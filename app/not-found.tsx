@@ -22,9 +22,12 @@ export default function NotFound() {
     // Return a beautiful, minimalist, design-system aligned Catalogue 404 page
     return (
       <div
-        className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[var(--cat-surface)] px-4 py-12 text-[var(--cat-on-surface)] selection:bg-[var(--cat-stone)]/50"
+        className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-(--cat-surface) px-4 py-12 text-(--cat-on-surface) selection:bg-(--cat-stone)/50"
         data-catalogue
       >
+        <div className="pointer-events-none absolute -top-40 left-1/2 h-125 w-125 -translate-x-1/2 rounded-full bg-linear-to-tr from-(--cat-stone)/20 via-neutral-100/10 to-transparent blur-3xl opacity-70" />
+        <div className="pointer-events-none absolute -bottom-40 left-1/3 h-125 w-125 rounded-full bg-linear-to-br from-neutral-200/20 via-(--cat-stone)/15 to-transparent blur-3xl opacity-60" />
+
         <div className="relative z-10 w-full max-w-lg space-y-8 text-center">
           <ScaleIn delay={0.1}>
             <div className="relative mx-auto flex h-28 w-28 items-center justify-center">
