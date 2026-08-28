@@ -1,0 +1,153 @@
+import type { MenuPermissionTree, RolePermissions } from '../types/roles.types';
+
+export const PERMISSION_TREE: MenuPermissionTree[] = [
+  {
+    id: 'overview',
+    menuName: '1. Overview & Dashboard',
+    description: 'Akses statistik utama, grafik penjualan, & aktivitas harian toko',
+    actions: [
+      {
+        key: 'overview.view',
+        label: 'Lihat Dashboard',
+        description: 'Melihat widget ringkasan omzet, grafik, dan pesanan terbaru'
+      }
+    ]
+  },
+  {
+    id: 'products',
+    menuName: '2. Produk & Katalog CMS',
+    description: 'Akses pengelolaan katalog kaos, varian ukuran, warna, & stok',
+    actions: [
+      {
+        key: 'products.view',
+        label: 'Lihat Katalog Produk',
+        description: 'Melihat daftar produk dan rincian varian stok'
+      },
+      {
+        key: 'products.create',
+        label: 'Tambah Produk',
+        description: 'Menambahkan kaos atau varian baru ke katalog toko'
+      },
+      {
+        key: 'products.edit',
+        label: 'Edit Produk & Stok',
+        description: 'Mengubah harga, gambar, deskripsi, & menyesuaikan stok'
+      },
+      {
+        key: 'products.delete',
+        label: 'Hapus Produk',
+        description: 'Menghapus item produk dari katalog CMS toko'
+      }
+    ]
+  },
+  {
+    id: 'orders',
+    menuName: '3. Pesanan & Transaksi',
+    description: 'Akses ke data transaksi pesanan pelanggan & resi pengiriman',
+    actions: [
+      {
+        key: 'orders.view',
+        label: 'Lihat Pesanan',
+        description: 'Melihat rincian pesanan masuk dari WhatsApp & web'
+      },
+      {
+        key: 'orders.process',
+        label: 'Proses Pesanan',
+        description: 'Memperbarui status pembayaran & menginput nomor resi'
+      },
+      {
+        key: 'orders.export',
+        label: 'Export Data Pesanan',
+        description: 'Mengunduh rekapitulasi data transaksi pesanan'
+      }
+    ]
+  },
+  {
+    id: 'testimonies',
+    menuName: '4. Bukti Chat & Testimoni',
+    description: 'Akses ke galeri screenshot tangkapan layar bukti kepuasan pelanggan',
+    actions: [
+      {
+        key: 'testimonies.view',
+        label: 'Lihat Testimoni',
+        description: 'Melihat galeri tangkapan layar chat WhatsApp pelanggan'
+      },
+      {
+        key: 'testimonies.manage',
+        label: 'Kelola Testimoni',
+        description: 'Upload screenshot baru, ubah keterangan, & hapus testimoni'
+      }
+    ]
+  },
+  {
+    id: 'journal',
+    menuName: '5. Jurnal & Artikel Blog',
+    description: 'Akses ke publikasi konten visual, artikel, & update brand',
+    actions: [
+      {
+        key: 'journal.view',
+        label: 'Lihat Artikel Jurnal',
+        description: 'Melihat rincian daftar artikel yang dipublikasikan'
+      },
+      {
+        key: 'journal.manage',
+        label: 'Kelola Artikel Jurnal',
+        description: 'Menulis artikel baru, edit draf, & publikasi konten'
+      }
+    ]
+  },
+  {
+    id: 'settings',
+    menuName: '6. Pengaturan Toko & Master Data',
+    description: 'Konfigurasi master data, ekspedisi pengiriman, & hero banner',
+    actions: [
+      {
+        key: 'settings.view',
+        label: 'Lihat Pengaturan Toko',
+        description: 'Melihat halaman pengaturan dan master data toko'
+      },
+      {
+        key: 'settings.manage',
+        label: 'Ubah Pengaturan Toko',
+        description: 'Mengubah konfigurasi toko, master data, & banner utama'
+      }
+    ]
+  },
+  {
+    id: 'reports',
+    menuName: '7. Laporan Keuangan & HPP',
+    description: 'Akses rincian margin profit, omzet bulanan, & perhitungan HPP',
+    actions: [
+      {
+        key: 'reports.view',
+        label: 'Lihat Laporan Keuangan',
+        description: 'Melihat rincian laporan omzet, profit margin, & HPP toko'
+      }
+    ]
+  }
+];
+
+export const DEFAULT_ADMIN_PERMISSIONS: RolePermissions = {
+  'overview.view': true,
+  'products.view': true,
+  'products.create': true,
+  'products.edit': true,
+  'products.delete': true,
+  'orders.view': true,
+  'orders.process': true,
+  'orders.export': true,
+  'testimonies.view': true,
+  'testimonies.manage': true,
+  'journal.view': true,
+  'journal.manage': true,
+  'settings.view': true,
+  'settings.manage': true,
+  'reports.view': true,
+  // legacy
+  viewOverview: true,
+  manageOrders: true,
+  manageProducts: true,
+  manageJournal: true,
+  manageSettings: true,
+  viewReports: true
+};

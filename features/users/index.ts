@@ -1,5 +1,8 @@
 export { default as UserTable } from './components/user-table';
 export * from './components/user-form-dialog';
+export * from './components/role-form-dialog';
+export * from './components/role-detail-dialog';
+export * from './components/role-table';
 export * from './components/user-actions';
 export * from './hooks/use-users';
 export * from './hooks/use-create-user';
@@ -8,3 +11,6 @@ export * from './hooks/use-delete-user';
 export * from './schemas/schema';
 export * from './types/user.types';
 export * from './data/mock-users';
+export * from './data/permission-tree';
+export * from './hooks/use-rbac';
+export * from './types/roles.types';
