@@ -20,15 +20,15 @@ export async function generateMetadata({ params }: JournalDetailProps): Promise<
     openGraph: {
       title: `${article.title} — RIO COLLECTION Journal`,
       description: article.excerpt,
-      images: [article.imageUrl],
-    },
+      images: [article.imageUrl]
+    }
   };
 }
 
 export async function generateStaticParams() {
   const journals = await getJournals();
   return journals.map((article) => ({
-    slug: article.slug,
+    slug: article.slug
   }));
 }
 
@@ -37,7 +37,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
   const [article, products, allJournals] = await Promise.all([
     getJournalBySlug(slug),
     getProducts(),
-    getJournals(),
+    getJournals()
   ]);
 
   if (!article) {
@@ -48,9 +48,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
     ? products.find((p) => p.slug === article.relatedProductSlug)
     : null;
 
-  const relatedArticles = allJournals
-    .filter((a) => a.id !== article.id)
-    .slice(0, 2);
+  const relatedArticles = allJournals.filter((a) => a.id !== article.id).slice(0, 2);
 
   return (
     <>
@@ -61,9 +59,13 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
           className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
           aria-label="Breadcrumb"
         >
-          <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">Home</Link>
+          <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">
+            Home
+          </Link>
           <span className="mx-2">/</span>
-          <Link href="/journal" className="hover:text-(--cat-on-surface) transition-colors">Journal</Link>
+          <Link href="/journal" className="hover:text-(--cat-on-surface) transition-colors">
+            Journal
+          </Link>
           <span className="mx-2">/</span>
           <span className="text-(--cat-on-surface) font-semibold">{article.title}</span>
         </nav>
@@ -89,7 +91,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
 
       {/* Hero Image */}
       <section className="mx-auto max-w-350 px-4 md:px-16 py-8">
-        <div className="relative aspect-16/9 md:aspect-[2.2/1] overflow-hidden bg-(--cat-surface-container-low)">
+        <div className="relative aspect-video md:aspect-[2.2/1] overflow-hidden bg-(--cat-surface-container-low)">
           <Image
             src={article.imageUrl}
             alt={article.title}
@@ -102,7 +104,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
       </section>
 
       {/* Article Content */}
-      <article className="mx-auto max-w-[768px] px-4 md:px-8 pb-16 md:pb-24">
+      <article className="mx-auto max-w-3xl px-4 md:px-8 pb-16 md:pb-24">
         {/* First two paragraphs */}
         {article.content.slice(0, 2).map((paragraph, i) => (
           <p
@@ -142,7 +144,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
             className="object-cover"
           />
           <div className="absolute bottom-0 left-0 right-0 bg-(--cat-surface)/80 px-4 py-2">
-            <p className="font-hanken text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) text-center">
+            <p className="font-hanken text-[10px] uppercase tracking-widest text-(--cat-on-surface-variant) text-center">
               Detail Tekstur — Katun 240gsm, Garment Washed
             </p>
           </div>
@@ -193,11 +195,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
                 {relatedArticles.map((related) => (
-                  <Link
-                    key={related.id}
-                    href={`/journal/${related.slug}`}
-                    className="group block"
-                  >
+                  <Link key={related.id} href={`/journal/${related.slug}`} className="group block">
                     <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
                       <Image
                         src={related.imageUrl}
