@@ -31,7 +31,7 @@ export default async function HomePage() {
       <HeroSection />
 
       {/* ═══ Featured Products — "Koleksi Terkini" ═══ */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">
         {/* Section header */}
         <div className="flex items-end justify-between mb-10 md:mb-14">
           <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
@@ -70,10 +70,10 @@ export default async function HomePage() {
       </section>
 
       {/* ═══ Brand Manifesto ═══ */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8 md:py-16">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
           {/* Left: Image */}
-          <div className="relative aspect-[4/5] md:aspect-[3/4] overflow-hidden">
+          <div className="relative aspect-4/5 md:aspect-3/4 overflow-hidden">
             <Image
               src="/images/brand/manifesto.jpg"
               alt="RIO COLLECTION design studio — where every garmet is constructed with precision"
@@ -111,7 +111,7 @@ export default async function HomePage() {
       <TestimonySection testimonies={testimonies} />
 
       {/* ═══ CTA Banner ═══ */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">
         <div className="text-center py-12 md:py-16 border-t border-b border-(--cat-stone)">
           <p className="font-eb-garamond text-[22px] md:text-[28px] font-normal leading-relaxed text-(--cat-on-surface) max-w-2xl mx-auto italic">
             Setiap edisi adalah eksplorasi mandiri. Temukan siluet terbaru kami.

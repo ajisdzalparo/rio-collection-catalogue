@@ -11,7 +11,7 @@ export function TestimonySection({ testimonies }: TestimonySectionProps) {
   }
 
   return (
-    <section className="mx-auto max-w-[1400px] py-16 md:py-24 border-t border-(--cat-stone)/50 bg-(--cat-surface-bright)">
+    <section className="mx-auto max-w-350 py-16 md:py-24 border-t border-(--cat-stone)/50 bg-(--cat-surface-bright)">
       {/* Header */}
       <div className="text-center mb-6 px-4">
         <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">

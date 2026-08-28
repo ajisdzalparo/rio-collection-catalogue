@@ -23,7 +23,7 @@ export default function AboutPage() {
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/40 via-black/10 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 px-4 md:px-16 pb-12 md:pb-16">
-          <div className="mx-auto max-w-[1400px]">
+          <div className="mx-auto max-w-350">
             <h1 className="font-eb-garamond text-[40px] md:text-[64px] font-normal leading-tight text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.3)]">
               About
             </h1>
@@ -32,7 +32,7 @@ export default function AboutPage() {
       </section>
 
       {/* Manifesto */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-16">
           <div className="md:col-span-5">
             <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
@@ -60,7 +60,7 @@ export default function AboutPage() {
 
       {/* Values */}
       <section className="bg-(--cat-surface-container-low)">
-        <div className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24">
+        <div className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">
           <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface) text-center mb-14 md:mb-20">
             Nilai Kami
           </h2>
@@ -96,9 +96,9 @@ export default function AboutPage() {
       </section>
 
       {/* Studio Image */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-          <div className="relative aspect-[4/5] overflow-hidden bg-(--cat-surface-container-low)">
+          <div className="relative aspect-4/5 overflow-hidden bg-(--cat-surface-container-low)">
             <Image
               src="/images/brand/hero-editorial.jpg"
               alt="RIO COLLECTION editorial photography"
@@ -130,7 +130,7 @@ export default function AboutPage() {
 
       {/* Contact */}
       <section className="border-t border-(--cat-stone)">
-        <div className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-20 text-center">
+        <div className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-20 text-center">
           <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
             Hubungi Kami
           </h2>

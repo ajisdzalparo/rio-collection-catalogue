@@ -38,7 +38,7 @@ export function CatalogueFooter({ className }: CatalogueFooterProps) {
         className
       )}
     >
-      <div className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-20">
+      <div className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
           {/* Brand Column */}
           <div className="md:col-span-4">

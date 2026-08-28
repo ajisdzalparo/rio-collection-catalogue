@@ -18,7 +18,7 @@ export default async function JournalPage() {
   return (
     <>
       {/* Header */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pt-12 md:pt-20 pb-8 md:pb-12 text-center">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pt-12 md:pt-20 pb-8 md:pb-12 text-center">
         <h1 className="font-eb-garamond text-[40px] md:text-[64px] font-normal leading-tight text-(--cat-on-surface)">
           Journal
         </h1>
@@ -28,7 +28,7 @@ export default async function JournalPage() {
       </section>
 
       {/* Featured Article */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pb-12 md:pb-16">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pb-12 md:pb-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
           {/* Left: Text */}
           <div className="order-2 md:order-1">
@@ -53,7 +53,7 @@ export default async function JournalPage() {
           </div>
 
           {/* Right: Image */}
-          <div className="order-1 md:order-2 relative aspect-[4/3] overflow-hidden bg-(--cat-surface-container-low)">
+          <div className="order-1 md:order-2 relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
             <Image
               src={featuredArticle.imageUrl}
               alt={featuredArticle.title}
@@ -67,12 +67,12 @@ export default async function JournalPage() {
       </section>
 
       {/* Divider */}
-      <div className="mx-auto max-w-[1400px] px-4 md:px-16">
+      <div className="mx-auto max-w-350 px-4 md:px-16">
         <hr className="border-(--cat-stone)" />
       </div>
 
       {/* Recent Articles */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-12 md:py-20">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-12 md:py-20">
         <div className="flex items-end justify-between mb-10 md:mb-14">
           <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
             Artikel Terbaru
@@ -89,7 +89,7 @@ export default async function JournalPage() {
               href={`/journal/${article.slug}`}
               className="group block"
             >
-              <div className="relative aspect-[4/3] overflow-hidden bg-(--cat-surface-container-low)">
+              <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
                 <Image
                   src={article.imageUrl}
                   alt={article.title}

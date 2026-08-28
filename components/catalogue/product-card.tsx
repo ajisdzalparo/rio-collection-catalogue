@@ -20,7 +20,7 @@ export function ProductCard({ product, className, priority = false }: ProductCar
       aria-label={`View ${product.name} — ${formatPrice(product.price)}`}
     >
       {/* Image Container — 4:5 ratio, 0px corners */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-(--cat-surface-container-low)">
+      <div className="relative aspect-4/5 overflow-hidden bg-(--cat-surface-container-low)">
         <Image
           src={product.imageUrl}
           alt={`${product.name} — ${product.color}`}

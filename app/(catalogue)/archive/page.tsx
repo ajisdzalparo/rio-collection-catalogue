@@ -18,7 +18,7 @@ export default async function ArchivePage() {
   return (
     <>
       {/* Header */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pt-8 md:pt-12 pb-6">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pt-8 md:pt-12 pb-6">
         <nav
           className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
           aria-label="Breadcrumb"
@@ -42,11 +42,11 @@ export default async function ArchivePage() {
       </section>
 
       {/* Archived Products Grid */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pb-12 md:pb-16">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pb-12 md:pb-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {archivedProducts.map((product) => (
             <Link key={product.id} href={`/products/${product.slug}`} className="group block">
-              <div className="relative aspect-[4/5] overflow-hidden bg-(--cat-surface-container-low)">
+              <div className="relative aspect-4/5 overflow-hidden bg-(--cat-surface-container-low)">
                 <Image
                   src={product.imageUrl}
                   alt={product.name}
@@ -75,7 +75,7 @@ export default async function ArchivePage() {
 
       {/* Quote Banner */}
       <section className="bg-(--cat-surface-container-low)">
-        <div className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24 text-center">
+        <div className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24 text-center">
           <p className="font-eb-garamond text-[24px] md:text-[36px] font-normal leading-relaxed text-(--cat-on-surface) italic max-w-2xl mx-auto">
             &quot;Merekam jejak perjalanan estetika kami.&quot;
           </p>
@@ -89,11 +89,11 @@ export default async function ArchivePage() {
       </section>
 
       {/* Archive Collections */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {archives.map((archive) => (
             <div key={archive.id} className="group">
-              <div className="relative aspect-[3/2] overflow-hidden bg-(--cat-surface-container-low)">
+              <div className="relative aspect-3/2 overflow-hidden bg-(--cat-surface-container-low)">
                 <Image
                   src={archive.imageUrl}
                   alt={archive.name}
@@ -121,7 +121,7 @@ export default async function ArchivePage() {
       </section>
 
       {/* Archive Coming Soon */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pb-16 md:pb-24">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pb-16 md:pb-24">
         <div className="text-center py-12 border-t border-(--cat-stone)">
           <BookOpen
             size={24}

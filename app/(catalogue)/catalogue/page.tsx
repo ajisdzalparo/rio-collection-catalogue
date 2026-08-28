@@ -34,7 +34,7 @@ export default function CataloguePage() {
   return (
     <>
       {/* Header */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pt-8 md:pt-12 pb-6">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pt-8 md:pt-12 pb-6">
         {/* Breadcrumbs */}
         <nav
           className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
@@ -62,7 +62,7 @@ export default function CataloguePage() {
       </section>
 
       {/* Filter tabs */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pb-8 md:pb-12">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pb-8 md:pb-12">
         <FilterTabs
           tabs={FILTER_TABS}
           activeTab={activeTab}
@@ -71,7 +71,7 @@ export default function CataloguePage() {
       </section>
 
       {/* Product Grid */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pb-16 md:pb-24">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pb-16 md:pb-24">
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {filteredProducts.map((product, index) => (
@@ -93,7 +93,7 @@ export default function CataloguePage() {
 
       {/* Historical Archive Section */}
       {activeTab !== 'AVAILABLE' && archives.length > 0 && (
-        <section className="mx-auto max-w-[1400px] px-4 md:px-16 pb-16 md:pb-24">
+        <section className="mx-auto max-w-350 px-4 md:px-16 pb-16 md:pb-24">
           <div className="text-center mb-10 md:mb-14">
             <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
               Historical Archive
@@ -110,7 +110,7 @@ export default function CataloguePage() {
                 href={`/archive/${archive.slug}`}
                 className="group block"
               >
-                <div className="relative aspect-[3/2] overflow-hidden bg-(--cat-surface-container-low)">
+                <div className="relative aspect-3/2 overflow-hidden bg-(--cat-surface-container-low)">
                   <Image
                     src={archive.imageUrl}
                     alt={archive.name}

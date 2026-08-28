@@ -28,7 +28,7 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
           className
         )}
       >
-        <div className="mx-auto max-w-[1400px] px-4 md:px-16 h-16 flex items-center justify-between">
+        <div className="mx-auto max-w-350 px-4 md:px-16 h-16 flex items-center justify-between">
           {/* Left: Brand Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <span className="font-eb-garamond text-[24px] md:text-[28px] font-normal tracking-[-0.01em] text-(--cat-on-surface) whitespace-nowrap">

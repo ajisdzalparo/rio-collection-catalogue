@@ -39,7 +39,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   return (
     <>
       {/* Main Product Section */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8 md:py-16">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
           {/* Left Gallery: Multi-image thumbnails + Main display (7 columns on desktop) */}
           <div className="md:col-span-7 flex flex-col-reverse md:flex-row gap-4">
@@ -71,7 +71,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             )}
 
             {/* Main Active Image View */}
-            <div className="relative flex-1 aspect-[4/5] overflow-hidden bg-(--cat-surface-container-low) group">
+            <div className="relative flex-1 aspect-4/5 overflow-hidden bg-(--cat-surface-container-low) group">
               <Image
                 src={activeImage}
                 alt={`${product.name} — ${product.color} (View ${activeImageIndex + 1})`}
@@ -249,7 +249,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
       </section>
 
       {/* Product Story Section */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8 md:py-16">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
           <div>
             <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
@@ -262,7 +262,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               The boxy fit allows for architectural draping, while the dropped shoulders construct a relaxed, contemporary line against the body.
             </p>
           </div>
-          <div className="relative aspect-[4/3] overflow-hidden bg-(--cat-surface-container-low)">
+          <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
             <Image
               src={imagesList[1] || product.imageUrl}
               alt={`${product.name} detail view`}
@@ -280,7 +280,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
       </section>
 
       {/* Materials & Care */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8 md:py-16 border-t border-(--cat-stone)">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16 border-t border-(--cat-stone)">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-3">
             <h3 className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">

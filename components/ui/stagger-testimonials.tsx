@@ -190,7 +190,7 @@ export const StaggerTestimonials: React.FC = () => {
           </button>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-[90vw] max-h-[85vh] aspect-[9/16] overflow-hidden rounded-2xl border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200"
+            className="relative max-w-[90vw] max-h-[85vh] aspect-9/16 overflow-hidden rounded-2xl border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200"
           >
             <img
               src={zoomedImage}

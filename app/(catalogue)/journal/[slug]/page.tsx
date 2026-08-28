@@ -55,7 +55,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
   return (
     <>
       {/* Header */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pt-8 md:pt-12">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pt-8 md:pt-12">
         {/* Breadcrumbs */}
         <nav
           className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
@@ -88,8 +88,8 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
       </section>
 
       {/* Hero Image */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8">
-        <div className="relative aspect-[16/9] md:aspect-[2.2/1] overflow-hidden bg-(--cat-surface-container-low)">
+      <section className="mx-auto max-w-350 px-4 md:px-16 py-8">
+        <div className="relative aspect-16/9 md:aspect-[2.2/1] overflow-hidden bg-(--cat-surface-container-low)">
           <Image
             src={article.imageUrl}
             alt={article.title}
@@ -133,7 +133,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
         ))}
 
         {/* Inline image */}
-        <div className="my-10 md:my-14 relative aspect-[4/3] overflow-hidden bg-(--cat-surface-container-low)">
+        <div className="my-10 md:my-14 relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
           <Image
             src={article.imageUrl}
             alt={`${article.title} — detail`}
@@ -151,7 +151,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
 
       {/* Related Content */}
       <section className="border-t border-(--cat-stone)">
-        <div className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-20">
+        <div className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-20">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-16">
             {/* Related Product */}
             {relatedProduct && (
@@ -160,7 +160,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
                   Melengkapi Cerita
                 </h3>
                 <Link href={`/products/${relatedProduct.slug}`} className="group block">
-                  <div className="relative aspect-[4/5] overflow-hidden bg-(--cat-surface-container-low)">
+                  <div className="relative aspect-4/5 overflow-hidden bg-(--cat-surface-container-low)">
                     <Image
                       src={relatedProduct.imageUrl}
                       alt={relatedProduct.name}
@@ -198,7 +198,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
                     href={`/journal/${related.slug}`}
                     className="group block"
                   >
-                    <div className="relative aspect-[4/3] overflow-hidden bg-(--cat-surface-container-low)">
+                    <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
                       <Image
                         src={related.imageUrl}
                         alt={related.title}

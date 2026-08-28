@@ -48,7 +48,7 @@ export default function OrderPage() {
   return (
     <>
       {/* Header */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pt-8 md:pt-12 pb-6">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pt-8 md:pt-12 pb-6">
         <nav
           className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
           aria-label="Breadcrumb"
@@ -66,7 +66,7 @@ export default function OrderPage() {
       </section>
 
       {/* Order Form */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 pb-16 md:pb-24">
+      <section className="mx-auto max-w-350 px-4 md:px-16 pb-16 md:pb-24">
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-16">
             {/* Left: Order Summary */}
