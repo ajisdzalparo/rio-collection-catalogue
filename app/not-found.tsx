@@ -2,15 +2,73 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Compass, ArrowLeft, Home } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Compass, ArrowLeft, Home, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FadeIn, ScaleIn } from '@/components/ui/motion';
 import { motion } from 'framer-motion';
 
 export default function NotFound() {
   const router = useRouter();
+  const pathname = usePathname();
 
+  // Detect if the user is attempting to access a dashboard path
+  const isDashboardPath = pathname?.startsWith('/dashboard') || 
+                          pathname?.startsWith('/users') || 
+                          pathname?.startsWith('/components');
+
+  if (!isDashboardPath) {
+    // Return a beautiful, minimalist, design-system aligned Catalogue 404 page
+    return (
+      <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[var(--cat-surface)] px-4 py-12 text-[var(--cat-on-surface)] selection:bg-[var(--cat-stone)]/50" data-catalogue>
+        <div className="relative z-10 w-full max-w-lg space-y-8 text-center">
+          <ScaleIn delay={0.1}>
+            <div className="relative mx-auto flex h-28 w-28 items-center justify-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+                className="absolute inset-0 rounded-full border border-dashed border-[var(--cat-stone)]"
+              />
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--cat-surface-container-low)] border border-[var(--cat-stone)]/60 text-[var(--cat-on-surface)] shadow-xs">
+                <Compass className="h-8 w-8 stroke-[1.2]" />
+              </div>
+            </div>
+          </ScaleIn>
+
+          <FadeIn delay={0.2} direction="up" className="space-y-4">
+            <div className="inline-flex items-center gap-2 border border-[var(--cat-stone)] px-4 py-1 text-[11px] font-semibold text-[var(--cat-on-surface-variant)] uppercase tracking-[0.08em] bg-[var(--cat-surface-container-low)]">
+              Error 404
+            </div>
+            <h1 className="font-[family-name:var(--font-eb-garamond)] text-[36px] md:text-[48px] font-normal leading-tight text-[var(--cat-on-surface)]">
+              Halaman Tidak Ditemukan
+            </h1>
+            <p className="mx-auto max-w-md font-[family-name:var(--font-hanken)] text-[14px] leading-relaxed text-[var(--cat-on-surface-variant)]">
+              Halaman yang Anda cari tidak tersedia, telah dipindahkan, atau alamat URL yang Anda tuju kurang tepat.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.3} direction="up" className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 border border-[var(--cat-stone)] bg-[var(--cat-surface)] text-[var(--cat-on-surface)] px-6 py-2.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-[var(--cat-surface-container)] transition-colors duration-150 cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+              <span>Kembali</span>
+            </button>
+            <Link
+              href="/catalogue"
+              className="inline-flex items-center gap-2 bg-[var(--cat-charcoal)] text-white px-6 py-2.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
+            >
+              <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
+              <span>Ke Katalog</span>
+            </Link>
+          </FadeIn>
+        </div>
+      </div>
+    );
+  }
+
+  // Dashboard 404 page (original styling)
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background px-4 py-12 text-foreground selection:bg-primary/20">
       <div className="pointer-events-none absolute -top-40 left-1/2 h-125 w-125 -translate-x-1/2 rounded-full bg-linear-to-tr from-primary/20 via-purple-500/10 to-transparent blur-3xl opacity-70" />
