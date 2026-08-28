@@ -13,24 +13,28 @@ export default function NotFound() {
   const pathname = usePathname();
 
   // Detect if the user is attempting to access a dashboard path
-  const isDashboardPath = pathname?.startsWith('/dashboard') || 
-                          pathname?.startsWith('/users') || 
-                          pathname?.startsWith('/components');
+  const isDashboardPath =
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/users') ||
+    pathname?.startsWith('/components');
 
   if (!isDashboardPath) {
     // Return a beautiful, minimalist, design-system aligned Catalogue 404 page
     return (
-      <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[var(--cat-surface)] px-4 py-12 text-[var(--cat-on-surface)] selection:bg-[var(--cat-stone)]/50" data-catalogue>
+      <div
+        className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[var(--cat-surface)] px-4 py-12 text-[var(--cat-on-surface)] selection:bg-[var(--cat-stone)]/50"
+        data-catalogue
+      >
         <div className="relative z-10 w-full max-w-lg space-y-8 text-center">
           <ScaleIn delay={0.1}>
             <div className="relative mx-auto flex h-28 w-28 items-center justify-center">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-                className="absolute inset-0 rounded-full border border-dashed border-[var(--cat-stone)]"
+                className="absolute inset-0 rounded-full border-2 border-dashed border-[var(--cat-stone)]/40"
               />
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--cat-surface-container-low)] border border-[var(--cat-stone)]/60 text-[var(--cat-on-surface)] shadow-xs">
-                <Compass className="h-8 w-8 stroke-[1.2]" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-(--cat-surface-container-low) border border-(--cat-stone)/60 text-(--cat-on-surface) shadow-xl backdrop-blur-xl">
+                <Compass className="h-10 w-10 stroke-[2.2]" />
               </div>
             </div>
           </ScaleIn>
@@ -43,11 +47,16 @@ export default function NotFound() {
               Halaman Tidak Ditemukan
             </h1>
             <p className="mx-auto max-w-md font-[family-name:var(--font-hanken)] text-[14px] leading-relaxed text-[var(--cat-on-surface-variant)]">
-              Halaman yang Anda cari tidak tersedia, telah dipindahkan, atau alamat URL yang Anda tuju kurang tepat.
+              Halaman yang Anda cari tidak tersedia, telah dipindahkan, atau alamat URL yang Anda
+              tuju kurang tepat.
             </p>
           </FadeIn>
 
-          <FadeIn delay={0.3} direction="up" className="flex items-center justify-center gap-3 pt-2">
+          <FadeIn
+            delay={0.3}
+            direction="up"
+            className="flex items-center justify-center gap-3 pt-2"
+          >
             <button
               onClick={() => router.back()}
               className="inline-flex items-center gap-2 border border-[var(--cat-stone)] bg-[var(--cat-surface)] text-[var(--cat-on-surface)] px-6 py-2.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-[var(--cat-surface-container)] transition-colors duration-150 cursor-pointer"
