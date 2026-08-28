@@ -58,7 +58,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 pt-8 md:pt-12">
         {/* Breadcrumbs */}
         <nav
-          className="mb-4 font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
+          className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
           aria-label="Breadcrumb"
         >
           <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">Home</Link>
@@ -70,19 +70,19 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
 
         {/* Category & Date */}
         <div className="flex items-center gap-4 mb-2">
-          <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) bg-(--cat-surface-container-low) px-2 py-1">
+          <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) bg-(--cat-surface-container-low) px-2 py-1">
             {article.category}
           </span>
-          <span className="font-[family-name:var(--font-hanken)] text-[12px] text-(--cat-on-surface-variant)">
+          <span className="font-hanken text-[12px] text-(--cat-on-surface-variant)">
             {article.date}
           </span>
         </div>
 
         {/* Title */}
-        <h1 className="font-[family-name:var(--font-eb-garamond)] text-[32px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface) max-w-3xl">
+        <h1 className="font-eb-garamond text-[32px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface) max-w-3xl">
           {article.title}
         </h1>
-        <p className="mt-2 font-[family-name:var(--font-hanken)] text-[14px] text-(--cat-on-surface-variant)">
+        <p className="mt-2 font-hanken text-[14px] text-(--cat-on-surface-variant)">
           Oleh {article.author}
         </p>
       </section>
@@ -107,7 +107,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
         {article.content.slice(0, 2).map((paragraph, i) => (
           <p
             key={i}
-            className="mt-6 first:mt-0 font-[family-name:var(--font-hanken)] text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
+            className="mt-6 first:mt-0 font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
           >
             {paragraph}
           </p>
@@ -116,7 +116,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
         {/* Pull Quote */}
         {article.pullQuote && (
           <blockquote className="my-10 md:my-14 py-8 border-t border-b border-(--cat-stone)">
-            <p className="font-[family-name:var(--font-eb-garamond)] text-[24px] md:text-[30px] font-normal leading-snug text-(--cat-on-surface) italic text-center max-w-xl mx-auto">
+            <p className="font-eb-garamond text-[24px] md:text-[30px] font-normal leading-snug text-(--cat-on-surface) italic text-center max-w-xl mx-auto">
               &quot;{article.pullQuote}&quot;
             </p>
           </blockquote>
@@ -126,7 +126,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
         {article.content.slice(2).map((paragraph, i) => (
           <p
             key={i + 2}
-            className="mt-6 font-[family-name:var(--font-hanken)] text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
+            className="mt-6 font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
           >
             {paragraph}
           </p>
@@ -142,7 +142,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
             className="object-cover"
           />
           <div className="absolute bottom-0 left-0 right-0 bg-(--cat-surface)/80 px-4 py-2">
-            <p className="font-[family-name:var(--font-hanken)] text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) text-center">
+            <p className="font-hanken text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) text-center">
               Detail Tekstur — Katun 240gsm, Garment Washed
             </p>
           </div>
@@ -156,7 +156,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
             {/* Related Product */}
             {relatedProduct && (
               <div className="md:col-span-4">
-                <h3 className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-6">
+                <h3 className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-6">
                   Melengkapi Cerita
                 </h3>
                 <Link href={`/products/${relatedProduct.slug}`} className="group block">
@@ -171,14 +171,14 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
                   </div>
                   <div className="mt-3 flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-[family-name:var(--font-hanken)] text-[15px] font-medium text-(--cat-on-surface)">
+                      <p className="font-hanken text-[15px] font-medium text-(--cat-on-surface)">
                         {relatedProduct.name}
                       </p>
                       <p className="text-[12px] text-(--cat-on-surface-variant)">
                         {relatedProduct.color} / 240GSM
                       </p>
                     </div>
-                    <p className="font-[family-name:var(--font-hanken)] text-[15px] font-medium text-(--cat-on-surface) tabular-nums">
+                    <p className="font-hanken text-[15px] font-medium text-(--cat-on-surface) tabular-nums">
                       {formatPrice(relatedProduct.price)}
                     </p>
                   </div>
@@ -188,7 +188,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
 
             {/* Related Articles */}
             <div className={relatedProduct ? 'md:col-span-8' : 'md:col-span-12'}>
-              <h3 className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-6">
+              <h3 className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-6">
                 Artikel Terkait
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
@@ -209,14 +209,14 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
                     </div>
                     <div className="mt-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+                        <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
                           {related.category}
                         </span>
-                        <span className="font-[family-name:var(--font-hanken)] text-[11px] text-(--cat-on-surface-variant)">
+                        <span className="font-hanken text-[11px] text-(--cat-on-surface-variant)">
                           {related.date}
                         </span>
                       </div>
-                      <h4 className="font-[family-name:var(--font-eb-garamond)] text-[18px] md:text-[20px] font-normal leading-snug text-(--cat-on-surface)">
+                      <h4 className="font-eb-garamond text-[18px] md:text-[20px] font-normal leading-snug text-(--cat-on-surface)">
                         {related.title}
                       </h4>
                     </div>

@@ -57,10 +57,10 @@ export function HeroSection({ className }: HeroSectionProps) {
           <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/15 to-black/30 md:from-transparent md:via-black/10 md:to-black/20" />
 
           <div className="relative z-10 px-4">
-            <h1 className="font-[family-name:var(--font-eb-garamond)] text-[48px] md:text-[72px] font-normal leading-[1.1] tracking-[-0.02em] text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.3)]">
+            <h1 className="font-eb-garamond text-[48px] md:text-[72px] font-normal leading-[1.1] tracking-[-0.02em] text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.3)]">
               EDITION 001
             </h1>
-            <p className="mt-3 font-[family-name:var(--font-hanken)] text-[13px] md:text-[14px] font-normal text-white/90 tracking-wide drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
+            <p className="mt-3 font-hanken text-[13px] md:text-[14px] font-normal text-white/90 tracking-wide drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
               Eksplorasi siluet dan tekstur dalam jumlah terbatas.
             </p>
 
@@ -68,13 +68,13 @@ export function HeroSection({ className }: HeroSectionProps) {
             <div className="mt-6 flex items-center justify-center gap-3">
               <Link
                 href="/catalogue"
-                className="inline-flex items-center px-6 py-2.5 bg-(--cat-charcoal) text-white font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
+                className="inline-flex items-center px-6 py-2.5 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
               >
                 Eksplor Koleksi
               </Link>
               <Link
                 href="/archive"
-                className="inline-flex items-center px-6 py-2.5 border border-white/80 text-white font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-white/10 transition-colors duration-150"
+                className="inline-flex items-center px-6 py-2.5 border border-white/80 text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-white/10 transition-colors duration-150"
               >
                 Lihat Arsip
               </Link>
@@ -85,7 +85,7 @@ export function HeroSection({ className }: HeroSectionProps) {
 
       {/* Subtle bottom edge */}
       <div className="absolute bottom-0 right-4 md:right-16">
-        <p className="font-[family-name:var(--font-hanken)] text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) py-2">
+        <p className="font-hanken text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) py-2">
           Edisi selanjutnya →
         </p>
       </div>

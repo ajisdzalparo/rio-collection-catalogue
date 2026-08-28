@@ -31,7 +31,7 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
         <div className="mx-auto max-w-[1400px] px-4 md:px-16 h-16 flex items-center justify-between">
           {/* Left: Brand Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="font-[family-name:var(--font-eb-garamond)] text-[24px] md:text-[28px] font-normal tracking-[-0.01em] text-(--cat-on-surface) whitespace-nowrap">
+            <span className="font-eb-garamond text-[24px] md:text-[28px] font-normal tracking-[-0.01em] text-(--cat-on-surface) whitespace-nowrap">
               RIO COLLECTION
             </span>
           </Link>
@@ -44,7 +44,7 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="font-[family-name:var(--font-hanken)] text-[12px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
+                  className="font-hanken text-[12px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
                 >
                   {link.label}
                 </Link>

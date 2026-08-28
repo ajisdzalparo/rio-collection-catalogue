@@ -20,7 +20,7 @@ export default async function ArchivePage() {
       {/* Header */}
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 pt-8 md:pt-12 pb-6">
         <nav
-          className="mb-4 font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
+          className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
           aria-label="Breadcrumb"
         >
           <Link
@@ -33,10 +33,10 @@ export default async function ArchivePage() {
           <span className="text-(--cat-on-surface) font-semibold">Archive</span>
         </nav>
 
-        <h1 className="font-[family-name:var(--font-eb-garamond)] text-[36px] md:text-[56px] font-normal leading-tight text-(--cat-on-surface)">
+        <h1 className="font-eb-garamond text-[36px] md:text-[56px] font-normal leading-tight text-(--cat-on-surface)">
           Archive
         </h1>
-        <p className="mt-2 font-[family-name:var(--font-hanken)] text-[14px] md:text-[16px] text-(--cat-on-surface-variant)">
+        <p className="mt-2 font-hanken text-[14px] md:text-[16px] text-(--cat-on-surface-variant)">
           Previous designs and past drops.
         </p>
       </section>
@@ -57,14 +57,14 @@ export default async function ArchivePage() {
               </div>
               <div className="mt-3 flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-[family-name:var(--font-hanken)] text-[15px] font-medium text-(--cat-on-surface)">
+                  <h3 className="font-hanken text-[15px] font-medium text-(--cat-on-surface)">
                     {product.name}
                   </h3>
-                  <p className="mt-0.5 font-[family-name:var(--font-hanken)] text-[12px] text-(--cat-on-surface-variant)">
+                  <p className="mt-0.5 font-hanken text-[12px] text-(--cat-on-surface-variant)">
                     {product.edition} — 2024
                   </p>
                 </div>
-                <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-secondary-container)">
+                <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-secondary-container)">
                   Archived
                 </span>
               </div>
@@ -76,10 +76,10 @@ export default async function ArchivePage() {
       {/* Quote Banner */}
       <section className="bg-(--cat-surface-container-low)">
         <div className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24 text-center">
-          <p className="font-[family-name:var(--font-eb-garamond)] text-[24px] md:text-[36px] font-normal leading-relaxed text-(--cat-on-surface) italic max-w-2xl mx-auto">
+          <p className="font-eb-garamond text-[24px] md:text-[36px] font-normal leading-relaxed text-(--cat-on-surface) italic max-w-2xl mx-auto">
             &quot;Merekam jejak perjalanan estetika kami.&quot;
           </p>
-          <p className="mt-6 font-[family-name:var(--font-hanken)] text-[13px] md:text-[14px] leading-relaxed text-(--cat-on-surface-variant) max-w-lg mx-auto">
+          <p className="mt-6 font-hanken text-[13px] md:text-[14px] leading-relaxed text-(--cat-on-surface-variant) max-w-lg mx-auto">
             This archive serves as a permanent record of our evolving dialogue with form, material,
             and time. Each piece documented here represents a singular iteration of our
             uncompromising commitment to slow fashion and independent craftsmanship—now retired, but
@@ -104,14 +104,14 @@ export default async function ArchivePage() {
               </div>
               <div className="mt-3 flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-[family-name:var(--font-hanken)] text-[15px] font-medium text-(--cat-on-surface)">
+                  <h3 className="font-hanken text-[15px] font-medium text-(--cat-on-surface)">
                     {archive.name}
                   </h3>
-                  <p className="mt-0.5 font-[family-name:var(--font-hanken)] text-[12px] text-(--cat-on-surface-variant)">
+                  <p className="mt-0.5 font-hanken text-[12px] text-(--cat-on-surface-variant)">
                     {archive.description}
                   </p>
                 </div>
-                <span className="shrink-0 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-secondary-container)">
+                <span className="shrink-0 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-secondary-container)">
                   Sold Out
                 </span>
               </div>
@@ -128,10 +128,10 @@ export default async function ArchivePage() {
             strokeWidth={1.5}
             className="mx-auto text-(--cat-on-surface-variant) mb-4"
           />
-          <p className="font-[family-name:var(--font-eb-garamond)] text-[22px] md:text-[28px] font-normal text-(--cat-on-surface) italic">
+          <p className="font-eb-garamond text-[22px] md:text-[28px] font-normal text-(--cat-on-surface) italic">
             &quot;Arsip sedang menunggu babak pertamanya.&quot;
           </p>
-          <p className="mt-2 font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+          <p className="mt-2 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
             The archive is waiting for its first chapter
           </p>
         </div>

@@ -100,7 +100,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                   </button>
 
                   {/* Image Counter indicator */}
-                  <div className="absolute bottom-3 right-3 bg-(--cat-surface)/80 backdrop-blur-xs px-2.5 py-1 text-[11px] font-[family-name:var(--font-hanken)] font-medium text-(--cat-on-surface)">
+                  <div className="absolute bottom-3 right-3 bg-(--cat-surface)/80 backdrop-blur-xs px-2.5 py-1 text-[11px] font-hanken font-medium text-(--cat-on-surface)">
                     {activeImageIndex + 1} / {imagesList.length}
                   </div>
                 </>
@@ -112,7 +112,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
           <div className="md:col-span-5 flex flex-col justify-start py-0 md:py-2">
             {/* Breadcrumbs */}
             <nav
-              className="mb-4 font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
+              className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
               aria-label="Breadcrumb"
             >
               <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">Home</Link>
@@ -123,15 +123,15 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             </nav>
 
             {/* Title & Price */}
-            <h1 className="font-[family-name:var(--font-eb-garamond)] text-[32px] md:text-[42px] font-normal leading-tight text-(--cat-on-surface)">
+            <h1 className="font-eb-garamond text-[32px] md:text-[42px] font-normal leading-tight text-(--cat-on-surface)">
               {product.name}
             </h1>
-            <p className="mt-2 font-[family-name:var(--font-hanken)] text-[20px] font-medium text-(--cat-on-surface) tabular-nums">
+            <p className="mt-2 font-hanken text-[20px] font-medium text-(--cat-on-surface) tabular-nums">
               {formatPrice(product.price)}
             </p>
 
             {/* Description */}
-            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
+            <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
               {product.description}
             </p>
 
@@ -143,7 +143,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
             {/* Color */}
             <div className="mt-6">
-              <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
+              <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
                 Color / Warna
               </p>
               <div className="mt-2 flex items-center gap-2">
@@ -152,7 +152,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                   style={{ backgroundColor: product.colorHex }}
                   title={product.color}
                 />
-                <span className="font-[family-name:var(--font-hanken)] text-[13px] text-(--cat-on-surface-variant)">
+                <span className="font-hanken text-[13px] text-(--cat-on-surface-variant)">
                   {product.color}
                 </span>
               </div>
@@ -161,10 +161,10 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             {/* Size Selector */}
             <div className="mt-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
+                <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
                   Size / Ukuran
                 </p>
-                <button className="font-[family-name:var(--font-hanken)] text-[12px] text-(--cat-on-surface-variant) underline hover:text-(--cat-on-surface) cursor-pointer">
+                <button className="font-hanken text-[12px] text-(--cat-on-surface-variant) underline hover:text-(--cat-on-surface) cursor-pointer">
                   Size Guide
                 </button>
               </div>
@@ -175,7 +175,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                     disabled={!variant.inStock}
                     onClick={() => setSelectedSize(variant.size)}
                     className={cn(
-                      'h-11 flex items-center justify-center font-[family-name:var(--font-hanken)] text-[13px] font-medium border transition-all duration-150 cursor-pointer',
+                      'h-11 flex items-center justify-center font-hanken text-[13px] font-medium border transition-all duration-150 cursor-pointer',
                       selectedSize === variant.size
                         ? 'bg-(--cat-charcoal) text-white border-(--cat-charcoal)'
                         : variant.inStock
@@ -191,7 +191,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
             {/* Quantity */}
             <div className="mt-6">
-              <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-2">
+              <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-2">
                 Quantity
               </p>
               <div className="inline-flex items-center border border-(--cat-stone)">
@@ -202,7 +202,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 >
                   <Minus size={14} strokeWidth={1.5} />
                 </button>
-                <span className="w-12 h-10 flex items-center justify-center font-[family-name:var(--font-hanken)] text-[14px] font-medium border-x border-(--cat-stone) tabular-nums">
+                <span className="w-12 h-10 flex items-center justify-center font-hanken text-[14px] font-medium border-x border-(--cat-stone) tabular-nums">
                   {quantity}
                 </span>
                 <button
@@ -223,7 +223,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                   if (!canOrder) e.preventDefault();
                 }}
                 className={cn(
-                  'w-full inline-flex items-center justify-center gap-2 px-12 py-3.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity duration-150',
+                  'w-full inline-flex items-center justify-center gap-2 px-12 py-3.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity duration-150',
                   canOrder
                     ? 'bg-(--cat-charcoal) text-white hover:opacity-85 cursor-pointer'
                     : 'bg-(--cat-secondary-container) text-(--cat-on-secondary-container) cursor-not-allowed'
@@ -239,7 +239,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 {canOrder && <ArrowRight size={14} strokeWidth={2} />}
               </Link>
               {product.status === 'AVAILABLE' && (
-                <p className="mt-2 font-[family-name:var(--font-hanken)] text-[12px] text-(--cat-on-surface-variant)">
+                <p className="mt-2 font-hanken text-[12px] text-(--cat-on-surface-variant)">
                   Submit your order request. We&apos;ll confirm availability and contact you via WhatsApp for payment.
                 </p>
               )}
@@ -252,13 +252,13 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
           <div>
-            <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
+            <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
               The Core Silhouette
             </h2>
-            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
+            <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
               Designed as the foundational garment for any minimalist wardrobe. We stripped away unnecessary details to focus purely on shape and texture.
             </p>
-            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
+            <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
               The boxy fit allows for architectural draping, while the dropped shoulders construct a relaxed, contemporary line against the body.
             </p>
           </div>
@@ -271,7 +271,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               className="object-cover"
             />
             <div className="absolute top-3 left-3">
-              <span className="font-[family-name:var(--font-hanken)] text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) bg-(--cat-surface)/80 px-2 py-1">
+              <span className="font-hanken text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) bg-(--cat-surface)/80 px-2 py-1">
                 Detail
               </span>
             </div>
@@ -283,7 +283,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8 md:py-16 border-t border-(--cat-stone)">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-3">
-            <h3 className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
+            <h3 className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
               Materials & Care
             </h3>
           </div>
@@ -296,10 +296,10 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 ['Care Instruction', 'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.'],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between py-4 gap-8">
-                  <span className="font-[family-name:var(--font-hanken)] text-[14px] text-(--cat-on-surface-variant) shrink-0">
+                  <span className="font-hanken text-[14px] text-(--cat-on-surface-variant) shrink-0">
                     {label}
                   </span>
-                  <span className="font-[family-name:var(--font-hanken)] text-[14px] text-(--cat-on-surface) text-right">
+                  <span className="font-hanken text-[14px] text-(--cat-on-surface) text-right">
                     {value}
                   </span>
                 </div>

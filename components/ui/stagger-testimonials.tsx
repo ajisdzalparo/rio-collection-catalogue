@@ -77,14 +77,14 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
         {isCenter && (
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white gap-2">
             <ZoomIn size={24} strokeWidth={2} className="animate-pulse" />
-            <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em]">
+            <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em]">
               Klik untuk Perbesar
             </span>
           </div>
         )}
 
         {/* Verification indicator */}
-        <div className="absolute top-3 right-3 bg-(--cat-charcoal)/80 backdrop-blur-xs text-white px-2 py-0.5 text-[9px] font-[family-name:var(--font-hanken)] uppercase tracking-wider rounded-xs font-semibold">
+        <div className="absolute top-3 right-3 bg-(--cat-charcoal)/80 backdrop-blur-xs text-white px-2 py-0.5 text-[9px] font-hanken uppercase tracking-wider rounded-xs font-semibold">
           Verified Chat
         </div>
       </div>

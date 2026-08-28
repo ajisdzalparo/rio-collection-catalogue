@@ -30,7 +30,7 @@ export function FilterTabs({
             aria-selected={isActive}
             onClick={() => onTabChange(tab)}
             className={cn(
-              'relative pb-2 font-[family-name:var(--font-hanken)] text-[12px] font-semibold uppercase tracking-[0.08em] leading-4 transition-colors duration-150 cursor-pointer',
+              'relative pb-2 font-hanken text-[12px] font-semibold uppercase tracking-[0.08em] leading-4 transition-colors duration-150 cursor-pointer',
               isActive
                 ? 'text-(--cat-on-surface)'
                 : 'text-(--cat-on-surface-variant) hover:text-(--cat-on-surface)'

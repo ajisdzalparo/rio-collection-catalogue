@@ -14,10 +14,10 @@ export function TestimonySection({ testimonies }: TestimonySectionProps) {
     <section className="mx-auto max-w-[1400px] py-16 md:py-24 border-t border-(--cat-stone)/50 bg-(--cat-surface-bright)">
       {/* Header */}
       <div className="text-center mb-6 px-4">
-        <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
+        <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
           Bukti Percakapan Pelanggan
         </h2>
-        <p className="mt-2 font-[family-name:var(--font-hanken)] text-[13px] md:text-[14px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+        <p className="mt-2 font-hanken text-[13px] md:text-[14px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
           Tangkapan Layar Hubungan WhatsApp Nyata Bersama Client
         </p>
       </div>

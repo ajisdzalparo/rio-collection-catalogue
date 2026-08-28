@@ -43,7 +43,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
         >
           {/* Header with close button */}
           <div className="flex items-center justify-between px-4 h-14">
-            <span className="font-[family-name:var(--font-eb-garamond)] text-[20px] font-normal tracking-[-0.01em] text-(--cat-on-surface)">
+            <span className="font-eb-garamond text-[20px] font-normal tracking-[-0.01em] text-(--cat-on-surface)">
               RIO COLLECTION
             </span>
             <button
@@ -72,7 +72,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
                   href={link.href}
                   onClick={onClose}
                   className={cn(
-                    'font-[family-name:var(--font-eb-garamond)] text-[42px] font-normal leading-tight',
+                    'font-eb-garamond text-[42px] font-normal leading-tight',
                     'text-(--cat-on-surface) hover:text-(--cat-on-surface-variant) transition-colors duration-150'
                   )}
                 >
@@ -84,7 +84,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
 
           {/* Footer */}
           <div className="px-8 pb-8">
-            <p className="font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+            <p className="font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
               © 2024 RIO COLLECTION
             </p>
           </div>

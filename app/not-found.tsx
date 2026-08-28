@@ -46,10 +46,10 @@ export default function NotFound() {
             <div className="inline-flex items-center gap-2 border border-(--cat-stone) px-4 py-1 text-[11px] font-semibold text-(--cat-on-surface-variant) uppercase tracking-[0.08em] bg-(--cat-surface-container-low)">
               Error 404
             </div>
-            <h1 className="font-[family-name:var(--font-eb-garamond)] text-[36px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface)">
+            <h1 className="font-eb-garamond text-[36px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface)">
               Halaman Tidak Ditemukan
             </h1>
-            <p className="mx-auto max-w-md font-[family-name:var(--font-hanken)] text-[14px] leading-relaxed text-(--cat-on-surface-variant)">
+            <p className="mx-auto max-w-md font-hanken text-[14px] leading-relaxed text-(--cat-on-surface-variant)">
               Halaman yang Anda cari tidak tersedia, telah dipindahkan, atau alamat URL yang Anda
               tuju kurang tepat.
             </p>
@@ -62,14 +62,14 @@ export default function NotFound() {
           >
             <button
               onClick={() => router.back()}
-              className="inline-flex items-center gap-2 border border-(--cat-stone) bg-(--cat-surface) text-(--cat-on-surface) px-6 py-2.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-(--cat-surface-container) transition-colors duration-150 cursor-pointer"
+              className="inline-flex items-center gap-2 border border-(--cat-stone) bg-(--cat-surface) text-(--cat-on-surface) px-6 py-2.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-(--cat-surface-container) transition-colors duration-150 cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
               <span>Kembali</span>
             </button>
             <Link
               href="/catalogue"
-              className="inline-flex items-center gap-2 bg-(--cat-charcoal) text-white px-6 py-2.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
+              className="inline-flex items-center gap-2 bg-(--cat-charcoal) text-white px-6 py-2.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
             >
               <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
               <span>Ke Katalog</span>

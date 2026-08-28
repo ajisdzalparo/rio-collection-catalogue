@@ -30,7 +30,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-block font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] leading-4',
+        'inline-block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] leading-4',
         config.className,
         className
       )}
