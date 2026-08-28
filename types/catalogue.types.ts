@@ -47,3 +47,9 @@ export interface JournalArticle {
   pullQuote?: string;
   relatedProductSlug?: string;
 }
+
+export interface Testimony {
+  id: string;
+  imageUrl: string;
+  alt: string;
+}

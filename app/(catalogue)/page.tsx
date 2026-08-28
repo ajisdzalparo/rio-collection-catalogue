@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { HeroSection } from '@/components/catalogue/hero-section';
 import { ProductCard } from '@/components/catalogue/product-card';
-import { getProducts } from '@/lib/api';
+import { getProducts, getTestimonies } from '@/lib/api';
+import { TestimonySection } from '@/components/catalogue/testimony-section';
 
 export const metadata: Metadata = {
   title: 'RIO COLLECTION — Limited Archival T-Shirt Catalogue',
@@ -18,7 +19,10 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const products = await getProducts();
+  const [products, testimonies] = await Promise.all([
+    getProducts(),
+    getTestimonies(),
+  ]);
   const featuredProducts = products.slice(0, 3);
 
   return (
@@ -72,7 +76,7 @@ export default async function HomePage() {
           <div className="relative aspect-[4/5] md:aspect-[3/4] overflow-hidden">
             <Image
               src="/images/brand/manifesto.jpg"
-              alt="RIO COLLECTION design studio — where every garment is constructed with precision"
+              alt="RIO COLLECTION design studio — where every garmet is constructed with precision"
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
@@ -102,6 +106,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ═══ Testimony Section ═══ */}
+      <TestimonySection testimonies={testimonies} />
 
       {/* ═══ CTA Banner ═══ */}
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24">

@@ -301,6 +301,7 @@ Introduce the brand and guide customers to the catalogue.
 - Featured T-shirts.
 - Brand story.
 - Selected previous designs.
+- **Testimony Section** (WhatsApp Chat Style): Visual testimonial section rendering customer chats styled as WhatsApp screenshot chat bubbles to emphasize authentic, manual order interaction.
 - Call-to-action to catalogue.
 - Social media links.
 
@@ -408,6 +409,33 @@ If product is out of stock:
 The customer should still be able to view the product.
 
 The order CTA should be disabled or replaced with an informational action.
+
+---
+
+## 9.5 Testimony Section (WhatsApp Chat Style)
+
+### Purpose
+To increase trust and social proof by displaying authentic customer feedback, styled like a WhatsApp chat screenshot. This highlights the WhatsApp-based manual ordering workflow.
+
+### Design Requirements
+- **WhatsApp UI Simulation**: Testimonials should render as WhatsApp chat bubble elements:
+  - Left-aligned bubbles for customer messages (light gray/white or light off-white background).
+  - Right-aligned bubbles for business/admin responses (light green or warm tone matching the brand palette).
+  - Bubble details: Small tail, message status ticks (double blue checkmark for read receipt), timestamp.
+  - Header avatar: Clean user avatars or stylized customer initials.
+- **Responsiveness**: Renders cleanly on mobile and desktop as a grid, carousel, or cascading chat thread.
+- **Minimalist Aesthetic**: The overall wrapper should align with the off-white editorial theme of the catalogue, avoiding overly bright default WhatsApp greens unless styled inside cohesive bubble frames.
+
+### Mock Testimonials
+1. **Garment Review**:
+   - Customer: *"T-shirt heavy weight-nya mantap banget bro, tebel dan fit-nya boxy presisi! Bakal nunggu drop edisi berikutnya."*
+   - Status: Read (Double blue checks)
+2. **Design Print Review**:
+   - Customer: *"Graphic Edition-nya unik banget, art-print rapi dan bahannya halus ga gampang panas pas dipake di luar."*
+   - Status: Read (Double blue checks)
+3. **Ordering Flow Review**:
+   - Customer: *"Awalnya ragu pesan manual via WA, tapi admin ramah & proses konfirmasi cepat. Kaos sampe dalam 2 hari."*
+   - Status: Read (Double blue checks)
 
 ---
 

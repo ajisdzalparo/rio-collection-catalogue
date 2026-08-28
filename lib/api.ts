@@ -1,6 +1,23 @@
-import type { Product, ArchiveCollection, JournalArticle } from '@/types/catalogue.types';
+import type { Product, ArchiveCollection, JournalArticle, Testimony } from '@/types/catalogue.types';
 
 export const VELOMOCK_BASE_URL = 'https://velomock-staging.ajisdzalparo.com/api/mock/rio-collection';
+
+/**
+ * Fetches all customer testimonies from VeloMock API endpoint.
+ */
+export async function getTestimonies(): Promise<Testimony[]> {
+  try {
+    const res = await fetch(`${VELOMOCK_BASE_URL}/api/v1/testimonies`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) throw new Error(`VeloMock error: ${res.status}`);
+    const json = await res.json();
+    return json.data || json || [];
+  } catch (error) {
+    console.error('VeloMock testimonies fetch failed:', error);
+    return [];
+  }
+}
 
 /**
  * Fetches all products from VeloMock API endpoint.
