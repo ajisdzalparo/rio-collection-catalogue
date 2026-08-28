@@ -278,7 +278,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               className="object-cover"
             />
             <div className="absolute top-3 left-3">
-              <span className="font-hanken text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) bg-(--cat-surface)/80 px-2 py-1">
+              <span className="font-hanken text-[10px] uppercase tracking-widest text-(--cat-on-surface-variant) bg-(--cat-surface)/80 px-2 py-1">
                 Detail
               </span>
             </div>
