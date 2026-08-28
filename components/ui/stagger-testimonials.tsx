@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // We map our 3 WhatsApp chat screenshot images into a list of 12 items to show volume
@@ -25,6 +25,7 @@ interface TestimonialCardProps {
   testimonial: typeof testimonials[0];
   handleMove: (steps: number) => void;
   cardSize: number;
+  onZoom: (imgSrc: string) => void;
 }
 
 const TestimonialCard: React.FC<TestimonialCardProps> = ({
@@ -32,14 +33,24 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
   testimonial,
   handleMove,
   cardSize,
+  onZoom,
 }) => {
   const isCenter = position === 0;
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isCenter) {
+      onZoom(testimonial.imgSrc);
+    } else {
+      handleMove(position);
+    }
+  };
+
   return (
     <div
-      onClick={() => handleMove(position)}
+      onClick={handleClick}
       className={cn(
-        'absolute left-1/2 top-1/2 cursor-pointer border rounded-2xl overflow-hidden transition-all duration-500 ease-in-out bg-[#e5ddd5]/30',
+        'absolute left-1/2 top-1/2 cursor-pointer border rounded-2xl overflow-hidden transition-all duration-500 ease-in-out bg-[#e5ddd5]/30 group',
         isCenter
           ? 'z-10 border-[var(--cat-charcoal)] shadow-[0_12px_40px_rgba(0,0,0,0.15)] opacity-100 scale-100'
           : 'z-0 border-[var(--cat-stone)]/40 opacity-40 hover:opacity-75 scale-90'
@@ -61,6 +72,17 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
           alt={testimonial.alt}
           className="w-full h-full object-cover select-none pointer-events-none"
         />
+
+        {/* Hover zoom overlay for center card */}
+        {isCenter && (
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white gap-2">
+            <ZoomIn size={24} strokeWidth={2} className="animate-pulse" />
+            <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em]">
+              Klik untuk Perbesar
+            </span>
+          </div>
+        )}
+
         {/* Verification indicator */}
         <div className="absolute top-3 right-3 bg-[var(--cat-charcoal)]/80 backdrop-blur-xs text-white px-2 py-0.5 text-[9px] font-[family-name:var(--font-hanken)] uppercase tracking-wider rounded-xs font-semibold">
           Verified Chat
@@ -73,6 +95,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
 export const StaggerTestimonials: React.FC = () => {
   const [cardSize, setCardSize] = useState(240);
   const [testimonialsList, setTestimonialsList] = useState(testimonials);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   const handleMove = (steps: number) => {
     const newList = [...testimonialsList];
@@ -104,50 +127,79 @@ export const StaggerTestimonials: React.FC = () => {
   }, []);
 
   return (
-    <div
-      className="relative w-full overflow-hidden bg-[var(--cat-surface-bright)] py-8 border-t border-b border-[var(--cat-stone)]/50"
-      style={{ height: 500 }}
-    >
-      {testimonialsList.map((testimonial, index) => {
-        const position = testimonialsList.length % 2
-          ? index - (testimonialsList.length + 1) / 2
-          : index - testimonialsList.length / 2;
+    <>
+      <div
+        className="relative w-full overflow-hidden bg-[var(--cat-surface-bright)] py-8 border-t border-b border-[var(--cat-stone)]/50"
+        style={{ height: 500 }}
+      >
+        {testimonialsList.map((testimonial, index) => {
+          const position = testimonialsList.length % 2
+            ? index - (testimonialsList.length + 1) / 2
+            : index - testimonialsList.length / 2;
 
-        // Only render cards that are relatively close to center for performance and layout focus
-        if (Math.abs(position) > 2) return null;
+          // Only render cards that are relatively close to center for performance and layout focus
+          if (Math.abs(position) > 2) return null;
 
-        return (
-          <TestimonialCard
-            key={testimonial.tempId}
-            testimonial={testimonial}
-            handleMove={handleMove}
-            position={position}
-            cardSize={cardSize}
-          />
-        );
-      })}
-      
-      {/* Control Buttons */}
-      <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-3 z-20">
-        <button
-          onClick={() => handleMove(-1)}
-          className={cn(
-            'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-[var(--cat-stone)] bg-[var(--cat-surface)] hover:bg-[var(--cat-charcoal)] hover:text-white cursor-pointer'
-          )}
-          aria-label="Previous testimonial"
-        >
-          <ChevronLeft size={20} strokeWidth={1.5} />
-        </button>
-        <button
-          onClick={() => handleMove(1)}
-          className={cn(
-            'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-[var(--cat-stone)] bg-[var(--cat-surface)] hover:bg-[var(--cat-charcoal)] hover:text-white cursor-pointer'
-          )}
-          aria-label="Next testimonial"
-        >
-          <ChevronRight size={20} strokeWidth={1.5} />
-        </button>
+          return (
+            <TestimonialCard
+              key={testimonial.tempId}
+              testimonial={testimonial}
+              handleMove={handleMove}
+              position={position}
+              cardSize={cardSize}
+              onZoom={setZoomedImage}
+            />
+          );
+        })}
+
+        {/* Control Buttons */}
+        <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-3 z-20">
+          <button
+            onClick={() => handleMove(-1)}
+            className={cn(
+              'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-[var(--cat-stone)] bg-[var(--cat-surface)] hover:bg-[var(--cat-charcoal)] hover:text-white cursor-pointer'
+            )}
+            aria-label="Previous testimonial"
+          >
+            <ChevronLeft size={20} strokeWidth={1.5} />
+          </button>
+          <button
+            onClick={() => handleMove(1)}
+            className={cn(
+              'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-[var(--cat-stone)] bg-[var(--cat-surface)] hover:bg-[var(--cat-charcoal)] hover:text-white cursor-pointer'
+            )}
+            aria-label="Next testimonial"
+          >
+            <ChevronRight size={20} strokeWidth={1.5} />
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Lightbox / Zoomed Image Modal */}
+      {zoomedImage && (
+        <div
+          onClick={() => setZoomedImage(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-4 transition-opacity duration-300 animate-in fade-in"
+        >
+          <button
+            onClick={() => setZoomedImage(null)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-2 bg-black/50 rounded-full cursor-pointer"
+            aria-label="Close zoomed view"
+          >
+            <X size={24} />
+          </button>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-[90vw] max-h-[85vh] aspect-[9/16] overflow-hidden rounded-2xl border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200"
+          >
+            <img
+              src={zoomedImage}
+              alt="Zoomed testimonial screenshot"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 };
