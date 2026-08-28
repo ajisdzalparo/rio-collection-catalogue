@@ -34,7 +34,7 @@ export default function NotFound() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-                className="absolute inset-0 rounded-full border-2 border-dashed border-[var(--cat-stone)]/40"
+                className="absolute inset-0 rounded-full border-2 border-dashed border-(--cat-stone)/40"
               />
               <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-(--cat-surface-container-low) border border-(--cat-stone)/60 text-(--cat-on-surface) shadow-xl backdrop-blur-xl">
                 <Compass className="h-10 w-10 stroke-[2.2]" />
