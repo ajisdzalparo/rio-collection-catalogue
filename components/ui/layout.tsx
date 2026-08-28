@@ -39,22 +39,13 @@ export const gridVariants = cva('grid w-full', {
 });
 
 export interface GridProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof gridVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof gridVariants> {
   minChildWidth?: string;
 }
 
-export function Grid({
-  className,
-  cols,
-  gap,
-  align,
-  minChildWidth,
-  style,
-  ...props
-}: GridProps) {
+export function Grid({ className, cols, gap, align, minChildWidth, style, ...props }: GridProps) {
   const mergedStyle = minChildWidth
-    ? { ...style, '--grid-min': minChildWidth } as React.CSSProperties
+    ? ({ ...style, '--grid-min': minChildWidth } as React.CSSProperties)
     : style;
 
   return (
@@ -114,8 +105,7 @@ export const flexVariants = cva('flex w-full', {
 });
 
 export interface FlexProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof flexVariants> {}
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof flexVariants> {}
 
 export function Flex({ className, direction, gap, align, justify, wrap, ...props }: FlexProps) {
   return (
@@ -129,17 +119,39 @@ export function Flex({ className, direction, gap, align, justify, wrap, ...props
 
 export interface StackProps extends React.HTMLAttributes<HTMLDivElement> {
   gap?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  align?: VariantProps<typeof flexVariants>['align'];
+  justify?: VariantProps<typeof flexVariants>['justify'];
 }
 
-export function VStack({ className, gap = 'md', ...props }: StackProps) {
+export function VStack({
+  className,
+  gap = 'md',
+  align = 'stretch',
+  justify,
+  ...props
+}: StackProps) {
   return (
-    <Flex direction="col" gap={gap} className={className} {...props} />
+    <Flex
+      direction="col"
+      gap={gap}
+      align={align}
+      justify={justify}
+      className={cn('w-full', className)}
+      {...props}
+    />
   );
 }
 
-export function HStack({ className, gap = 'md', ...props }: StackProps) {
+export function HStack({ className, gap = 'md', align = 'center', justify, ...props }: StackProps) {
   return (
-    <Flex direction="row" gap={gap} align="center" className={className} {...props} />
+    <Flex
+      direction="row"
+      gap={gap}
+      align={align}
+      justify={justify}
+      className={className}
+      {...props}
+    />
   );
 }
 
@@ -161,9 +173,8 @@ export interface SpacerProps {
 }
 
 export function Spacer({ size = '1rem', axis = 'vertical' }: SpacerProps) {
-  const style = axis === 'vertical'
-    ? { height: size, minHeight: size }
-    : { width: size, minWidth: size };
+  const style =
+    axis === 'vertical' ? { height: size, minHeight: size } : { width: size, minWidth: size };
 
   return <div data-slot="spacer" style={style} aria-hidden="true" />;
 }

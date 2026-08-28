@@ -1,5 +1,17 @@
+'use client';
+
+import React from 'react';
 import Link from 'next/link';
+import { MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStoreSettingsStore } from '@/hooks/use-store-settings';
+import {
+  InstagramIcon,
+  TikTokIcon,
+  PinterestIcon,
+  FacebookIcon,
+  XTwitterIcon
+} from '@/components/icons/social-icons';
 
 interface CatalogueFooterProps {
   className?: string;
@@ -31,6 +43,32 @@ const FOOTER_LINKS = [
 ];
 
 export function CatalogueFooter({ className }: CatalogueFooterProps) {
+  const storeName = useStoreSettingsStore((s) => s.storeName) || 'RIO COLLECTION';
+  const instagramUrl = useStoreSettingsStore((s) => s.instagramUrl);
+  const tiktokUrl = useStoreSettingsStore((s) => s.tiktokUrl);
+  const facebookUrl = useStoreSettingsStore((s) => s.facebookUrl);
+  const pinterestUrl = useStoreSettingsStore((s) => s.pinterestUrl);
+  const xTwitterUrl = useStoreSettingsStore((s) => s.xTwitterUrl);
+  const whatsappNumber = useStoreSettingsStore((s) => s.whatsappNumber);
+
+  const rawSocials: { name: string; url: string | undefined; icon: React.ReactNode }[] = [
+    { name: 'Instagram', url: instagramUrl, icon: <InstagramIcon className="shrink-0" /> },
+    { name: 'TikTok', url: tiktokUrl, icon: <TikTokIcon className="shrink-0" /> },
+    { name: 'Pinterest', url: pinterestUrl, icon: <PinterestIcon className="shrink-0" /> },
+    { name: 'Facebook', url: facebookUrl, icon: <FacebookIcon className="shrink-0" /> },
+    { name: 'X / Twitter', url: xTwitterUrl, icon: <XTwitterIcon className="shrink-0" /> },
+    {
+      name: 'WhatsApp',
+      url: whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}` : undefined,
+      icon: <MessageCircle size={14} className="shrink-0" />
+    }
+  ];
+
+  const socialLinks = rawSocials.filter(
+    (item): item is { name: string; url: string; icon: React.ReactNode } =>
+      typeof item.url === 'string' && item.url.trim() !== ''
+  );
+
   return (
     <footer className={cn('border-t border-(--cat-stone) bg-(--cat-surface)', className)}>
       <div className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-20">
@@ -39,13 +77,13 @@ export function CatalogueFooter({ className }: CatalogueFooterProps) {
           <div className="md:col-span-4">
             <Link href="/" className="inline-block">
               <h2 className="font-eb-garamond text-[32px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
-                RIO
+                {storeName.split(' ')[0]}
                 <br />
-                COLLECTION
+                {storeName.split(' ').slice(1).join(' ') || 'COLLECTION'}
               </h2>
             </Link>
             <p className="mt-3 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-              © 2024 RIO COLLECTION
+              © {new Date().getFullYear()} {storeName}
             </p>
           </div>
 
@@ -74,18 +112,21 @@ export function CatalogueFooter({ className }: CatalogueFooterProps) {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-16 pt-6 border-t border-(--cat-stone)/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div className="mt-16 pt-6 border-t border-(--cat-stone)/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="font-hanken text-[11px] text-(--cat-on-surface-variant) tracking-wide">
             Curated for the independent.
           </p>
-          <div className="flex items-center gap-4">
-            {['Instagram', 'Pinterest'].map((social) => (
+          <div className="flex items-center gap-3 flex-wrap">
+            {socialLinks.map((social) => (
               <a
-                key={social}
-                href="#"
-                className="font-hanken text-[11px] font-medium uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
+                key={social.name}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150 flex items-center gap-1.5 py-1 px-2.5 rounded-md hover:bg-(--cat-stone)/20 border border-transparent hover:border-(--cat-stone)/40"
               >
-                {social}
+                {social.icon}
+                <span>{social.name}</span>
               </a>
             ))}
           </div>

@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <SidebarInset className="bg-transparent flex flex-col flex-1 min-h-[calc(100vh-2rem)]">
           <div className="equa-main-panel flex-1 flex flex-col min-h-full p-6 sm:p-8">
             <AppHeader />
-            <main className="flex-1 pt-6">{children}</main>
+            <main className="flex-1 w-full flex flex-col pt-6">{children}</main>
           </div>
         </SidebarInset>
       </SidebarProvider>

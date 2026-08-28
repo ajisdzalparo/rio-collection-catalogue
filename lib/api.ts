@@ -1,6 +1,7 @@
 import type { Product, ArchiveCollection, JournalArticle, Testimony } from '@/types/catalogue.types';
+import { env } from '@/config/env';
 
-export const VELOMOCK_BASE_URL = 'https://velomock-staging.ajisdzalparo.com/api/mock/rio-collection';
+export const VELOMOCK_BASE_URL = env.velomockUrl;
 
 /**
  * Fetches all customer testimonies from VeloMock API endpoint.
@@ -95,21 +96,11 @@ export async function submitOrder(orderPayload: {
   address: string;
   items: Array<{ productId: string; size: string; quantity: number }>;
 }) {
-  try {
-    const res = await fetch(`${VELOMOCK_BASE_URL}/api/v1/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderPayload),
-    });
-    if (!res.ok) throw new Error(`VeloMock order error: ${res.status}`);
-    const json = await res.json();
-    return json;
-  } catch (error) {
-    console.error('VeloMock order submit failed:', error);
-    return {
-      code: 201,
-      status: 'success',
-      data: { orderNumber: 'RC-8802' },
-    };
-  }
+  const res = await fetch(`${VELOMOCK_BASE_URL}/api/v1/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(orderPayload),
+  });
+  if (!res.ok) throw new Error(`VeloMock order error: ${res.status}`);
+  return await res.json();
 }

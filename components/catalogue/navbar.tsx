@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Search, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNav } from '@/components/catalogue/mobile-nav';
+import { SearchModal } from '@/components/catalogue/search-modal';
 
 const NAV_LINKS = [
   { href: '/catalogue', label: 'Catalogue' },
@@ -19,6 +20,7 @@ interface CatalogueNavbarProps {
 
 export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   return (
     <>
@@ -55,6 +57,7 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
             <div className="flex items-center gap-3">
               <button
                 aria-label="Search"
+                onClick={() => setSearchModalOpen(true)}
                 className="p-1.5 text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer"
               >
                 <Search size={18} strokeWidth={1.5} />
@@ -72,6 +75,12 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
           </div>
         </div>
       </header>
+
+      {/* Interactive Search Modal */}
+      <SearchModal
+        isOpen={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+      />
 
       {/* Mobile Nav Overlay */}
       <MobileNav

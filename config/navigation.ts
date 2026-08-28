@@ -1,12 +1,14 @@
 import {
   LayoutDashboard,
-  FolderKanban,
-  Calendar,
-  Sparkles,
-  Clock,
+  ShoppingCart,
+  BookOpen,
+  Users,
+  Database,
   BarChart3,
-  Component,
-  type LucideIcon
+  Settings,
+  ShieldAlert,
+  type LucideIcon,
+  MessageSquare
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -23,43 +25,54 @@ export const navigation: NavigationItem[] = [
     icon: LayoutDashboard
   },
   {
-    title: 'Projects',
-    href: '/projects',
-    icon: FolderKanban
+    title: 'Orders',
+    href: '/dashboard/orders',
+    icon: ShoppingCart
   },
   {
-    title: 'Calendar',
-    href: '/calendar',
-    icon: Calendar
-  },
-  {
-    title: 'AI Insights',
-    href: '/ai-insights',
-    icon: Sparkles
-  },
-  {
-    title: 'Time Tracker',
-    href: '/time-tracker',
-    icon: Clock
-  },
-  {
-    title: 'Analytics',
-    href: '/analytics',
-    icon: BarChart3,
+    title: 'Master Data',
+    href: '#',
+    icon: Database,
     subMenu: [
-      {
-        title: 'Time Tracker',
-        href: '/time-tracker'
-      },
-      {
-        title: 'Users',
-        href: '/users'
-      }
+      { title: 'Products', href: '/dashboard/products' },
+      { title: 'Kategori Kaos', href: '/dashboard/master?tab=categories' },
+      { title: 'Warna (Hex)', href: '/dashboard/master?tab=colors' },
+      { title: 'Ukuran (Sizes)', href: '/dashboard/master?tab=sizes' },
+      { title: 'Topik Jurnal', href: '/dashboard/master?tab=topics' }
     ]
   },
   {
-    title: 'UI Components',
-    href: '/components',
-    icon: Component
+    title: 'Journal',
+    href: '/dashboard/journal',
+    icon: BookOpen
+  },
+  {
+    title: 'Customers',
+    href: '/dashboard/customers',
+    icon: Users
+  },
+  {
+    title: 'Testimonials',
+    href: '/dashboard/testimonies',
+    icon: MessageSquare
+  },
+  {
+    title: 'User Management',
+    href: '#',
+    icon: ShieldAlert,
+    subMenu: [
+      { title: 'User List', href: '/users?tab=users' },
+      { title: 'Roles & RBAC', href: '/users?tab=rbac' }
+    ]
+  },
+  {
+    title: 'Laporan Penjualan',
+    href: '/dashboard/reports',
+    icon: BarChart3
+  },
+  {
+    title: 'Store Settings',
+    href: '/dashboard/settings',
+    icon: Settings
   }
 ];

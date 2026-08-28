@@ -13,8 +13,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { User, LogOut, Settings, Search, Bell, Plus, Command } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { User, LogOut, Settings } from 'lucide-react';
 
 export default function AppHeader() {
   return (
@@ -26,35 +25,6 @@ export default function AppHeader() {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Equa Command Search Bar */}
-        <div className="relative hidden md:flex items-center w-72">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search or type a command"
-            className="pl-9 pr-12 h-9 rounded-full bg-card border-border/70 text-xs focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted text-[10px] font-mono text-muted-foreground border border-border/60">
-            <Command className="h-2.5 w-2.5" />
-            <span>F</span>
-          </div>
-        </div>
-
-        {/* Primary Action Button: + New Project */}
-        <Button className="rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold px-4 h-9 text-xs gap-1.5 shadow-xs">
-          <Plus className="h-4 w-4" />
-          <span>New Project</span>
-        </Button>
-
-        {/* Bell Notifications Button */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-9 w-9 rounded-full relative bg-card border-border/70"
-        >
-          <Bell className="h-4 w-4 text-foreground" />
-          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
-        </Button>
-
         <ThemeToggle />
 
         {/* User Profile Avatar */}
@@ -76,8 +46,8 @@ export default function AppHeader() {
           <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-lg">
             <DropdownMenuLabel className="font-normal p-2">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-semibold leading-none">Ajis Johnson</p>
-                <p className="text-xs leading-none text-muted-foreground">Ajis@equa.design</p>
+                <p className="text-sm font-semibold leading-none">Admin RIO</p>
+                <p className="text-xs leading-none text-muted-foreground">admin@riocollection.com</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

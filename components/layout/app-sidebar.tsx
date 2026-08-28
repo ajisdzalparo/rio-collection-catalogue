@@ -59,7 +59,9 @@ export default function AppSidebar() {
             </div>
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="font-extrabold tracking-tight text-xl text-foreground">Equa</span>
+            <span className="font-extrabold tracking-tight text-base text-foreground">
+              RIO COLLECTION
+            </span>
           </div>
         </div>
       </SidebarHeader>

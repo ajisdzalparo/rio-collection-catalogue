@@ -90,7 +90,7 @@ export function TopLoader() {
             initial={{ width: '0%' }}
             animate={{ width: `${progress}%` }}
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            className="h-full bg-[var(--cat-charcoal,var(--primary,#18181b))] shadow-[0_0_8px_rgba(26,26,26,0.3)]"
+            className="h-full bg-(--cat-charcoal,var(--primary,#18181b)) shadow-[0_0_8px_rgba(26,26,26,0.3)]"
           />
         </motion.div>
       )}

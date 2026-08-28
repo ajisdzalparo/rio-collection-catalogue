@@ -1,10 +1,17 @@
 export type ProductStatus = 'AVAILABLE' | 'SOLD_OUT' | 'COMING_SOON';
-
-export type ProductCategory = 'heavy-weight' | 'graphic-edition' | 'core-silhouette';
+export type StockMode = 'QUANTITY' | 'ALWAYS_AVAILABLE';
 
 export interface ProductVariant {
   size: string;
   inStock: boolean;
+  stock?: number;
+}
+
+export interface MaterialsAndCare {
+  fabric?: string;
+  treatment?: string;
+  origin?: string;
+  careInstruction?: string;
 }
 
 export interface Product {
@@ -12,15 +19,19 @@ export interface Product {
   name: string;
   slug: string;
   price: number;
+  hpp?: number;
+  stock?: number;
+  stockMode?: StockMode;
   color: string;
   colorHex: string;
   status: ProductStatus;
-  category: ProductCategory;
+  category: string;
   imageUrl: string;
   images: string[];
   description: string;
   edition: string;
   variants: ProductVariant[];
+  materialsAndCare?: MaterialsAndCare;
 }
 
 export interface ArchiveCollection {
@@ -32,7 +43,12 @@ export interface ArchiveCollection {
   description: string;
 }
 
-export type JournalCategory = 'PROSES KREATIF' | 'CULTURE' | 'PROCESS' | 'DESIGN' | 'MATERIAL STUDY';
+export type JournalCategory =
+  | 'PROSES KREATIF'
+  | 'CULTURE'
+  | 'PROCESS'
+  | 'DESIGN'
+  | 'MATERIAL STUDY';
 
 export interface JournalArticle {
   id: string;
@@ -44,6 +60,7 @@ export interface JournalArticle {
   author: string;
   imageUrl: string;
   content: string[];
+  contentHtml?: string;
   pullQuote?: string;
   relatedProductSlug?: string;
 }
@@ -52,4 +69,7 @@ export interface Testimony {
   id: string;
   imageUrl: string;
   alt: string;
+  clientName?: string;
+  status?: 'ACTIVE' | 'HIDDEN';
+  createdAt?: string;
 }

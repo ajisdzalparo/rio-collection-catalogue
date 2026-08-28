@@ -55,11 +55,13 @@ export interface DataTableProps<T> {
   isLoading?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
+  getRowId?: (item: T, index: number) => string | number;
 }
 
-export function DataTable<T extends { id: string | number }>({
+export function DataTable<T extends object>({
   columns,
   data,
+  getRowId,
   searchKey,
   searchPlaceholder = 'Search records...',
   showSearch,
@@ -100,7 +102,7 @@ export function DataTable<T extends { id: string | number }>({
     if (!searchKey || !searchQuery.trim() || !isSearchVisible) return data;
     const query = searchQuery.toLowerCase();
     return data.filter((item) => {
-      const val = item[searchKey];
+      const val = (item as Record<string, unknown>)[searchKey as string];
       return String(val ?? '')
         .toLowerCase()
         .includes(query);
@@ -110,11 +112,11 @@ export function DataTable<T extends { id: string | number }>({
   const sortedData = useMemo(() => {
     if (manualSorting || !activeSortKey || !activeSortDirection) return filteredData;
 
-    const targetKey = activeSortKey as keyof T;
+    const targetKey = activeSortKey as string;
 
     return [...filteredData].sort((a, b) => {
-      const aVal = a[targetKey];
-      const bVal = b[targetKey];
+      const aVal = (a as Record<string, unknown>)[targetKey];
+      const bVal = (b as Record<string, unknown>)[targetKey];
 
       if (aVal === bVal) return 0;
       if (aVal === null || aVal === undefined) return 1;
@@ -148,19 +150,15 @@ export function DataTable<T extends { id: string | number }>({
   const handleSort = (key?: keyof T, sortable?: boolean) => {
     if (!key || !sortable) return;
 
-    let nextKey: keyof T | null = key;
     let nextDirection: 'asc' | 'desc' | null = 'asc';
 
-    if (activeSortKey !== key) {
-      nextKey = key;
-      nextDirection = 'asc';
-    } else if (activeSortDirection === 'asc') {
-      nextKey = key;
-      nextDirection = 'desc';
-    } else {
-      nextKey = null;
-      nextDirection = null;
+    if (activeSortKey === key) {
+      if (activeSortDirection === 'asc') nextDirection = 'desc';
+      else if (activeSortDirection === 'desc') nextDirection = null;
+      else nextDirection = 'asc';
     }
+
+    const nextKey = nextDirection ? key : null;
 
     if (sortBy === undefined) {
       setInternalSortKey(nextKey);
@@ -170,22 +168,38 @@ export function DataTable<T extends { id: string | number }>({
     onSortChange?.(nextKey, nextDirection);
   };
 
+  const getItemKey = React.useCallback(
+    (item: T, idx: number): string | number => {
+      if (getRowId) return getRowId(item, idx);
+      const record = item as Record<string, unknown>;
+      if (record && record.id !== undefined && record.id !== null)
+        return record.id as string | number;
+      if (record && record.name !== undefined && record.name !== null)
+        return record.name as string | number;
+      if (record && record.key !== undefined && record.key !== null)
+        return record.key as string | number;
+      return `row-${idx}`;
+    },
+    [getRowId]
+  );
+
   const selectedItems = useMemo(() => {
-    return data.filter((item) => selectedIds.has(item.id));
-  }, [data, selectedIds]);
+    return data.filter((item, idx) => selectedIds.has(getItemKey(item, idx)));
+  }, [data, selectedIds, getItemKey]);
 
   const isAllPageSelected =
-    paginatedData.length > 0 && paginatedData.every((item) => selectedIds.has(item.id));
+    paginatedData.length > 0 &&
+    paginatedData.every((item, idx) => selectedIds.has(getItemKey(item, idx)));
 
   const toggleSelectAll = () => {
     const newSelected = new Set(selectedIds);
     if (isAllPageSelected) {
-      paginatedData.forEach((item) => newSelected.delete(item.id));
+      paginatedData.forEach((item, idx) => newSelected.delete(getItemKey(item, idx)));
     } else {
-      paginatedData.forEach((item) => newSelected.add(item.id));
+      paginatedData.forEach((item, idx) => newSelected.add(getItemKey(item, idx)));
     }
     setSelectedIds(newSelected);
-    const updatedSelected = data.filter((item) => newSelected.has(item.id));
+    const updatedSelected = data.filter((item, idx) => newSelected.has(getItemKey(item, idx)));
     onSelectionChange?.(updatedSelected);
   };
 
@@ -197,7 +211,7 @@ export function DataTable<T extends { id: string | number }>({
       newSelected.add(id);
     }
     setSelectedIds(newSelected);
-    const updatedSelected = data.filter((item) => newSelected.has(item.id));
+    const updatedSelected = data.filter((item, idx) => newSelected.has(getItemKey(item, idx)));
     onSelectionChange?.(updatedSelected);
   };
 
@@ -212,7 +226,7 @@ export function DataTable<T extends { id: string | number }>({
   const extraColumnsCount = (enableSelection ? 1 : 0) + (showRowNumbers ? 1 : 0);
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       {(isSearchVisible || filterComponents) && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -379,12 +393,13 @@ export function DataTable<T extends { id: string | number }>({
             </TableRow>
           ) : (
             paginatedData.map((row, rIdx) => {
-              const isSelected = selectedIds.has(row.id);
+              const rowKey = getItemKey(row, rIdx);
+              const isSelected = selectedIds.has(rowKey);
               const globalIndex = (currentPage - 1) * currentSize + rIdx + 1;
 
               return (
                 <TableRow
-                  key={row.id}
+                  key={rowKey}
                   data-state={isSelected ? 'selected' : undefined}
                   className={cn(
                     'transition-colors',
@@ -397,9 +412,9 @@ export function DataTable<T extends { id: string | number }>({
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => toggleSelectRow(row.id)}
+                        onChange={() => toggleSelectRow(rowKey)}
                         className="h-4 w-4 rounded-md border-border/70 text-primary accent-primary cursor-pointer focus:ring-1 focus:ring-primary/40"
-                        aria-label={`Select row ${row.id}`}
+                        aria-label={`Select row ${rowKey}`}
                       />
                     </TableCell>
                   )}
@@ -420,7 +435,9 @@ export function DataTable<T extends { id: string | number }>({
                       {col.cell
                         ? col.cell(row, globalIndex)
                         : col.accessorKey
-                          ? String(row[col.accessorKey] ?? '')
+                          ? String(
+                              (row as Record<string, unknown>)[col.accessorKey as string] ?? ''
+                            )
                           : null}
                     </TableCell>
                   ))}
