@@ -297,12 +297,12 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
           <div className="md:col-span-9">
             <div className="space-y-0 divide-y divide-(--cat-stone)">
               {[
-                ['Fabric', '100% Premium Cotton, 280gsm'],
-                ['Treatment', 'Pre-shrunk to minimize shrinkage'],
-                ['Origin', 'Constructed in Italy'],
+                ['Fabric', product.materialsAndCare?.fabric || '100% Premium Heavyweight Cotton, 280gsm'],
+                ['Treatment', product.materialsAndCare?.treatment || 'Pre-shrunk to minimize shrinkage'],
+                ['Origin', product.materialsAndCare?.origin || 'Constructed in Indonesia'],
                 [
                   'Care Instruction',
-                  'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.'
+                  product.materialsAndCare?.careInstruction || 'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.'
                 ]
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between py-4 gap-8">
