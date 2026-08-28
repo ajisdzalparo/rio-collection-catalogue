@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ZoomIn, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Testimony } from '@/types/catalogue.types';
 
-// We map our 3 WhatsApp chat screenshot images into a list of 12 items to show volume
-const testimonials = [
+const defaultTestimonials = [
   { tempId: 0, imgSrc: '/images/testimonials/testimony-1.png', alt: 'Testimonial 1' },
   { tempId: 1, imgSrc: '/images/testimonials/testimony-2.png', alt: 'Testimonial 2' },
   { tempId: 2, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 3' },
@@ -15,15 +15,12 @@ const testimonials = [
   { tempId: 5, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 6' },
   { tempId: 6, imgSrc: '/images/testimonials/testimony-1.png', alt: 'Testimonial 7' },
   { tempId: 7, imgSrc: '/images/testimonials/testimony-2.png', alt: 'Testimonial 8' },
-  { tempId: 8, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 9' },
-  { tempId: 9, imgSrc: '/images/testimonials/testimony-1.png', alt: 'Testimonial 10' },
-  { tempId: 10, imgSrc: '/images/testimonials/testimony-2.png', alt: 'Testimonial 11' },
-  { tempId: 11, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 12' }
+  { tempId: 8, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 9' }
 ];
 
 interface TestimonialCardProps {
   position: number;
-  testimonial: (typeof testimonials)[0];
+  testimonial: { tempId: number; imgSrc: string; alt: string };
   handleMove: (steps: number) => void;
   cardSize: number;
   onZoom: (imgSrc: string) => void;
@@ -37,6 +34,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
   onZoom
 }) => {
   const isCenter = position === 0;
+  const absPos = Math.abs(position);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -47,23 +45,40 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
     }
   };
 
+  const zIndex = 30 - absPos * 10;
+  const scale = isCenter ? 1 : absPos === 1 ? 0.92 : 0.84;
+
+  const translateX =
+    position === 0
+      ? 0
+      : position > 0
+        ? cardSize * (0.68 + (absPos - 1) * 0.58)
+        : -cardSize * (0.68 + (absPos - 1) * 0.58);
+
+  const rotate =
+    position === 0 ? 0 : position > 0 ? (absPos === 1 ? 2.5 : 5) : absPos === 1 ? -2.5 : -5;
+
   return (
     <div
       onClick={handleClick}
       className={cn(
-        'absolute left-1/2 top-1/2 cursor-pointer border rounded-2xl overflow-hidden transition-all duration-500 ease-in-out bg-[#e5ddd5]/30 group',
+        'absolute left-1/2 top-1/2 cursor-pointer transition-all duration-500 ease-out group rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border',
         isCenter
-          ? 'z-10 border-(--cat-charcoal) shadow-[0_12px_40px_rgba(0,0,0,0.15)] opacity-100 scale-100'
-          : 'z-0 border-(--cat-stone)/40 opacity-40 hover:opacity-75 scale-90'
+          ? 'border-(--cat-charcoal) shadow-[0_30px_60px_-12px_rgba(0,0,0,0.35),0_14px_28px_-8px_rgba(0,0,0,0.18)] opacity-100 ring-1 ring-black/10'
+          : absPos === 1
+            ? 'border-(--cat-stone)/90 shadow-[0_18px_36px_-8px_rgba(0,0,0,0.24),0_8px_16px_-6px_rgba(0,0,0,0.12)] opacity-100 hover:shadow-2xl hover:scale-[0.95]'
+            : 'border-(--cat-stone)/70 shadow-[0_10px_22px_-6px_rgba(0,0,0,0.18)] opacity-90 hover:scale-[0.87]'
       )}
       style={{
         width: cardSize,
-        height: cardSize * 1.5, // Vertical aspect ratio for phone screens
+        height: cardSize * 1.5,
+        zIndex,
         transform: `
           translate(-50%, -50%)
-          translateX(${cardSize * 0.95 * position}px)
-          translateY(${isCenter ? -10 : position % 2 ? 10 : -10}px)
-          rotate(${isCenter ? 0 : position % 2 ? 2.5 : -2.5}deg)
+          translateX(${translateX}px)
+          translateY(${isCenter ? -14 : absPos === 1 ? 4 : 16}px)
+          scale(${scale})
+          rotate(${rotate}deg)
         `
       }}
     >
@@ -77,29 +92,64 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
           className="w-full h-full object-cover select-none pointer-events-none"
         />
 
+        {/* Ambient Depth Lighting Overlay for Side Cards */}
+        {!isCenter && (
+          <div
+            className={cn(
+              'absolute inset-0 pointer-events-none transition-opacity duration-500',
+              absPos === 1 ? 'bg-black/10' : 'bg-black/20'
+            )}
+          />
+        )}
+
         {/* Hover zoom overlay for center card */}
         {isCenter && (
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white gap-2">
-            <ZoomIn size={24} strokeWidth={2} className="animate-pulse" />
-            <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em]">
+            <ZoomIn size={24} strokeWidth={2} className="animate-bounce" />
+            <span className="font-hanken text-[10px] font-bold uppercase tracking-widest">
               Klik untuk Perbesar
             </span>
           </div>
         )}
 
-        {/* Verification indicator */}
-        <div className="absolute top-3 right-3 bg-(--cat-charcoal)/80 backdrop-blur-xs text-white px-2 py-0.5 text-[9px] font-hanken uppercase tracking-wider rounded-xs font-semibold">
-          Verified Chat
-        </div>
+        {/* Verified Badge */}
+        {isCenter && (
+          <div className="absolute top-3 right-3 bg-emerald-600/90 backdrop-blur-md text-white px-2 py-0.5 text-[9px] font-hanken uppercase tracking-wider rounded-full font-bold flex items-center gap-1 shadow-md z-20">
+            <CheckCircle2 size={10} className="shrink-0" />
+            <span>Verified Chat</span>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export const StaggerTestimonials: React.FC = () => {
+interface StaggerTestimonialsProps {
+  items?: Testimony[];
+}
+
+export const StaggerTestimonials: React.FC<StaggerTestimonialsProps> = ({ items }) => {
   const [cardSize, setCardSize] = useState(240);
-  const [testimonialsList, setTestimonialsList] = useState(testimonials);
+
+  const initialList = useMemo(() => {
+    if (items && items.length > 0) {
+      return items.map((item, idx) => ({
+        tempId: idx,
+        imgSrc: item.imageUrl,
+        alt: item.alt || item.clientName || `Testimonial ${idx + 1}`
+      }));
+    }
+    return defaultTestimonials;
+  }, [items]);
+
+  const [testimonialsList, setTestimonialsList] = useState(initialList);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [prevItems, setPrevItems] = useState(items);
+
+  if (items !== prevItems) {
+    setPrevItems(items);
+    setTestimonialsList(initialList);
+  }
 
   const handleMove = (steps: number) => {
     const newList = [...testimonialsList];
@@ -133,16 +183,18 @@ export const StaggerTestimonials: React.FC = () => {
   return (
     <>
       <div
-        className="relative w-full overflow-hidden bg-(--cat-surface-bright) py-8 border-t border-b border-(--cat-stone)/50"
+        className="relative w-full overflow-hidden bg-(--cat-surface-bright) py-10 border-t border-b border-(--cat-stone)/50"
         style={{ height: 500 }}
       >
+        {/* Soft Ambient Floor Shadow under Center Card */}
+        <div className="absolute top-[68%] left-1/2 -translate-x-1/2 w-70 sm:w-85 h-6 bg-black/25 blur-xl rounded-full pointer-events-none z-0" />
+
         {testimonialsList.map((testimonial, index) => {
           const position =
             testimonialsList.length % 2
               ? index - (testimonialsList.length + 1) / 2
               : index - testimonialsList.length / 2;
 
-          // Only render cards that are relatively close to center for performance and layout focus
           if (Math.abs(position) > 2) return null;
 
           return (
@@ -157,25 +209,22 @@ export const StaggerTestimonials: React.FC = () => {
           );
         })}
 
-        {/* Control Buttons */}
-        <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-3 z-20">
+        {/* Control Buttons & Indicators */}
+        <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-3 z-30">
           <button
             onClick={() => handleMove(-1)}
-            className={cn(
-              'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-(--cat-stone) bg-(--cat-surface) hover:bg-(--cat-charcoal) hover:text-white cursor-pointer'
-            )}
+            className="flex h-11 w-11 items-center justify-center transition-all rounded-full border border-(--cat-stone) bg-(--cat-surface-container-lowest) text-(--cat-on-surface) hover:bg-(--cat-charcoal) hover:text-white shadow-sm cursor-pointer hover:scale-105 active:scale-95"
             aria-label="Previous testimonial"
           >
-            <ChevronLeft size={20} strokeWidth={1.5} />
+            <ChevronLeft size={18} strokeWidth={2} />
           </button>
+
           <button
             onClick={() => handleMove(1)}
-            className={cn(
-              'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-(--cat-stone) bg-(--cat-surface) hover:bg-(--cat-charcoal) hover:text-white cursor-pointer'
-            )}
+            className="flex h-11 w-11 items-center justify-center transition-all rounded-full border border-(--cat-stone) bg-(--cat-surface-container-lowest) text-(--cat-on-surface) hover:bg-(--cat-charcoal) hover:text-white shadow-sm cursor-pointer hover:scale-105 active:scale-95"
             aria-label="Next testimonial"
           >
-            <ChevronRight size={20} strokeWidth={1.5} />
+            <ChevronRight size={18} strokeWidth={2} />
           </button>
         </div>
       </div>
@@ -184,18 +233,18 @@ export const StaggerTestimonials: React.FC = () => {
       {zoomedImage && (
         <div
           onClick={() => setZoomedImage(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-4 transition-opacity duration-300 animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 transition-opacity duration-300 animate-in fade-in cursor-pointer"
         >
           <button
             onClick={() => setZoomedImage(null)}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-2 bg-black/50 rounded-full cursor-pointer"
+            className="absolute top-5 right-5 text-white hover:text-gray-300 transition-colors p-2.5 bg-neutral-800/80 rounded-full cursor-pointer border border-white/10"
             aria-label="Close zoomed view"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-[90vw] max-h-[85vh] aspect-9/16 overflow-hidden rounded-2xl border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200"
+            className="relative max-w-[90vw] max-h-[85vh] aspect-9/16 overflow-hidden rounded-2xl border border-neutral-700 bg-neutral-950 shadow-2xl animate-in zoom-in-95 duration-200"
           >
             <Image
               src={zoomedImage}
@@ -203,7 +252,7 @@ export const StaggerTestimonials: React.FC = () => {
               width={540}
               height={960}
               priority
-              className="object-contain"
+              className="object-contain w-full h-full rounded-xl"
             />
           </div>
         </div>

@@ -6,7 +6,9 @@ interface TestimonySectionProps {
 }
 
 export function TestimonySection({ testimonies }: TestimonySectionProps) {
-  if (!testimonies || testimonies.length === 0) {
+  const activeTestimonies = testimonies ? testimonies.filter((t) => t.status !== 'HIDDEN') : [];
+
+  if (activeTestimonies.length === 0) {
     return null;
   }
 
@@ -23,7 +25,7 @@ export function TestimonySection({ testimonies }: TestimonySectionProps) {
       </div>
 
       {/* Stagger Stacked Screenshots Deck */}
-      <StaggerTestimonials />
+      <StaggerTestimonials items={activeTestimonies} />
     </section>
   );
 }
