@@ -1,0 +1,298 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans:
+    var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+  --font-heading: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.5);
+  --radius-3xl: calc(var(--radius) * 2);
+}
+
+:root {
+  --background: #eaeaef;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #18181b;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f6;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f6;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f6;
+  --accent-foreground: #18181b;
+  --destructive: #ef4444;
+  --border: #e4e4e8;
+  --input: #e4e4e8;
+  --ring: #18181b;
+  --chart-1: #18181b;
+  --chart-2: #3f3f46;
+  --chart-3: #71717a;
+  --chart-4: #a1a1aa;
+  --chart-5: #d4d4d8;
+  --radius: 0.75rem;
+  --sidebar: #f7f7fa;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #18181b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffffff;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: transparent;
+  --sidebar-ring: #18181b;
+}
+
+.dark {
+  --background: #0b0b0d;
+  --foreground: #fafafa;
+  --card: #202024;
+  --card-foreground: #fafafa;
+  --popover: #161618;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #18181b;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --border: #2b2b30;
+  --input: #2b2b30;
+  --ring: #fafafa;
+  --chart-1: #fafafa;
+  --chart-2: #d4d4d8;
+  --chart-3: #a1a1aa;
+  --chart-4: #71717a;
+  --chart-5: #3f3f46;
+  --sidebar: #161618;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #fafafa;
+  --sidebar-primary-foreground: #18181b;
+  --sidebar-accent: #27272a;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: transparent;
+  --sidebar-ring: #fafafa;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 min-h-screen;
+    font-family:
+      var(--font-geist-sans),
+      'Plus Jakarta Sans',
+      Inter,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif !important;
+  }
+}
+
+/* Equa Floating Panel Utility Classes - Sleek Modern Corners */
+.equa-main-panel {
+  @apply bg-[#F7F7FA] dark:bg-[#161618] rounded-2xl border border-white/60 dark:border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)];
+}
+
+.equa-card {
+  @apply bg-card border border-border/70 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:shadow-xs;
+}
+
+.equa-inverted-card {
+  @apply bg-[#18181B] text-white dark:bg-white dark:text-[#18181B] border border-transparent rounded-2xl shadow-xs;
+}
+
+/* Custom Striped Bar Pattern */
+.bg-striped-pattern {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(255, 255, 255, 0.25) 4px,
+    rgba(255, 255, 255, 0.25) 8px
+  );
+}
+
+/* Smooth Fade View Transition for Theme Switching */
+::view-transition-old(root) {
+  animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both fade-out;
+}
+::view-transition-new(root) {
+  animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both fade-in;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Custom Sleek Equa Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(24, 24, 27, 0.25);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(24, 24, 27, 0.5);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(250, 250, 250, 0.25);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(250, 250, 250, 0.5);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* Firefox Scrollbar Styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(24, 24, 27, 0.25) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(250, 250, 250, 0.25) transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RIO COLLECTION — Public Catalogue Design Tokens (Scoped)
+   Scoped under [data-catalogue] to prevent dashboard pollution.
+   ═══════════════════════════════════════════════════════════ */
+
+[data-catalogue] {
+  /* Canvas & Surface System */
+  --cat-surface: #fcf9f8;
+  --cat-surface-dim: #ddd9d8;
+  --cat-surface-bright: #fdf8f8;
+  --cat-surface-container-lowest: #ffffff;
+  --cat-surface-container-low: #f7f3f2;
+  --cat-surface-container: #f0edec;
+  --cat-surface-container-high: #ebe7e6;
+  --cat-surface-container-highest: #e5e2e1;
+
+  /* Typography & On-Surface */
+  --cat-on-surface: #1c1b1b;
+  --cat-on-surface-variant: #444748;
+  --cat-inverse-surface: #313030;
+  --cat-inverse-on-surface: #f4f0ef;
+
+  /* Primary Brand Anchors */
+  --cat-primary: #000000;
+  --cat-on-primary: #ffffff;
+  --cat-primary-container: #1c1b1b;
+  --cat-on-primary-container: #858383;
+  --cat-charcoal: #1A1A1A;
+
+  /* Structural Neutrals */
+  --cat-secondary: #5f5e5b;
+  --cat-on-secondary: #ffffff;
+  --cat-secondary-container: #e4e2dd;
+  --cat-on-secondary-container: #656461;
+  --cat-stone: #E2E0DB;
+  --cat-outline: #747878;
+  --cat-outline-variant: #c4c7c7;
+
+  /* Utility & Accents */
+  --cat-accent-cobalt: #001e81;
+  --cat-error: #ba1a1a;
+  --cat-on-error: #ffffff;
+  --cat-error-container: #ffdad6;
+  --cat-on-error-container: #93000a;
+
+  /* Typography Families (set via next/font CSS vars) */
+  --font-eb-garamond: var(--font-catalogue-serif);
+  --font-hanken: var(--font-catalogue-sans);
+
+  /* Force light canvas for catalogue */
+  background-color: var(--cat-surface);
+  color: var(--cat-on-surface);
+}
+
+/* Catalogue-scoped scrollbar (more minimal) */
+[data-catalogue] ::-webkit-scrollbar-thumb {
+  background: rgba(28, 27, 27, 0.15);
+}
+[data-catalogue] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(28, 27, 27, 0.35);
+}
