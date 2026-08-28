@@ -32,13 +32,13 @@ export function FilterTabs({
             className={cn(
               'relative pb-2 font-[family-name:var(--font-hanken)] text-[12px] font-semibold uppercase tracking-[0.08em] leading-4 transition-colors duration-150 cursor-pointer',
               isActive
-                ? 'text-[var(--cat-on-surface)]'
-                : 'text-[var(--cat-on-surface-variant)] hover:text-[var(--cat-on-surface)]'
+                ? 'text-(--cat-on-surface)'
+                : 'text-(--cat-on-surface-variant) hover:text-(--cat-on-surface)'
             )}
           >
             {tab}
             {isActive && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--cat-charcoal)]" />
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-(--cat-charcoal)" />
             )}
           </button>
         );

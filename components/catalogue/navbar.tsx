@@ -24,14 +24,14 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
     <>
       <header
         className={cn(
-          'sticky top-0 z-40 w-full bg-[var(--cat-surface)]/95 backdrop-blur-sm border-b border-[var(--cat-stone)]/50',
+          'sticky top-0 z-40 w-full bg-(--cat-surface)/95 backdrop-blur-sm border-b border-(--cat-stone)/50',
           className
         )}
       >
         <div className="mx-auto max-w-[1400px] px-4 md:px-16 h-16 flex items-center justify-between">
           {/* Left: Brand Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="font-[family-name:var(--font-eb-garamond)] text-[24px] md:text-[28px] font-normal tracking-[-0.01em] text-[var(--cat-on-surface)] whitespace-nowrap">
+            <span className="font-[family-name:var(--font-eb-garamond)] text-[24px] md:text-[28px] font-normal tracking-[-0.01em] text-(--cat-on-surface) whitespace-nowrap">
               RIO COLLECTION
             </span>
           </Link>
@@ -44,7 +44,7 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="font-[family-name:var(--font-hanken)] text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)] hover:text-[var(--cat-on-surface)] transition-colors duration-150"
+                  className="font-[family-name:var(--font-hanken)] text-[12px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
                 >
                   {link.label}
                 </Link>
@@ -55,7 +55,7 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
             <div className="flex items-center gap-3">
               <button
                 aria-label="Search"
-                className="p-1.5 text-[var(--cat-on-surface)] hover:opacity-70 transition-opacity cursor-pointer"
+                className="p-1.5 text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer"
               >
                 <Search size={18} strokeWidth={1.5} />
               </button>
@@ -63,7 +63,7 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
               {/* Mobile Hamburger */}
               <button
                 aria-label="Open navigation menu"
-                className="md:hidden p-1.5 text-[var(--cat-on-surface)] hover:opacity-70 transition-opacity cursor-pointer"
+                className="md:hidden p-1.5 text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer"
                 onClick={() => setMobileNavOpen(true)}
               >
                 <Menu size={20} strokeWidth={1.5} />

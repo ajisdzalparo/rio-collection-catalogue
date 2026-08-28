@@ -25,57 +25,57 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
         <CheckCircle2
           size={48}
           strokeWidth={1}
-          className="mx-auto text-[var(--cat-on-surface)] mb-6"
+          className="mx-auto text-(--cat-on-surface) mb-6"
         />
 
         {/* Status Badge */}
-        <div className="inline-block border border-[var(--cat-stone)] px-6 py-2 mb-6">
-          <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)]">
+        <div className="inline-block border border-(--cat-stone) px-6 py-2 mb-6">
+          <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
             Menunggu
           </p>
-          <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)]">
+          <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
             Konfirmasi
           </p>
         </div>
 
         {/* Title */}
-        <h1 className="font-[family-name:var(--font-eb-garamond)] text-[32px] md:text-[48px] font-normal leading-tight text-[var(--cat-on-surface)]">
+        <h1 className="font-[family-name:var(--font-eb-garamond)] text-[32px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface)">
           Permintaan Pesanan Diterima
         </h1>
       </div>
 
       {/* Order Details */}
-      <div className="mt-10 pt-8 border-t border-[var(--cat-stone)]">
+      <div className="mt-10 pt-8 border-t border-(--cat-stone)">
         <div className="grid grid-cols-2 gap-y-8 gap-x-8">
           <div>
-            <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)] mb-1">
+            <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-1">
               Order Number
             </p>
-            <p className="font-[family-name:var(--font-hanken)] text-[18px] font-medium text-[var(--cat-on-surface)]">
+            <p className="font-[family-name:var(--font-hanken)] text-[18px] font-medium text-(--cat-on-surface)">
               #{orderNumber}
             </p>
           </div>
           <div>
-            <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)] mb-1">
+            <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-1">
               Product
             </p>
-            <p className="font-[family-name:var(--font-hanken)] text-[16px] font-medium text-[var(--cat-on-surface)]">
+            <p className="font-[family-name:var(--font-hanken)] text-[16px] font-medium text-(--cat-on-surface)">
               {product?.name || 'Heavy-Weight Boxy Tee'} (M)
             </p>
           </div>
           <div>
-            <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)] mb-1">
+            <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-1">
               Customer
             </p>
-            <p className="font-[family-name:var(--font-hanken)] text-[16px] font-medium text-[var(--cat-on-surface)]">
+            <p className="font-[family-name:var(--font-hanken)] text-[16px] font-medium text-(--cat-on-surface)">
               Guest User
             </p>
           </div>
           <div>
-            <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)] mb-1">
+            <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-1">
               Total
             </p>
-            <p className="font-[family-name:var(--font-hanken)] text-[20px] font-semibold text-[var(--cat-on-surface)] tabular-nums">
+            <p className="font-[family-name:var(--font-hanken)] text-[20px] font-semibold text-(--cat-on-surface) tabular-nums">
               {product ? formatPrice(product.price) : 'Rp 450.000'}
             </p>
           </div>
@@ -83,8 +83,8 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
       </div>
 
       {/* Next Steps */}
-      <div className="mt-10 pt-8 border-t border-[var(--cat-stone)] text-center">
-        <p className="font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-[var(--cat-on-surface-variant)] max-w-lg mx-auto">
+      <div className="mt-10 pt-8 border-t border-(--cat-stone) text-center">
+        <p className="font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-lg mx-auto">
           Permintaan pesanan Anda telah kami terima. Tim kami akan segera menghubungi Anda melalui WhatsApp untuk konfirmasi ketersediaan stok dan instruksi pembayaran manual.
         </p>
 
@@ -94,14 +94,14 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
             href={`https://wa.me/6281234567890?text=${encodeURIComponent(`Halo, saya ingin konfirmasi pesanan #${orderNumber}`)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[var(--cat-charcoal)] text-white font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-(--cat-charcoal) text-white font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
           >
             <MessageCircle size={16} strokeWidth={1.5} />
             Chat via WhatsApp
           </a>
           <Link
             href="/catalogue"
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border border-[var(--cat-charcoal)] text-[var(--cat-charcoal)] font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-[var(--cat-surface-container)] transition-colors duration-150"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border border-(--cat-charcoal) text-(--cat-charcoal) font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-(--cat-surface-container) transition-colors duration-150"
           >
             Kembali ke Katalog
           </Link>

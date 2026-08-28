@@ -12,15 +12,15 @@ const STATUS_CONFIG: Record<
 > = {
   AVAILABLE: {
     label: 'Tersedia',
-    className: 'text-[var(--cat-on-surface)]',
+    className: 'text-(--cat-on-surface)',
   },
   SOLD_OUT: {
     label: 'Habis',
-    className: 'text-[var(--cat-on-secondary-container)] bg-[var(--cat-secondary-container)] px-2 py-0.5',
+    className: 'text-(--cat-on-secondary-container) bg-(--cat-secondary-container) px-2 py-0.5',
   },
   COMING_SOON: {
     label: 'Segera Hadir',
-    className: 'text-[var(--cat-accent-cobalt)]',
+    className: 'text-(--cat-accent-cobalt)',
   },
 };
 

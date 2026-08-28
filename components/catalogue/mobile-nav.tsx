@@ -39,17 +39,17 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="fixed inset-0 z-50 bg-[var(--cat-surface)] flex flex-col"
+          className="fixed inset-0 z-50 bg-(--cat-surface) flex flex-col"
         >
           {/* Header with close button */}
           <div className="flex items-center justify-between px-4 h-14">
-            <span className="font-[family-name:var(--font-eb-garamond)] text-[20px] font-normal tracking-[-0.01em] text-[var(--cat-on-surface)]">
+            <span className="font-[family-name:var(--font-eb-garamond)] text-[20px] font-normal tracking-[-0.01em] text-(--cat-on-surface)">
               RIO COLLECTION
             </span>
             <button
               onClick={onClose}
               aria-label="Close navigation menu"
-              className="p-2 text-[var(--cat-on-surface)] hover:opacity-70 transition-opacity cursor-pointer"
+              className="p-2 text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer"
             >
               <X size={24} strokeWidth={1.5} />
             </button>
@@ -73,7 +73,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
                   onClick={onClose}
                   className={cn(
                     'font-[family-name:var(--font-eb-garamond)] text-[42px] font-normal leading-tight',
-                    'text-[var(--cat-on-surface)] hover:text-[var(--cat-on-surface-variant)] transition-colors duration-150'
+                    'text-(--cat-on-surface) hover:text-(--cat-on-surface-variant) transition-colors duration-150'
                   )}
                 >
                   {link.label}
@@ -84,7 +84,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
 
           {/* Footer */}
           <div className="px-8 pb-8">
-            <p className="font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)]">
+            <p className="font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
               © 2024 RIO COLLECTION
             </p>
           </div>

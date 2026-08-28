@@ -68,7 +68,7 @@ export function HeroSection({ className }: HeroSectionProps) {
             <div className="mt-6 flex items-center justify-center gap-3">
               <Link
                 href="/catalogue"
-                className="inline-flex items-center px-6 py-2.5 bg-[var(--cat-charcoal)] text-white font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
+                className="inline-flex items-center px-6 py-2.5 bg-(--cat-charcoal) text-white font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
               >
                 Eksplor Koleksi
               </Link>
@@ -85,7 +85,7 @@ export function HeroSection({ className }: HeroSectionProps) {
 
       {/* Subtle bottom edge */}
       <div className="absolute bottom-0 right-4 md:right-16">
-        <p className="font-[family-name:var(--font-hanken)] text-[10px] uppercase tracking-[0.1em] text-[var(--cat-on-surface-variant)] py-2">
+        <p className="font-[family-name:var(--font-hanken)] text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) py-2">
           Edisi selanjutnya →
         </p>
       </div>

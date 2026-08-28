@@ -51,9 +51,9 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                     key={`${img}-${idx}`}
                     onClick={() => setActiveImageIndex(idx)}
                     className={cn(
-                      'relative w-16 h-20 md:w-20 md:h-24 shrink-0 overflow-hidden bg-[var(--cat-surface-container-low)] border transition-all duration-150 cursor-pointer',
+                      'relative w-16 h-20 md:w-20 md:h-24 shrink-0 overflow-hidden bg-(--cat-surface-container-low) border transition-all duration-150 cursor-pointer',
                       activeImageIndex === idx
-                        ? 'border-[var(--cat-charcoal)] ring-1 ring-[var(--cat-charcoal)] opacity-100'
+                        ? 'border-(--cat-charcoal) ring-1 ring-(--cat-charcoal) opacity-100'
                         : 'border-transparent opacity-60 hover:opacity-100'
                     )}
                     aria-label={`View product image ${idx + 1}`}
@@ -71,7 +71,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             )}
 
             {/* Main Active Image View */}
-            <div className="relative flex-1 aspect-[4/5] overflow-hidden bg-[var(--cat-surface-container-low)] group">
+            <div className="relative flex-1 aspect-[4/5] overflow-hidden bg-(--cat-surface-container-low) group">
               <Image
                 src={activeImage}
                 alt={`${product.name} — ${product.color} (View ${activeImageIndex + 1})`}
@@ -86,21 +86,21 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 <>
                   <button
                     onClick={handlePrevImage}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-[var(--cat-surface)]/80 hover:bg-[var(--cat-surface)] text-[var(--cat-on-surface)] transition-opacity duration-150 backdrop-blur-xs opacity-80 md:opacity-0 group-hover:opacity-100 cursor-pointer"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-(--cat-surface)/80 hover:bg-(--cat-surface) text-(--cat-on-surface) transition-opacity duration-150 backdrop-blur-xs opacity-80 md:opacity-0 group-hover:opacity-100 cursor-pointer"
                     aria-label="Previous image"
                   >
                     <ChevronLeft size={18} strokeWidth={1.5} />
                   </button>
                   <button
                     onClick={handleNextImage}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-[var(--cat-surface)]/80 hover:bg-[var(--cat-surface)] text-[var(--cat-on-surface)] transition-opacity duration-150 backdrop-blur-xs opacity-80 md:opacity-0 group-hover:opacity-100 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-(--cat-surface)/80 hover:bg-(--cat-surface) text-(--cat-on-surface) transition-opacity duration-150 backdrop-blur-xs opacity-80 md:opacity-0 group-hover:opacity-100 cursor-pointer"
                     aria-label="Next image"
                   >
                     <ChevronRight size={18} strokeWidth={1.5} />
                   </button>
 
                   {/* Image Counter indicator */}
-                  <div className="absolute bottom-3 right-3 bg-[var(--cat-surface)]/80 backdrop-blur-xs px-2.5 py-1 text-[11px] font-[family-name:var(--font-hanken)] font-medium text-[var(--cat-on-surface)]">
+                  <div className="absolute bottom-3 right-3 bg-(--cat-surface)/80 backdrop-blur-xs px-2.5 py-1 text-[11px] font-[family-name:var(--font-hanken)] font-medium text-(--cat-on-surface)">
                     {activeImageIndex + 1} / {imagesList.length}
                   </div>
                 </>
@@ -112,47 +112,47 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
           <div className="md:col-span-5 flex flex-col justify-start py-0 md:py-2">
             {/* Breadcrumbs */}
             <nav
-              className="mb-4 font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)]"
+              className="mb-4 font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
               aria-label="Breadcrumb"
             >
-              <Link href="/" className="hover:text-[var(--cat-on-surface)] transition-colors">Home</Link>
+              <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">Home</Link>
               <span className="mx-2">/</span>
-              <Link href="/catalogue" className="hover:text-[var(--cat-on-surface)] transition-colors">Catalogue</Link>
+              <Link href="/catalogue" className="hover:text-(--cat-on-surface) transition-colors">Catalogue</Link>
               <span className="mx-2">/</span>
-              <span className="text-[var(--cat-on-surface)] font-semibold">{product.name}</span>
+              <span className="text-(--cat-on-surface) font-semibold">{product.name}</span>
             </nav>
 
             {/* Title & Price */}
-            <h1 className="font-[family-name:var(--font-eb-garamond)] text-[32px] md:text-[42px] font-normal leading-tight text-[var(--cat-on-surface)]">
+            <h1 className="font-[family-name:var(--font-eb-garamond)] text-[32px] md:text-[42px] font-normal leading-tight text-(--cat-on-surface)">
               {product.name}
             </h1>
-            <p className="mt-2 font-[family-name:var(--font-hanken)] text-[20px] font-medium text-[var(--cat-on-surface)] tabular-nums">
+            <p className="mt-2 font-[family-name:var(--font-hanken)] text-[20px] font-medium text-(--cat-on-surface) tabular-nums">
               {formatPrice(product.price)}
             </p>
 
             {/* Description */}
-            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-[var(--cat-on-surface-variant)] max-w-md">
+            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
               {product.description}
             </p>
 
             {/* Status */}
             <div className="mt-4 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 bg-[var(--cat-charcoal)]" />
+              <span className="w-2.5 h-2.5 bg-(--cat-charcoal)" />
               <StatusBadge status={product.status} className="text-[12px]" />
             </div>
 
             {/* Color */}
             <div className="mt-6">
-              <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface)]">
+              <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
                 Color / Warna
               </p>
               <div className="mt-2 flex items-center gap-2">
                 <span
-                  className="w-8 h-8 border border-[var(--cat-stone)] flex items-center justify-center"
+                  className="w-8 h-8 border border-(--cat-stone) flex items-center justify-center"
                   style={{ backgroundColor: product.colorHex }}
                   title={product.color}
                 />
-                <span className="font-[family-name:var(--font-hanken)] text-[13px] text-[var(--cat-on-surface-variant)]">
+                <span className="font-[family-name:var(--font-hanken)] text-[13px] text-(--cat-on-surface-variant)">
                   {product.color}
                 </span>
               </div>
@@ -161,10 +161,10 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             {/* Size Selector */}
             <div className="mt-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface)]">
+                <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
                   Size / Ukuran
                 </p>
-                <button className="font-[family-name:var(--font-hanken)] text-[12px] text-[var(--cat-on-surface-variant)] underline hover:text-[var(--cat-on-surface)] cursor-pointer">
+                <button className="font-[family-name:var(--font-hanken)] text-[12px] text-(--cat-on-surface-variant) underline hover:text-(--cat-on-surface) cursor-pointer">
                   Size Guide
                 </button>
               </div>
@@ -177,10 +177,10 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                     className={cn(
                       'h-11 flex items-center justify-center font-[family-name:var(--font-hanken)] text-[13px] font-medium border transition-all duration-150 cursor-pointer',
                       selectedSize === variant.size
-                        ? 'bg-[var(--cat-charcoal)] text-white border-[var(--cat-charcoal)]'
+                        ? 'bg-(--cat-charcoal) text-white border-(--cat-charcoal)'
                         : variant.inStock
-                          ? 'border-[var(--cat-stone)] text-[var(--cat-on-surface)] hover:border-[var(--cat-charcoal)]'
-                          : 'border-[var(--cat-stone)]/50 text-[var(--cat-on-surface-variant)]/40 cursor-not-allowed line-through'
+                          ? 'border-(--cat-stone) text-(--cat-on-surface) hover:border-(--cat-charcoal)'
+                          : 'border-(--cat-stone)/50 text-(--cat-on-surface-variant)/40 cursor-not-allowed line-through'
                     )}
                   >
                     {variant.size}
@@ -191,23 +191,23 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
             {/* Quantity */}
             <div className="mt-6">
-              <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface)] mb-2">
+              <p className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-2">
                 Quantity
               </p>
-              <div className="inline-flex items-center border border-[var(--cat-stone)]">
+              <div className="inline-flex items-center border border-(--cat-stone)">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 flex items-center justify-center text-[var(--cat-on-surface)] hover:bg-[var(--cat-surface-container)] transition-colors cursor-pointer"
+                  className="w-10 h-10 flex items-center justify-center text-(--cat-on-surface) hover:bg-(--cat-surface-container) transition-colors cursor-pointer"
                   aria-label="Decrease quantity"
                 >
                   <Minus size={14} strokeWidth={1.5} />
                 </button>
-                <span className="w-12 h-10 flex items-center justify-center font-[family-name:var(--font-hanken)] text-[14px] font-medium border-x border-[var(--cat-stone)] tabular-nums">
+                <span className="w-12 h-10 flex items-center justify-center font-[family-name:var(--font-hanken)] text-[14px] font-medium border-x border-(--cat-stone) tabular-nums">
                   {quantity}
                 </span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 flex items-center justify-center text-[var(--cat-on-surface)] hover:bg-[var(--cat-surface-container)] transition-colors cursor-pointer"
+                  className="w-10 h-10 flex items-center justify-center text-(--cat-on-surface) hover:bg-(--cat-surface-container) transition-colors cursor-pointer"
                   aria-label="Increase quantity"
                 >
                   <Plus size={14} strokeWidth={1.5} />
@@ -225,8 +225,8 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 className={cn(
                   'w-full inline-flex items-center justify-center gap-2 px-12 py-3.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity duration-150',
                   canOrder
-                    ? 'bg-[var(--cat-charcoal)] text-white hover:opacity-85 cursor-pointer'
-                    : 'bg-[var(--cat-secondary-container)] text-[var(--cat-on-secondary-container)] cursor-not-allowed'
+                    ? 'bg-(--cat-charcoal) text-white hover:opacity-85 cursor-pointer'
+                    : 'bg-(--cat-secondary-container) text-(--cat-on-secondary-container) cursor-not-allowed'
                 )}
               >
                 {product.status === 'SOLD_OUT'
@@ -239,7 +239,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 {canOrder && <ArrowRight size={14} strokeWidth={2} />}
               </Link>
               {product.status === 'AVAILABLE' && (
-                <p className="mt-2 font-[family-name:var(--font-hanken)] text-[12px] text-[var(--cat-on-surface-variant)]">
+                <p className="mt-2 font-[family-name:var(--font-hanken)] text-[12px] text-(--cat-on-surface-variant)">
                   Submit your order request. We&apos;ll confirm availability and contact you via WhatsApp for payment.
                 </p>
               )}
@@ -252,17 +252,17 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
           <div>
-            <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[36px] font-normal leading-tight text-[var(--cat-on-surface)]">
+            <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
               The Core Silhouette
             </h2>
-            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-[var(--cat-on-surface-variant)]">
+            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
               Designed as the foundational garment for any minimalist wardrobe. We stripped away unnecessary details to focus purely on shape and texture.
             </p>
-            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-[var(--cat-on-surface-variant)]">
+            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
               The boxy fit allows for architectural draping, while the dropped shoulders construct a relaxed, contemporary line against the body.
             </p>
           </div>
-          <div className="relative aspect-[4/3] overflow-hidden bg-[var(--cat-surface-container-low)]">
+          <div className="relative aspect-[4/3] overflow-hidden bg-(--cat-surface-container-low)">
             <Image
               src={imagesList[1] || product.imageUrl}
               alt={`${product.name} detail view`}
@@ -271,7 +271,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               className="object-cover"
             />
             <div className="absolute top-3 left-3">
-              <span className="font-[family-name:var(--font-hanken)] text-[10px] uppercase tracking-[0.1em] text-[var(--cat-on-surface-variant)] bg-[var(--cat-surface)]/80 px-2 py-1">
+              <span className="font-[family-name:var(--font-hanken)] text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) bg-(--cat-surface)/80 px-2 py-1">
                 Detail
               </span>
             </div>
@@ -280,15 +280,15 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
       </section>
 
       {/* Materials & Care */}
-      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8 md:py-16 border-t border-[var(--cat-stone)]">
+      <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-8 md:py-16 border-t border-(--cat-stone)">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-3">
-            <h3 className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface)]">
+            <h3 className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
               Materials & Care
             </h3>
           </div>
           <div className="md:col-span-9">
-            <div className="space-y-0 divide-y divide-[var(--cat-stone)]">
+            <div className="space-y-0 divide-y divide-(--cat-stone)">
               {[
                 ['Fabric', '100% Premium Cotton, 280gsm'],
                 ['Treatment', 'Pre-shrunk to minimize shrinkage'],
@@ -296,10 +296,10 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 ['Care Instruction', 'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.'],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between py-4 gap-8">
-                  <span className="font-[family-name:var(--font-hanken)] text-[14px] text-[var(--cat-on-surface-variant)] shrink-0">
+                  <span className="font-[family-name:var(--font-hanken)] text-[14px] text-(--cat-on-surface-variant) shrink-0">
                     {label}
                   </span>
-                  <span className="font-[family-name:var(--font-hanken)] text-[14px] text-[var(--cat-on-surface)] text-right">
+                  <span className="font-[family-name:var(--font-hanken)] text-[14px] text-(--cat-on-surface) text-right">
                     {value}
                   </span>
                 </div>

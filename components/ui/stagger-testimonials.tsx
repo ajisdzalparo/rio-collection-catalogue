@@ -52,8 +52,8 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
       className={cn(
         'absolute left-1/2 top-1/2 cursor-pointer border rounded-2xl overflow-hidden transition-all duration-500 ease-in-out bg-[#e5ddd5]/30 group',
         isCenter
-          ? 'z-10 border-[var(--cat-charcoal)] shadow-[0_12px_40px_rgba(0,0,0,0.15)] opacity-100 scale-100'
-          : 'z-0 border-[var(--cat-stone)]/40 opacity-40 hover:opacity-75 scale-90'
+          ? 'z-10 border-(--cat-charcoal) shadow-[0_12px_40px_rgba(0,0,0,0.15)] opacity-100 scale-100'
+          : 'z-0 border-(--cat-stone)/40 opacity-40 hover:opacity-75 scale-90'
       )}
       style={{
         width: cardSize,
@@ -84,7 +84,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
         )}
 
         {/* Verification indicator */}
-        <div className="absolute top-3 right-3 bg-[var(--cat-charcoal)]/80 backdrop-blur-xs text-white px-2 py-0.5 text-[9px] font-[family-name:var(--font-hanken)] uppercase tracking-wider rounded-xs font-semibold">
+        <div className="absolute top-3 right-3 bg-(--cat-charcoal)/80 backdrop-blur-xs text-white px-2 py-0.5 text-[9px] font-[family-name:var(--font-hanken)] uppercase tracking-wider rounded-xs font-semibold">
           Verified Chat
         </div>
       </div>
@@ -129,7 +129,7 @@ export const StaggerTestimonials: React.FC = () => {
   return (
     <>
       <div
-        className="relative w-full overflow-hidden bg-[var(--cat-surface-bright)] py-8 border-t border-b border-[var(--cat-stone)]/50"
+        className="relative w-full overflow-hidden bg-(--cat-surface-bright) py-8 border-t border-b border-(--cat-stone)/50"
         style={{ height: 500 }}
       >
         {testimonialsList.map((testimonial, index) => {
@@ -157,7 +157,7 @@ export const StaggerTestimonials: React.FC = () => {
           <button
             onClick={() => handleMove(-1)}
             className={cn(
-              'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-[var(--cat-stone)] bg-[var(--cat-surface)] hover:bg-[var(--cat-charcoal)] hover:text-white cursor-pointer'
+              'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-(--cat-stone) bg-(--cat-surface) hover:bg-(--cat-charcoal) hover:text-white cursor-pointer'
             )}
             aria-label="Previous testimonial"
           >
@@ -166,7 +166,7 @@ export const StaggerTestimonials: React.FC = () => {
           <button
             onClick={() => handleMove(1)}
             className={cn(
-              'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-[var(--cat-stone)] bg-[var(--cat-surface)] hover:bg-[var(--cat-charcoal)] hover:text-white cursor-pointer'
+              'flex h-12 w-12 items-center justify-center transition-colors rounded-full border border-(--cat-stone) bg-(--cat-surface) hover:bg-(--cat-charcoal) hover:text-white cursor-pointer'
             )}
             aria-label="Next testimonial"
           >

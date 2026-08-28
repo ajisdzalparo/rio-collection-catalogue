@@ -34,12 +34,12 @@ export default async function HomePage() {
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24">
         {/* Section header */}
         <div className="flex items-end justify-between mb-10 md:mb-14">
-          <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[40px] font-normal leading-tight text-[var(--cat-on-surface)]">
+          <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
             Koleksi Terkini
           </h2>
           <Link
             href="/catalogue"
-            className="hidden md:inline-flex items-center gap-1.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)] hover:text-[var(--cat-on-surface)] transition-colors duration-150"
+            className="hidden md:inline-flex items-center gap-1.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
           >
             Lihat Semua
             <ArrowRight size={12} strokeWidth={2} />
@@ -61,7 +61,7 @@ export default async function HomePage() {
         <div className="mt-8 text-center md:hidden">
           <Link
             href="/catalogue"
-            className="inline-flex items-center gap-1.5 font-[family-name:var(--font-hanken)] text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)] hover:text-[var(--cat-on-surface)] transition-colors duration-150"
+            className="inline-flex items-center gap-1.5 font-[family-name:var(--font-hanken)] text-[12px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
           >
             Lihat Semua
             <ArrowRight size={12} strokeWidth={2} />
@@ -85,12 +85,12 @@ export default async function HomePage() {
 
           {/* Right: Text */}
           <div className="flex flex-col justify-center py-4 md:py-12">
-            <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[40px] font-normal leading-tight text-[var(--cat-on-surface)]">
+            <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
               Mendefinisikan Ulang
               <br />
               Esensi.
             </h2>
-            <p className="mt-6 font-[family-name:var(--font-hanken)] text-[15px] md:text-[16px] leading-relaxed text-[var(--cat-on-surface-variant)] max-w-md">
+            <p className="mt-6 font-[family-name:var(--font-hanken)] text-[15px] md:text-[16px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
               RIO COLLECTION lahir dari keinginan untuk mengembalikan esensi berpakaian.
               Kami memandang setiap garmen sebagai kanvas modern, dirancang dengan presisi
               arsitektural dan material tak tertandingi.
@@ -98,7 +98,7 @@ export default async function HomePage() {
             <div className="mt-8">
               <Link
                 href="/about"
-                className="inline-block font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface)] border-b border-[var(--cat-on-surface)] pb-0.5 hover:opacity-70 transition-opacity duration-150"
+                className="inline-block font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) border-b border-(--cat-on-surface) pb-0.5 hover:opacity-70 transition-opacity duration-150"
               >
                 Tentang Kami
               </Link>
@@ -112,14 +112,14 @@ export default async function HomePage() {
 
       {/* ═══ CTA Banner ═══ */}
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-16 md:py-24">
-        <div className="text-center py-12 md:py-16 border-t border-b border-[var(--cat-stone)]">
-          <p className="font-[family-name:var(--font-eb-garamond)] text-[22px] md:text-[28px] font-normal leading-relaxed text-[var(--cat-on-surface)] max-w-2xl mx-auto italic">
+        <div className="text-center py-12 md:py-16 border-t border-b border-(--cat-stone)">
+          <p className="font-[family-name:var(--font-eb-garamond)] text-[22px] md:text-[28px] font-normal leading-relaxed text-(--cat-on-surface) max-w-2xl mx-auto italic">
             Setiap edisi adalah eksplorasi mandiri. Temukan siluet terbaru kami.
           </p>
           <div className="mt-8">
             <Link
               href="/catalogue"
-              className="inline-flex items-center px-8 py-3 bg-[var(--cat-charcoal)] text-white font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
+              className="inline-flex items-center px-8 py-3 bg-(--cat-charcoal) text-white font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
             >
               Eksplor Koleksi Terkini
             </Link>

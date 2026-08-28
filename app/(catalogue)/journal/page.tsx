@@ -19,10 +19,10 @@ export default async function JournalPage() {
     <>
       {/* Header */}
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 pt-12 md:pt-20 pb-8 md:pb-12 text-center">
-        <h1 className="font-[family-name:var(--font-eb-garamond)] text-[40px] md:text-[64px] font-normal leading-tight text-[var(--cat-on-surface)]">
+        <h1 className="font-[family-name:var(--font-eb-garamond)] text-[40px] md:text-[64px] font-normal leading-tight text-(--cat-on-surface)">
           Journal
         </h1>
-        <p className="mt-2 font-[family-name:var(--font-hanken)] text-[14px] md:text-[16px] text-[var(--cat-on-surface-variant)]">
+        <p className="mt-2 font-[family-name:var(--font-hanken)] text-[14px] md:text-[16px] text-(--cat-on-surface-variant)">
           Stories, ideas, and the work behind each drop.
         </p>
       </section>
@@ -32,19 +32,19 @@ export default async function JournalPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
           {/* Left: Text */}
           <div className="order-2 md:order-1">
-            <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)]">
+            <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
               {featuredArticle.category}
             </span>
-            <h2 className="mt-3 font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[36px] font-normal leading-tight text-[var(--cat-on-surface)]">
+            <h2 className="mt-3 font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
               {featuredArticle.title}
             </h2>
-            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-[var(--cat-on-surface-variant)] max-w-md">
+            <p className="mt-4 font-[family-name:var(--font-hanken)] text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
               {featuredArticle.excerpt}
             </p>
             <div className="mt-6">
               <Link
                 href={`/journal/${featuredArticle.slug}`}
-                className="inline-flex items-center gap-1.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface)] border-b border-[var(--cat-on-surface)] pb-0.5 hover:opacity-70 transition-opacity duration-150"
+                className="inline-flex items-center gap-1.5 font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) border-b border-(--cat-on-surface) pb-0.5 hover:opacity-70 transition-opacity duration-150"
               >
                 Baca Selengkapnya
                 <ArrowRight size={12} strokeWidth={2} />
@@ -53,7 +53,7 @@ export default async function JournalPage() {
           </div>
 
           {/* Right: Image */}
-          <div className="order-1 md:order-2 relative aspect-[4/3] overflow-hidden bg-[var(--cat-surface-container-low)]">
+          <div className="order-1 md:order-2 relative aspect-[4/3] overflow-hidden bg-(--cat-surface-container-low)">
             <Image
               src={featuredArticle.imageUrl}
               alt={featuredArticle.title}
@@ -68,16 +68,16 @@ export default async function JournalPage() {
 
       {/* Divider */}
       <div className="mx-auto max-w-[1400px] px-4 md:px-16">
-        <hr className="border-[var(--cat-stone)]" />
+        <hr className="border-(--cat-stone)" />
       </div>
 
       {/* Recent Articles */}
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 py-12 md:py-20">
         <div className="flex items-end justify-between mb-10 md:mb-14">
-          <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[36px] font-normal leading-tight text-[var(--cat-on-surface)]">
+          <h2 className="font-[family-name:var(--font-eb-garamond)] text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
             Artikel Terbaru
           </h2>
-          <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)]">
+          <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
             Lihat Semua
           </span>
         </div>
@@ -89,7 +89,7 @@ export default async function JournalPage() {
               href={`/journal/${article.slug}`}
               className="group block"
             >
-              <div className="relative aspect-[4/3] overflow-hidden bg-[var(--cat-surface-container-low)]">
+              <div className="relative aspect-[4/3] overflow-hidden bg-(--cat-surface-container-low)">
                 <Image
                   src={article.imageUrl}
                   alt={article.title}
@@ -100,17 +100,17 @@ export default async function JournalPage() {
               </div>
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)]">
+                  <span className="font-[family-name:var(--font-hanken)] text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
                     {article.category}
                   </span>
-                  <span className="font-[family-name:var(--font-hanken)] text-[11px] text-[var(--cat-on-surface-variant)]">
+                  <span className="font-[family-name:var(--font-hanken)] text-[11px] text-(--cat-on-surface-variant)">
                     {article.date}
                   </span>
                 </div>
-                <h3 className="font-[family-name:var(--font-eb-garamond)] text-[20px] md:text-[22px] font-normal leading-snug text-[var(--cat-on-surface)] group-hover:text-[var(--cat-on-surface-variant)] transition-colors duration-150">
+                <h3 className="font-[family-name:var(--font-eb-garamond)] text-[20px] md:text-[22px] font-normal leading-snug text-(--cat-on-surface) group-hover:text-(--cat-on-surface-variant) transition-colors duration-150">
                   {article.title}
                 </h3>
-                <p className="mt-2 font-[family-name:var(--font-hanken)] text-[13px] leading-relaxed text-[var(--cat-on-surface-variant)] line-clamp-3">
+                <p className="mt-2 font-[family-name:var(--font-hanken)] text-[13px] leading-relaxed text-(--cat-on-surface-variant) line-clamp-3">
                   {article.excerpt}
                 </p>
               </div>
