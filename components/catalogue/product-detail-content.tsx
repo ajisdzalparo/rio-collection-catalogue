@@ -115,9 +115,13 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
               aria-label="Breadcrumb"
             >
-              <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">Home</Link>
+              <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">
+                Home
+              </Link>
               <span className="mx-2">/</span>
-              <Link href="/catalogue" className="hover:text-(--cat-on-surface) transition-colors">Catalogue</Link>
+              <Link href="/catalogue" className="hover:text-(--cat-on-surface) transition-colors">
+                Catalogue
+              </Link>
               <span className="mx-2">/</span>
               <span className="text-(--cat-on-surface) font-semibold">{product.name}</span>
             </nav>
@@ -240,7 +244,8 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               </Link>
               {product.status === 'AVAILABLE' && (
                 <p className="mt-2 font-hanken text-[12px] text-(--cat-on-surface-variant)">
-                  Submit your order request. We&apos;ll confirm availability and contact you via WhatsApp for payment.
+                  Submit your order request. We&apos;ll confirm availability and contact you via
+                  WhatsApp for payment.
                 </p>
               )}
             </div>
@@ -256,10 +261,12 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               The Core Silhouette
             </h2>
             <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
-              Designed as the foundational garment for any minimalist wardrobe. We stripped away unnecessary details to focus purely on shape and texture.
+              Designed as the foundational garment for any minimalist wardrobe. We stripped away
+              unnecessary details to focus purely on shape and texture.
             </p>
             <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
-              The boxy fit allows for architectural draping, while the dropped shoulders construct a relaxed, contemporary line against the body.
+              The boxy fit allows for architectural draping, while the dropped shoulders construct a
+              relaxed, contemporary line against the body.
             </p>
           </div>
           <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
@@ -293,7 +300,10 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 ['Fabric', '100% Premium Cotton, 280gsm'],
                 ['Treatment', 'Pre-shrunk to minimize shrinkage'],
                 ['Origin', 'Constructed in Italy'],
-                ['Care Instruction', 'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.'],
+                [
+                  'Care Instruction',
+                  'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.'
+                ]
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between py-4 gap-8">
                   <span className="font-hanken text-[14px] text-(--cat-on-surface-variant) shrink-0">

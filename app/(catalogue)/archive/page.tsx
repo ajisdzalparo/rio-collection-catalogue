@@ -23,10 +23,7 @@ export default async function ArchivePage() {
           className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
           aria-label="Breadcrumb"
         >
-          <Link
-            href="/"
-            className="hover:text-(--cat-on-surface) transition-colors duration-150"
-          >
+          <Link href="/" className="hover:text-(--cat-on-surface) transition-colors duration-150">
             Home
           </Link>
           <span className="mx-2">/</span>

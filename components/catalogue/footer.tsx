@@ -10,34 +10,29 @@ const FOOTER_LINKS = [
     title: 'Shop',
     links: [
       { href: '/catalogue', label: 'Catalogue' },
-      { href: '/archive', label: 'Archive' },
-    ],
+      { href: '/archive', label: 'Archive' }
+    ]
   },
   {
     title: 'Brand',
     links: [
       { href: '/journal', label: 'Journal' },
-      { href: '/about', label: 'About' },
-    ],
+      { href: '/about', label: 'About' }
+    ]
   },
   {
     title: 'Info',
     links: [
       { href: '/legal', label: 'Legal' },
       { href: '/terms', label: 'Terms' },
-      { href: '/shipping', label: 'Shipping' },
-    ],
-  },
+      { href: '/shipping', label: 'Shipping' }
+    ]
+  }
 ];
 
 export function CatalogueFooter({ className }: CatalogueFooterProps) {
   return (
-    <footer
-      className={cn(
-        'border-t border-(--cat-stone) bg-(--cat-surface)',
-        className
-      )}
-    >
+    <footer className={cn('border-t border-(--cat-stone) bg-(--cat-surface)', className)}>
       <div className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
           {/* Brand Column */}

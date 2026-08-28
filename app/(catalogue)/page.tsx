@@ -13,16 +13,12 @@ export const metadata: Metadata = {
     'Discover limited T-shirt drops, archival past designs, and brand stories from RIO COLLECTION. Independent limited T-shirt brand & archival catalogue.',
   openGraph: {
     title: 'RIO COLLECTION — Limited Archival T-Shirt Catalogue',
-    description:
-      'Independent limited T-shirt brand & archival catalogue.',
-  },
+    description: 'Independent limited T-shirt brand & archival catalogue.'
+  }
 };
 
 export default async function HomePage() {
-  const [products, testimonies] = await Promise.all([
-    getProducts(),
-    getTestimonies(),
-  ]);
+  const [products, testimonies] = await Promise.all([getProducts(), getTestimonies()]);
   const featuredProducts = products.slice(0, 3);
 
   return (
@@ -49,11 +45,7 @@ export default async function HomePage() {
         {/* Product grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {featuredProducts.map((product, index) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              priority={index < 2}
-            />
+            <ProductCard key={product.id} product={product} priority={index < 2} />
           ))}
         </div>
 
@@ -91,9 +83,9 @@ export default async function HomePage() {
               Esensi.
             </h2>
             <p className="mt-6 font-hanken text-[15px] md:text-[16px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
-              RIO COLLECTION lahir dari keinginan untuk mengembalikan esensi berpakaian.
-              Kami memandang setiap garmen sebagai kanvas modern, dirancang dengan presisi
-              arsitektural dan material tak tertandingi.
+              RIO COLLECTION lahir dari keinginan untuk mengembalikan esensi berpakaian. Kami
+              memandang setiap garmen sebagai kanvas modern, dirancang dengan presisi arsitektural
+              dan material tak tertandingi.
             </p>
             <div className="mt-8">
               <Link

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -17,12 +18,12 @@ const testimonials = [
   { tempId: 8, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 9' },
   { tempId: 9, imgSrc: '/images/testimonials/testimony-1.png', alt: 'Testimonial 10' },
   { tempId: 10, imgSrc: '/images/testimonials/testimony-2.png', alt: 'Testimonial 11' },
-  { tempId: 11, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 12' },
+  { tempId: 11, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 12' }
 ];
 
 interface TestimonialCardProps {
   position: number;
-  testimonial: typeof testimonials[0];
+  testimonial: (typeof testimonials)[0];
   handleMove: (steps: number) => void;
   cardSize: number;
   onZoom: (imgSrc: string) => void;
@@ -33,7 +34,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
   testimonial,
   handleMove,
   cardSize,
-  onZoom,
+  onZoom
 }) => {
   const isCenter = position === 0;
 
@@ -60,16 +61,19 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
         height: cardSize * 1.5, // Vertical aspect ratio for phone screens
         transform: `
           translate(-50%, -50%)
-          translateX(${(cardSize * 0.95) * position}px)
+          translateX(${cardSize * 0.95 * position}px)
           translateY(${isCenter ? -10 : position % 2 ? 10 : -10}px)
           rotate(${isCenter ? 0 : position % 2 ? 2.5 : -2.5}deg)
-        `,
+        `
       }}
     >
       <div className="relative w-full h-full">
-        <img
+        <Image
           src={testimonial.imgSrc}
           alt={testimonial.alt}
+          width={cardSize || 240}
+          height={(cardSize || 240) * 1.5}
+          sizes="(max-width: 640px) 210px, 260px"
           className="w-full h-full object-cover select-none pointer-events-none"
         />
 
@@ -133,9 +137,10 @@ export const StaggerTestimonials: React.FC = () => {
         style={{ height: 500 }}
       >
         {testimonialsList.map((testimonial, index) => {
-          const position = testimonialsList.length % 2
-            ? index - (testimonialsList.length + 1) / 2
-            : index - testimonialsList.length / 2;
+          const position =
+            testimonialsList.length % 2
+              ? index - (testimonialsList.length + 1) / 2
+              : index - testimonialsList.length / 2;
 
           // Only render cards that are relatively close to center for performance and layout focus
           if (Math.abs(position) > 2) return null;
@@ -192,10 +197,13 @@ export const StaggerTestimonials: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
             className="relative max-w-[90vw] max-h-[85vh] aspect-9/16 overflow-hidden rounded-2xl border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200"
           >
-            <img
+            <Image
               src={zoomedImage}
               alt="Zoomed testimonial screenshot"
-              className="w-full h-full object-contain"
+              width={540}
+              height={960}
+              priority
+              className="object-contain"
             />
           </div>
         </div>

@@ -15,7 +15,7 @@ const NAV_LINKS = [
   { href: '/catalogue', label: 'Catalogue' },
   { href: '/archive', label: 'Archive' },
   { href: '/journal', label: 'Journal' },
-  { href: '/about', label: 'About' },
+  { href: '/about', label: 'About' }
 ];
 
 export function MobileNav({ isOpen, onClose }: MobileNavProps) {
@@ -65,7 +65,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 transition={{
                   duration: 0.3,
                   delay: 0.05 * index,
-                  ease: 'easeOut',
+                  ease: 'easeOut'
                 }}
               >
                 <Link

@@ -54,7 +54,7 @@ export function HeroSection({ className }: HeroSectionProps) {
         {/* Overlay content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10">
           {/* Subtle dark gradient for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/15 to-black/30 md:from-transparent md:via-black/10 md:to-black/20" />
+          <div className="absolute inset-0 bg-linear-to-b from-black/5 via-black/15 to-black/30 md:from-transparent md:via-black/10 md:to-black/20" />
 
           <div className="relative z-10 px-4">
             <h1 className="font-eb-garamond text-[48px] md:text-[72px] font-normal leading-[1.1] tracking-[-0.02em] text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.3)]">
@@ -85,7 +85,7 @@ export function HeroSection({ className }: HeroSectionProps) {
 
       {/* Subtle bottom edge */}
       <div className="absolute bottom-0 right-4 md:right-16">
-        <p className="font-hanken text-[10px] uppercase tracking-[0.1em] text-(--cat-on-surface-variant) py-2">
+        <p className="font-hanken text-[10px] uppercase tracking-widest text-(--cat-on-surface-variant) py-2">
           Edisi selanjutnya →
         </p>
       </div>

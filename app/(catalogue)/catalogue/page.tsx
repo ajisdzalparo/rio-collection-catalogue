@@ -40,16 +40,11 @@ export default function CataloguePage() {
           className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
           aria-label="Breadcrumb"
         >
-          <Link
-            href="/"
-            className="hover:text-(--cat-on-surface) transition-colors duration-150"
-          >
+          <Link href="/" className="hover:text-(--cat-on-surface) transition-colors duration-150">
             Home
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-(--cat-on-surface) font-semibold">
-            Catalogue
-          </span>
+          <span className="text-(--cat-on-surface) font-semibold">Catalogue</span>
         </nav>
 
         {/* Title */}
@@ -63,11 +58,7 @@ export default function CataloguePage() {
 
       {/* Filter tabs */}
       <section className="mx-auto max-w-350 px-4 md:px-16 pb-8 md:pb-12">
-        <FilterTabs
-          tabs={FILTER_TABS}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <FilterTabs tabs={FILTER_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
       </section>
 
       {/* Product Grid */}
@@ -75,11 +66,7 @@ export default function CataloguePage() {
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {filteredProducts.map((product, index) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                priority={index < 3}
-              />
+              <ProductCard key={product.id} product={product} priority={index < 3} />
             ))}
           </div>
         ) : (
@@ -105,11 +92,7 @@ export default function CataloguePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             {archives.map((archive) => (
-              <Link
-                key={archive.id}
-                href={`/archive/${archive.slug}`}
-                className="group block"
-              >
+              <Link key={archive.id} href={`/archive/${archive.slug}`} className="group block">
                 <div className="relative aspect-3/2 overflow-hidden bg-(--cat-surface-container-low)">
                   <Image
                     src={archive.imageUrl}

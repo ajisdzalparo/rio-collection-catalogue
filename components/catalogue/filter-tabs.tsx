@@ -9,12 +9,7 @@ interface FilterTabsProps {
   className?: string;
 }
 
-export function FilterTabs({
-  tabs,
-  activeTab,
-  onTabChange,
-  className,
-}: FilterTabsProps) {
+export function FilterTabs({ tabs, activeTab, onTabChange, className }: FilterTabsProps) {
   return (
     <nav
       className={cn('flex items-center gap-6', className)}
@@ -38,7 +33,7 @@ export function FilterTabs({
           >
             {tab}
             {isActive && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-(--cat-charcoal)" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-(--cat-charcoal)" />
             )}
           </button>
         );

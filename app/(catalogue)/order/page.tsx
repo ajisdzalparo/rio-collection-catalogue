@@ -15,7 +15,7 @@ export default function OrderPage() {
   const [formData, setFormData] = useState({
     fullName: '',
     whatsapp: '',
-    address: '',
+    address: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -34,7 +34,7 @@ export default function OrderPage() {
         fullName: formData.fullName,
         whatsapp: formData.whatsapp,
         address: formData.address,
-        items: [{ productId: product.id, size: 'M', quantity: 1 }],
+        items: [{ productId: product.id, size: 'M', quantity: 1 }]
       });
       const orderNum = res?.data?.orderNumber || 'RC-8802';
       router.push(`/order/confirmation/${orderNum}`);
@@ -53,9 +53,13 @@ export default function OrderPage() {
           className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
           aria-label="Breadcrumb"
         >
-          <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">Home</Link>
+          <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">
+            Home
+          </Link>
           <span className="mx-2">&gt;</span>
-          <Link href="/catalogue" className="hover:text-(--cat-on-surface) transition-colors">Catalogue</Link>
+          <Link href="/catalogue" className="hover:text-(--cat-on-surface) transition-colors">
+            Catalogue
+          </Link>
           <span className="mx-2">&gt;</span>
           <span className="text-(--cat-on-surface) font-semibold">Checkout</span>
         </nav>
@@ -110,19 +114,27 @@ export default function OrderPage() {
                 {/* Totals */}
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-hanken text-[14px] text-(--cat-on-surface-variant)">Subtotal</span>
+                    <span className="font-hanken text-[14px] text-(--cat-on-surface-variant)">
+                      Subtotal
+                    </span>
                     <span className="font-hanken text-[14px] text-(--cat-on-surface) tabular-nums">
                       {product ? formatPrice(product.price) : 'Rp 450.000'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="font-hanken text-[14px] text-(--cat-on-surface-variant)">Estimasi Pengiriman</span>
-                    <span className="font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">Dihitung Selanjutnya</span>
+                    <span className="font-hanken text-[14px] text-(--cat-on-surface-variant)">
+                      Estimasi Pengiriman
+                    </span>
+                    <span className="font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+                      Dihitung Selanjutnya
+                    </span>
                   </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-(--cat-stone) flex items-center justify-between">
-                  <span className="font-hanken text-[16px] font-semibold text-(--cat-on-surface)">Total</span>
+                  <span className="font-hanken text-[16px] font-semibold text-(--cat-on-surface)">
+                    Total
+                  </span>
                   <span className="font-hanken text-[18px] font-semibold text-(--cat-on-surface) tabular-nums">
                     {product ? formatPrice(product.price) : 'Rp 450.000'}
                   </span>

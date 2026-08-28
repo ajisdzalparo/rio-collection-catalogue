@@ -6,22 +6,19 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-const STATUS_CONFIG: Record<
-  ProductStatus,
-  { label: string; className: string }
-> = {
+const STATUS_CONFIG: Record<ProductStatus, { label: string; className: string }> = {
   AVAILABLE: {
     label: 'Tersedia',
-    className: 'text-(--cat-on-surface)',
+    className: 'text-(--cat-on-surface)'
   },
   SOLD_OUT: {
     label: 'Habis',
-    className: 'text-(--cat-on-secondary-container) bg-(--cat-secondary-container) px-2 py-0.5',
+    className: 'text-(--cat-on-secondary-container) bg-(--cat-secondary-container) px-2 py-0.5'
   },
   COMING_SOON: {
     label: 'Segera Hadir',
-    className: 'text-(--cat-accent-cobalt)',
-  },
+    className: 'text-(--cat-accent-cobalt)'
+  }
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {

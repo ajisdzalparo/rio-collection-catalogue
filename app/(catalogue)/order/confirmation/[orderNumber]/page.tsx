@@ -6,7 +6,8 @@ import { formatPrice } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Permintaan Pesanan Diterima',
-  description: 'Your purchase request has been received. We will contact you via WhatsApp for confirmation.',
+  description:
+    'Your purchase request has been received. We will contact you via WhatsApp for confirmation.'
 };
 
 interface OrderConfirmationProps {
@@ -19,14 +20,10 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
   const product = products[0];
 
   return (
-    <section className="mx-auto max-w-[800px] px-4 md:px-8 py-16 md:py-24">
+    <section className="mx-auto max-w-200 px-4 md:px-8 py-16 md:py-24">
       {/* Success Icon */}
       <div className="text-center">
-        <CheckCircle2
-          size={48}
-          strokeWidth={1}
-          className="mx-auto text-(--cat-on-surface) mb-6"
-        />
+        <CheckCircle2 size={48} strokeWidth={1} className="mx-auto text-(--cat-on-surface) mb-6" />
 
         {/* Status Badge */}
         <div className="inline-block border border-(--cat-stone) px-6 py-2 mb-6">
@@ -85,7 +82,8 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
       {/* Next Steps */}
       <div className="mt-10 pt-8 border-t border-(--cat-stone) text-center">
         <p className="font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-lg mx-auto">
-          Permintaan pesanan Anda telah kami terima. Tim kami akan segera menghubungi Anda melalui WhatsApp untuk konfirmasi ketersediaan stok dan instruksi pembayaran manual.
+          Permintaan pesanan Anda telah kami terima. Tim kami akan segera menghubungi Anda melalui
+          WhatsApp untuk konfirmasi ketersediaan stok dan instruksi pembayaran manual.
         </p>
 
         {/* WhatsApp CTA */}
