@@ -7,7 +7,7 @@ import { getProducts, getArchives } from '@/lib/api';
 export const metadata: Metadata = {
   title: 'Archive',
   description:
-    'Explore the historical archive of past RIO COLLECTION editions. Previous designs and past drops, preserved.',
+    'Explore the historical archive of past RIO COLLECTION editions. Previous designs and past drops, preserved.'
 };
 
 export default async function ArchivePage() {
@@ -23,7 +23,9 @@ export default async function ArchivePage() {
           className="mb-4 font-[family-name:var(--font-hanken)] text-[11px] uppercase tracking-[0.08em] text-[var(--cat-on-surface-variant)]"
           aria-label="Breadcrumb"
         >
-          <Link href="/" className="hover:text-[var(--cat-on-surface)] transition-colors duration-150">Home</Link>
+          <Link href="/" className="hover:text-[var(--cat-on-surface)] transition-colors duration-150">
+            Home
+          </Link>
           <span className="mx-2">/</span>
           <span className="text-[var(--cat-on-surface)] font-semibold">Archive</span>
         </nav>
@@ -40,11 +42,7 @@ export default async function ArchivePage() {
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 pb-12 md:pb-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {archivedProducts.map((product) => (
-            <Link
-              key={product.id}
-              href={`/products/${product.slug}`}
-              className="group block"
-            >
+            <Link key={product.id} href={`/products/${product.slug}`} className="group block">
               <div className="relative aspect-[4/5] overflow-hidden bg-[var(--cat-surface-container-low)]">
                 <Image
                   src={product.imageUrl}
@@ -79,9 +77,10 @@ export default async function ArchivePage() {
             &quot;Merekam jejak perjalanan estetika kami.&quot;
           </p>
           <p className="mt-6 font-[family-name:var(--font-hanken)] text-[13px] md:text-[14px] leading-relaxed text-[var(--cat-on-surface-variant)] max-w-lg mx-auto">
-            This archive serves as a permanent record of our evolving dialogue with form, material, and time.
-            Each piece documented here represents a singular iteration of our uncompromising commitment to slow fashion
-            and independent craftsmanship—now retired, but foundational to our ongoing narrative.
+            This archive serves as a permanent record of our evolving dialogue with form, material,
+            and time. Each piece documented here represents a singular iteration of our
+            uncompromising commitment to slow fashion and independent craftsmanship—now retired, but
+            foundational to our ongoing narrative.
           </p>
         </div>
       </section>
@@ -121,7 +120,11 @@ export default async function ArchivePage() {
       {/* Archive Coming Soon */}
       <section className="mx-auto max-w-[1400px] px-4 md:px-16 pb-16 md:pb-24">
         <div className="text-center py-12 border-t border-[var(--cat-stone)]">
-          <BookOpen size={24} strokeWidth={1.5} className="mx-auto text-[var(--cat-on-surface-variant)] mb-4" />
+          <BookOpen
+            size={24}
+            strokeWidth={1.5}
+            className="mx-auto text-[var(--cat-on-surface-variant)] mb-4"
+          />
           <p className="font-[family-name:var(--font-eb-garamond)] text-[22px] md:text-[28px] font-normal text-[var(--cat-on-surface)] italic">
             &quot;Arsip sedang menunggu babak pertamanya.&quot;
           </p>
