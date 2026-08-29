@@ -298,3 +298,10 @@
 [data-catalogue] ::-webkit-scrollbar-thumb:hover {
   background: rgba(28, 27, 27, 0.35);
 }
+
+/* Hide Next.js dev indicator floating badge */
+nextjs-portal,
+#nextjs-dev-tools,
+[data-nextjs-toast] {
+  display: none !important;
+}
