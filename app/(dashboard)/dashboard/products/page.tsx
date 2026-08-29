@@ -466,7 +466,7 @@ export default function ProductsCmsPage() {
             return (
               <Badge
                 variant="outline"
-                className="bg-gradient-to-r from-sky-500/15 via-blue-500/10 to-indigo-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30 text-[11px] font-bold tracking-wider uppercase px-3 py-1 rounded-full gap-1.5 backdrop-blur-xs shadow-xs transition-all hover:border-sky-400/50"
+                className="bg-linear-to-r from-sky-500/15 via-blue-500/10 to-indigo-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30 text-[11px] font-bold tracking-wider uppercase px-3 py-1 rounded-full gap-1.5 backdrop-blur-xs shadow-xs transition-all hover:border-sky-400/50"
               >
                 <InfinityIcon className="h-3.5 w-3.5 shrink-0 stroke-[2.5] text-sky-500 dark:text-sky-400" />
                 <span className="font-mono text-[11px]">Tanpa Batas</span>
