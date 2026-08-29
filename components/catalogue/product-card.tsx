@@ -1,8 +1,8 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { cn, formatPrice } from '@/lib/utils';
 import { StatusBadge } from '@/components/catalogue/status-badge';
 import type { Product } from '@/types/catalogue.types';
+import { SafeImage } from '@/components/shared';
 
 interface ProductCardProps {
   product: Product;
@@ -21,7 +21,7 @@ export function ProductCard({ product, className, priority = false }: ProductCar
     >
       {/* Image Container — 4:5 ratio, 0px corners */}
       <div className="relative aspect-4/5 overflow-hidden bg-(--cat-surface-container-low)">
-        <Image
+        <SafeImage
           src={product.imageUrl}
           alt={`${product.name} — ${product.color}`}
           fill

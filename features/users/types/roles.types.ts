@@ -45,6 +45,7 @@ export interface UserRole {
   description?: string;
   isSystemRole?: boolean;
   permissions: RolePermissions;
+  isActive?: boolean;
 }
 
 export interface ActionPermission {

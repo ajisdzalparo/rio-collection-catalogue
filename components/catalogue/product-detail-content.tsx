@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
 import { ArrowRight, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
@@ -58,7 +58,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                     )}
                     aria-label={`View product image ${idx + 1}`}
                   >
-                    <Image
+                    <SafeImage
                       src={img}
                       alt={`${product.name} view ${idx + 1}`}
                       fill
@@ -72,7 +72,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
             {/* Main Active Image View */}
             <div className="relative flex-1 aspect-4/5 overflow-hidden bg-(--cat-surface-container-low) group">
-              <Image
+              <SafeImage
                 src={activeImage}
                 alt={`${product.name} — ${product.color} (View ${activeImageIndex + 1})`}
                 fill
@@ -270,7 +270,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             </p>
           </div>
           <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
-            <Image
+            <SafeImage
               src={imagesList[1] || product.imageUrl}
               alt={`${product.name} detail view`}
               fill

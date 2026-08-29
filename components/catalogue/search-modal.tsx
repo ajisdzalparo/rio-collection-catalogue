@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
 import { Search, X, ArrowRight, Tag } from 'lucide-react';
 import { getProducts } from '@/lib/api';
@@ -137,15 +137,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:border-(--cat-stone) hover:bg-(--cat-surface-container-low) transition-all group"
                   >
                     <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-lg bg-(--cat-surface-container-low) border border-(--cat-stone)">
-                      {product.imageUrl && (
-                        <Image
-                          src={product.imageUrl}
-                          alt={product.name}
-                          fill
-                          sizes="56px"
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      )}
+                      <SafeImage
+                        src={product.imageUrl}
+                        alt={product.name}
+                        fill
+                        sizes="56px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-hanken text-sm font-semibold text-(--cat-on-surface) truncate">

@@ -1333,14 +1333,13 @@ const columns: Column<UserRow>[] = [
   filterComponents={<Button variant="outline" size="sm">Filter Options</Button>}
   bulkActions={(selectedItems, clearSelection) => (
     <Button
-      variant="destructive"
-      size="xs"
       onClick={() => {
         toast.error(\`Deleted \${selectedItems.length} user(s)\`);
         clearSelection();
       }}
+      className="gap-1.5 text-xs font-bold h-8 px-3.5 rounded-full bg-red-600 hover:bg-red-500 active:bg-red-700 text-white border-none transition-all cursor-pointer shadow-md shadow-red-950/20"
     >
-      Delete Selected ({selectedItems.length})
+      Delete
     </Button>
   )}
   pageSize={5}

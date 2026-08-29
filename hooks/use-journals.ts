@@ -3,10 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { JournalArticle } from '@/types/catalogue.types';
 import axios from 'axios';
-import { env } from '@/config/env';
 
 async function fetchJournals(): Promise<JournalArticle[]> {
-  const { data } = await axios.get(`${env.velomockUrl}/api/v1/journals`);
+  const { data } = await axios.get('/api/v1/journals');
   if (data.code === 200 && data.data) {
     return data.data;
   }
@@ -26,40 +25,31 @@ export function useJournals() {
 
   const createMutation = useMutation({
     mutationFn: async (newArticle: JournalArticle) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return newArticle;
+      const { data } = await axios.post('/api/v1/journals', newArticle);
+      return data.data || newArticle;
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData<JournalArticle[]>(['journals'], (old) => {
-        if (!old) return [data];
-        return [data, ...old];
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journals'] });
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: async (updatedArticle: JournalArticle) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return updatedArticle;
+      const { data } = await axios.put(`/api/v1/journals/${updatedArticle.id}`, updatedArticle);
+      return data.data || updatedArticle;
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData<JournalArticle[]>(['journals'], (old) => {
-        if (!old) return [];
-        return old.map((a) => (a.id === data.id ? data : a));
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journals'] });
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await axios.delete(`/api/v1/journals/${id}`);
       return id;
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData<JournalArticle[]>(['journals'], (old) => {
-        if (!old) return [];
-        return old.filter((a) => a.id !== data);
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journals'] });
     }
   });
 

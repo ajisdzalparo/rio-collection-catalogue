@@ -20,9 +20,24 @@ import {
 } from '@/components/ui/sidebar';
 import { LogOut, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRbac } from '@/features/users/hooks/use-rbac';
+import type { RolePermissions } from '@/features/users/types/roles.types';
+
+const NAVIGATION_PERMISSION_MAP: Record<string, string> = {
+  'Overview': 'overview.view',
+  'Orders': 'orders.view',
+  'Master Data': 'products.view',
+  'Journal': 'journal.view',
+  'Testimonials': 'testimonies.view',
+  'Laporan Penjualan': 'reports.view',
+  'Store Settings': 'settings.view',
+  'User Management': 'settings.view',
+  'Customers': 'orders.view'
+};
 
 export default function AppSidebar() {
   const pathname = usePathname();
+  const { hasPermission } = useRbac();
 
   const [openSubMenus, setOpenSubMenus] = React.useState<Record<string, boolean>>(() => {
     const initialState: Record<string, boolean> = {};
@@ -71,6 +86,11 @@ export default function AppSidebar() {
           <SidebarGroupContent className="mt-1">
             <SidebarMenu className="space-y-1">
               {navigation.map((item) => {
+                const permKey = NAVIGATION_PERMISSION_MAP[item.title];
+                if (permKey && !hasPermission(permKey as keyof RolePermissions)) {
+                  return null;
+                }
+
                 const Icon = item.icon;
                 const hasSubMenu = Boolean(item.subMenu && item.subMenu.length > 0);
                 const isSubActive =
@@ -79,7 +99,9 @@ export default function AppSidebar() {
                     (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
                   );
                 const isActive =
-                  !hasSubMenu && (pathname === item.href || pathname.startsWith(`${item.href}/`));
+                  !hasSubMenu &&
+                  (pathname === item.href ||
+                    (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`)));
                 const isOpen = openSubMenus[item.title] ?? isSubActive;
 
                 if (hasSubMenu) {

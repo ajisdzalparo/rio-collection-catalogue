@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Tag, Palette, Scaling, BookOpen, Plus, Check, AlertCircle, Pencil, Trash2, Sparkles } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Plus, Check, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -24,6 +26,7 @@ import {
   useSizesQuery,
   useTopicsQuery,
   useEditionsQuery,
+  useMasterMutations,
   type CategoryItem,
   type ColorItem,
   type TopicItem,
@@ -32,10 +35,9 @@ import {
 import { cn } from '@/lib/utils';
 
 function MasterDataPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
-  // React Query hooks to fetch from VeloMock staging API
+  // React Query hooks to fetch from native backend API
   const { data: mockCats, isLoading: loadingCats } = useCategoriesQuery();
   const { data: mockCols, isLoading: loadingCols } = useColorsQuery();
   const { data: mockSizes } = useSizesQuery();
@@ -91,9 +93,31 @@ function MasterDataPageContent() {
 
   const activeTab = searchParams.get('tab') || 'categories';
 
-  const handleTabChange = (tab: string) => {
-    router.push(`/dashboard/master?tab=${tab}`, { scroll: false });
+  const tabTitles: Record<string, { title: string; desc: string }> = {
+    categories: {
+      title: 'Kategori Kaos',
+      desc: 'Kelola data kategori kaos untuk katalog produk.'
+    },
+    colors: {
+      title: 'Warna Kaos (Hex)',
+      desc: 'Kelola kode warna kain standar yang digunakan pada model produk.'
+    },
+    sizes: {
+      title: 'Ukuran Kaos (Sizes)',
+      desc: 'Kelola standarisasi ukuran kaos yang aktif di catalog.'
+    },
+    editions: {
+      title: 'Edisi / Drop Kaos',
+      desc: 'Kelola edisi peluncuran rilis produk (drops).'
+    },
+    topics: {
+      title: 'Topik Jurnal',
+      desc: 'Kelola topik tulisan untuk jurnal editorial blog.'
+    }
   };
+
+  const currentInfo = tabTitles[activeTab] || tabTitles.categories;
+
 
   // Dialog & Form states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -126,63 +150,105 @@ function MasterDataPageContent() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const masterMutations = useMasterMutations();
+
+  const handleSave = async () => {
     if (!itemName.trim()) return;
 
-    if (editingItem) {
-      if (editingItem.type === 'cat') {
-        updateCategory(editingItem.id, itemName, itemDesc);
-      } else if (editingItem.type === 'col') {
-        updateColor(editingItem.id, itemName, itemHex);
-      } else if (editingItem.type === 'top') {
-        updateTopic(editingItem.id, itemName, itemDesc);
-      } else if (editingItem.type === 'ed') {
-        updateEdition(editingItem.id, itemName, itemDesc);
+    try {
+      if (editingItem) {
+        if (editingItem.type === 'cat') {
+          await masterMutations.updateCategory({ id: editingItem.id, name: itemName, description: itemDesc });
+          updateCategory(editingItem.id, itemName, itemDesc);
+        } else if (editingItem.type === 'col') {
+          await masterMutations.updateColor({ id: editingItem.id, name: itemName, hex: itemHex });
+          updateColor(editingItem.id, itemName, itemHex);
+        } else if (editingItem.type === 'top') {
+          await masterMutations.updateTopic({ id: editingItem.id, name: itemName, description: itemDesc });
+          updateTopic(editingItem.id, itemName, itemDesc);
+        } else if (editingItem.type === 'ed') {
+          updateEdition(editingItem.id, itemName, itemDesc);
+        }
+      } else {
+        if (activeTab === 'categories') {
+          await masterMutations.addCategory({ name: itemName, description: itemDesc });
+          addCategory(itemName, itemDesc);
+        } else if (activeTab === 'colors') {
+          await masterMutations.addColor({ name: itemName, hex: itemHex });
+          addColor(itemName, itemHex);
+        } else if (activeTab === 'topics') {
+          await masterMutations.addTopic({ name: itemName, description: itemDesc });
+          addTopic(itemName, itemDesc);
+        } else if (activeTab === 'editions') {
+          addEdition(itemName, itemDesc);
+        }
       }
-    } else {
-      if (activeTab === 'categories') {
-        addCategory(itemName, itemDesc);
-      } else if (activeTab === 'colors') {
-        addColor(itemName, itemHex);
-      } else if (activeTab === 'topics') {
-        addTopic(itemName, itemDesc);
-      } else if (activeTab === 'editions') {
-        addEdition(itemName, itemDesc);
-      }
+    } catch (error) {
+      console.error('Failed to save master item:', error);
     }
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (type: 'cat' | 'col' | 'top' | 'ed', id: string, name: string) => {
+  const handleDelete = async (type: 'cat' | 'col' | 'top' | 'ed', id: string, name: string) => {
     if (confirm(`Apakah Anda yakin ingin menghapus "${name}"?`)) {
-      if (type === 'cat') deleteCategory(id);
-      else if (type === 'col') deleteColor(id);
-      else if (type === 'top') deleteTopic(id);
-      else if (type === 'ed') deleteEdition(id);
+      try {
+        if (type === 'cat') {
+          await masterMutations.deleteCategory(id);
+          deleteCategory(id);
+        } else if (type === 'col') {
+          await masterMutations.deleteColor(id);
+          deleteColor(id);
+        } else if (type === 'top') {
+          await masterMutations.deleteTopic(id);
+          deleteTopic(id);
+        } else if (type === 'ed') {
+          deleteEdition(id);
+        }
+      } catch (error) {
+        console.error('Failed to delete master item:', error);
+      }
     }
   };
-
   // Categories Columns
   const categoryColumns: Column<CategoryItem>[] = [
     {
       header: 'Nama Kategori',
       accessorKey: 'name',
       sortable: true,
-      className: 'font-bold text-xs w-1/3'
+      className: 'font-bold text-xs w-1/4'
     },
     {
       header: 'Slug / URL Key',
       accessorKey: 'slug',
-      className: 'font-mono text-[10px] text-muted-foreground w-1/3'
+      className: 'font-mono text-[10px] text-muted-foreground w-1/4'
     },
     {
       header: 'Keterangan',
       accessorKey: 'description',
-      className: 'text-xs text-muted-foreground w-1/3'
+      className: 'text-xs text-muted-foreground w-1/4'
+    },
+    {
+      header: 'Status',
+      className: 'w-20',
+      cell: (item) => (
+        <Switch
+          checked={item.isActive ?? true}
+          onCheckedChange={async (checked) => {
+            try {
+              await masterMutations.updateCategory({ id: item.id, isActive: checked });
+              updateCategory(item.id, undefined, undefined, checked);
+              toast.success(`Kategori "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+            } catch (error) {
+              console.error(error);
+              toast.error('Gagal memperbarui status');
+            }
+          }}
+        />
+      )
     },
     {
       header: 'Aksi',
-      className: 'text-right',
+      className: 'text-right w-24',
       cell: (item) => (
         <div className="flex justify-end gap-1">
           <Button
@@ -222,16 +288,35 @@ function MasterDataPageContent() {
       header: 'Nama Warna',
       accessorKey: 'name',
       sortable: true,
-      className: 'font-bold text-xs w-1/3'
+      className: 'font-bold text-xs w-1/4'
     },
     {
       header: 'Kode Hex Color',
       accessorKey: 'hex',
-      className: 'font-mono text-xs uppercase font-semibold text-muted-foreground w-1/3'
+      className: 'font-mono text-xs uppercase font-semibold text-muted-foreground w-1/4'
+    },
+    {
+      header: 'Status',
+      className: 'w-20',
+      cell: (item) => (
+        <Switch
+          checked={item.isActive ?? true}
+          onCheckedChange={async (checked) => {
+            try {
+              await masterMutations.updateColor({ id: item.id, isActive: checked });
+              updateColor(item.id, undefined, undefined, checked);
+              toast.success(`Warna "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+            } catch (error) {
+              console.error(error);
+              toast.error('Gagal memperbarui status');
+            }
+          }}
+        />
+      )
     },
     {
       header: 'Aksi',
-      className: 'text-right',
+      className: 'text-right w-24',
       cell: (item) => (
         <div className="flex justify-end gap-1">
           <Button
@@ -261,16 +346,35 @@ function MasterDataPageContent() {
       header: 'Nama Topik Jurnal',
       accessorKey: 'name',
       sortable: true,
-      className: 'font-bold text-xs w-1/2 uppercase tracking-wider'
+      className: 'font-bold text-xs w-1/3 uppercase tracking-wider'
     },
     {
       header: 'Deskripsi Topik',
       accessorKey: 'description',
-      className: 'text-xs text-muted-foreground w-1/2'
+      className: 'text-xs text-muted-foreground w-1/3'
+    },
+    {
+      header: 'Status',
+      className: 'w-20',
+      cell: (item) => (
+        <Switch
+          checked={item.isActive ?? true}
+          onCheckedChange={async (checked) => {
+            try {
+              await masterMutations.updateTopic({ id: item.id, isActive: checked });
+              updateTopic(item.id, undefined, undefined, checked);
+              toast.success(`Topik "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+            } catch (error) {
+              console.error(error);
+              toast.error('Gagal memperbarui status');
+            }
+          }}
+        />
+      )
     },
     {
       header: 'Aksi',
-      className: 'text-right',
+      className: 'text-right w-24',
       cell: (item) => (
         <div className="flex justify-end gap-1">
           <Button
@@ -342,9 +446,9 @@ function MasterDataPageContent() {
     <VStack gap="lg" className="pb-10">
       <Flex direction="responsive" justify="between" align="center" gap="md">
         <VStack gap="xs">
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Master Data</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{currentInfo.title}</h1>
           <p className="text-sm text-muted-foreground pt-1">
-            Konfigurasi parameter dasar seperti kategori produk, warna, ukuran, dan topik jurnal.
+            {currentInfo.desc}
           </p>
         </VStack>
 
@@ -358,74 +462,6 @@ function MasterDataPageContent() {
           </Button>
         )}
       </Flex>
-
-      {/* Tabs Row */}
-      <div className="flex border-b border-border/20 gap-1 pb-px overflow-x-auto scrollbar-none">
-        <button
-          onClick={() => handleTabChange('categories')}
-          className={cn(
-            'flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap',
-            activeTab === 'categories'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <Tag className="h-4 w-4" />
-          Kategori Kaos
-        </button>
-
-        <button
-          onClick={() => handleTabChange('colors')}
-          className={cn(
-            'flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap',
-            activeTab === 'colors'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <Palette className="h-4 w-4" />
-          Warna (Hex)
-        </button>
-
-        <button
-          onClick={() => handleTabChange('sizes')}
-          className={cn(
-            'flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap',
-            activeTab === 'sizes'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <Scaling className="h-4 w-4" />
-          Ukuran (Sizes)
-        </button>
-
-        <button
-          onClick={() => handleTabChange('editions')}
-          className={cn(
-            'flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap',
-            activeTab === 'editions'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <Sparkles className="h-4 w-4" />
-          Edisi / Drop Kaos
-        </button>
-
-        <button
-          onClick={() => handleTabChange('topics')}
-          className={cn(
-            'flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap',
-            activeTab === 'topics'
-              ? 'border-foreground text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <BookOpen className="h-4 w-4" />
-          Topik Jurnal
-        </button>
-      </div>
 
       {/* Tab Panels */}
       {activeTab === 'categories' && (
@@ -498,7 +534,17 @@ function MasterDataPageContent() {
               <button
                 key={s.size}
                 type="button"
-                onClick={() => toggleSize(s.size)}
+                onClick={async () => {
+                  const nextActive = !s.isActive;
+                  try {
+                    await masterMutations.toggleSize({ size: s.size, isActive: nextActive });
+                    toggleSize(s.size);
+                    toast.success(`Ukuran "${s.size}" berhasil ${nextActive ? 'diaktifkan' : 'dinonaktifkan'}`);
+                  } catch (error) {
+                    console.error(error);
+                    toast.error('Gagal memperbarui status ukuran');
+                  }
+                }}
                 className={cn(
                   'h-14 flex items-center justify-between px-4 font-bold border rounded-2xl transition-all cursor-pointer select-none',
                   s.isActive

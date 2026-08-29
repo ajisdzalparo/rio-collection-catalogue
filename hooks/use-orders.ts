@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { env } from '@/config/env';
 
 export interface OrderItem {
   productId: string;
@@ -37,7 +36,7 @@ export interface Order {
 const STALE_PENDING_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 async function fetchOrders(): Promise<Order[]> {
-  const { data } = await axios.get(`${env.velomockUrl}/api/v1/orders`);
+  const { data } = await axios.get('/api/v1/orders');
   if (data.code !== 200 || !data.data) {
     throw new Error(data.message || 'Invalid orders data received');
   }
@@ -105,25 +104,17 @@ export function useOrders() {
       courierName?: string;
       trackingNumber?: string;
     }) => {
-      // Mock network delay & return inputs to update cache
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return { id, status, adminNotes, courierName, trackingNumber };
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData<Order[]>(['orders'], (old) => {
-        if (!old) return [];
-        return old.map((o) =>
-          o.id === data.id
-            ? {
-                ...o,
-                status: data.status,
-                adminNotes: data.adminNotes,
-                courierName: data.courierName ?? o.courierName,
-                trackingNumber: data.trackingNumber ?? o.trackingNumber
-              }
-            : o
-        );
+      const { data } = await axios.patch(`/api/v1/orders/${id}`, {
+        status,
+        adminNotes,
+        courierName,
+        trackingNumber
       });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
     }
   });
 

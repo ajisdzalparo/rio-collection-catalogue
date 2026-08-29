@@ -5,11 +5,34 @@ import { useUsers } from '../hooks/use-users';
 import { DataTable, ErrorState, type Column } from '@/components/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { UserActions } from './user-actions';
 import { MOCK_USERS } from '../data/mock-users';
+import { useUpdateUser } from '../hooks/use-update-user';
 import type { User } from '../types/user.types';
+
+function UserStatusSwitch({ user }: { user: User }) {
+  const { mutateAsync: updateUser } = useUpdateUser();
+  const checked = user.status === 'active';
+
+  return (
+    <Switch
+      checked={checked}
+      onCheckedChange={async (val) => {
+        try {
+          await updateUser({
+            id: user.id,
+            payload: { status: val ? 'active' : 'inactive' }
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      }}
+    />
+  );
+}
 
 const columns: Column<User>[] = [
   {
@@ -51,19 +74,7 @@ const columns: Column<User>[] = [
     header: 'Status',
     accessorKey: 'status',
     sortable: true,
-    cell: (user) => {
-      const isInactive = user.status === 'inactive';
-      return (
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted/50 border border-border/50 text-[11px] font-bold">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              isInactive ? 'bg-destructive shadow-xs' : 'bg-emerald-500 shadow-xs'
-            }`}
-          />
-          <span className="capitalize text-foreground">{user.status ?? 'active'}</span>
-        </div>
-      );
-    }
+    cell: (user) => <UserStatusSwitch user={user} />
   },
   {
     header: 'Actions',
@@ -108,13 +119,11 @@ export default function UserTable() {
       enableSelection
       bulkActions={(selected, clear) => (
         <Button
-          variant="destructive"
-          size="xs"
           onClick={() => handleBulkDelete(selected, clear)}
-          className="gap-1.5 text-xs font-semibold rounded-xl"
+          className="gap-1.5 text-xs font-bold h-8 px-3.5 rounded-full bg-red-600 hover:bg-red-500 active:bg-red-700 text-white border-none transition-all cursor-pointer shadow-md shadow-red-950/20"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          <span>Delete Selected ({selected.length})</span>
+          <span>Hapus</span>
         </Button>
       )}
     />

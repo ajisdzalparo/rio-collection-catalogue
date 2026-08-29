@@ -1,14 +1,13 @@
 'use client';
 
 import React from 'react';
-import { DataTable, type Column } from '@/components/shared';
-import { Badge } from '@/components/ui/badge';
+import { DataTable, type Column, CMSBadge } from '@/components/shared';
 import { Button } from '@/components/ui/button';
-import { KeyRound, Edit, Trash2, ShieldCheck, CheckCircle2, Eye } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Edit, Trash2, ShieldCheck, CheckCircle2, Eye } from 'lucide-react';
 import type { UserRole } from '../types/roles.types';
 import { PERMISSION_TREE } from '../data/permission-tree';
-import { useRbacStore } from '../hooks/use-rbac';
-import { cn } from '@/lib/utils';
+import { useRbacStore, syncRolePermissions } from '../hooks/use-rbac';
 
 interface RoleTableProps {
   onEditRole: (role: UserRole) => void;
@@ -16,7 +15,7 @@ interface RoleTableProps {
 }
 
 export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
-  const { roles, deleteRole } = useRbacStore();
+  const { roles, deleteRole, updateRole } = useRbacStore();
 
   const totalActionsCount = PERMISSION_TREE.reduce(
     (acc, menu) => acc + menu.actions.length,
@@ -35,31 +34,15 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
       accessorKey: 'name',
       sortable: true,
       cell: (role) => (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-2xs">
-            <KeyRound className="h-4 w-4" />
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-foreground text-xs uppercase tracking-wide">
-                {role.name}
-              </span>
-              {role.isSystemRole ? (
-                <span className="text-[9px] font-bold uppercase tracking-wider bg-muted text-muted-foreground px-1.5 py-0.5 rounded-md border border-border/40">
-                  System Role
-                </span>
-              ) : (
-                <span className="text-[9px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded-md border border-primary/20">
-                  Master Custom
-                </span>
-              )}
-            </div>
-            {role.description && (
-              <span className="text-[11px] text-muted-foreground line-clamp-1">
-                {role.description}
-              </span>
-            )}
-          </div>
+        <div className="flex flex-col py-1">
+          <span className="font-bold text-foreground text-sm uppercase tracking-wide">
+            {role.name}
+          </span>
+          {role.description && (
+            <span className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+              {role.description}
+            </span>
+          )}
         </div>
       )
     },
@@ -67,71 +50,51 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
       header: 'Hak Akses Menu (Permissions)',
       accessorKey: 'permissions',
       cell: (role) => {
+        const syncedPerms = syncRolePermissions(role.permissions, role.name);
         let activeCount = 0;
         PERMISSION_TREE.forEach((menu) => {
           menu.actions.forEach((act) => {
-            if (role.permissions && role.permissions[act.key]) {
+            if (syncedPerms[act.key]) {
               activeCount += 1;
             }
           });
         });
 
-        // Fallback for legacy permission flags
-        if (activeCount === 0 && role.permissions) {
-          const legacyKeys = [
-            'viewOverview',
-            'manageOrders',
-            'manageProducts',
-            'manageJournal',
-            'manageSettings',
-            'viewReports'
-          ];
-          activeCount = legacyKeys.filter((k) => role.permissions[k]).length;
-        }
-
         const isFullAccess = activeCount >= totalActionsCount || role.name === 'Admin';
 
         return (
-          <div className="flex flex-col gap-1.5 py-1">
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={isFullAccess ? 'default' : activeCount > 0 ? 'secondary' : 'outline'}
-                className="text-[10px] font-bold px-2 py-0.5"
-              >
-                {isFullAccess ? (
-                  <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-400 inline" />
-                ) : (
+          <div className="flex items-center py-1">
+            <CMSBadge variant={isFullAccess ? 'success' : activeCount > 0 ? 'info' : 'neutral'}>
+              {isFullAccess ? (
+                <span className="flex items-center">
+                  <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-200 inline" />
+                  Akses Penuh
+                </span>
+              ) : (
+                <span className="flex items-center">
                   <ShieldCheck className="h-3 w-3 mr-1 inline" />
-                )}
-                {isFullAccess ? 'Akses Penuh' : `${activeCount} / ${totalActionsCount} Akses Menu`}
-              </Badge>
-            </div>
-            <div className="flex flex-wrap gap-1 max-w-md">
-              {PERMISSION_TREE.map((menu) => {
-                const hasMenuAccess = menu.actions.some(
-                  (act) => role.permissions && role.permissions[act.key]
-                );
-
-                if (!hasMenuAccess && !isFullAccess) return null;
-
-                return (
-                  <span
-                    key={menu.id}
-                    className={cn(
-                      'text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors',
-                      hasMenuAccess || isFullAccess
-                        ? 'bg-foreground/5 border-foreground/20 text-foreground'
-                        : 'bg-muted/40 border-border/30 text-muted-foreground'
-                    )}
-                  >
-                    {menu.menuName.replace(/^\d+\.\s*/, '')}
-                  </span>
-                );
-              })}
-            </div>
+                  {activeCount} / {totalActionsCount} Akses Menu
+                </span>
+              )}
+            </CMSBadge>
           </div>
         );
       }
+    },
+    {
+      header: 'Status',
+      accessorKey: 'isActive',
+      className: 'w-24 text-center',
+      cell: (role) => (
+        <div className="flex items-center justify-center">
+          <Switch
+            checked={role.isActive ?? true}
+            onCheckedChange={(checked) => {
+              updateRole(role.name, { isActive: checked });
+            }}
+          />
+        </div>
+      )
     },
     {
       header: 'Actions',
@@ -165,7 +128,7 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
               size="sm"
               variant="ghost"
               onClick={() => handleDelete(role.name)}
-              className="h-8 w-8 p-0 cursor-pointer text-destructive hover:bg-destructive/10"
+              className="h-8 w-8 p-0 cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Hapus Role"
             >
               <Trash2 className="h-3.5 w-3.5" />

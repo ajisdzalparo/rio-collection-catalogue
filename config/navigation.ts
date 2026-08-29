@@ -38,6 +38,7 @@ export const navigation: NavigationItem[] = [
       { title: 'Kategori Kaos', href: '/dashboard/master?tab=categories' },
       { title: 'Warna (Hex)', href: '/dashboard/master?tab=colors' },
       { title: 'Ukuran (Sizes)', href: '/dashboard/master?tab=sizes' },
+      { title: 'Edisi / Drop Kaos', href: '/dashboard/master?tab=editions' },
       { title: 'Topik Jurnal', href: '/dashboard/master?tab=topics' }
     ]
   },

@@ -3,10 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product, StockMode } from '@/types/catalogue.types';
 import axios from 'axios';
-import { env } from '@/config/env';
 
 async function fetchProducts(): Promise<Product[]> {
-  const { data } = await axios.get(`${env.velomockUrl}/api/v1/products`);
+  const { data } = await axios.get('/api/v1/products');
   let prods: Product[] = [];
   if (data.code === 200 && data.data) {
     prods = data.data;
@@ -63,40 +62,31 @@ export function useProducts() {
 
   const createMutation = useMutation({
     mutationFn: async (newProduct: Product) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return newProduct;
+      const { data } = await axios.post('/api/v1/products', newProduct);
+      return data.data || newProduct;
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData<Product[]>(['products'], (old) => {
-        if (!old) return [data];
-        return [data, ...old];
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: async (updatedProduct: Product) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return updatedProduct;
+      const { data } = await axios.put(`/api/v1/products/${updatedProduct.id}`, updatedProduct);
+      return data.data || updatedProduct;
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData<Product[]>(['products'], (old) => {
-        if (!old) return [];
-        return old.map((p) => (p.id === data.id ? data : p));
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await axios.delete(`/api/v1/products/${id}`);
       return id;
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData<Product[]>(['products'], (old) => {
-        if (!old) return [];
-        return old.filter((p) => p.id !== data);
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     }
   });
 

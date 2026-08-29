@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Save, ShoppingBag, Share2 } from 'lucide-react';
+import { Save, ShoppingBag, Share2, LayoutTemplate } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { VStack, Flex } from '@/components/ui/layout';
 import { useStoreSettingsStore, useStoreSettingsQuery, type StoreSettings } from '@/hooks/use-store-settings';
+import { ImageUpload } from '@/components/shared/image-upload';
 import { toast } from 'sonner';
+
+import axios from 'axios';
 
 export default function StoreSettingsPage() {
   const { data: mockSettings } = useStoreSettingsQuery();
@@ -21,6 +24,13 @@ export default function StoreSettingsPage() {
   const pinterestUrlStore = useStoreSettingsStore((s) => s.pinterestUrl || '');
   const xTwitterUrlStore = useStoreSettingsStore((s) => s.xTwitterUrl || '');
 
+  const heroTitleStore = useStoreSettingsStore((s) => s.heroTitle || 'EDITION 001');
+  const heroSubtitleStore = useStoreSettingsStore((s) => s.heroSubtitle || 'Eksplorasi siluet dan tekstur dalam jumlah terbatas.');
+  const heroLeftImageStore = useStoreSettingsStore((s) => s.heroLeftImage || '');
+  const heroRightImageStore = useStoreSettingsStore((s) => s.heroRightImage || '');
+  const heroCtaTextStore = useStoreSettingsStore((s) => s.heroCtaText || 'Eksplor Koleksi');
+  const heroCtaLinkStore = useStoreSettingsStore((s) => s.heroCtaLink || '/catalogue');
+
   const setSettings = useStoreSettingsStore((s) => s.setSettings);
   const updateSettings = useStoreSettingsStore((s) => s.updateSettings);
 
@@ -33,10 +43,17 @@ export default function StoreSettingsPage() {
   const [pinterestUrl, setPinterestUrl] = useState(pinterestUrlStore);
   const [xTwitterUrl, setXTwitterUrl] = useState(xTwitterUrlStore);
 
+  const [heroTitle, setHeroTitle] = useState(heroTitleStore);
+  const [heroSubtitle, setHeroSubtitle] = useState(heroSubtitleStore);
+  const [heroLeftImage, setHeroLeftImage] = useState(heroLeftImageStore);
+  const [heroRightImage, setHeroRightImage] = useState(heroRightImageStore);
+  const [heroCtaText, setHeroCtaText] = useState(heroCtaTextStore);
+  const [heroCtaLink, setHeroCtaLink] = useState(heroCtaLinkStore);
+
   const [isSaving, setIsSaving] = useState(false);
   const [prevMockSettings, setPrevMockSettings] = useState<StoreSettings | undefined>(undefined);
 
-  // Sync VeloMock API data to Zustand store and local form state once fetched from VeloMock
+  // Sync database API data to Zustand store and local form state once fetched
   if (mockSettings && mockSettings !== prevMockSettings) {
     setPrevMockSettings(mockSettings);
     setSettings(mockSettings);
@@ -47,12 +64,19 @@ export default function StoreSettingsPage() {
     setFacebookUrl(mockSettings.facebookUrl || '');
     setPinterestUrl(mockSettings.pinterestUrl || '');
     setXTwitterUrl(mockSettings.xTwitterUrl || '');
+
+    if (mockSettings.heroTitle) setHeroTitle(mockSettings.heroTitle);
+    if (mockSettings.heroSubtitle) setHeroSubtitle(mockSettings.heroSubtitle);
+    if (mockSettings.heroLeftImage) setHeroLeftImage(mockSettings.heroLeftImage);
+    if (mockSettings.heroRightImage) setHeroRightImage(mockSettings.heroRightImage);
+    if (mockSettings.heroCtaText) setHeroCtaText(mockSettings.heroCtaText);
+    if (mockSettings.heroCtaLink) setHeroCtaLink(mockSettings.heroCtaLink);
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      updateSettings({
+    try {
+      const payload = {
         storeName,
         whatsappNumber,
         flatShippingRate: Number(flatShippingRate),
@@ -60,24 +84,129 @@ export default function StoreSettingsPage() {
         tiktokUrl,
         facebookUrl,
         pinterestUrl,
-        xTwitterUrl
-      });
+        xTwitterUrl,
+        heroTitle,
+        heroSubtitle,
+        heroLeftImage,
+        heroRightImage,
+        heroCtaText,
+        heroCtaLink
+      };
+      await axios.put('/api/v1/settings', payload);
+      updateSettings(payload);
+      toast.success('Pengaturan toko, Hero Section & media sosial berhasil disimpan!');
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      toast.error('Gagal menyimpan pengaturan toko ke database');
+    } finally {
       setIsSaving(false);
-      toast.success('Pengaturan toko & media sosial berhasil disimpan!');
-    }, 400);
+    }
   };
 
   return (
     <VStack gap="lg" className="pb-10 w-full">
       <VStack gap="xs">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Store Settings</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Store Settings & CMS</h1>
         <p className="text-sm text-muted-foreground pt-1">
-          Atur data profil toko, media sosial (Instagram, TikTok, dll), dan nomor billing WhatsApp.
+          Atur profil toko, Banner Hero Katalog Utama, media sosial, dan kontak WhatsApp.
         </p>
       </VStack>
 
       <div className="space-y-5 max-w-3xl">
-        {/* Card 1: General Info */}
+        {/* Card 1: Hero Section CMS Settings */}
+        <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-4 shadow-2xs">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-2">
+            <LayoutTemplate className="h-4 w-4 text-primary" />
+            Hero Banner Katalog Depan (CMS)
+          </h3>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="hero-title" className="text-xs font-bold text-foreground">
+                  Judul Hero (Judul Utama)
+                </Label>
+                <Input
+                  id="hero-title"
+                  type="text"
+                  value={heroTitle}
+                  onChange={(e) => setHeroTitle(e.target.value)}
+                  className="h-10 rounded-xl font-bold"
+                  placeholder="EDITION 001"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="hero-subtitle" className="text-xs font-bold text-foreground">
+                  Sub-judul / Deskripsi Singkat
+                </Label>
+                <Input
+                  id="hero-subtitle"
+                  type="text"
+                  value={heroSubtitle}
+                  onChange={(e) => setHeroSubtitle(e.target.value)}
+                  className="h-10 rounded-xl"
+                  placeholder="Eksplorasi siluet dan tekstur dalam jumlah terbatas."
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="hero-cta-text" className="text-xs font-bold text-foreground">
+                  Teks Tombol CTA Utama
+                </Label>
+                <Input
+                  id="hero-cta-text"
+                  type="text"
+                  value={heroCtaText}
+                  onChange={(e) => setHeroCtaText(e.target.value)}
+                  className="h-10 rounded-xl"
+                  placeholder="Eksplor Koleksi"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="hero-cta-link" className="text-xs font-bold text-foreground">
+                  Link Tombol CTA
+                </Label>
+                <Input
+                  id="hero-cta-link"
+                  type="text"
+                  value={heroCtaLink}
+                  onChange={(e) => setHeroCtaLink(e.target.value)}
+                  className="h-10 rounded-xl"
+                  placeholder="/catalogue"
+                />
+              </div>
+            </div>
+
+            {/* Hero Images Uploaders (Left & Right Column images) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-foreground block">
+                  Foto Banner Kiri (Model / Campaign)
+                </Label>
+                <ImageUpload
+                  value={heroLeftImage}
+                  onChange={setHeroLeftImage}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-foreground block">
+                  Foto Banner Kanan (Tekstur / Fabric)
+                </Label>
+                <ImageUpload
+                  value={heroRightImage}
+                  onChange={setHeroRightImage}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: General Info */}
         <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-4 shadow-2xs">
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-2">
             <ShoppingBag className="h-4 w-4 text-muted-foreground/75" />
@@ -99,30 +228,26 @@ export default function StoreSettingsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="whatsapp-number" className="text-xs font-bold text-foreground">
-                No. WhatsApp Admin (Gunakan format 62...)
+              <Label htmlFor="wa-number" className="text-xs font-bold text-foreground">
+                Nomor WhatsApp Admin (Format 62...)
               </Label>
               <Input
-                id="whatsapp-number"
+                id="wa-number"
                 type="text"
                 value={whatsappNumber}
                 onChange={(e) => setWhatsappNumber(e.target.value)}
                 className="h-10 rounded-xl"
                 placeholder="628123456789"
               />
-              <p className="text-[10px] text-muted-foreground leading-normal">
-                Digunakan untuk membuat invoice link direct WhatsApp. Pastikan diawali kode negara
-                62.
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Card 2: Social Media Links */}
+        {/* Card 3: Social Media Links */}
         <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-4 shadow-2xs">
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-2">
             <Share2 className="h-4 w-4 text-muted-foreground/75" />
-            Link Media Sosial (Tampil di Footer Katalog)
+            Tautan Media Sosial Toko
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -206,7 +331,7 @@ export default function StoreSettingsPage() {
             className="gap-2 h-11 px-6 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs shadow-xs"
           >
             <Save className="h-4 w-4" />
-            <span>{isSaving ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>
+            <span>{isSaving ? 'Menyimpan...' : 'Simpan Pengaturan CMS'}</span>
           </Button>
         </Flex>
       </div>

@@ -14,7 +14,7 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative w-full h-[50vh] md:h-[65vh] overflow-hidden">
         <Image
-          src="/images/brand/manifesto.jpg"
+          src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1200&auto=format&fit=crop&q=80"
           alt="RIO COLLECTION studio"
           fill
           sizes="100vw"
@@ -100,7 +100,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
           <div className="relative aspect-4/5 overflow-hidden bg-(--cat-surface-container-low)">
             <Image
-              src="/images/brand/hero-editorial.jpg"
+              src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80"
               alt="RIO COLLECTION editorial photography"
               fill
               sizes="(max-width: 768px) 100vw, 50vw"

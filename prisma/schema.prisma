@@ -1,0 +1,170 @@
+// Prisma Schema for RIO Collection Catalogue & Backend API
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String   @default("Admin")
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  permissions Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Color {
+  id        String    @id @default(cuid())
+  name      String
+  hex       String
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Size {
+  id        String    @id @default(cuid())
+  size      String    @unique
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String           @unique
+  edition     String           @default("Edition 001")
+  category    String
+  color       String
+  colorHex    String
+  price       Int
+  status      String           @default("AVAILABLE") // AVAILABLE, SOLD_OUT, COMING_SOON
+  imageUrl    String
+  images      String[]
+  description String
+  variants    ProductVariant[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size      String
+  inStock   Boolean @default(true)
+}
+
+model Archive {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  status      String   @default("SOLD_OUT")
+  imageUrl    String
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model Journal {
+  id                 String   @id @default(cuid())
+  title              String
+  slug               String   @unique
+  author             String
+  date               String
+  category           String
+  imageUrl           String
+  excerpt            String
+  content            String[]
+  pullQuote          String?
+  relatedProductSlug String?
+  createdAt          DateTime @default(now())
+}
+
+model Topic {
+  id          String    @id @default(cuid())
+  name        String
+  description String
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Testimony {
+  id        String   @id @default(cuid())
+  alt       String
+  imageUrl  String
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber String      @unique
+  fullName    String
+  whatsapp    String
+  address     String
+  notes       String?
+  totalPrice  Int
+  status      String      @default("PENDING") // PENDING, PAID, FULFILLED, CANCELLED
+  items       OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  name      String
+  size      String
+  price     Int
+  quantity  Int
+  createdAt DateTime @default(now())
+}
+
+model StoreSettings {
+  id                String   @id @default("default")
+  storeName         String   @default("RIO COLLECTION")
+  whatsappNumber    String   @default("628123456789")
+  bankName          String?  @default("BCA")
+  bankAccountNumber String?  @default("1234567890")
+  bankAccountOwner  String?  @default("RIO COLLECTION")
+  flatShippingRate  Int      @default(15000)
+  instagramUrl      String?
+  tiktokUrl         String?
+  facebookUrl       String?
+  pinterestUrl      String?
+  xTwitterUrl       String?
+  heroTitle         String?  @default("EDITION 001")
+  heroSubtitle      String?  @default("ARCHIVAL COTTON SILHOUETTE")
+  heroLeftImage     String?  @default("https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80")
+  heroRightImage    String?  @default("https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80")
+  heroCtaText       String?  @default("Eksplor Koleksi Terkini")
+  heroCtaLink       String?  @default("/catalogue")
+  updatedAt         DateTime @updatedAt
+}

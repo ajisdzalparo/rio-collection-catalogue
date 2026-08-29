@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import {
   UserTable,
@@ -17,8 +17,6 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   Plus,
-  Users,
-  ShieldAlert,
   KeyRound,
   Check,
   Edit,
@@ -30,9 +28,21 @@ import {
 import { cn } from '@/lib/utils';
 
 function UsersPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'users';
+
+  const tabInfo: Record<string, { title: string; desc: string }> = {
+    users: {
+      title: 'Daftar Pengguna / Admin',
+      desc: 'Kelola akun administrator dan staff yang memiliki hak akses masuk ke dashboard CMS.'
+    },
+    rbac: {
+      title: 'Master Roles & Permissions',
+      desc: 'Kelola tingkat otorisasi, hak akses per menu, dan status aktif master role (RBAC) sistem.'
+    }
+  };
+
+  const currentHeader = tabInfo[activeTab] || tabInfo.users;
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
@@ -50,9 +60,6 @@ function UsersPageContent() {
     }
   }, [mockRoles, roles.length, setRoles]);
 
-  const handleTabChange = (tab: string) => {
-    router.push(`/users?tab=${tab}`, { scroll: false });
-  };
 
   const handlePermissionToggle = (roleName: string, permKey: string, currentVal: boolean) => {
     updateRolePermissions(roleName, { [permKey]: !currentVal });
@@ -82,8 +89,8 @@ function UsersPageContent() {
   return (
     <div className="space-y-6 pb-12">
       <PageHeader
-        title="User & Access Control"
-        description="Kelola akun pengguna CMS serta atur hak akses Master Role-Based Access Control (RBAC)."
+        title={currentHeader.title}
+        description={currentHeader.desc}
       >
         {activeTab === 'users' ? (
           <Button
@@ -104,38 +111,10 @@ function UsersPageContent() {
         )}
       </PageHeader>
 
-      {/* Tabs & View Mode Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border/20 gap-3 pb-px">
-        <div className="flex gap-1 overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => handleTabChange('users')}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap',
-              activeTab === 'users'
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Users className="h-4 w-4" />
-            User List
-          </button>
-
-          <button
-            onClick={() => handleTabChange('rbac')}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap',
-              activeTab === 'rbac'
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <ShieldAlert className="h-4 w-4" />
-            Master Roles & Permissions (RBAC)
-          </button>
-        </div>
-
-        {activeTab === 'rbac' && (
-          <div className="flex items-center gap-1 self-end sm:self-auto mb-2 sm:mb-0">
+      {/* View Mode Bar (Only on RBAC) */}
+      {activeTab === 'rbac' && (
+        <div className="flex justify-end border-b border-border/20 pb-3">
+          <div className="flex items-center gap-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mr-1">
               Tampilan:
             </span>
@@ -164,8 +143,8 @@ function UsersPageContent() {
               <LayoutGrid className="h-3.5 w-3.5" />
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Tab Panels */}
       {activeTab === 'users' ? (

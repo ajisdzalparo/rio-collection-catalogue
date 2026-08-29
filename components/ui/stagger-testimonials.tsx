@@ -7,15 +7,12 @@ import { cn } from '@/lib/utils';
 import type { Testimony } from '@/types/catalogue.types';
 
 const defaultTestimonials = [
-  { tempId: 0, imgSrc: '/images/testimonials/testimony-1.png', alt: 'Testimonial 1' },
-  { tempId: 1, imgSrc: '/images/testimonials/testimony-2.png', alt: 'Testimonial 2' },
-  { tempId: 2, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 3' },
-  { tempId: 3, imgSrc: '/images/testimonials/testimony-1.png', alt: 'Testimonial 4' },
-  { tempId: 4, imgSrc: '/images/testimonials/testimony-2.png', alt: 'Testimonial 5' },
-  { tempId: 5, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 6' },
-  { tempId: 6, imgSrc: '/images/testimonials/testimony-1.png', alt: 'Testimonial 7' },
-  { tempId: 7, imgSrc: '/images/testimonials/testimony-2.png', alt: 'Testimonial 8' },
-  { tempId: 8, imgSrc: '/images/testimonials/testimony-3.png', alt: 'Testimonial 9' }
+  { tempId: 0, imgSrc: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80', alt: 'Testimonial 1' },
+  { tempId: 1, imgSrc: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80', alt: 'Testimonial 2' },
+  { tempId: 2, imgSrc: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&auto=format&fit=crop&q=80', alt: 'Testimonial 3' },
+  { tempId: 3, imgSrc: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=80', alt: 'Testimonial 4' },
+  { tempId: 4, imgSrc: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80', alt: 'Testimonial 5' },
+  { tempId: 5, imgSrc: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600&auto=format&fit=crop&q=80', alt: 'Testimonial 6' }
 ];
 
 interface TestimonialCardProps {
@@ -190,10 +187,8 @@ export const StaggerTestimonials: React.FC<StaggerTestimonialsProps> = ({ items 
         <div className="absolute top-[68%] left-1/2 -translate-x-1/2 w-70 sm:w-85 h-6 bg-black/25 blur-xl rounded-full pointer-events-none z-0" />
 
         {testimonialsList.map((testimonial, index) => {
-          const position =
-            testimonialsList.length % 2
-              ? index - (testimonialsList.length + 1) / 2
-              : index - testimonialsList.length / 2;
+          const centerIndex = Math.floor(testimonialsList.length / 2);
+          const position = index - centerIndex;
 
           if (Math.abs(position) > 2) return null;
 

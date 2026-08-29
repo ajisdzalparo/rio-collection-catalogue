@@ -11,10 +11,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, KeyRound, Check, X, Edit, FolderTree } from 'lucide-react';
+import { ShieldCheck, KeyRound, Edit, FolderTree } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '../types/roles.types';
 import { PERMISSION_TREE } from '../data/permission-tree';
+import { syncRolePermissions } from '../hooks/use-rbac';
 
 interface RoleDetailDialogProps {
   open: boolean;
@@ -36,14 +37,14 @@ export function RoleDetailDialog({
     0
   );
 
-  let activeCount = 0;
-  PERMISSION_TREE.forEach((menu) => {
-    menu.actions.forEach((act) => {
-      if (role.permissions && role.permissions[act.key]) {
-        activeCount += 1;
-      }
-    });
-  });
+  const syncedPerms = syncRolePermissions(role.permissions, role.name);
+
+  const activeCount = PERMISSION_TREE.reduce(
+    (acc, menu) =>
+      acc +
+      menu.actions.filter((act) => syncedPerms[act.key]).length,
+    0
+  );
 
   const isFullAccess = activeCount >= totalActionsCount || role.name === 'Admin';
 
@@ -101,82 +102,66 @@ export function RoleDetailDialog({
 
           <div className="space-y-3">
             {PERMISSION_TREE.map((menu) => {
-              const activeMenuActions = menu.actions.filter(
-                (act) => isFullAccess || (role.permissions && role.permissions[act.key])
+              const activeCountInMenu = menu.actions.filter(
+                (act) => syncedPerms[act.key]
               ).length;
 
-              const isMenuAllowed = activeMenuActions > 0;
+              const isFullyActive = activeCountInMenu === menu.actions.length;
+              const isPartiallyActive = activeCountInMenu > 0 && !isFullyActive;
 
               return (
                 <div
                   key={menu.id}
-                  className={cn(
-                    'border rounded-2xl p-4 transition-all',
-                    isMenuAllowed
-                      ? 'border-border/40 bg-card'
-                      : 'border-border/20 bg-muted/10 opacity-70'
-                  )}
+                  className="border border-border/40 rounded-xl p-3 bg-card/60 space-y-2.5 shadow-2xs"
                 >
-                  <div className="flex items-center justify-between border-b border-border/20 pb-2 mb-2.5">
-                    <div>
+                  <div className="flex items-center justify-between gap-1.5 border-b border-border/20 pb-2">
+                    <div className="space-y-0.5">
                       <span className="font-bold text-xs text-foreground block">
-                        {menu.menuName}
+                        {menu.menuName.replace(/^\d+\.\s*/, '')}
                       </span>
-                      <span className="text-[11px] text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground leading-normal">
                         {menu.description}
-                      </span>
+                      </p>
                     </div>
 
                     <span
                       className={cn(
-                        'text-[10px] font-bold px-2 py-0.5 rounded-full border',
-                        activeMenuActions === menu.actions.length
-                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                          : activeMenuActions > 0
-                          ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                          : 'bg-muted text-muted-foreground border-border/30'
+                        'text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border shrink-0',
+                        isFullyActive
+                          ? 'bg-zinc-900/10 text-zinc-800 border-zinc-900/20 dark:bg-zinc-100/10 dark:text-zinc-200 dark:border-zinc-100/20'
+                          : isPartiallyActive
+                          ? 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20 dark:text-zinc-400'
+                          : 'bg-muted text-muted-foreground border-border/40'
                       )}
                     >
-                      {activeMenuActions} / {menu.actions.length} Aktif
+                      {activeCountInMenu} / {menu.actions.length} Aktif
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {menu.actions.map((action) => {
-                      const isAllowed = isFullAccess || !!(role.permissions && role.permissions[action.key]);
+                      const isAllowed = !!syncedPerms[action.key];
 
                       return (
-                        <div
+                        <span
                           key={action.key}
                           className={cn(
-                            'flex items-center justify-between p-2 rounded-xl border text-xs',
+                            'text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-all flex items-center gap-1.5',
                             isAllowed
-                              ? 'border-emerald-500/30 bg-emerald-500/5 text-foreground'
-                              : 'border-border/20 bg-muted/20 text-muted-foreground'
+                              ? 'bg-zinc-900/10 text-zinc-800 dark:text-zinc-200 border-zinc-900/20 dark:bg-zinc-100/10 dark:border-zinc-100/20'
+                              : 'bg-zinc-100 text-zinc-400 border-zinc-200 dark:bg-zinc-900/50 dark:border-zinc-800 dark:text-zinc-500'
                           )}
                         >
-                          <div className="flex flex-col pr-2">
-                            <span className="font-semibold text-[11px]">{action.label}</span>
-                            <span className="text-[10px] text-muted-foreground line-clamp-1">
-                              {action.description}
-                            </span>
-                          </div>
-
-                          <div
+                          <span
                             className={cn(
-                              'h-4 w-4 rounded flex items-center justify-center shrink-0 ml-1',
+                              'h-1.5 w-1.5 rounded-full shrink-0',
                               isAllowed
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-muted text-muted-foreground border border-border/40'
+                                ? 'bg-zinc-900 dark:bg-zinc-100'
+                                : 'bg-zinc-300 dark:bg-zinc-700'
                             )}
-                          >
-                            {isAllowed ? (
-                              <Check className="h-2.5 w-2.5 stroke-3" />
-                            ) : (
-                              <X className="h-2.5 w-2.5 stroke-3" />
-                            )}
-                          </div>
-                        </div>
+                          />
+                          {action.label}
+                        </span>
                       );
                     })}
                   </div>

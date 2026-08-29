@@ -1,12 +1,25 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useStoreSettingsQuery, useStoreSettingsStore } from '@/hooks/use-store-settings';
 
 interface HeroSectionProps {
   className?: string;
 }
 
 export function HeroSection({ className }: HeroSectionProps) {
+  const { data: settings } = useStoreSettingsQuery();
+  const store = useStoreSettingsStore();
+
+  const heroTitle = settings?.heroTitle || store.heroTitle || 'EDITION 001';
+  const heroSubtitle = settings?.heroSubtitle || store.heroSubtitle || 'Eksplorasi siluet dan tekstur dalam jumlah terbatas.';
+  const heroLeftImage = settings?.heroLeftImage || store.heroLeftImage || 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80';
+  const heroRightImage = settings?.heroRightImage || store.heroRightImage || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80';
+  const heroCtaText = settings?.heroCtaText || store.heroCtaText || 'Eksplor Koleksi';
+  const heroCtaLink = settings?.heroCtaLink || store.heroCtaLink || '/catalogue';
+
   return (
     <section
       className={cn('relative w-full overflow-hidden', className)}
@@ -19,8 +32,8 @@ export function HeroSection({ className }: HeroSectionProps) {
           {/* Left: Model shot */}
           <div className="relative hidden md:block">
             <Image
-              src="/images/brand/hero-editorial.jpg"
-              alt="RIO COLLECTION — Edition 001 editorial campaign"
+              src={heroLeftImage}
+              alt="RIO COLLECTION editorial campaign"
               fill
               sizes="50vw"
               className="object-cover object-top"
@@ -30,7 +43,7 @@ export function HeroSection({ className }: HeroSectionProps) {
           {/* Right: Texture close-up */}
           <div className="relative">
             <Image
-              src="/images/brand/hero-texture.jpg"
+              src={heroRightImage}
               alt="Premium cotton fabric texture detail"
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
@@ -41,8 +54,8 @@ export function HeroSection({ className }: HeroSectionProps) {
           {/* Mobile: show editorial as full background */}
           <div className="absolute inset-0 md:hidden">
             <Image
-              src="/images/brand/hero-editorial.jpg"
-              alt="RIO COLLECTION — Edition 001 editorial campaign"
+              src={heroLeftImage}
+              alt="RIO COLLECTION editorial campaign"
               fill
               sizes="100vw"
               className="object-cover object-top"
@@ -58,19 +71,19 @@ export function HeroSection({ className }: HeroSectionProps) {
 
           <div className="relative z-10 px-4">
             <h1 className="font-eb-garamond text-[48px] md:text-[72px] font-normal leading-[1.1] tracking-[-0.02em] text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.3)]">
-              EDITION 001
+              {heroTitle}
             </h1>
             <p className="mt-3 font-hanken text-[13px] md:text-[14px] font-normal text-white/90 tracking-wide drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
-              Eksplorasi siluet dan tekstur dalam jumlah terbatas.
+              {heroSubtitle}
             </p>
 
             {/* CTA buttons */}
             <div className="mt-6 flex items-center justify-center gap-3">
               <Link
-                href="/catalogue"
+                href={heroCtaLink}
                 className="inline-flex items-center px-6 py-2.5 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
               >
-                Eksplor Koleksi
+                {heroCtaText}
               </Link>
               <Link
                 href="/archive"

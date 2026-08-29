@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { env } from '@/config/env';
 
 export interface DashboardStats {
   totalOrders: number;
@@ -14,7 +13,7 @@ export interface DashboardStats {
 }
 
 async function fetchStats(): Promise<DashboardStats> {
-  const { data } = await axios.get(`${env.velomockUrl}/api/v1/dashboard/stats`);
+  const { data } = await axios.get('/api/v1/dashboard/stats');
   if (data.code !== 200 || !data.data) {
     throw new Error(data.message || 'Invalid stats data received');
   }

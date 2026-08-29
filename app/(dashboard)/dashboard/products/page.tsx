@@ -9,7 +9,6 @@ import {
   Layers,
   Check,
   Trash2,
-  Image as ImageIcon,
   Eye,
   Pencil,
   Package,
@@ -21,12 +20,14 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RupiahInput } from '@/components/ui/rupiah-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useProducts } from '@/hooks/use-products';
 import { useMasterStore } from '@/hooks/use-master-data';
 import { Flex, VStack } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { SafeImage, CMSBadge } from '@/components/shared';
 import { ImageUpload, MultiImageUpload } from '@/components/shared/image-upload';
 import { cn, formatIDR } from '@/lib/utils';
 import {
@@ -266,29 +267,26 @@ export default function ProductsCmsPage() {
     const isOutOfStock = !isAlwaysAvailable && (product.stock === 0 || product.status === 'SOLD_OUT');
 
     if (isOutOfStock) {
-      return <Badge variant="destructive">Sold Out (Stok 0)</Badge>;
+      return <CMSBadge variant="error">SOLD OUT</CMSBadge>;
     }
 
     switch (product.status) {
       case 'AVAILABLE':
         return (
-          <Badge
-            variant="secondary"
-            className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-          >
-            {isAlwaysAvailable ? 'Available (Selalu Ready)' : 'Available (Ready Stock)'}
-          </Badge>
+          <CMSBadge variant="success">
+            {isAlwaysAvailable ? 'ALWAYS READY' : 'READY STOCK'}
+          </CMSBadge>
         );
       case 'COMING_SOON':
+        return <CMSBadge variant="warning">PRE-ORDER</CMSBadge>;
+      case 'SOLD_OUT':
+        return <CMSBadge variant="error">SOLD OUT</CMSBadge>;
+      default:
         return (
-          <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
-            Coming Soon / Pre-Order
+          <Badge variant="outline" className="font-semibold px-2.5 py-0.5 rounded-full text-[10px]">
+            {product.status}
           </Badge>
         );
-      case 'SOLD_OUT':
-        return <Badge variant="destructive">Sold Out</Badge>;
-      default:
-        return <Badge variant="outline">{product.status}</Badge>;
     }
   };
 
@@ -337,19 +335,13 @@ export default function ProductsCmsPage() {
         header: 'Foto',
         cell: (product) => (
           <div className="relative h-12 w-10 overflow-hidden bg-muted/50 border border-border/20 rounded-md shrink-0">
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.name}
-                fill
-                sizes="40px"
-                className="object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                <ImageIcon className="h-4 w-4" />
-              </div>
-            )}
+            <SafeImage
+              src={product.imageUrl}
+              alt={product.name}
+              fill
+              sizes="40px"
+              className="object-cover"
+            />
           </div>
         )
       },
@@ -655,14 +647,14 @@ export default function ProductsCmsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="prod-price" className="text-xs font-bold text-foreground">
-                    Harga Jual (IDR)
+                    Harga Jual
                   </Label>
-                  <Input
+                  <RupiahInput
                     id="prod-price"
-                    type="number"
                     value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
+                    onValueChange={setPrice}
                     className="h-10 rounded-xl font-bold"
+                    placeholder="250.000"
                     required
                   />
                 </div>
@@ -671,18 +663,17 @@ export default function ProductsCmsPage() {
                     htmlFor="prod-hpp"
                     className="text-xs font-bold text-foreground flex justify-between items-center"
                   >
-                    <span>HPP / Modal (IDR)</span>
+                    <span>HPP / Modal</span>
                     <span className="text-[9px] text-amber-600 dark:text-amber-400 font-extrabold uppercase">
                       Privat
                     </span>
                   </Label>
-                  <Input
+                  <RupiahInput
                     id="prod-hpp"
-                    type="number"
                     value={hpp}
-                    onChange={(e) => setHpp(Number(e.target.value))}
+                    onValueChange={setHpp}
                     className="h-10 rounded-xl font-bold text-amber-600 dark:text-amber-400"
-                    placeholder="180000"
+                    placeholder="180.000"
                     required
                   />
                 </div>
@@ -724,20 +715,22 @@ export default function ProductsCmsPage() {
                       <SelectValue placeholder="Pilih Warna" />
                     </SelectTrigger>
                     <SelectContent>
-                      {colors.map((c) => (
-                        <SelectItem key={c.id} value={c.name}>
-                          <span className="flex items-center gap-2">
-                            <span
-                              className="inline-block h-3 w-3 rounded-full border border-border/40"
-                              style={{ backgroundColor: c.hex }}
-                            />
-                            {c.name}
-                            <span className="text-muted-foreground font-mono text-[10px] uppercase">
-                              {c.hex}
+                      {colors
+                        .filter((c) => c.isActive || c.name === color)
+                        .map((c) => (
+                          <SelectItem key={c.id} value={c.name}>
+                            <span className="flex items-center gap-2">
+                              <span
+                                className="inline-block h-3 w-3 rounded-full border border-border/40"
+                                style={{ backgroundColor: c.hex }}
+                              />
+                              {c.name}
+                              <span className="text-muted-foreground font-mono text-[10px] uppercase">
+                                {c.hex}
+                              </span>
                             </span>
-                          </span>
-                        </SelectItem>
-                      ))}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -751,11 +744,13 @@ export default function ProductsCmsPage() {
                       <SelectValue placeholder="Pilih Kategori" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.slug}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
+                      {categories
+                        .filter((cat) => cat.isActive || cat.slug === category)
+                        .map((cat) => (
+                          <SelectItem key={cat.id} value={cat.slug}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

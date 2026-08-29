@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import Image from 'next/image';
+import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Truck, MapPin, Calculator } from 'lucide-react';
@@ -370,6 +370,7 @@ export default function OrderPage() {
   const flatShippingRate = useStoreSettingsStore((s) => s.flatShippingRate);
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [selectedSize, setSelectedSize] = useState('M');
   const [formData, setFormData] = useState({
     fullName: '',
     whatsapp: '',
@@ -384,8 +385,19 @@ export default function OrderPage() {
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sizeParam = params.get('size');
+    if (sizeParam) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedSize(sizeParam);
+    }
+
+    const productSlug = params.get('product');
     getProducts().then((prods) => {
-      if (prods.length > 0) setProduct(prods[0]);
+      if (prods.length > 0) {
+        const found = productSlug ? prods.find((p) => p.slug === productSlug) : null;
+        setProduct(found || prods[0]);
+      }
     });
   }, []);
 
@@ -447,7 +459,7 @@ export default function OrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!product) return;
+    if (!product || !isValid || !isCaptchaVerified) return;
     setIsSubmitting(true);
 
     const fullAddress = `${formData.streetAddress}${formData.district ? `, Kec. ${formData.district}` : ''}, ${formData.city}, ${formData.province}${formData.postalCode ? ` ${formData.postalCode}` : ''}`;
@@ -457,7 +469,7 @@ export default function OrderPage() {
         fullName: formData.fullName,
         whatsapp: formData.whatsapp,
         address: fullAddress,
-        items: [{ productId: product.id, size: 'M', quantity: 1 }]
+        items: [{ productId: product.id, size: selectedSize, quantity: 1 }]
       });
       const orderNum = res?.data?.orderNumber || 'RC-8802';
       router.push(`/order/confirmation/${orderNum}`);
@@ -467,11 +479,13 @@ export default function OrderPage() {
   };
 
   const isValid =
-    formData.fullName &&
-    formData.whatsapp &&
-    formData.province &&
-    formData.city &&
-    formData.streetAddress;
+    !!product &&
+    !!formData.fullName.trim() &&
+    !!formData.whatsapp.trim() &&
+    !!formData.province &&
+    !!formData.city &&
+    !!formData.district &&
+    !!formData.streetAddress.trim();
 
   return (
     <>
@@ -511,15 +525,13 @@ export default function OrderPage() {
                 {/* Product */}
                 <div className="flex gap-4 pb-6 border-b border-(--cat-stone)">
                   <div className="relative w-20 h-24 shrink-0 overflow-hidden bg-(--cat-surface-container-low)">
-                    {product?.imageUrl && (
-                      <Image
-                        src={product.imageUrl}
-                        alt={product.name}
-                        fill
-                        sizes="80px"
-                        className="object-cover"
-                      />
-                    )}
+                    <SafeImage
+                      src={product?.imageUrl}
+                      alt={product?.name || 'Product'}
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-hanken text-[15px] font-medium text-(--cat-on-surface)">

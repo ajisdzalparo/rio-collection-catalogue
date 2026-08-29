@@ -1,10 +1,9 @@
 import axios from 'axios';
-import { env } from '@/config/env';
 import type { User } from '../types/user.types';
 import type { ApiListResponse } from '@/types/api.type';
 
 export async function getUsers(): Promise<ApiListResponse<User>> {
-  const { data } = await axios.get(`${env.velomockUrl}/api/v1/users`);
+  const { data } = await axios.get('/api/v1/users');
   const userList = data.code === 200 && data.data ? data.data : Array.isArray(data) ? data : [];
 
   return {

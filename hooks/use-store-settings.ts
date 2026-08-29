@@ -4,7 +4,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { env } from '@/config/env';
 
 export interface StoreSettings {
   storeName: string;
@@ -15,6 +14,12 @@ export interface StoreSettings {
   facebookUrl?: string;
   pinterestUrl?: string;
   xTwitterUrl?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroLeftImage?: string;
+  heroRightImage?: string;
+  heroCtaText?: string;
+  heroCtaLink?: string;
 }
 
 interface StoreSettingsState extends StoreSettings {
@@ -33,6 +38,12 @@ export const useStoreSettingsStore = create<StoreSettingsState>()(
       facebookUrl: '',
       pinterestUrl: '',
       xTwitterUrl: '',
+      heroTitle: 'EDITION 001',
+      heroSubtitle: 'ARCHIVAL COTTON SILHOUETTE',
+      heroLeftImage: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80',
+      heroRightImage: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
+      heroCtaText: 'Eksplor Koleksi Terkini',
+      heroCtaLink: '/catalogue',
 
       setSettings: (settings) => set({ ...settings }),
       updateSettings: (newSettings) => set((state) => ({ ...state, ...newSettings }))
@@ -43,12 +54,12 @@ export const useStoreSettingsStore = create<StoreSettingsState>()(
   )
 );
 
-// React Query to retrieve settings from VeloMock API
+// React Query to retrieve settings from native backend API
 export function useStoreSettingsQuery() {
   return useQuery({
-    queryKey: ['mock-settings'],
+    queryKey: ['store-settings'],
     queryFn: async () => {
-      const { data } = await axios.get(`${env.velomockUrl}/api/v1/settings`);
+      const { data } = await axios.get('/api/v1/settings');
       if (data.code === 200 && data.data) {
         return data.data as StoreSettings;
       }

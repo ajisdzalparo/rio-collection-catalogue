@@ -15,9 +15,10 @@ import {
   Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { SafeImage, CMSBadge } from '@/components/shared';
 import { useTestimonies } from '@/hooks/use-testimonies';
 import type { Testimony } from '@/types/catalogue.types';
 import {
@@ -115,19 +116,13 @@ export default function TestimoniesCmsPage() {
       header: 'Screenshot Testimoni',
       cell: (item: Testimony) => (
         <div className="relative h-20 w-14 overflow-hidden rounded-lg border border-border/60 bg-muted/30 shadow-xs">
-          {item.imageUrl ? (
-            <Image
-              src={item.imageUrl}
-              alt={item.alt || item.clientName || 'Testimonial'}
-              fill
-              sizes="56px"
-              className="object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-              No Img
-            </div>
-          )}
+          <SafeImage
+            src={item.imageUrl}
+            alt={item.alt || item.clientName || 'Testimonial'}
+            fill
+            sizes="56px"
+            className="object-cover"
+          />
         </div>
       )
     },
@@ -149,16 +144,9 @@ export default function TestimoniesCmsPage() {
       accessorKey: 'status',
       header: 'Status Tampil',
       cell: (item: Testimony) => (
-        <Badge
-          variant={item.status === 'ACTIVE' ? 'default' : 'secondary'}
-          className={
-            item.status === 'ACTIVE'
-              ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
-              : 'bg-zinc-500/15 text-zinc-500'
-          }
-        >
+        <CMSBadge variant={item.status === 'ACTIVE' ? 'success' : 'neutral'}>
           {item.status === 'ACTIVE' ? 'Aktif (Tampil)' : 'Disembunyikan'}
-        </Badge>
+        </CMSBadge>
       )
     },
     {
@@ -166,8 +154,16 @@ export default function TestimoniesCmsPage() {
       header: 'Tanggal Dibuat',
       cell: (item: Testimony) => (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Calendar size={13} />
-          <span>{item.createdAt || '2026-08-01'}</span>
+          <Calendar size={13} className="shrink-0" />
+          <span>
+            {item.createdAt
+              ? new Date(item.createdAt).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
+                })
+              : '-'}
+          </span>
         </div>
       )
     },
@@ -213,7 +209,7 @@ export default function TestimoniesCmsPage() {
             variant="ghost"
             onClick={() => deleteTestimony(item.id)}
             title="Hapus Testimoni"
-            className="text-destructive hover:bg-destructive/10"
+            className="h-8 w-8 p-0 cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
           >
             <Trash2 size={15} />
           </Button>
@@ -342,7 +338,7 @@ export default function TestimoniesCmsPage() {
                   <Input
                     value={formData.imageUrl.startsWith('data:') ? '' : formData.imageUrl}
                     onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    placeholder="/images/testimonials/testimony-1.png"
+                    placeholder="https://..."
                     className="text-xs h-8"
                   />
                 </div>
@@ -360,23 +356,24 @@ export default function TestimoniesCmsPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Status Tampil
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) =>
+            <div className="flex items-center justify-between rounded-xl border border-border/60 p-3 bg-muted/10">
+              <div className="space-y-0.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Status Tampil
+                </label>
+                <span className="text-xs text-muted-foreground">
+                  {formData.status === 'ACTIVE' ? 'Aktif (Tampil di Katalog)' : 'Disembunyikan'}
+                </span>
+              </div>
+              <Switch
+                checked={formData.status === 'ACTIVE'}
+                onCheckedChange={(checked) =>
                   setFormData({
                     ...formData,
-                    status: e.target.value as 'ACTIVE' | 'HIDDEN'
+                    status: checked ? 'ACTIVE' : 'HIDDEN'
                   })
                 }
-                className="w-full h-10 px-3 rounded-lg border border-border/60 bg-background text-sm outline-none cursor-pointer"
-              >
-                <option value="ACTIVE">Aktif (Tampil di Katalog)</option>
-                <option value="HIDDEN">Disembunyikan</option>
-              </select>
+              />
             </div>
 
             <DialogFooter className="pt-4">
@@ -437,16 +434,9 @@ export default function TestimoniesCmsPage() {
                   <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-0.5">
                     Status Tampil
                   </span>
-                  <Badge
-                    variant={detailItem.status === 'ACTIVE' ? 'default' : 'secondary'}
-                    className={
-                      detailItem.status === 'ACTIVE'
-                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/20 text-[10px]'
-                        : 'text-[10px]'
-                    }
-                  >
+                  <CMSBadge variant={detailItem.status === 'ACTIVE' ? 'success' : 'neutral'}>
                     {detailItem.status === 'ACTIVE' ? 'Aktif (Tampil)' : 'Disembunyikan'}
-                  </Badge>
+                  </CMSBadge>
                 </div>
 
                 <div>

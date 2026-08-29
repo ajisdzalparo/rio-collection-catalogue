@@ -67,7 +67,7 @@ export default async function HomePage() {
           {/* Left: Image */}
           <div className="relative aspect-4/5 md:aspect-3/4 overflow-hidden">
             <Image
-              src="/images/brand/manifesto.jpg"
+              src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1200&auto=format&fit=crop&q=80"
               alt="RIO COLLECTION design studio — where every garmet is constructed with precision"
               fill
               sizes="(max-width: 768px) 100vw, 50vw"

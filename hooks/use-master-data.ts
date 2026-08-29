@@ -2,32 +2,38 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { env } from '@/config/env';
 
 export interface CategoryItem {
   id: string;
   name: string;
   slug: string;
   description?: string;
+  isActive: boolean;
+  deletedAt?: string | null;
 }
 
 export interface ColorItem {
   id: string;
   name: string;
   hex: string;
+  isActive: boolean;
+  deletedAt?: string | null;
 }
 
 export interface SizeItem {
   size: string;
   isActive: boolean;
+  deletedAt?: string | null;
 }
 
 export interface TopicItem {
   id: string;
   name: string;
   description?: string;
+  isActive: boolean;
+  deletedAt?: string | null;
 }
 
 export interface EditionItem {
@@ -54,12 +60,12 @@ interface MasterDataState {
 
   // Categories CRUD
   addCategory: (name: string, description?: string) => void;
-  updateCategory: (id: string, name: string, description?: string) => void;
+  updateCategory: (id: string, name?: string, description?: string, isActive?: boolean) => void;
   deleteCategory: (id: string) => void;
 
   // Colors CRUD
   addColor: (name: string, hex: string) => void;
-  updateColor: (id: string, name: string, hex: string) => void;
+  updateColor: (id: string, name?: string, hex?: string, isActive?: boolean) => void;
   deleteColor: (id: string) => void;
 
   // Sizes Actions
@@ -67,7 +73,7 @@ interface MasterDataState {
 
   // Topics CRUD
   addTopic: (name: string, description?: string) => void;
-  updateTopic: (id: string, name: string, description?: string) => void;
+  updateTopic: (id: string, name?: string, description?: string, isActive?: boolean) => void;
   deleteTopic: (id: string) => void;
 
   // Editions CRUD
@@ -103,12 +109,20 @@ export const useMasterStore = create<MasterDataState>()(
       addCategory: (name, description) => set((state) => ({
         categories: [
           ...state.categories,
-          { id: `cat-${Date.now()}`, name, slug: getSlug(name), description }
+          { id: `cat-${Date.now()}`, name, slug: getSlug(name), description, isActive: true }
         ]
       })),
-      updateCategory: (id, name, description) => set((state) => ({
+      updateCategory: (id, name, description, isActive) => set((state) => ({
         categories: state.categories.map((c) =>
-          c.id === id ? { ...c, name, slug: getSlug(name), description } : c
+          c.id === id
+            ? {
+                ...c,
+                name: name !== undefined ? name : c.name,
+                slug: name !== undefined ? getSlug(name) : c.slug,
+                description: description !== undefined ? description : c.description,
+                isActive: isActive !== undefined ? isActive : c.isActive
+              }
+            : c
         )
       })),
       deleteCategory: (id) => set((state) => ({
@@ -119,12 +133,19 @@ export const useMasterStore = create<MasterDataState>()(
       addColor: (name, hex) => set((state) => ({
         colors: [
           ...state.colors,
-          { id: `col-${Date.now()}`, name, hex }
+          { id: `col-${Date.now()}`, name, hex, isActive: true }
         ]
       })),
-      updateColor: (id, name, hex) => set((state) => ({
+      updateColor: (id, name, hex, isActive) => set((state) => ({
         colors: state.colors.map((c) =>
-          c.id === id ? { ...c, name, hex } : c
+          c.id === id
+            ? {
+                ...c,
+                name: name !== undefined ? name : c.name,
+                hex: hex !== undefined ? hex : c.hex,
+                isActive: isActive !== undefined ? isActive : c.isActive
+              }
+            : c
         )
       })),
       deleteColor: (id) => set((state) => ({
@@ -142,12 +163,19 @@ export const useMasterStore = create<MasterDataState>()(
       addTopic: (name, description) => set((state) => ({
         topics: [
           ...state.topics,
-          { id: `top-${Date.now()}`, name: name.toUpperCase(), description }
+          { id: `top-${Date.now()}`, name: name.toUpperCase(), description, isActive: true }
         ]
       })),
-      updateTopic: (id, name, description) => set((state) => ({
+      updateTopic: (id, name, description, isActive) => set((state) => ({
         topics: state.topics.map((t) =>
-          t.id === id ? { ...t, name: name.toUpperCase(), description } : t
+          t.id === id
+            ? {
+                ...t,
+                name: name !== undefined ? name.toUpperCase() : t.name,
+                description: description !== undefined ? description : t.description,
+                isActive: isActive !== undefined ? isActive : t.isActive
+              }
+            : t
         )
       })),
       deleteTopic: (id) => set((state) => ({
@@ -176,12 +204,12 @@ export const useMasterStore = create<MasterDataState>()(
   )
 );
 
-// React Query hooks for fetching from VeloMock Staging Mock API
+// React Query hooks for fetching from native backend API
 export function useCategoriesQuery() {
   return useQuery({
-    queryKey: ['mock-categories'],
+    queryKey: ['categories'],
     queryFn: async () => {
-      const { data } = await axios.get(`${env.velomockUrl}/api/v1/categories`);
+      const { data } = await axios.get('/api/v1/categories');
       if (data.code === 200 && data.data) {
         return data.data as CategoryItem[];
       }
@@ -192,9 +220,9 @@ export function useCategoriesQuery() {
 
 export function useColorsQuery() {
   return useQuery({
-    queryKey: ['mock-colors'],
+    queryKey: ['colors'],
     queryFn: async () => {
-      const { data } = await axios.get(`${env.velomockUrl}/api/v1/colors`);
+      const { data } = await axios.get('/api/v1/colors');
       if (data.code === 200 && data.data) {
         return data.data as ColorItem[];
       }
@@ -205,9 +233,9 @@ export function useColorsQuery() {
 
 export function useSizesQuery() {
   return useQuery({
-    queryKey: ['mock-sizes'],
+    queryKey: ['sizes'],
     queryFn: async () => {
-      const { data } = await axios.get(`${env.velomockUrl}/api/v1/sizes`);
+      const { data } = await axios.get('/api/v1/sizes');
       if (data.code === 200 && data.data) {
         return data.data as SizeItem[];
       }
@@ -218,9 +246,9 @@ export function useSizesQuery() {
 
 export function useTopicsQuery() {
   return useQuery({
-    queryKey: ['mock-topics'],
+    queryKey: ['topics'],
     queryFn: async () => {
-      const { data } = await axios.get(`${env.velomockUrl}/api/v1/topics`);
+      const { data } = await axios.get('/api/v1/topics');
       if (data.code === 200 && data.data) {
         return data.data as TopicItem[];
       }
@@ -231,13 +259,110 @@ export function useTopicsQuery() {
 
 export function useEditionsQuery() {
   return useQuery({
-    queryKey: ['mock-editions'],
+    queryKey: ['editions'],
     queryFn: async () => {
-      const { data } = await axios.get(`${env.velomockUrl}/api/v1/editions`);
+      const { data } = await axios.get('/api/v1/categories');
       if (data.code === 200 && data.data) {
         return data.data as EditionItem[];
       }
       return Array.isArray(data) ? data : [];
     }
   });
+}
+
+export function useMasterMutations() {
+  const queryClient = useQueryClient();
+
+  const addCategoryMutation = useMutation({
+    mutationFn: async ({ name, description }: { name: string; description?: string }) => {
+      const { data } = await axios.post('/api/v1/categories', { name, description });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] })
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ id, name, description, isActive }: { id: string; name?: string; description?: string; isActive?: boolean }) => {
+      const { data } = await axios.put(`/api/v1/categories/${id}`, { name, description, isActive });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] })
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(`/api/v1/categories/${id}`);
+      return id;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] })
+  });
+
+  const addColorMutation = useMutation({
+    mutationFn: async ({ name, hex }: { name: string; hex: string }) => {
+      const { data } = await axios.post('/api/v1/colors', { name, hex });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['colors'] })
+  });
+
+  const updateColorMutation = useMutation({
+    mutationFn: async ({ id, name, hex, isActive }: { id: string; name?: string; hex?: string; isActive?: boolean }) => {
+      const { data } = await axios.put(`/api/v1/colors/${id}`, { name, hex, isActive });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['colors'] })
+  });
+
+  const deleteColorMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(`/api/v1/colors/${id}`);
+      return id;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['colors'] })
+  });
+
+  const addTopicMutation = useMutation({
+    mutationFn: async ({ name, description }: { name: string; description?: string }) => {
+      const { data } = await axios.post('/api/v1/topics', { name, description });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] })
+  });
+
+  const updateTopicMutation = useMutation({
+    mutationFn: async ({ id, name, description, isActive }: { id: string; name?: string; description?: string; isActive?: boolean }) => {
+      const { data } = await axios.put(`/api/v1/topics/${id}`, { name, description, isActive });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] })
+  });
+
+  const deleteTopicMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(`/api/v1/topics/${id}`);
+      return id;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] })
+  });
+
+  const toggleSizeMutation = useMutation({
+    mutationFn: async ({ size, isActive }: { size: string; isActive: boolean }) => {
+      const { data } = await axios.put(`/api/v1/sizes/${size}`, { isActive });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sizes'] })
+  });
+
+  return {
+    addCategory: addCategoryMutation.mutateAsync,
+    updateCategory: updateCategoryMutation.mutateAsync,
+    deleteCategory: deleteCategoryMutation.mutateAsync,
+    addColor: addColorMutation.mutateAsync,
+    updateColor: updateColorMutation.mutateAsync,
+    deleteColor: deleteColorMutation.mutateAsync,
+    addTopic: addTopicMutation.mutateAsync,
+    updateTopic: updateTopicMutation.mutateAsync,
+    deleteTopic: deleteTopicMutation.mutateAsync,
+    toggleSize: toggleSizeMutation.mutateAsync
+  };
 }

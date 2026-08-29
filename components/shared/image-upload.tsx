@@ -23,10 +23,28 @@ export function ImageUpload({
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInputVal, setUrlInputVal] = useState('');
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       alert('File harus berupa gambar (JPEG, PNG, WEBP, dll.)');
       return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/v1/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data?.url) {
+          onChange(json.data.url);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to upload file to MinIO:', error);
     }
 
     const reader = new FileReader();

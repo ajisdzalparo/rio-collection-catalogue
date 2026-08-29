@@ -11,10 +11,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, ShieldCheck, FolderTree, ChevronRight } from 'lucide-react';
+import { Check, ShieldCheck, FolderTree } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { RolePermissions, UserRole } from '../types/roles.types';
-import { useRbacStore } from '../hooks/use-rbac';
+import { useRbacStore, syncRolePermissions } from '../hooks/use-rbac';
 import { PERMISSION_TREE, DEFAULT_ADMIN_PERMISSIONS } from '../data/permission-tree';
 
 interface RoleFormDialogProps {
@@ -40,7 +40,7 @@ export function RoleFormDialog({ open, onOpenChange, roleToEdit }: RoleFormDialo
     if (roleToEdit) {
       setName(roleToEdit.name);
       setDescription(roleToEdit.description || '');
-      setPermissions(roleToEdit.permissions || DEFAULT_ADMIN_PERMISSIONS);
+      setPermissions(syncRolePermissions(roleToEdit.permissions, roleToEdit.name));
     } else {
       setName('');
       setDescription('');
@@ -119,8 +119,9 @@ export function RoleFormDialog({ open, onOpenChange, roleToEdit }: RoleFormDialo
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2 overflow-y-auto pr-1 flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden pt-2">
+          {/* Static inputs block */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-border/20 shrink-0">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                 Nama Master Role *
@@ -147,9 +148,9 @@ export function RoleFormDialog({ open, onOpenChange, roleToEdit }: RoleFormDialo
             </div>
           </div>
 
-          {/* Tree Permission Checklist */}
-          <div className="space-y-3 pt-2 border-t border-border/40">
-            <div className="flex items-center justify-between sticky top-0 bg-background py-1.5 z-10">
+          {/* Scrollable checklist block */}
+          <div className="flex-1 overflow-y-auto pr-1 pb-4 space-y-3">
+            <div className="flex items-center justify-between sticky top-0 bg-background py-2.5 z-10 border-b border-border/10">
               <div className="flex items-center gap-2">
                 <FolderTree className="h-4 w-4 text-primary" />
                 <label className="text-xs font-bold uppercase tracking-wider text-foreground">
@@ -186,27 +187,29 @@ export function RoleFormDialog({ open, onOpenChange, roleToEdit }: RoleFormDialo
                 return (
                   <div
                     key={menu.id}
-                    className="border border-border/40 rounded-2xl p-4 bg-card/60 space-y-3 shadow-2xs"
+                    className="border border-border/40 rounded-xl p-3.5 bg-card/60 space-y-3 shadow-2xs"
                   >
                     {/* Menu Header (Parent Node) */}
-                    <div className="flex items-center justify-between border-b border-border/20 pb-2.5">
+                    <div className="flex items-center justify-between border-b border-border/20 pb-2">
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-foreground">{menu.menuName}</span>
+                          <span className="font-bold text-xs text-foreground">
+                            {menu.menuName.replace(/^\d+\.\s*/, '')}
+                          </span>
                           <span
                             className={cn(
                               'text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border',
                               isFullyChecked
-                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                ? 'bg-zinc-900/10 text-zinc-800 border-zinc-900/20 dark:bg-zinc-100/10 dark:text-zinc-200 dark:border-zinc-100/20'
                                 : isPartiallyChecked
-                                ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                ? 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20 dark:text-zinc-400'
                                 : 'bg-muted text-muted-foreground border-border/40'
                             )}
                           >
                             {activeActionCount} / {menu.actions.length} Akses Aktif
                           </span>
                         </div>
-                        <p className="text-[11px] text-muted-foreground">{menu.description}</p>
+                        <p className="text-[10px] text-muted-foreground">{menu.description}</p>
                       </div>
 
                       <button
@@ -214,12 +217,12 @@ export function RoleFormDialog({ open, onOpenChange, roleToEdit }: RoleFormDialo
                         onClick={() => toggleMenuAll(menu.id)}
                         className="text-[11px] font-bold text-primary hover:underline shrink-0 ml-2 cursor-pointer"
                       >
-                        {isFullyChecked ? 'Uncheck Menu' : 'Check Semua Menu'}
+                        {isFullyChecked ? 'Kosongkan' : 'Pilih Semua'}
                       </button>
                     </div>
 
                     {/* Actions List (Child Nodes) */}
-                    <div className="pl-3 border-l-2 border-primary/20 ml-1 space-y-2 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                       {menu.actions.map((action) => {
                         const isChecked = !!permissions[action.key];
                         return (
@@ -228,33 +231,30 @@ export function RoleFormDialog({ open, onOpenChange, roleToEdit }: RoleFormDialo
                             type="button"
                             onClick={() => togglePermission(action.key)}
                             className={cn(
-                              'w-full flex items-start justify-between p-2.5 rounded-xl border transition-all text-left cursor-pointer group',
+                              'flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left cursor-pointer transition-all hover:bg-muted/50 group',
                               isChecked
-                                ? 'border-foreground/30 bg-foreground/5'
-                                : 'border-border/30 bg-muted/10 hover:bg-muted/20'
+                                ? 'border-zinc-900/20 bg-zinc-900/5 text-foreground dark:border-zinc-100/20 dark:bg-zinc-100/5'
+                                : 'border-border/30 bg-card text-muted-foreground'
                             )}
                           >
-                            <div className="flex items-start gap-2 pr-2">
-                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5 opacity-60" />
-                              <div>
-                                <span className="text-xs font-bold text-foreground block">
-                                  {action.label}
-                                </span>
-                                <span className="text-[11px] text-muted-foreground block leading-tight">
-                                  {action.description}
-                                </span>
-                              </div>
-                            </div>
-
                             <div
                               className={cn(
                                 'h-4.5 w-4.5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-all',
                                 isChecked
-                                  ? 'bg-foreground border-foreground text-background'
+                                  ? 'bg-zinc-900 border-zinc-900 text-white dark:bg-zinc-100 dark:border-zinc-100 dark:text-zinc-900'
                                   : 'border-border/60 bg-transparent group-hover:border-foreground/50'
                               )}
                             >
                               {isChecked && <Check className="h-3 w-3 stroke-3" />}
+                            </div>
+
+                            <div className="flex flex-col flex-1 min-w-0 pr-1">
+                              <span className={cn('text-xs font-bold transition-colors line-clamp-1', isChecked ? 'text-foreground' : 'text-zinc-655 dark:text-zinc-455')}>
+                                {action.label}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground font-normal line-clamp-1 leading-normal">
+                                {action.description}
+                              </span>
                             </div>
                           </button>
                         );
@@ -266,7 +266,8 @@ export function RoleFormDialog({ open, onOpenChange, roleToEdit }: RoleFormDialo
             </div>
           </div>
 
-          <DialogFooter className="pt-4 shrink-0">
+          {/* Static footer block */}
+          <DialogFooter className="pt-4 border-t border-border/20 shrink-0">
             <Button
               type="button"
               variant="outline"

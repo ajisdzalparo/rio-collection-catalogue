@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import { getProducts, getArchives } from '@/lib/api';
@@ -44,7 +44,7 @@ export default async function ArchivePage() {
           {archivedProducts.map((product) => (
             <Link key={product.id} href={`/products/${product.slug}`} className="group block">
               <div className="relative aspect-4/5 overflow-hidden bg-(--cat-surface-container-low)">
-                <Image
+                <SafeImage
                   src={product.imageUrl}
                   alt={product.name}
                   fill
@@ -91,7 +91,7 @@ export default async function ArchivePage() {
           {archives.map((archive) => (
             <div key={archive.id} className="group">
               <div className="relative aspect-3/2 overflow-hidden bg-(--cat-surface-container-low)">
-                <Image
+                <SafeImage
                   src={archive.imageUrl}
                   alt={archive.name}
                   fill
