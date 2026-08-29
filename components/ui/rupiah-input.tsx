@@ -24,11 +24,11 @@ export const RupiahInput = React.forwardRef<HTMLInputElement, RupiahInputProps>(
     ref
   ) => {
     const [displayValue, setDisplayValue] = React.useState(() =>
-      value || value === 0 ? formatNumberToRupiah(value) : ''
+      value > 0 ? formatNumberToRupiah(value) : ''
     );
 
     React.useEffect(() => {
-      setDisplayValue(value || value === 0 ? formatNumberToRupiah(value) : '');
+      setDisplayValue(value > 0 ? formatNumberToRupiah(value) : '');
     }, [value]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

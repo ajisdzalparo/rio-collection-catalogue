@@ -8,7 +8,8 @@ export async function GET() {
         variants: {
           select: {
             size: true,
-            inStock: true
+            inStock: true,
+            stock: true
           }
         }
       },
@@ -32,7 +33,29 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, slug, category, color, colorHex, price, status, imageUrl, images, description, variants, edition } = body;
+    const {
+      name,
+      slug,
+      category,
+      color,
+      colorHex,
+      colors,
+      colorHexes,
+      price,
+      hpp,
+      stock,
+      stockMode,
+      status,
+      imageUrl,
+      images,
+      description,
+      variants,
+      edition,
+      imageDetails,
+      storyTitle,
+      storyText,
+      materialsAndCare
+    } = body;
 
     const newProduct = await prisma.product.create({
       data: {
@@ -42,18 +65,30 @@ export async function POST(request: Request) {
         category,
         color,
         colorHex: colorHex || '#1A1A1A',
+        colors: Array.isArray(colors) && colors.length > 0 ? colors : [color].filter(Boolean),
+        colorHexes:
+          Array.isArray(colorHexes) && colorHexes.length > 0 ? colorHexes : [colorHex || '#1A1A1A'],
         price: Number(price),
+        hpp: hpp === undefined ? null : Number(hpp),
+        stock: stock === undefined ? 0 : Number(stock),
+        stockMode: stockMode || 'QUANTITY',
         status: status || 'AVAILABLE',
-        imageUrl: imageUrl || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
-        images: images || [imageUrl],
+        imageUrl:
+          imageUrl ||
+          'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+        images: Array.isArray(images) && images.length > 0 ? images : [imageUrl || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80'],
+        imageDetails: imageDetails || null,
         description: description || '',
+        storyTitle: storyTitle || null,
+        storyText: storyText || null,
+        materialsAndCare: materialsAndCare || null,
         variants: {
           createMany: {
             data: variants || [
-              { size: 'S', inStock: true },
-              { size: 'M', inStock: true },
-              { size: 'L', inStock: true },
-              { size: 'XL', inStock: true }
+              { size: 'S', inStock: true, stock: 10 },
+              { size: 'M', inStock: true, stock: 10 },
+              { size: 'L', inStock: true, stock: 10 },
+              { size: 'XL', inStock: true, stock: 10 }
             ]
           }
         }

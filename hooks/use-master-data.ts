@@ -36,6 +36,15 @@ export interface TopicItem {
   deletedAt?: string | null;
 }
 
+export interface BankItem {
+  id: string;
+  name: string;
+  code?: string | null;
+  logoUrl?: string | null;
+  isActive: boolean;
+  createdAt?: string;
+}
+
 export interface EditionItem {
   id: string;
   name: string;
@@ -50,6 +59,7 @@ interface MasterDataState {
   sizes: SizeItem[];
   topics: TopicItem[];
   editions: EditionItem[];
+  banks: BankItem[];
 
   // Setters for seeding from mock API
   setCategories: (categories: CategoryItem[]) => void;
@@ -57,6 +67,7 @@ interface MasterDataState {
   setSizes: (sizes: SizeItem[]) => void;
   setTopics: (topics: TopicItem[]) => void;
   setEditions: (editions: EditionItem[]) => void;
+  setBanks: (banks: BankItem[]) => void;
 
   // Categories CRUD
   addCategory: (name: string, description?: string) => void;
@@ -80,6 +91,11 @@ interface MasterDataState {
   addEdition: (name: string, description?: string, releaseYear?: string) => void;
   updateEdition: (id: string, name: string, description?: string, releaseYear?: string) => void;
   deleteEdition: (id: string) => void;
+
+  // Banks CRUD
+  addBank: (name: string, code?: string, logoUrl?: string) => void;
+  updateBank: (id: string, name?: string, code?: string, logoUrl?: string, isActive?: boolean) => void;
+  deleteBank: (id: string) => void;
 }
 
 const getSlug = (text: string) => {
@@ -97,6 +113,7 @@ export const useMasterStore = create<MasterDataState>()(
       sizes: [],
       topics: [],
       editions: [],
+      banks: [],
 
       // Setters
       setCategories: (categories) => set({ categories }),
@@ -104,6 +121,7 @@ export const useMasterStore = create<MasterDataState>()(
       setSizes: (sizes) => set({ sizes }),
       setTopics: (topics) => set({ topics }),
       setEditions: (editions) => set({ editions }),
+      setBanks: (banks) => set({ banks }),
 
       // Categories
       addCategory: (name, description) => set((state) => ({
@@ -196,6 +214,30 @@ export const useMasterStore = create<MasterDataState>()(
       })),
       deleteEdition: (id) => set((state) => ({
         editions: state.editions.filter((e) => e.id !== id)
+      })),
+
+      // Banks
+      addBank: (name, code, logoUrl) => set((state) => ({
+        banks: [
+          ...state.banks,
+          { id: `bank-${Date.now()}`, name, code: code || name.toUpperCase(), logoUrl, isActive: true }
+        ]
+      })),
+      updateBank: (id, name, code, logoUrl, isActive) => set((state) => ({
+        banks: state.banks.map((b) =>
+          b.id === id
+            ? {
+                ...b,
+                name: name !== undefined ? name : b.name,
+                code: code !== undefined ? code : b.code,
+                logoUrl: logoUrl !== undefined ? logoUrl : b.logoUrl,
+                isActive: isActive !== undefined ? isActive : b.isActive
+              }
+            : b
+        )
+      })),
+      deleteBank: (id) => set((state) => ({
+        banks: state.banks.filter((b) => b.id !== id)
       }))
     }),
     {
@@ -264,6 +306,19 @@ export function useEditionsQuery() {
       const { data } = await axios.get('/api/v1/categories');
       if (data.code === 200 && data.data) {
         return data.data as EditionItem[];
+      }
+      return Array.isArray(data) ? data : [];
+    }
+  });
+}
+
+export function useBanksQuery(activeOnly = false) {
+  return useQuery({
+    queryKey: ['banks', activeOnly],
+    queryFn: async () => {
+      const { data } = await axios.get(`/api/v1/banks${activeOnly ? '?activeOnly=true' : ''}`);
+      if (data.code === 200 && data.data) {
+        return data.data as BankItem[];
       }
       return Array.isArray(data) ? data : [];
     }
@@ -353,6 +408,30 @@ export function useMasterMutations() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sizes'] })
   });
 
+  const addBankMutation = useMutation({
+    mutationFn: async ({ name, code, logoUrl, isActive }: { name: string; code?: string; logoUrl?: string; isActive?: boolean }) => {
+      const { data } = await axios.post('/api/v1/banks', { name, code, logoUrl, isActive });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['banks'] })
+  });
+
+  const updateBankMutation = useMutation({
+    mutationFn: async ({ id, name, code, logoUrl, isActive }: { id: string; name?: string; code?: string; logoUrl?: string; isActive?: boolean }) => {
+      const { data } = await axios.put(`/api/v1/banks/${id}`, { name, code, logoUrl, isActive });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['banks'] })
+  });
+
+  const deleteBankMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(`/api/v1/banks/${id}`);
+      return id;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['banks'] })
+  });
+
   return {
     addCategory: addCategoryMutation.mutateAsync,
     updateCategory: updateCategoryMutation.mutateAsync,
@@ -363,6 +442,9 @@ export function useMasterMutations() {
     addTopic: addTopicMutation.mutateAsync,
     updateTopic: updateTopicMutation.mutateAsync,
     deleteTopic: deleteTopicMutation.mutateAsync,
-    toggleSize: toggleSizeMutation.mutateAsync
+    toggleSize: toggleSizeMutation.mutateAsync,
+    addBank: addBankMutation.mutateAsync,
+    updateBank: updateBankMutation.mutateAsync,
+    deleteBank: deleteBankMutation.mutateAsync
   };
 }

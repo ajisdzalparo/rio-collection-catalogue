@@ -15,6 +15,7 @@ import {
   type UserRole
 } from '@/features/users';
 import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/shared/confirm-modal';
 import {
   Plus,
   KeyRound,
@@ -49,6 +50,7 @@ function UsersPageContent() {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [roleToEdit, setRoleToEdit] = useState<UserRole | null>(null);
   const [roleToView, setRoleToView] = useState<UserRole | null>(null);
+  const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
   const [roleViewMode, setRoleViewMode] = useState<'table' | 'grid'>('table');
 
   const { data: mockRoles } = useRolesQuery();
@@ -81,8 +83,13 @@ function UsersPageContent() {
   };
 
   const handleDeleteRole = (roleName: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus master role "${roleName}"?`)) {
-      deleteRole(roleName);
+    setDeleteTargetRole(roleName);
+  };
+
+  const confirmDeleteRole = () => {
+    if (deleteTargetRole) {
+      deleteRole(deleteTargetRole);
+      setDeleteTargetRole(null);
     }
   };
 
@@ -305,6 +312,22 @@ function UsersPageContent() {
         onOpenChange={setShowDetailDialog}
         role={roleToView}
         onEditRole={handleOpenEditRole}
+      />
+      <ConfirmModal
+        open={Boolean(deleteTargetRole)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTargetRole(null);
+        }}
+        title="Konfirmasi Hapus Role"
+        description={
+          deleteTargetRole
+            ? `Apakah Anda yakin ingin menghapus master role "${deleteTargetRole}"?`
+            : ''
+        }
+        confirmText="Hapus Role"
+        cancelText="Batal"
+        variant="destructive"
+        onConfirm={confirmDeleteRole}
       />
     </div>
   );

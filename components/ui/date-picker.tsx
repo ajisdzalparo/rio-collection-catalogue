@@ -109,7 +109,8 @@ export function DatePicker({
   isClearable = true,
   disabled = false,
   className,
-  size = 'md'
+  size = 'md',
+  align = 'left'
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -272,7 +273,8 @@ export function DatePicker({
       {isOpen && (
         <div
           className={cn(
-            'absolute left-0 z-50 mt-2 flex flex-col sm:flex-row rounded-3xl border border-border/70 bg-card/95 p-4 shadow-xl backdrop-blur-md animate-in fade-in-50 zoom-in-95',
+            'absolute z-50 mt-2 flex flex-col sm:flex-row rounded-3xl border border-border/70 bg-card/95 p-4 shadow-xl backdrop-blur-md animate-in fade-in-50 zoom-in-95',
+            align === 'right' ? 'right-0 left-auto' : 'left-0',
             shouldShowPresets ? 'min-w-85 sm:min-w-120' : 'w-[320px]'
           )}
         >

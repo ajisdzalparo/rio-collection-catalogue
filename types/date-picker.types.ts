@@ -27,4 +27,5 @@ export interface DatePickerProps {
   disabled?: boolean;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  align?: 'left' | 'right';
 }

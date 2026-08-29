@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus, Check, AlertCircle, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Check, AlertCircle, Pencil, Trash2, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { VStack, Flex } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { ConfirmModal } from '@/components/shared/confirm-modal';
 import {
   Dialog,
   DialogContent,
@@ -26,11 +27,13 @@ import {
   useSizesQuery,
   useTopicsQuery,
   useEditionsQuery,
+  useBanksQuery,
   useMasterMutations,
   type CategoryItem,
   type ColorItem,
   type TopicItem,
-  type EditionItem
+  type EditionItem,
+  type BankItem
 } from '@/hooks/use-master-data';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +46,7 @@ function MasterDataPageContent() {
   const { data: mockSizes } = useSizesQuery();
   const { data: mockTopics, isLoading: loadingTopics } = useTopicsQuery();
   const { data: mockEditions, isLoading: loadingEditions } = useEditionsQuery();
+  const { data: mockBanks, isLoading: loadingBanks } = useBanksQuery();
 
   const {
     categories,
@@ -50,11 +54,13 @@ function MasterDataPageContent() {
     sizes,
     topics,
     editions,
+    banks,
     setCategories,
     setColors,
     setSizes,
     setTopics,
     setEditions,
+    setBanks,
     addCategory,
     updateCategory,
     deleteCategory,
@@ -67,7 +73,10 @@ function MasterDataPageContent() {
     deleteTopic,
     addEdition,
     updateEdition,
-    deleteEdition
+    deleteEdition,
+    addBank,
+    updateBank,
+    deleteBank
   } = useMasterStore();
 
   // Sync VeloMock API data to Zustand master store if empty
@@ -91,6 +100,10 @@ function MasterDataPageContent() {
     if (mockEditions && editions.length === 0) setEditions(mockEditions);
   }, [mockEditions, editions, setEditions]);
 
+  useEffect(() => {
+    if (mockBanks && banks.length === 0) setBanks(mockBanks);
+  }, [mockBanks, banks, setBanks]);
+
   const activeTab = searchParams.get('tab') || 'categories';
 
   const tabTitles: Record<string, { title: string; desc: string }> = {
@@ -113,16 +126,19 @@ function MasterDataPageContent() {
     topics: {
       title: 'Topik Jurnal',
       desc: 'Kelola topik tulisan untuk jurnal editorial blog.'
+    },
+    banks: {
+      title: 'Master Bank Pembayaran',
+      desc: 'Kelola data daftar bank yang dapat dipilih untuk rekening pembayaran toko.'
     }
   };
 
   const currentInfo = tabTitles[activeTab] || tabTitles.categories;
 
-
   // Dialog & Form states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{
-    type: 'cat' | 'col' | 'top' | 'ed';
+    type: 'cat' | 'col' | 'top' | 'ed' | 'bank';
     id: string;
   } | null>(null);
 
@@ -130,23 +146,36 @@ function MasterDataPageContent() {
   const [itemName, setItemName] = useState('');
   const [itemHex, setItemHex] = useState('#1A1A1A');
   const [itemDesc, setItemDesc] = useState('');
+  const [itemCode, setItemCode] = useState('');
+  const [itemLogoUrl, setItemLogoUrl] = useState('');
 
   const handleOpenCreate = () => {
     setEditingItem(null);
     setItemName('');
     setItemHex('#1A1A1A');
     setItemDesc('');
+    setItemCode('');
+    setItemLogoUrl('');
     setIsDialogOpen(true);
   };
 
   const handleOpenEdit = (
-    type: 'cat' | 'col' | 'top' | 'ed',
-    item: { id: string; name: string; hex?: string; description?: string }
+    type: 'cat' | 'col' | 'top' | 'ed' | 'bank',
+    item: {
+      id: string;
+      name: string;
+      hex?: string;
+      description?: string;
+      code?: string | null;
+      logoUrl?: string | null;
+    }
   ) => {
     setEditingItem({ type, id: item.id });
     setItemName(item.name);
     setItemHex(item.hex || '#1A1A1A');
     setItemDesc(item.description || '');
+    setItemCode(item.code || '');
+    setItemLogoUrl(item.logoUrl || '');
     setIsDialogOpen(true);
   };
 
@@ -158,16 +187,33 @@ function MasterDataPageContent() {
     try {
       if (editingItem) {
         if (editingItem.type === 'cat') {
-          await masterMutations.updateCategory({ id: editingItem.id, name: itemName, description: itemDesc });
+          await masterMutations.updateCategory({
+            id: editingItem.id,
+            name: itemName,
+            description: itemDesc
+          });
           updateCategory(editingItem.id, itemName, itemDesc);
         } else if (editingItem.type === 'col') {
           await masterMutations.updateColor({ id: editingItem.id, name: itemName, hex: itemHex });
           updateColor(editingItem.id, itemName, itemHex);
         } else if (editingItem.type === 'top') {
-          await masterMutations.updateTopic({ id: editingItem.id, name: itemName, description: itemDesc });
+          await masterMutations.updateTopic({
+            id: editingItem.id,
+            name: itemName,
+            description: itemDesc
+          });
           updateTopic(editingItem.id, itemName, itemDesc);
         } else if (editingItem.type === 'ed') {
           updateEdition(editingItem.id, itemName, itemDesc);
+        } else if (editingItem.type === 'bank') {
+          await masterMutations.updateBank({
+            id: editingItem.id,
+            name: itemName,
+            code: itemCode,
+            logoUrl: itemLogoUrl
+          });
+          updateBank(editingItem.id, itemName, itemCode, itemLogoUrl);
+          toast.success('Master bank berhasil diperbarui');
         }
       } else {
         if (activeTab === 'categories') {
@@ -181,32 +227,58 @@ function MasterDataPageContent() {
           addTopic(itemName, itemDesc);
         } else if (activeTab === 'editions') {
           addEdition(itemName, itemDesc);
+        } else if (activeTab === 'banks') {
+          await masterMutations.addBank({
+            name: itemName,
+            code: itemCode || itemName.toUpperCase(),
+            logoUrl: itemLogoUrl
+          });
+          addBank(itemName, itemCode, itemLogoUrl);
+          toast.success('Master bank baru berhasil ditambahkan');
         }
       }
     } catch (error) {
       console.error('Failed to save master item:', error);
+      toast.error('Gagal menyimpan data master');
     }
     setIsDialogOpen(false);
   };
 
-  const handleDelete = async (type: 'cat' | 'col' | 'top' | 'ed', id: string, name: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus "${name}"?`)) {
-      try {
-        if (type === 'cat') {
-          await masterMutations.deleteCategory(id);
-          deleteCategory(id);
-        } else if (type === 'col') {
-          await masterMutations.deleteColor(id);
-          deleteColor(id);
-        } else if (type === 'top') {
-          await masterMutations.deleteTopic(id);
-          deleteTopic(id);
-        } else if (type === 'ed') {
-          deleteEdition(id);
-        }
-      } catch (error) {
-        console.error('Failed to delete master item:', error);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: 'cat' | 'col' | 'top' | 'ed' | 'bank';
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const handleDelete = (type: 'cat' | 'col' | 'top' | 'ed' | 'bank', id: string, name: string) => {
+    setDeleteTarget({ type, id, name });
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!deleteTarget) return;
+    const { type, id, name } = deleteTarget;
+    try {
+      if (type === 'cat') {
+        await masterMutations.deleteCategory(id);
+        deleteCategory(id);
+      } else if (type === 'col') {
+        await masterMutations.deleteColor(id);
+        deleteColor(id);
+      } else if (type === 'top') {
+        await masterMutations.deleteTopic(id);
+        deleteTopic(id);
+      } else if (type === 'ed') {
+        deleteEdition(id);
+      } else if (type === 'bank') {
+        await masterMutations.deleteBank(id);
+        deleteBank(id);
       }
+      toast.success(`Berhasil menghapus "${name}"`);
+    } catch (error) {
+      console.error('Failed to delete master item:', error);
+      toast.error('Gagal menghapus data');
+    } finally {
+      setDeleteTarget(null);
     }
   };
   // Categories Columns
@@ -237,7 +309,9 @@ function MasterDataPageContent() {
             try {
               await masterMutations.updateCategory({ id: item.id, isActive: checked });
               updateCategory(item.id, undefined, undefined, checked);
-              toast.success(`Kategori "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+              toast.success(
+                `Kategori "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
+              );
             } catch (error) {
               console.error(error);
               toast.error('Gagal memperbarui status');
@@ -305,7 +379,9 @@ function MasterDataPageContent() {
             try {
               await masterMutations.updateColor({ id: item.id, isActive: checked });
               updateColor(item.id, undefined, undefined, checked);
-              toast.success(`Warna "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+              toast.success(
+                `Warna "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
+              );
             } catch (error) {
               console.error(error);
               toast.error('Gagal memperbarui status');
@@ -363,7 +439,9 @@ function MasterDataPageContent() {
             try {
               await masterMutations.updateTopic({ id: item.id, isActive: checked });
               updateTopic(item.id, undefined, undefined, checked);
-              toast.success(`Topik "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+              toast.success(
+                `Topik "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
+              );
             } catch (error) {
               console.error(error);
               toast.error('Gagal memperbarui status');
@@ -442,14 +520,84 @@ function MasterDataPageContent() {
     }
   ];
 
+  // Bank Columns
+  const bankColumns: Column<BankItem>[] = [
+    {
+      header: 'Nama Bank',
+      accessorKey: 'name',
+      sortable: true,
+      className: 'font-bold text-xs w-1/3 flex items-center gap-2',
+      cell: (item) => (
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
+            {item.code?.slice(0, 3) || <Building2 className="h-4 w-4" />}
+          </div>
+          <div>
+            <p className="font-bold text-xs text-foreground">{item.name}</p>
+            {item.code && <p className="font-mono text-[10px] text-muted-foreground">{item.code}</p>}
+          </div>
+        </div>
+      )
+    },
+    {
+      header: 'Kode Bank',
+      accessorKey: 'code',
+      className: 'font-mono text-xs uppercase font-semibold text-muted-foreground w-1/4',
+      cell: (item) => item.code || '-'
+    },
+    {
+      header: 'Status',
+      className: 'w-20',
+      cell: (item) => (
+        <Switch
+          checked={item.isActive ?? true}
+          onCheckedChange={async (checked) => {
+            try {
+              await masterMutations.updateBank({ id: item.id, isActive: checked });
+              updateBank(item.id, undefined, undefined, undefined, checked);
+              toast.success(`Bank "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+            } catch (error) {
+              console.error(error);
+              toast.error('Gagal memperbarui status bank');
+            }
+          }}
+        />
+      )
+    },
+    {
+      header: 'Aksi',
+      className: 'text-right w-24',
+      cell: (item) => (
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleOpenEdit('bank', item)}
+            className="h-8 w-8 rounded-lg cursor-pointer"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete('bank', item.id, item.name)}
+            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
   return (
     <VStack gap="lg" className="pb-10">
       <Flex direction="responsive" justify="between" align="center" gap="md">
         <VStack gap="xs">
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{currentInfo.title}</h1>
-          <p className="text-sm text-muted-foreground pt-1">
-            {currentInfo.desc}
-          </p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+            {currentInfo.title}
+          </h1>
+          <p className="text-sm text-muted-foreground pt-1">{currentInfo.desc}</p>
         </VStack>
 
         {activeTab !== 'sizes' && (
@@ -486,6 +634,19 @@ function MasterDataPageContent() {
           searchPlaceholder="Cari warna..."
           emptyTitle="Belum Ada Warna"
           emptyDescription="Mulai tambahkan varian warna kain baru."
+          pageSize={10}
+        />
+      )}
+
+      {activeTab === 'banks' && (
+        <DataTable
+          columns={bankColumns}
+          data={banks}
+          isLoading={loadingBanks}
+          searchKey="name"
+          searchPlaceholder="Cari nama bank..."
+          emptyTitle="Belum Ada Master Bank"
+          emptyDescription="Mulai tambahkan nama bank baru untuk pilihan transfer pembayaran."
           pageSize={10}
         />
       )}
@@ -539,7 +700,9 @@ function MasterDataPageContent() {
                   try {
                     await masterMutations.toggleSize({ size: s.size, isActive: nextActive });
                     toggleSize(s.size);
-                    toast.success(`Ukuran "${s.size}" berhasil ${nextActive ? 'diaktifkan' : 'dinonaktifkan'}`);
+                    toast.success(
+                      `Ukuran "${s.size}" berhasil ${nextActive ? 'diaktifkan' : 'dinonaktifkan'}`
+                    );
                   } catch (error) {
                     console.error(error);
                     toast.error('Gagal memperbarui status ukuran');
@@ -576,25 +739,45 @@ function MasterDataPageContent() {
             <DialogDescription className="text-xs pt-1">
               {editingItem
                 ? 'Update detail parameter master data Anda.'
-                : `Lengkapi parameter baru untuk tab ${activeTab === 'categories' ? 'Kategori Kaos' : activeTab === 'colors' ? 'Warna' : 'Topik Jurnal'}.`}
+                : `Lengkapi parameter baru untuk tab ${activeTab === 'categories' ? 'Kategori Kaos' : activeTab === 'colors' ? 'Warna' : activeTab === 'banks' ? 'Master Bank' : 'Topik Jurnal'}.`}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
               <Label htmlFor="item-name" className="text-xs font-bold text-foreground">
-                Nama / Label
+                Nama / Label Bank
               </Label>
               <Input
                 id="item-name"
                 type="text"
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
-                placeholder="Misal: Heavy-Weight, Crimson Red, Culture..."
+                placeholder={
+                  activeTab === 'banks'
+                    ? 'Misal: Bank BCA, Mandiri, Bank Jago...'
+                    : 'Misal: Heavy-Weight, Crimson Red, Culture...'
+                }
                 className="h-10 rounded-xl"
                 required
               />
             </div>
+
+            {activeTab === 'banks' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="item-code" className="text-xs font-bold text-foreground">
+                  Kode Singkat Bank (e.g. BCA, MANDIRI, BNI)
+                </Label>
+                <Input
+                  id="item-code"
+                  type="text"
+                  value={itemCode}
+                  onChange={(e) => setItemCode(e.target.value.toUpperCase())}
+                  placeholder="BCA"
+                  className="h-10 rounded-xl uppercase font-mono font-bold"
+                />
+              </div>
+            )}
 
             {activeTab === 'colors' && (
               <div className="space-y-1.5">
@@ -620,7 +803,7 @@ function MasterDataPageContent() {
               </div>
             )}
 
-            {activeTab !== 'colors' && (
+            {activeTab !== 'colors' && activeTab !== 'banks' && (
               <div className="space-y-1.5">
                 <Label htmlFor="item-desc" className="text-xs font-bold text-foreground">
                   Keterangan / Deskripsi
@@ -654,6 +837,21 @@ function MasterDataPageContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="Konfirmasi Hapus Data Master"
+        description={
+          deleteTarget ? `Apakah Anda yakin ingin menghapus "${deleteTarget.name}"?` : ''
+        }
+        confirmText="Hapus"
+        cancelText="Batal"
+        variant="destructive"
+        onConfirm={confirmDeleteAction}
+      />
     </VStack>
   );
 }

@@ -1,15 +1,13 @@
-'use client';
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useUsers } from '../hooks/use-users';
 import { DataTable, ErrorState, type Column } from '@/components/shared';
+import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { UserActions } from './user-actions';
-import { MOCK_USERS } from '../data/mock-users';
 import { useUpdateUser } from '../hooks/use-update-user';
 import type { User } from '../types/user.types';
 
@@ -36,7 +34,7 @@ function UserStatusSwitch({ user }: { user: User }) {
 
 const columns: Column<User>[] = [
   {
-    header: 'User',
+    header: 'Pengguna',
     accessorKey: 'name',
     sortable: true,
     cell: (user) => {
@@ -61,7 +59,7 @@ const columns: Column<User>[] = [
     }
   },
   {
-    header: 'Role',
+    header: 'Master Role',
     accessorKey: 'role',
     sortable: true,
     cell: (user) => (
@@ -77,7 +75,7 @@ const columns: Column<User>[] = [
     cell: (user) => <UserStatusSwitch user={user} />
   },
   {
-    header: 'Actions',
+    header: 'Aksi',
     className: 'w-16 text-right',
     cell: (user) => <UserActions user={user} />
   }
@@ -85,47 +83,73 @@ const columns: Column<User>[] = [
 
 export default function UserTable() {
   const { data, isLoading, isError, error } = useUsers();
+  const [bulkDeleteSelected, setBulkDeleteSelected] = useState<User[]>([]);
+  const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
 
-  const handleBulkDelete = (selected: User[], clear: () => void) => {
-    toast.error(`Deleted ${selected.length} user(s)`);
-    clear();
+  const confirmBulkDelete = () => {
+    if (bulkDeleteSelected.length > 0) {
+      toast.success(`${bulkDeleteSelected.length} akun pengguna berhasil dihapus`);
+      if (clearSelectionFn) clearSelectionFn();
+      setBulkDeleteSelected([]);
+      setClearSelectionFn(null);
+    }
   };
 
   if (isError && !data) {
     return (
       <div className="space-y-4">
-        <ErrorState message={error?.message || 'Failed to connect to backend server.'} />
-        <p className="text-xs text-center text-muted-foreground">Showing demo fallback data below:</p>
+        <ErrorState message={error?.message || 'Gagal terhubung ke server backend.'} />
         <DataTable
           columns={columns}
-          data={MOCK_USERS}
+          data={[]}
           searchKey="name"
-          searchPlaceholder="Search users..."
-          enableSelection
+          searchPlaceholder="Cari pengguna berdasarkan nama atau email..."
+          emptyTitle="Belum Ada Pengguna / Admin"
+          emptyDescription="Klik 'Add User' di atas untuk menambahkan akun pengelola CMS baru."
         />
       </div>
     );
   }
 
-  const tableData = data?.data && data.data.length > 0 ? data.data : MOCK_USERS;
+  const tableData = data?.data || [];
 
   return (
-    <DataTable
-      columns={columns}
-      data={tableData}
-      searchKey="name"
-      searchPlaceholder="Search users by name or email..."
-      isLoading={isLoading}
-      enableSelection
-      bulkActions={(selected, clear) => (
-        <Button
-          onClick={() => handleBulkDelete(selected, clear)}
-          className="gap-1.5 text-xs font-bold h-8 px-3.5 rounded-full bg-red-600 hover:bg-red-500 active:bg-red-700 text-white border-none transition-all cursor-pointer shadow-md shadow-red-950/20"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-          <span>Hapus</span>
-        </Button>
-      )}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={tableData}
+        searchKey="name"
+        searchPlaceholder="Cari pengguna berdasarkan nama atau email..."
+        isLoading={isLoading}
+        enableSelection
+        emptyTitle="Belum Ada Pengguna / Admin"
+        emptyDescription="Klik 'Add User' di atas untuk menambahkan akun pengelola CMS baru."
+        bulkActions={(selected, clear) => (
+          <Button
+            onClick={() => {
+              setBulkDeleteSelected(selected);
+              setClearSelectionFn(() => clear);
+            }}
+            className="gap-1.5 text-xs font-bold h-8 px-3.5 rounded-full bg-red-600 hover:bg-red-500 active:bg-red-700 text-white border-none transition-all cursor-pointer shadow-md shadow-red-950/20"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Hapus ({selected.length})</span>
+          </Button>
+        )}
+      />
+
+      <ConfirmModal
+        open={bulkDeleteSelected.length > 0}
+        onOpenChange={(open) => {
+          if (!open) setBulkDeleteSelected([]);
+        }}
+        title="Konfirmasi Hapus Pengguna"
+        description={`Apakah Anda yakin ingin menghapus ${bulkDeleteSelected.length} akun pengguna yang dipilih?`}
+        confirmText="Hapus Pengguna"
+        cancelText="Batal"
+        variant="destructive"
+        onConfirm={confirmBulkDelete}
+      />
+    </>
   );
 }

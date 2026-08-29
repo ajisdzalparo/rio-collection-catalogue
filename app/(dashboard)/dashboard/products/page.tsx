@@ -17,6 +17,7 @@ import {
   Shirt
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +46,16 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import type { Product, ProductVariant, ProductStatus, StockMode } from '@/types/catalogue.types';
+import { MultiSelect } from '@/components/ui/multi-select';
+import type {
+  Product,
+  ProductImage,
+  ProductVariant,
+  ProductStatus,
+  StockMode
+} from '@/types/catalogue.types';
+
+const MAX_PRODUCT_IMAGES = 3;
 
 export default function ProductsCmsPage() {
   const {
@@ -83,8 +93,8 @@ export default function ProductsCmsPage() {
   // Form states
   const [name, setName] = useState('');
   const [price, setPrice] = useState(0);
-  const [hpp, setHpp] = useState(180000);
-  const [color, setColor] = useState('');
+  const [hpp, setHpp] = useState(0);
+  const [colorsSelected, setColorsSelected] = useState<string[]>([]);
   const [colorHex, setColorHex] = useState('#1A1A1A');
   const [category, setCategory] = useState<string>('');
   const [status, setStatus] = useState<ProductStatus>('AVAILABLE');
@@ -93,40 +103,44 @@ export default function ProductsCmsPage() {
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [imagesList, setImagesList] = useState<string[]>([]);
+  const [detailImageFlags, setDetailImageFlags] = useState<Record<string, boolean>>({});
 
   // Materials & Care Form States
-  const [fabric, setFabric] = useState('100% Premium Heavyweight Cotton, 280gsm');
-  const [treatment, setTreatment] = useState('Pre-shrunk to minimize shrinkage');
-  const [origin, setOrigin] = useState('Constructed in Indonesia');
-  const [careInstruction, setCareInstruction] = useState('Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.');
+  const [fabric, setFabric] = useState('');
+  const [treatment, setTreatment] = useState('');
+  const [origin, setOrigin] = useState('');
+  const [careInstruction, setCareInstruction] = useState('');
 
   // Stock state per size variant: { size: { inStock: boolean, stock: number } }
-  const [sizesStock, setSizesStock] = useState<Record<string, { inStock: boolean; stock: number }>>({});
+  const [sizesStock, setSizesStock] = useState<Record<string, { inStock: boolean; stock: number }>>(
+    {}
+  );
 
   const handleOpenCreate = () => {
     setEditingProduct(null);
     setName('');
-    setPrice(450000);
-    setHpp(180000);
-    setColor(colors[0]?.name || '');
-    setColorHex(colors[0]?.hex || '#1A1A1A');
-    setCategory(categories[0]?.slug || '');
+    setPrice(0);
+    setHpp(0);
+    setColorsSelected([]);
+    setColorHex('#1A1A1A');
+    setCategory('');
     setStatus('AVAILABLE');
     setStockMode('QUANTITY');
-    setEdition(editions[0]?.name || 'Edition 001');
+    setEdition('');
     setDescription('');
-    setImageUrl('/images/products/black-tee.jpg');
-    setImagesList(['/images/products/black-tee.jpg']);
+    setImageUrl('');
+    setImagesList([]);
+    setDetailImageFlags({});
 
-    setFabric('100% Premium Heavyweight Cotton, 280gsm');
-    setTreatment('Pre-shrunk to minimize shrinkage');
-    setOrigin('Constructed in Indonesia');
-    setCareInstruction('Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.');
+    setFabric('');
+    setTreatment('');
+    setOrigin('');
+    setCareInstruction('');
 
-    // Build default sizes stock map from active sizes
+    // Build default sizes stock map from active sizes with 0 stock
     const defaultSizes: Record<string, { inStock: boolean; stock: number }> = {};
     activeSizes.forEach((s) => {
-      defaultSizes[s.size] = { inStock: true, stock: 10 };
+      defaultSizes[s.size] = { inStock: false, stock: 0 };
     });
     setSizesStock(defaultSizes);
     setIsDialogOpen(true);
@@ -138,7 +152,9 @@ export default function ProductsCmsPage() {
       setName(product.name);
       setPrice(product.price);
       setHpp(product.hpp || 180000);
-      setColor(product.color);
+      setColorsSelected(
+        product.colors?.length ? product.colors : product.color ? [product.color] : []
+      );
       setColorHex(product.colorHex);
       setCategory(product.category);
       setStatus(product.status);
@@ -146,12 +162,37 @@ export default function ProductsCmsPage() {
       setEdition(product.edition);
       setDescription(product.description);
       setImageUrl(product.imageUrl);
-      setImagesList(product.images || [product.imageUrl]);
+      // The cover has its own uploader; the gallery contains only optional details.
+      const detailImages = (product.images || []).filter(
+        (image) => image && image !== product.imageUrl
+      );
+      setImagesList(detailImages);
+      const savedFlags = Array.isArray(product.imageDetails) ? product.imageDetails : [];
+      // Legacy products without stored imageDetails: treat every non-cover
+      // gallery image as a detail so editing + saving preserves them. When
+      // imageDetails exists, keep the stored boolean flags exactly as saved.
+      setDetailImageFlags({
+        // The cover has its own detail toggle too.
+        [product.imageUrl]: Array.isArray(product.imageDetails)
+          ? savedFlags.some((item: ProductImage) => item.url === product.imageUrl && item.isDetail)
+          : false,
+        ...Object.fromEntries(
+          detailImages.map((image) => [
+            image,
+            Array.isArray(product.imageDetails)
+              ? savedFlags.some((item: ProductImage) => item.url === image && item.isDetail)
+              : true
+          ])
+        )
+      });
 
       setFabric(product.materialsAndCare?.fabric || '100% Premium Heavyweight Cotton, 280gsm');
       setTreatment(product.materialsAndCare?.treatment || 'Pre-shrunk to minimize shrinkage');
       setOrigin(product.materialsAndCare?.origin || 'Constructed in Indonesia');
-      setCareInstruction(product.materialsAndCare?.careInstruction || 'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.');
+      setCareInstruction(
+        product.materialsAndCare?.careInstruction ||
+          'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.'
+      );
 
       // Map variants back to sizing stock state
       const stockMap: Record<string, { inStock: boolean; stock: number }> = {};
@@ -182,19 +223,30 @@ export default function ProductsCmsPage() {
   // Total calculated stock from form sizes
   const totalFormStock = useMemo(() => {
     if (stockMode === 'ALWAYS_AVAILABLE') return 9999;
-    return Object.values(sizesStock).reduce((sum, item) => sum + (item.inStock ? item.stock : 0), 0);
+    return Object.values(sizesStock).reduce(
+      (sum, item) => sum + (item.inStock ? item.stock : 0),
+      0
+    );
   }, [sizesStock, stockMode]);
 
   const handleSaveProduct = async () => {
+    if (!name || !imageUrl) {
+      toast.error('Nama dan Foto Utama wajib diisi');
+      return;
+    }
+
     const slug = getSlug(name);
 
     const variants: ProductVariant[] = Object.entries(sizesStock).map(([size, item]) => ({
       size,
-      inStock: stockMode === 'ALWAYS_AVAILABLE' ? true : (item.inStock && item.stock > 0),
-      stock: stockMode === 'ALWAYS_AVAILABLE' ? 999 : (item.inStock ? item.stock : 0)
+      inStock: stockMode === 'ALWAYS_AVAILABLE' ? true : item.inStock && item.stock > 0,
+      stock: stockMode === 'ALWAYS_AVAILABLE' ? 999 : item.inStock ? item.stock : 0
     }));
 
-    const computedTotalStock = stockMode === 'ALWAYS_AVAILABLE' ? 9999 : variants.reduce((acc, v) => acc + (v.stock || 0), 0);
+    const computedTotalStock =
+      stockMode === 'ALWAYS_AVAILABLE'
+        ? 9999
+        : variants.reduce((acc, v) => acc + (v.stock || 0), 0);
 
     let finalStatus: ProductStatus = status;
     if (stockMode === 'ALWAYS_AVAILABLE') {
@@ -207,6 +259,9 @@ export default function ProductsCmsPage() {
       }
     }
 
+    // Foto utama adalah cover; gallery hanya menyimpan maksimal dua foto detail.
+    const normalizedImages = imagesList.filter(Boolean).slice(0, MAX_PRODUCT_IMAGES - 1);
+
     const payload: Product = {
       id: editingProduct ? editingProduct.id : `prod-${Math.floor(Math.random() * 1000)}`,
       name,
@@ -215,14 +270,25 @@ export default function ProductsCmsPage() {
       hpp,
       stock: computedTotalStock,
       stockMode,
-      color,
-      colorHex,
+      color: colorsSelected[0] || '',
+      colorHex: colors.find((c) => c.name === (colorsSelected[0] || ''))?.hex || colorHex,
+      colors: colorsSelected,
+      colorHexes: colorsSelected.map(
+        (name) => colors.find((c) => c.name === name)?.hex || '#1A1A1A'
+      ),
       category,
       status: finalStatus,
       edition,
       description,
       imageUrl,
-      images: imagesList,
+      images: [imageUrl, ...normalizedImages].filter(Boolean),
+      imageDetails: [
+        { url: imageUrl, isDetail: detailImageFlags[imageUrl] === true },
+        ...normalizedImages.map((url) => ({
+          url,
+          isDetail: detailImageFlags[url] === true
+        }))
+      ].filter((item) => item.url),
       variants,
       materialsAndCare: {
         fabric,
@@ -247,24 +313,25 @@ export default function ProductsCmsPage() {
     }
   };
 
-  const handleDeleteProduct = useCallback(
-    async (productId: string) => {
-      if (confirm('Apakah Anda yakin ingin menghapus produk ini dari CMS?')) {
-        try {
-          await deleteProduct(productId);
-          toast.success('Produk berhasil dihapus');
-        } catch (err) {
-          console.error('Failed to delete product:', err);
-          toast.error('Gagal menghapus produk');
-        }
-      }
-    },
-    [deleteProduct]
-  );
+  const [deleteTargetProduct, setDeleteTargetProduct] = useState<Product | null>(null);
+
+  const confirmDeleteProduct = async () => {
+    if (!deleteTargetProduct) return;
+    try {
+      await deleteProduct(deleteTargetProduct.id);
+      toast.success(`Produk "${deleteTargetProduct.name}" berhasil dihapus`);
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      toast.error('Gagal menghapus produk');
+    } finally {
+      setDeleteTargetProduct(null);
+    }
+  };
 
   const getStatusBadge = (product: Product) => {
     const isAlwaysAvailable = product.stockMode === 'ALWAYS_AVAILABLE';
-    const isOutOfStock = !isAlwaysAvailable && (product.stock === 0 || product.status === 'SOLD_OUT');
+    const isOutOfStock =
+      !isAlwaysAvailable && (product.stock === 0 || product.status === 'SOLD_OUT');
 
     if (isOutOfStock) {
       return <CMSBadge variant="error">SOLD OUT</CMSBadge>;
@@ -397,17 +464,28 @@ export default function ProductsCmsPage() {
         cell: (product) => {
           if (product.stockMode === 'ALWAYS_AVAILABLE') {
             return (
-              <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 text-xs font-bold gap-1">
-                <InfinityIcon className="h-3.5 w-3.5" />
-                <span>Tanpa Batas</span>
+              <Badge
+                variant="outline"
+                className="bg-gradient-to-r from-sky-500/15 via-blue-500/10 to-indigo-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30 text-[11px] font-bold tracking-wider uppercase px-3 py-1 rounded-full gap-1.5 backdrop-blur-xs shadow-xs transition-all hover:border-sky-400/50"
+              >
+                <InfinityIcon className="h-3.5 w-3.5 shrink-0 stroke-[2.5] text-sky-500 dark:text-sky-400" />
+                <span className="font-mono text-[11px]">Tanpa Batas</span>
               </Badge>
             );
           }
-          const totalStock = product.stock ?? product.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
+          const totalStock =
+            product.stock ??
+            product.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
           return (
             <div className="flex items-center gap-1.5 font-bold text-xs">
-              <Package className={`h-4 w-4 ${totalStock > 0 ? 'text-emerald-500' : 'text-red-500'}`} />
-              <span className={totalStock > 0 ? 'text-foreground font-black' : 'text-red-500 font-black'}>
+              <Package
+                className={`h-4 w-4 ${totalStock > 0 ? 'text-emerald-500' : 'text-red-500'}`}
+              />
+              <span
+                className={
+                  totalStock > 0 ? 'text-foreground font-black' : 'text-red-500 font-black'
+                }
+              >
                 {totalStock} pcs
               </span>
             </div>
@@ -419,7 +497,9 @@ export default function ProductsCmsPage() {
         className: 'min-w-[220px]',
         cell: (product) => {
           if (product.stockMode === 'ALWAYS_AVAILABLE') {
-            return <span className="text-[11px] text-muted-foreground italic">Semua ukuran ready</span>;
+            return (
+              <span className="text-[11px] text-muted-foreground italic">Semua ukuran ready</span>
+            );
           }
           return (
             <div className="flex gap-1.5 flex-wrap">
@@ -476,7 +556,7 @@ export default function ProductsCmsPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleDeleteProduct(product.id)}
+              onClick={() => setDeleteTargetProduct(product)}
               disabled={isDeleting}
               className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
               title="Hapus Produk"
@@ -487,16 +567,19 @@ export default function ProductsCmsPage() {
         )
       }
     ],
-    [handleDeleteProduct, handleOpenEdit, isDeleting]
+    [handleOpenEdit, isDeleting]
   );
 
   return (
     <VStack gap="lg" className="pb-10">
       <Flex direction="responsive" justify="between" align="center" gap="md">
         <VStack gap="xs">
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Master Produk & Stok</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+            Master Produk & Stok
+          </h1>
           <p className="text-sm text-muted-foreground pt-1">
-            Kelola katalog kaos RIO COLLECTION, atur mode ketersediaan, spesifikasi bahan & care instruction, harga, & HPP
+            Kelola katalog kaos RIO COLLECTION, atur mode ketersediaan, spesifikasi bahan & care
+            instruction, harga, & HPP
           </p>
         </VStack>
         <Button
@@ -550,11 +633,14 @@ export default function ProductsCmsPage() {
             <DialogTitle className="text-lg font-extrabold flex items-center gap-2">
               <Tag className="h-5 w-5 text-muted-foreground" />
               <span>
-                {editingProduct ? `Edit Kaos & Spesifikasi: ${editingProduct.name}` : 'Tambah Model Kaos & Spesifikasi Baru'}
+                {editingProduct
+                  ? `Edit Kaos & Spesifikasi: ${editingProduct.name}`
+                  : 'Tambah Model Kaos & Spesifikasi Baru'}
               </span>
             </DialogTitle>
             <DialogDescription className="text-xs pt-1">
-              Atur informasi dasar kaos, harga HPP, mode ketersediaan stok, galeri foto, serta Materials & Care instruction.
+              Atur informasi dasar kaos, harga HPP, mode ketersediaan stok, galeri foto, serta
+              Materials & Care instruction.
             </DialogDescription>
           </DialogHeader>
 
@@ -580,7 +666,9 @@ export default function ProductsCmsPage() {
               <div className="space-y-2 bg-muted/15 p-4 rounded-2xl border border-border/20">
                 <Label className="text-xs font-bold text-foreground flex items-center justify-between">
                   <span>Mode Ketersediaan Stok</span>
-                  <span className="text-[10px] text-muted-foreground font-normal">Pilih metode kontrol stok</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    Pilih metode kontrol stok
+                  </span>
                 </Label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -602,14 +690,20 @@ export default function ProductsCmsPage() {
                       <div
                         className={cn(
                           'w-4 h-4 rounded-full border flex items-center justify-center shrink-0',
-                          stockMode === 'QUANTITY' ? 'border-foreground bg-foreground' : 'border-border/60'
+                          stockMode === 'QUANTITY'
+                            ? 'border-foreground bg-foreground'
+                            : 'border-border/60'
                         )}
                       >
-                        {stockMode === 'QUANTITY' && <div className="w-1.5 h-1.5 rounded-full bg-background" />}
+                        {stockMode === 'QUANTITY' && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-background" />
+                        )}
                       </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-normal">
-                      Menghitung stok fisik per size. Otomatis <strong className="text-foreground font-semibold">Sold Out</strong> jika stok 0.
+                      Menghitung stok fisik per size. Otomatis{' '}
+                      <strong className="text-foreground font-semibold">Sold Out</strong> jika stok
+                      0.
                     </p>
                   </div>
 
@@ -631,10 +725,14 @@ export default function ProductsCmsPage() {
                       <div
                         className={cn(
                           'w-4 h-4 rounded-full border flex items-center justify-center shrink-0',
-                          stockMode === 'ALWAYS_AVAILABLE' ? 'border-foreground bg-foreground' : 'border-border/60'
+                          stockMode === 'ALWAYS_AVAILABLE'
+                            ? 'border-foreground bg-foreground'
+                            : 'border-border/60'
                         )}
                       >
-                        {stockMode === 'ALWAYS_AVAILABLE' && <div className="w-1.5 h-1.5 rounded-full bg-background" />}
+                        {stockMode === 'ALWAYS_AVAILABLE' && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-background" />
+                        )}
                       </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-normal">
@@ -696,43 +794,53 @@ export default function ProductsCmsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Warna</Label>
+                <Label className="text-xs font-bold text-foreground">
+                  Warna (bisa pilih lebih dari satu)
+                </Label>
                 <div className="flex items-center gap-3">
-                  <div
-                    className="h-10 w-10 rounded-xl border border-border/40 shadow-xs shrink-0"
-                    style={{ backgroundColor: colorHex }}
-                  />
-                  <Select
-                    value={color}
-                    onValueChange={(val) => {
-                      if (!val) return;
-                      setColor(val);
-                      const found = colors.find((c) => c.name === val);
-                      if (found) setColorHex(found.hex);
+                  <div className="flex items-center -space-x-1.5 shrink-0">
+                    {(colorsSelected.length > 0 ? colorsSelected : []).map((name) => {
+                      const hex = colors.find((c) => c.name === name)?.hex || '#1A1A1A';
+                      const isLight =
+                        hex.toLowerCase() === '#ffffff' ||
+                        hex.toLowerCase() === '#fff' ||
+                        hex.toLowerCase() === '#fafafa' ||
+                        hex.toLowerCase() === '#f5f5f5';
+
+                      return (
+                        <span
+                          key={name}
+                          className={cn(
+                            'h-8 w-8 rounded-full border-2 shadow-xs',
+                            isLight ? 'border-stone-400 dark:border-stone-500' : 'border-card'
+                          )}
+                          style={{ backgroundColor: hex }}
+                          title={name}
+                        />
+                      );
+                    })}
+                    {colorsSelected.length === 0 && (
+                      <span className="h-8 w-8 rounded-full border border-border/40 bg-muted/30" />
+                    )}
+                  </div>
+                  <MultiSelect
+                    className="grow"
+                    placeholder="Pilih satu atau beberapa warna"
+                    maxCount={3}
+                    value={colorsSelected}
+                    onChange={(selected) => {
+                      setColorsSelected(selected);
+                      const first = colors.find((c) => c.name === selected[0]);
+                      if (first) setColorHex(first.hex);
                     }}
-                  >
-                    <SelectTrigger className="h-10 rounded-xl grow">
-                      <SelectValue placeholder="Pilih Warna" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {colors
-                        .filter((c) => c.isActive || c.name === color)
-                        .map((c) => (
-                          <SelectItem key={c.id} value={c.name}>
-                            <span className="flex items-center gap-2">
-                              <span
-                                className="inline-block h-3 w-3 rounded-full border border-border/40"
-                                style={{ backgroundColor: c.hex }}
-                              />
-                              {c.name}
-                              <span className="text-muted-foreground font-mono text-[10px] uppercase">
-                                {c.hex}
-                              </span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                    options={colors
+                      .filter((c) => c.isActive || colorsSelected.includes(c.name))
+                      .map((c) => ({
+                        value: c.name,
+                        label: c.name,
+                        description: c.hex
+                      }))}
+                  />
                 </div>
               </div>
 
@@ -757,7 +865,9 @@ export default function ProductsCmsPage() {
 
                 {stockMode === 'ALWAYS_AVAILABLE' ? (
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Status Availability Produk</Label>
+                    <Label className="text-xs font-bold text-foreground">
+                      Status Availability Produk
+                    </Label>
                     <Select
                       value={status}
                       onValueChange={(val) => val && setStatus(val as ProductStatus)}
@@ -774,7 +884,9 @@ export default function ProductsCmsPage() {
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-muted-foreground">Status Availability</Label>
+                    <Label className="text-xs font-bold text-muted-foreground">
+                      Status Availability
+                    </Label>
                     <div className="h-10 px-3.5 flex items-center bg-muted/20 border border-border/20 rounded-xl text-xs">
                       {totalFormStock > 0 ? (
                         <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
@@ -813,7 +925,10 @@ export default function ProductsCmsPage() {
                 </Label>
                 <div className="space-y-2.5">
                   <div className="space-y-1">
-                    <Label htmlFor="mat-fabric" className="text-[11px] font-semibold text-muted-foreground">
+                    <Label
+                      htmlFor="mat-fabric"
+                      className="text-[11px] font-semibold text-muted-foreground"
+                    >
                       Fabric / Material Bahan
                     </Label>
                     <Input
@@ -825,7 +940,10 @@ export default function ProductsCmsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="mat-treatment" className="text-[11px] font-semibold text-muted-foreground">
+                    <Label
+                      htmlFor="mat-treatment"
+                      className="text-[11px] font-semibold text-muted-foreground"
+                    >
                       Treatment Bahan
                     </Label>
                     <Input
@@ -838,7 +956,10 @@ export default function ProductsCmsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label htmlFor="mat-origin" className="text-[11px] font-semibold text-muted-foreground">
+                      <Label
+                        htmlFor="mat-origin"
+                        className="text-[11px] font-semibold text-muted-foreground"
+                      >
                         Origin / Negara Asal
                       </Label>
                       <Input
@@ -850,7 +971,10 @@ export default function ProductsCmsPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="mat-care" className="text-[11px] font-semibold text-muted-foreground">
+                      <Label
+                        htmlFor="mat-care"
+                        className="text-[11px] font-semibold text-muted-foreground"
+                      >
                         Care Instruction
                       </Label>
                       <Input
@@ -874,12 +998,31 @@ export default function ProductsCmsPage() {
                   value={imageUrl}
                   onChange={setImageUrl}
                   placeholder="Pilih atau upload foto kaos utama"
+                  detailFlag={detailImageFlags[imageUrl] === true}
+                  onDetailFlagChange={(checked) =>
+                    setDetailImageFlags((flags) => ({ ...flags, [imageUrl]: checked }))
+                  }
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Galeri Foto Produk</Label>
-                <MultiImageUpload value={imagesList} onChange={setImagesList} maxImages={6} />
+                <Label className="text-xs font-bold text-foreground">
+                  Foto Detail (Opsional, Maks. 2)
+                </Label>
+                <MultiImageUpload
+                  value={imagesList}
+                  onChange={(images) => {
+                    const nextImages = images.slice(0, MAX_PRODUCT_IMAGES - 1);
+                    setImagesList(nextImages);
+                    setDetailImageFlags((flags) =>
+                      Object.fromEntries(nextImages.map((image) => [image, flags[image] === true]))
+                    );
+                  }}
+                  maxImages={MAX_PRODUCT_IMAGES - 1}
+                  detailFlags={detailImageFlags}
+                  onDetailFlagsChange={setDetailImageFlags}
+                  slotLabels={['Foto Detail 1', 'Foto Detail 2']}
+                />
               </div>
 
               {/* Enhanced Stock Management Per Size */}
@@ -890,12 +1033,18 @@ export default function ProductsCmsPage() {
                     Manajemen Stok Per Ukuran (Size)
                   </Label>
                   {stockMode === 'ALWAYS_AVAILABLE' ? (
-                    <Badge variant="secondary" className="font-mono text-xs font-bold bg-blue-500/10 text-blue-600 border-blue-500/20 gap-1">
+                    <Badge
+                      variant="secondary"
+                      className="font-mono text-xs font-bold bg-blue-500/10 text-blue-600 border-blue-500/20 gap-1"
+                    >
                       <InfinityIcon className="h-3.5 w-3.5" />
                       <span>Selalu Available</span>
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="font-mono text-xs font-bold bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                    <Badge
+                      variant="outline"
+                      className="font-mono text-xs font-bold bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                    >
                       Total: {totalFormStock} pcs
                     </Badge>
                   )}
@@ -903,7 +1052,8 @@ export default function ProductsCmsPage() {
 
                 {stockMode === 'ALWAYS_AVAILABLE' ? (
                   <p className="text-xs text-muted-foreground bg-blue-500/5 border border-blue-500/15 p-3 rounded-xl">
-                    Mode <strong>Selalu Tersedia</strong> aktif. Produk tidak membatasi jumlah stok dan tidak akan otomatis menjadi Sold Out.
+                    Mode <strong>Selalu Tersedia</strong> aktif. Produk tidak membatasi jumlah stok
+                    dan tidak akan otomatis menjadi Sold Out.
                   </p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
@@ -969,7 +1119,7 @@ export default function ProductsCmsPage() {
             </Button>
             <Button
               onClick={handleSaveProduct}
-              disabled={!name || isCreating || isUpdating}
+              disabled={!name || !imageUrl || isCreating || isUpdating}
               className="h-10 rounded-xl text-xs cursor-pointer font-bold uppercase tracking-wider"
             >
               {isCreating || isUpdating ? 'Menyimpan...' : 'Simpan Produk & Spesifikasi'}
@@ -987,12 +1137,21 @@ export default function ProductsCmsPage() {
       >
         {detailProduct &&
           (() => {
-            const imagesList =
-              detailProduct.images && detailProduct.images.length > 0
-                ? detailProduct.images
-                : [detailProduct.imageUrl];
+            const configuredDetails = (detailProduct.imageDetails ?? []).filter(
+              (image) => image.url && image.isDetail
+            );
+            const imagesList = [
+              detailProduct.imageUrl,
+              ...(Array.isArray(detailProduct.imageDetails)
+                ? configuredDetails.map((image) => image.url)
+                : (detailProduct.images || []).filter(
+                    (image) => image && image !== detailProduct.imageUrl
+                  ))
+            ].filter(Boolean);
             const activeImage = imagesList[activeImageIndex] || detailProduct.imageUrl;
-            const totalStock = detailProduct.stock ?? detailProduct.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
+            const totalStock =
+              detailProduct.stock ??
+              detailProduct.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
 
             return (
               <DialogContent className="sm:max-w-4xl bg-card border-border/40 rounded-3xl p-6 md:p-8">
@@ -1073,7 +1232,9 @@ export default function ProductsCmsPage() {
                           Ketersediaan Stok:
                         </span>
                         <span className="text-xs font-extrabold text-foreground font-mono">
-                          {detailProduct.stockMode === 'ALWAYS_AVAILABLE' ? 'Selalu Ready (Tanpa Batas)' : `${totalStock} pcs`}
+                          {detailProduct.stockMode === 'ALWAYS_AVAILABLE'
+                            ? 'Selalu Ready (Tanpa Batas)'
+                            : `${totalStock} pcs`}
                         </span>
                       </div>
 
@@ -1084,10 +1245,26 @@ export default function ProductsCmsPage() {
                           Materials & Care
                         </span>
                         <div className="text-[11px] space-y-1 text-foreground/90">
-                          <div><strong className="font-semibold text-muted-foreground">Fabric:</strong> {detailProduct.materialsAndCare?.fabric || '100% Premium Cotton, 280gsm'}</div>
-                          <div><strong className="font-semibold text-muted-foreground">Treatment:</strong> {detailProduct.materialsAndCare?.treatment || 'Pre-shrunk'}</div>
-                          <div><strong className="font-semibold text-muted-foreground">Origin:</strong> {detailProduct.materialsAndCare?.origin || 'Constructed in Indonesia'}</div>
-                          <div><strong className="font-semibold text-muted-foreground">Care:</strong> {detailProduct.materialsAndCare?.careInstruction || 'Machine wash cold inside out'}</div>
+                          <div>
+                            <strong className="font-semibold text-muted-foreground">Fabric:</strong>{' '}
+                            {detailProduct.materialsAndCare?.fabric ||
+                              '100% Premium Cotton, 280gsm'}
+                          </div>
+                          <div>
+                            <strong className="font-semibold text-muted-foreground">
+                              Treatment:
+                            </strong>{' '}
+                            {detailProduct.materialsAndCare?.treatment || 'Pre-shrunk'}
+                          </div>
+                          <div>
+                            <strong className="font-semibold text-muted-foreground">Origin:</strong>{' '}
+                            {detailProduct.materialsAndCare?.origin || 'Constructed in Indonesia'}
+                          </div>
+                          <div>
+                            <strong className="font-semibold text-muted-foreground">Care:</strong>{' '}
+                            {detailProduct.materialsAndCare?.careInstruction ||
+                              'Machine wash cold inside out'}
+                          </div>
                         </div>
                       </div>
 
@@ -1132,7 +1309,9 @@ export default function ProductsCmsPage() {
                           Rincian Stok Per Ukuran
                         </span>
                         {detailProduct.stockMode === 'ALWAYS_AVAILABLE' ? (
-                          <p className="text-xs text-muted-foreground italic">Semua ukuran selalu ready stock.</p>
+                          <p className="text-xs text-muted-foreground italic">
+                            Semua ukuran selalu ready stock.
+                          </p>
                         ) : (
                           <div className="grid grid-cols-2 gap-2">
                             {detailProduct.variants.map((v) => {
@@ -1148,7 +1327,9 @@ export default function ProductsCmsPage() {
                                   )}
                                 >
                                   <span>Ukuran {v.size}</span>
-                                  <span className="font-mono">{qty > 0 ? `${qty} pcs` : 'Habis'}</span>
+                                  <span className="font-mono">
+                                    {qty > 0 ? `${qty} pcs` : 'Habis'}
+                                  </span>
                                 </div>
                               );
                             })}
@@ -1184,6 +1365,24 @@ export default function ProductsCmsPage() {
             );
           })()}
       </Dialog>
+
+      <ConfirmModal
+        open={Boolean(deleteTargetProduct)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTargetProduct(null);
+        }}
+        title="Konfirmasi Hapus Produk"
+        description={
+          deleteTargetProduct
+            ? `Apakah Anda yakin ingin menghapus produk "${deleteTargetProduct.name}" dari CMS?`
+            : ''
+        }
+        confirmText="Hapus Produk"
+        cancelText="Batal"
+        variant="destructive"
+        loading={isDeleting}
+        onConfirm={confirmDeleteProduct}
+      />
     </VStack>
   );
 }

@@ -17,12 +17,34 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+  const colorsList = useMemo(
+    () => (product.colors?.length ? product.colors : [product.color].filter(Boolean)),
+    [product.colors, product.color]
+  );
+
+  const hexesList = useMemo(
+    () => (product.colorHexes?.length ? product.colorHexes : [product.colorHex].filter(Boolean)),
+    [product.colorHexes, product.colorHex]
+  );
+
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+
+  // The cover is always the first image. Photos flagged "Jadikan foto detail"
+  // in the CMS are added after it; if none are flagged, the cover doubles as
+  // the detail image.
   const imagesList = useMemo(() => {
-    if (product.images && product.images.length > 0) {
-      return product.images;
-    }
-    return [product.imageUrl];
-  }, [product.images, product.imageUrl]);
+    const configuredDetails = (product.imageDetails ?? []).filter(
+      (image) => image.url && image.isDetail
+    );
+    const hasCmsImageSettings = Array.isArray(product.imageDetails);
+    const detailImages = hasCmsImageSettings
+      ? configuredDetails
+      : (product.images ?? [])
+          .filter((image) => image && image !== product.imageUrl)
+          .map((url) => ({ url, isDetail: true }));
+
+    return [product.imageUrl, ...detailImages.map((image) => image.url)];
+  }, [product.imageDetails, product.images, product.imageUrl]);
 
   const activeImage = imagesList[activeImageIndex] || product.imageUrl;
 
@@ -145,19 +167,55 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               <StatusBadge status={product.status} className="text-[12px]" />
             </div>
 
-            {/* Color */}
+            {/* Color Selector */}
             <div className="mt-6">
-              <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
-                Color / Warna
+              <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-2">
+                Color / Warna:{' '}
+                <span className="font-normal text-(--cat-on-surface-variant) capitalize ml-1">
+                  {colorsList[selectedColorIndex] || product.color}
+                </span>
               </p>
-              <div className="mt-2 flex items-center gap-2">
-                <span
-                  className="w-8 h-8 border border-(--cat-stone) flex items-center justify-center"
-                  style={{ backgroundColor: product.colorHex }}
-                  title={product.color}
-                />
-                <span className="font-hanken text-[13px] text-(--cat-on-surface-variant)">
-                  {product.color}
+              <div className="flex items-center gap-2.5">
+                {hexesList.map((hex, idx) => {
+                  const isSelected = selectedColorIndex === idx;
+                  const colorName = colorsList[idx] || product.color;
+                  const isLightColor =
+                    hex.toLowerCase() === '#ffffff' ||
+                    hex.toLowerCase() === '#fff' ||
+                    hex.toLowerCase() === '#fafafa' ||
+                    hex.toLowerCase() === '#f5f5f5' ||
+                    hex.toLowerCase() === '#f0f0f0' ||
+                    hex.toLowerCase() === '#ffffff00';
+
+                  return (
+                    <button
+                      key={`${hex}-${idx}`}
+                      type="button"
+                      onClick={() => setSelectedColorIndex(idx)}
+                      className={cn(
+                        'w-7 h-7 rounded-none transition-all cursor-pointer relative flex items-center justify-center border',
+                        isLightColor ? 'border-stone-400 dark:border-stone-500' : 'border-stone-300 dark:border-stone-700',
+                        isSelected
+                          ? 'ring-2 ring-foreground border-foreground scale-105 opacity-100 shadow-xs'
+                          : 'opacity-80 hover:opacity-100'
+                      )}
+                      style={{ backgroundColor: hex }}
+                      title={colorName}
+                      aria-label={`Pilih warna ${colorName}`}
+                    >
+                      {isSelected && (
+                        <div
+                          className={cn(
+                            'w-2 h-2 rounded-full',
+                            isLightColor ? 'bg-black' : 'bg-white shadow-xs'
+                          )}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+                <span className="ml-1 font-hanken text-[13px] text-(--cat-on-surface-variant)">
+                  {colorsList.join(' / ')}
                 </span>
               </div>
             </div>
@@ -253,38 +311,37 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
         </div>
       </section>
 
-      {/* Product Story Section */}
-      <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-          <div>
-            <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
-              The Core Silhouette
-            </h2>
-            <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
-              Designed as the foundational garment for any minimalist wardrobe. We stripped away
-              unnecessary details to focus purely on shape and texture.
-            </p>
-            <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
-              The boxy fit allows for architectural draping, while the dropped shoulders construct a
-              relaxed, contemporary line against the body.
-            </p>
-          </div>
-          <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
-            <SafeImage
-              src={imagesList[1] || product.imageUrl}
-              alt={`${product.name} detail view`}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
-            <div className="absolute top-3 left-3">
-              <span className="font-hanken text-[10px] uppercase tracking-widest text-(--cat-on-surface-variant) bg-(--cat-surface)/80 px-2 py-1">
-                Detail
-              </span>
+      {/* Product Story Section — CMS-driven, hidden when empty */}
+      {product.storyTitle && (
+        <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+            <div>
+              <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
+                {product.storyTitle}
+              </h2>
+              {product.storyText && (
+                <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
+                  {product.storyText}
+                </p>
+              )}
+            </div>
+            <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
+              <SafeImage
+                src={imagesList[1] || product.imageUrl}
+                alt={`${product.name} detail view`}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+              />
+              <div className="absolute top-3 left-3">
+                <span className="font-hanken text-[10px] uppercase tracking-widest text-(--cat-on-surface-variant) bg-(--cat-surface)/80 px-2 py-1">
+                  Detail
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Materials & Care */}
       <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16 border-t border-(--cat-stone)">
@@ -297,19 +354,16 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
           <div className="md:col-span-9">
             <div className="space-y-0 divide-y divide-(--cat-stone)">
               {[
-                ['Fabric', product.materialsAndCare?.fabric || '100% Premium Heavyweight Cotton, 280gsm'],
-                ['Treatment', product.materialsAndCare?.treatment || 'Pre-shrunk to minimize shrinkage'],
-                ['Origin', product.materialsAndCare?.origin || 'Constructed in Indonesia'],
-                [
-                  'Care Instruction',
-                  product.materialsAndCare?.careInstruction || 'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.'
-                ]
+                ['Fabric', product.materialsAndCare?.fabric || '100% Premium Heavyweight Cotton'],
+                ['Treatment', product.materialsAndCare?.treatment || 'Pre-washed & Bio-polished'],
+                ['Origin', product.materialsAndCare?.origin || 'Handcrafted in Indonesia'],
+                ['Care Instruction', product.materialsAndCare?.careInstruction || 'Machine wash cold, tumble dry low, do not bleach']
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between py-4 gap-8">
                   <span className="font-hanken text-[14px] text-(--cat-on-surface-variant) shrink-0">
                     {label}
                   </span>
-                  <span className="font-hanken text-[14px] text-(--cat-on-surface) text-right">
+                  <span className="font-hanken text-[14px] font-medium text-(--cat-on-surface) text-right">
                     {value}
                   </span>
                 </div>

@@ -3,6 +3,7 @@ import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import { getProducts, getArchives } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = {
   title: 'Archive',
@@ -11,9 +12,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ArchivePage() {
-  const products = await getProducts();
-  const archives = await getArchives();
+  const [products, archives, settings] = await Promise.all([
+    getProducts(),
+    getArchives(),
+    prisma.storeSettings.findUnique({ where: { id: 'default' } }).catch(() => null)
+  ]);
   const archivedProducts = products.filter((p) => p.status === 'SOLD_OUT');
+  const archiveQuoteTitle = settings?.archiveQuoteTitle || '';
+  const archiveQuoteText = settings?.archiveQuoteText || '';
 
   return (
     <>
@@ -58,7 +64,7 @@ export default async function ArchivePage() {
                     {product.name}
                   </h3>
                   <p className="mt-0.5 font-hanken text-[12px] text-(--cat-on-surface-variant)">
-                    {product.edition} — 2024
+                    {product.edition}
                   </p>
                 </div>
                 <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-secondary-container)">
@@ -70,20 +76,23 @@ export default async function ArchivePage() {
         </div>
       </section>
 
-      {/* Quote Banner */}
-      <section className="bg-(--cat-surface-container-low)">
-        <div className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24 text-center">
-          <p className="font-eb-garamond text-[24px] md:text-[36px] font-normal leading-relaxed text-(--cat-on-surface) italic max-w-2xl mx-auto">
-            &quot;Merekam jejak perjalanan estetika kami.&quot;
-          </p>
-          <p className="mt-6 font-hanken text-[13px] md:text-[14px] leading-relaxed text-(--cat-on-surface-variant) max-w-lg mx-auto">
-            This archive serves as a permanent record of our evolving dialogue with form, material,
-            and time. Each piece documented here represents a singular iteration of our
-            uncompromising commitment to slow fashion and independent craftsmanship—now retired, but
-            foundational to our ongoing narrative.
-          </p>
-        </div>
-      </section>
+      {/* Quote Banner — CMS-driven, hidden when empty */}
+      {(archiveQuoteTitle || archiveQuoteText) && (
+        <section className="bg-(--cat-surface-container-low)">
+          <div className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24 text-center">
+            {archiveQuoteTitle && (
+              <p className="font-eb-garamond text-[24px] md:text-[36px] font-normal leading-relaxed text-(--cat-on-surface) italic max-w-2xl mx-auto">
+                &quot;{archiveQuoteTitle}&quot;
+              </p>
+            )}
+            {archiveQuoteText && (
+              <p className="mt-6 font-hanken text-[13px] md:text-[14px] leading-relaxed text-(--cat-on-surface-variant) max-w-lg mx-auto">
+                {archiveQuoteText}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Archive Collections */}
       <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">

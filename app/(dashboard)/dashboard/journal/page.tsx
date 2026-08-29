@@ -15,6 +15,7 @@ import {
   Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { useJournals } from '@/hooks/use-journals';
 import { Flex, VStack } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
@@ -42,19 +43,18 @@ function JournalCmsPageContent() {
   // Search & Filter
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [detailArticle, setDetailArticle] = useState<JournalArticle | null>(null);
+  const [deleteTargetArticle, setDeleteTargetArticle] = useState<JournalArticle | null>(null);
 
-  const handleDeleteArticle = useCallback(
-    async (articleId: string) => {
-      if (confirm('Apakah Anda yakin ingin menghapus artikel jurnal ini dari CMS?')) {
-        try {
-          await deleteJournal(articleId);
-        } catch (err) {
-          console.error('Failed to delete article:', err);
-        }
-      }
-    },
-    [deleteJournal]
-  );
+  const confirmDeleteArticle = async () => {
+    if (!deleteTargetArticle) return;
+    try {
+      await deleteJournal(deleteTargetArticle.id);
+    } catch (err) {
+      console.error('Failed to delete article:', err);
+    } finally {
+      setDeleteTargetArticle(null);
+    }
+  };
 
   const filteredArticles = useMemo(() => {
     return articles.filter((a) => {
@@ -171,7 +171,7 @@ function JournalCmsPageContent() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleDeleteArticle(article.id)}
+              onClick={() => setDeleteTargetArticle(article)}
               disabled={isDeleting}
               className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
               title="Hapus Artikel"
@@ -182,7 +182,7 @@ function JournalCmsPageContent() {
         )
       }
     ],
-    [handleDeleteArticle, isDeleting, router]
+    [isDeleting, router]
   );
 
   return (
@@ -361,6 +361,24 @@ function JournalCmsPageContent() {
           </DialogContent>
         )}
       </Dialog>
+
+      <ConfirmModal
+        open={Boolean(deleteTargetArticle)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTargetArticle(null);
+        }}
+        title="Konfirmasi Hapus Artikel Jurnal"
+        description={
+          deleteTargetArticle
+            ? `Apakah Anda yakin ingin menghapus artikel "${deleteTargetArticle.title}" dari CMS?`
+            : ''
+        }
+        confirmText="Hapus Artikel"
+        cancelText="Batal"
+        variant="destructive"
+        loading={isDeleting}
+        onConfirm={confirmDeleteArticle}
+      />
     </VStack>
   );
 }

@@ -1,14 +1,32 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const totalOrders = await prisma.order.count();
+    const { searchParams } = new URL(request.url);
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+    if (startDateParam) {
+      const start = new Date(startDateParam);
+      if (!isNaN(start.getTime())) dateFilter.gte = start;
+    }
+    if (endDateParam) {
+      const end = new Date(endDateParam);
+      if (!isNaN(end.getTime())) dateFilter.lte = end;
+    }
+
+    const orderWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
+    const totalOrders = await prisma.order.count({
+      where: orderWhere
+    });
     const paidOrdersCount = await prisma.order.count({
-      where: { status: 'PAID' }
+      where: { ...orderWhere, status: 'PAID' }
     });
     const pendingOrdersCount = await prisma.order.count({
-      where: { status: 'PENDING' }
+      where: { ...orderWhere, status: 'PENDING' }
     });
 
     const revenueResult = await prisma.order.aggregate({
@@ -16,6 +34,7 @@ export async function GET() {
         totalPrice: true
       },
       where: {
+        ...orderWhere,
         status: { in: ['PAID', 'FULFILLED'] }
       }
     });

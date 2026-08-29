@@ -11,13 +11,22 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       category,
       color,
       colorHex,
+      colors,
+      colorHexes,
       price,
       status,
       imageUrl,
       images,
       description,
       variants,
-      edition
+      edition,
+      imageDetails,
+      storyTitle,
+      storyText,
+      hpp,
+      stock,
+      stockMode,
+      materialsAndCare
     } = body;
 
     // Delete existing variants and re-create updated variants
@@ -34,16 +43,27 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         category,
         color,
         colorHex,
+        colors: Array.isArray(colors) && colors.length > 0 ? colors : [color].filter(Boolean),
+        colorHexes:
+          Array.isArray(colorHexes) && colorHexes.length > 0 ? colorHexes : [colorHex || '#1A1A1A'],
         price: Number(price),
+        hpp: hpp === undefined ? null : Number(hpp),
+        stock: stock === undefined ? 0 : Number(stock),
+        stockMode: stockMode || 'QUANTITY',
         status,
         imageUrl,
         images,
+        imageDetails: imageDetails || null,
         description,
+        storyTitle: storyTitle ?? null,
+        storyText: storyText ?? null,
+        materialsAndCare: materialsAndCare || null,
         variants: {
           createMany: {
-            data: (variants || []).map((v: { size: string; inStock?: boolean }) => ({
+            data: (variants || []).map((v: { size: string; inStock?: boolean; stock?: number }) => ({
               size: v.size,
-              inStock: Boolean(v.inStock)
+              inStock: Boolean(v.inStock),
+              stock: Number(v.stock ?? (v.inStock ? 10 : 0))
             }))
           }
         }

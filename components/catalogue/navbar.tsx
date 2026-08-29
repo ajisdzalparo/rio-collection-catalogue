@@ -6,6 +6,7 @@ import { Search, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNav } from '@/components/catalogue/mobile-nav';
 import { SearchModal } from '@/components/catalogue/search-modal';
+import { useStoreSettingsStore } from '@/hooks/use-store-settings';
 
 const NAV_LINKS = [
   { href: '/catalogue', label: 'Catalogue' },
@@ -21,6 +22,7 @@ interface CatalogueNavbarProps {
 export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const storeName = useStoreSettingsStore((s) => s.storeName);
 
   return (
     <>
@@ -34,7 +36,7 @@ export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
           {/* Left: Brand Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <span className="font-eb-garamond text-[24px] md:text-[28px] font-normal tracking-[-0.01em] text-(--cat-on-surface) whitespace-nowrap">
-              RIO COLLECTION
+              {storeName || 'RIO COLLECTION'}
             </span>
           </Link>
 

@@ -45,22 +45,22 @@ export function UserActions({ user }: UserActionsProps) {
             </Button>
           }
         />
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+        <DropdownMenuContent align="end" className="w-44 rounded-xl border-border/40">
+          <DropdownMenuLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Aksi</DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-border/20" />
           <DropdownMenuItem
-            className="cursor-pointer gap-2"
+            className="cursor-pointer gap-2 text-xs font-semibold"
             onClick={() => setShowEditDialog(true)}
           >
-            <Edit className="h-4 w-4" />
-            <span>Edit</span>
+            <Edit className="h-4 w-4 text-muted-foreground" />
+            <span>Edit Pengguna</span>
           </DropdownMenuItem>
           <DropdownMenuItem
-            className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+            className="cursor-pointer gap-2 text-xs font-semibold text-destructive focus:text-destructive"
             onClick={() => setShowDeleteDialog(true)}
           >
             <Trash2 className="h-4 w-4" />
-            <span>Delete</span>
+            <span>Hapus Pengguna</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -74,9 +74,10 @@ export function UserActions({ user }: UserActionsProps) {
       <ConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        title="Delete User"
-        description={`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`}
-        confirmText="Delete"
+        title="Konfirmasi Hapus Pengguna"
+        description={`Apakah Anda yakin ingin menghapus pengguna "${user.name}"? Tindakan ini tidak dapat dibatalkan.`}
+        confirmText="Hapus Pengguna"
+        cancelText="Batal"
         variant="destructive"
         isLoading={deleteUserMutation.isPending}
         onConfirm={handleDelete}

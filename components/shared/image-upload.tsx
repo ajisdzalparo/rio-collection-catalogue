@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import Image from 'next/image';
 import { Upload, X, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -10,13 +11,17 @@ interface ImageUploadProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  detailFlag?: boolean;
+  onDetailFlagChange?: (checked: boolean) => void;
 }
 
 export function ImageUpload({
   value = '',
   onChange,
   placeholder = 'Pilih gambar atau drop file di sini',
-  className
+  className,
+  detailFlag = false,
+  onDetailFlagChange
 }: ImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragActive, setIsDragActive] = useState(false);
@@ -103,7 +108,9 @@ export function ImageUpload({
       {hasImage ? (
         // Preview State
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-border/50 bg-muted/20 group">
-          <img
+          <Image
+            width={400}
+            height={400}
             src={value}
             alt="Uploaded preview"
             className="h-full w-full object-cover transition-transform duration-350 group-hover:scale-103"
@@ -125,6 +132,16 @@ export function ImageUpload({
               <X className="h-4 w-4" />
             </button>
           </div>
+          {onDetailFlagChange && (
+            <label className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/70 px-2 py-1 text-[10px] font-bold text-white cursor-pointer">
+              <input
+                type="checkbox"
+                checked={detailFlag === true}
+                onChange={(event) => onDetailFlagChange(event.target.checked)}
+              />
+              Jadikan foto detail
+            </label>
+          )}
         </div>
       ) : (
         // Upload/Drop Zone
@@ -215,9 +232,19 @@ interface MultiImageUploadProps {
   value: string[]; // List of URLs or base64 strings
   onChange: (value: string[]) => void;
   maxImages?: number;
+  detailFlags?: Record<string, boolean>;
+  onDetailFlagsChange?: (flags: Record<string, boolean>) => void;
+  slotLabels?: string[];
 }
 
-export function MultiImageUpload({ value = [], onChange, maxImages = 6 }: MultiImageUploadProps) {
+export function MultiImageUpload({
+  value = [],
+  onChange,
+  maxImages = 6,
+  detailFlags = {},
+  onDetailFlagsChange,
+  slotLabels = []
+}: MultiImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (file: File) => {
@@ -255,11 +282,30 @@ export function MultiImageUpload({ value = [], onChange, maxImages = 6 }: MultiI
             key={idx}
             className="relative aspect-square w-full overflow-hidden rounded-xl border border-border/40 bg-muted/20 group"
           >
-            <img
+            {slotLabels[idx] && (
+              <span className="absolute top-1 left-1 z-10 rounded-md bg-black/70 px-1.5 py-1 text-[9px] font-bold text-white">
+                {slotLabels[idx]}
+              </span>
+            )}
+            <Image
+              fill
               src={img}
               alt={`Gallery preview ${idx}`}
-              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-103"
+              className="object-cover transition-transform duration-200 group-hover:scale-103"
+              unoptimized
             />
+            {onDetailFlagsChange && (
+              <label className="absolute bottom-1 left-1 right-1 flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-1 text-[9px] font-bold text-white">
+                <input
+                  type="checkbox"
+                  checked={detailFlags[img] === true}
+                  onChange={(event) =>
+                    onDetailFlagsChange({ ...detailFlags, [img]: event.target.checked })
+                  }
+                />
+                Jadikan foto detail
+              </label>
+            )}
             <button
               type="button"
               onClick={() => removeImage(idx)}
@@ -291,7 +337,9 @@ export function MultiImageUpload({ value = [], onChange, maxImages = 6 }: MultiI
         )}
       </div>
       <div className="text-[9px] font-medium text-muted-foreground">
-        Ukuran galeri: {value.length} / {maxImages} foto. Format JPEG, PNG, WebP.
+        Tambahkan maksimal 2 foto detail. Centang “Jadikan foto detail” untuk mengaktifkannya. Jika
+        tidak ada yang dicentang, foto utama dipakai sebagai detail. {value.length} / {maxImages}{' '}
+        foto. Format JPEG, PNG, WebP.
       </div>
     </div>
   );

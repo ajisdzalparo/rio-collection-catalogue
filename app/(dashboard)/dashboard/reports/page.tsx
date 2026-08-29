@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Order, useOrders } from '@/hooks/use-orders';
+import { useOrders } from '@/hooks/use-orders';
 import { formatIDR } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -57,6 +57,13 @@ ChartJS.register(
 );
 
 type PeriodFilter = '7D' | '30D' | 'THIS_MONTH' | 'ALL';
+
+const PERIOD_LABELS: Record<PeriodFilter, string> = {
+  '7D': '7 Hari Terakhir',
+  '30D': '30 Hari Terakhir',
+  THIS_MONTH: 'Bulan Ini',
+  ALL: 'Semua Waktu'
+};
 
 function ReportsPageContent() {
   const { data: orders = [] } = useOrders();
@@ -401,12 +408,13 @@ function ReportsPageContent() {
   }, []);
 
   // Export CSV Function with Filtered Data
-  const handleExportCSV = () => {
+  const handleExportCsv = () => {
     if (currentOrders.length === 0) {
       toast.error('Tidak ada data penjualan pada periode dan produk ini.');
       return;
     }
 
+    const delimiter = ',';
     const headers = [
       'ID Order',
       'Tanggal',
@@ -421,6 +429,11 @@ function ReportsPageContent() {
 
     const rows: string[] = [];
 
+    const cleanField = (val: unknown) => {
+      const str = String(val ?? '').replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
     currentOrders.forEach((o) => {
       o.items.forEach((item) => {
         if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
@@ -432,21 +445,22 @@ function ReportsPageContent() {
 
         rows.push(
           [
-            `"${o.orderNumber}"`,
-            `"${dateStr}"`,
-            `"${o.fullName}"`,
-            `"${o.status}"`,
-            `"${item.name}"`,
-            item.quantity,
-            rev,
-            hpp,
-            profit
-          ].join(',')
+            cleanField(o.orderNumber),
+            cleanField(dateStr),
+            cleanField(o.fullName),
+            cleanField(o.status),
+            cleanField(item.name),
+            cleanField(item.quantity),
+            cleanField(rev),
+            cleanField(hpp),
+            cleanField(profit)
+          ].join(delimiter)
         );
       });
     });
 
-    const csvContent = [headers.join(','), ...rows].join('\n');
+    const csvLines = [headers.map(cleanField).join(delimiter), ...rows];
+    const csvContent = '\uFEFF' + csvLines.join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -507,7 +521,7 @@ function ReportsPageContent() {
             <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
             <Select value={period} onValueChange={(val) => val && setPeriod(val as PeriodFilter)}>
               <SelectTrigger className="h-8 border-none bg-transparent shadow-none text-xs font-bold w-36 focus:ring-0">
-                <SelectValue placeholder="Pilih Periode" />
+                <SelectValue placeholder="Pilih Periode">{PERIOD_LABELS[period]}</SelectValue>
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="7D">7 Hari Terakhir</SelectItem>
@@ -520,8 +534,8 @@ function ReportsPageContent() {
 
           {/* Export CSV Button */}
           <Button
-            onClick={handleExportCSV}
-            className="gap-2 h-10 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer shadow-xs"
+            onClick={handleExportCsv}
+            className="gap-2 h-10 rounded-full px-5 font-bold uppercase tracking-wider text-xs cursor-pointer shadow-xs"
           >
             <Download className="h-4 w-4" />
             <span>Ekspor CSV</span>

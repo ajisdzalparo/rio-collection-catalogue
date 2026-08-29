@@ -34,14 +34,16 @@ async function main() {
     ]
   });
 
-  await prisma.user.createMany({
-    data: [
-      { id: 'usr-1', name: 'Ajis Johnson', role: 'Admin', email: 'Ajis@example.com', status: 'active' },
-      { id: 'usr-2', name: 'Sarah Connor', role: 'Developer', email: 'sarah@example.com', status: 'active' },
-      { id: 'usr-3', name: 'Michael Scott', role: 'Manager', email: 'michael@example.com', status: 'active' },
-      { id: 'usr-4', name: 'Dwight Schrute', role: 'Sales', email: 'dwight@example.com', status: 'inactive' },
-      { id: 'usr-5', name: 'Pam Beesly', role: 'Designer', email: 'pam@example.com', status: 'active' }
-    ]
+  // 2. Users (Admin Default)
+  await prisma.user.deleteMany();
+  await prisma.user.create({
+    data: {
+      id: 'usr-admin-1',
+      name: 'Admin RIO COLLECTION',
+      email: 'admin@riocollection.id',
+      role: 'Admin',
+      status: 'active'
+    }
   });
 
   // 2. Categories, Colors, Sizes
@@ -357,7 +359,30 @@ async function main() {
     }
   });
 
-  // 8. Store Settings
+  // 8. Master Banks & Store Banks
+  await prisma.bank.deleteMany();
+  await prisma.bank.createMany({
+    data: [
+      { name: 'Bank BCA', code: 'BCA', isActive: true },
+      { name: 'Bank Mandiri', code: 'MANDIRI', isActive: true },
+      { name: 'Bank BNI', code: 'BNI', isActive: true },
+      { name: 'Bank BRI', code: 'BRI', isActive: true },
+      { name: 'Bank Syariah Indonesia', code: 'BSI', isActive: true },
+      { name: 'Bank Permata', code: 'PERMATA', isActive: true },
+      { name: 'Bank CIMB Niaga', code: 'CIMB', isActive: true },
+      { name: 'Bank Jago', code: 'JAGO', isActive: true }
+    ]
+  });
+
+  await prisma.storeBank.deleteMany();
+  await prisma.storeBank.createMany({
+    data: [
+      { bankName: 'Bank BCA', accountNumber: '1234567890', accountOwner: 'RIO COLLECTION', isActive: true, sortOrder: 1 },
+      { bankName: 'Bank Mandiri', accountNumber: '0987654321', accountOwner: 'RIO COLLECTION', isActive: true, sortOrder: 2 }
+    ]
+  });
+
+  // 9. Store Settings
   await prisma.storeSettings.upsert({
     where: { id: 'default' },
     update: {

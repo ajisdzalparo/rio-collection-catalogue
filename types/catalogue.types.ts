@@ -14,6 +14,11 @@ export interface MaterialsAndCare {
   careInstruction?: string;
 }
 
+export interface ProductImage {
+  url: string;
+  isDetail: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -24,11 +29,16 @@ export interface Product {
   stockMode?: StockMode;
   color: string;
   colorHex: string;
+  colors?: string[];
+  colorHexes?: string[];
   status: ProductStatus;
   category: string;
   imageUrl: string;
   images: string[];
+  imageDetails?: ProductImage[];
   description: string;
+  storyTitle?: string;
+  storyText?: string;
   edition: string;
   variants: ProductVariant[];
   materialsAndCare?: MaterialsAndCare;

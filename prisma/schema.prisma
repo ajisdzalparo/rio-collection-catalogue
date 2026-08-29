@@ -55,21 +55,30 @@ model Size {
 }
 
 model Product {
-  id          String           @id @default(cuid())
-  name        String
-  slug        String           @unique
-  edition     String           @default("Edition 001")
-  category    String
-  color       String
-  colorHex    String
-  price       Int
-  status      String           @default("AVAILABLE") // AVAILABLE, SOLD_OUT, COMING_SOON
-  imageUrl    String
-  images      String[]
-  description String
-  variants    ProductVariant[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  edition          String           @default("Edition 001")
+  category         String
+  color            String
+  colorHex         String
+  colors           String[]
+  colorHexes       String[]
+  price            Int
+  hpp              Int?
+  stock            Int              @default(0)
+  stockMode        String           @default("QUANTITY") // QUANTITY, ALWAYS_AVAILABLE
+  status           String           @default("AVAILABLE") // AVAILABLE, SOLD_OUT, COMING_SOON
+  imageUrl         String
+  images           String[]
+  imageDetails     Json?
+  description      String
+  storyTitle       String?
+  storyText        String?
+  materialsAndCare Json?
+  variants         ProductVariant[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model ProductVariant {
@@ -78,6 +87,7 @@ model ProductVariant {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   size      String
   inStock   Boolean @default(true)
+  stock     Int     @default(0)
 }
 
 model Archive {
@@ -166,5 +176,47 @@ model StoreSettings {
   heroRightImage    String?  @default("https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80")
   heroCtaText       String?  @default("Eksplor Koleksi Terkini")
   heroCtaLink       String?  @default("/catalogue")
+  homeFeaturedTitle String?
+  homeViewAllLabel  String?
+  homeManifestoTitle String?
+  homeManifestoText String?
+  homeManifestoImage String?
+  homeBannerText    String?
+  homeBannerButton  String?
+  archiveHeaderSub  String?
+  archiveQuoteTitle String?
+  archiveQuoteText  String?
+  aboutHeroImage    String?
+  aboutHeading      String?
+  aboutParagraph1   String?
+  aboutParagraph2   String?
+  aboutValuesTitle  String?
+  aboutValues       Json?
+  aboutQuote        String?
+  aboutQuoteText    String?
+  aboutStudioImage  String?
+  contactEmail      String?
+  updatedAt         DateTime @updatedAt
+}
+
+/// Master bank — daftar bank yang tersedia untuk dipilih toko
+model Bank {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?  // e.g. BCA, BNI, MANDIRI
+  logoUrl   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+/// Rekening bank toko — bisa lebih dari satu, client hanya melihat yang isActive
+model StoreBank {
+  id                String   @id @default(cuid())
+  bankName          String
+  accountNumber     String
+  accountOwner      String
+  isActive          Boolean  @default(true)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }

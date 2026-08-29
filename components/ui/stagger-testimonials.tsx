@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, X, ZoomIn, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Testimony } from '@/types/catalogue.types';
 
@@ -59,16 +59,16 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
     <div
       onClick={handleClick}
       className={cn(
-        'absolute left-1/2 top-1/2 cursor-pointer transition-all duration-500 ease-out group rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border',
+        'absolute left-1/2 top-1/2 cursor-pointer transition-all duration-500 ease-out group rounded-2xl overflow-hidden bg-background border',
         isCenter
-          ? 'border-(--cat-charcoal) shadow-[0_30px_60px_-12px_rgba(0,0,0,0.35),0_14px_28px_-8px_rgba(0,0,0,0.18)] opacity-100 ring-1 ring-black/10'
+          ? 'border-neutral-800 dark:border-neutral-200 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] opacity-100 ring-1 ring-black/10'
           : absPos === 1
-            ? 'border-(--cat-stone)/90 shadow-[0_18px_36px_-8px_rgba(0,0,0,0.24),0_8px_16px_-6px_rgba(0,0,0,0.12)] opacity-100 hover:shadow-2xl hover:scale-[0.95]'
-            : 'border-(--cat-stone)/70 shadow-[0_10px_22px_-6px_rgba(0,0,0,0.18)] opacity-90 hover:scale-[0.87]'
+            ? 'border-stone-300 dark:border-stone-700 shadow-[0_15px_30px_-8px_rgba(0,0,0,0.2)] opacity-95 hover:shadow-2xl hover:scale-[0.95]'
+            : 'border-stone-200 dark:border-stone-800 shadow-[0_10px_20px_-6px_rgba(0,0,0,0.15)] opacity-85 hover:scale-[0.87]'
       )}
       style={{
         width: cardSize,
-        height: cardSize * 1.5,
+        height: cardSize * 1.48,
         zIndex,
         transform: `
           translate(-50%, -50%)
@@ -94,7 +94,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
           <div
             className={cn(
               'absolute inset-0 pointer-events-none transition-opacity duration-500',
-              absPos === 1 ? 'bg-black/10' : 'bg-black/20'
+              absPos === 1 ? 'bg-black/10' : 'bg-black/25'
             )}
           />
         )}
@@ -109,10 +109,10 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
           </div>
         )}
 
-        {/* Verified Badge */}
+        {/* Refined Verified Badge */}
         {isCenter && (
-          <div className="absolute top-3 right-3 bg-emerald-600/90 backdrop-blur-md text-white px-2 py-0.5 text-[9px] font-hanken uppercase tracking-wider rounded-full font-bold flex items-center gap-1 shadow-md z-20">
-            <CheckCircle2 size={10} className="shrink-0" />
+          <div className="absolute top-3.5 right-3.5 bg-neutral-950/85 dark:bg-white/90 text-white dark:text-neutral-900 px-2.5 py-1 text-[9px] font-hanken uppercase tracking-widest rounded-full font-bold flex items-center gap-1.5 shadow-md border border-white/20 dark:border-black/20 z-20 backdrop-blur-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>Verified Chat</span>
           </div>
         )}
@@ -208,7 +208,7 @@ export const StaggerTestimonials: React.FC<StaggerTestimonialsProps> = ({ items 
         <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-3 z-30">
           <button
             onClick={() => handleMove(-1)}
-            className="flex h-11 w-11 items-center justify-center transition-all rounded-full border border-(--cat-stone) bg-(--cat-surface-container-lowest) text-(--cat-on-surface) hover:bg-(--cat-charcoal) hover:text-white shadow-sm cursor-pointer hover:scale-105 active:scale-95"
+            className="flex h-11 w-11 items-center justify-center transition-all rounded-full border border-stone-300 dark:border-stone-700 bg-background text-foreground hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-900 shadow-xs cursor-pointer hover:scale-105 active:scale-95"
             aria-label="Previous testimonial"
           >
             <ChevronLeft size={18} strokeWidth={2} />
@@ -216,7 +216,7 @@ export const StaggerTestimonials: React.FC<StaggerTestimonialsProps> = ({ items 
 
           <button
             onClick={() => handleMove(1)}
-            className="flex h-11 w-11 items-center justify-center transition-all rounded-full border border-(--cat-stone) bg-(--cat-surface-container-lowest) text-(--cat-on-surface) hover:bg-(--cat-charcoal) hover:text-white shadow-sm cursor-pointer hover:scale-105 active:scale-95"
+            className="flex h-11 w-11 items-center justify-center transition-all rounded-full border border-stone-300 dark:border-stone-700 bg-background text-foreground hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-900 shadow-xs cursor-pointer hover:scale-105 active:scale-95"
             aria-label="Next testimonial"
           >
             <ChevronRight size={18} strokeWidth={2} />

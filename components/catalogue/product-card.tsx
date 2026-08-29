@@ -12,6 +12,16 @@ interface ProductCardProps {
 
 export function ProductCard({ product, className, priority = false }: ProductCardProps) {
   const isSoldOut = product.status === 'SOLD_OUT';
+  const colorList = product.colors?.length
+    ? product.colors
+    : product.color
+      ? [product.color]
+      : [];
+  const hexList = product.colorHexes?.length
+    ? product.colorHexes
+    : product.colorHex
+      ? [product.colorHex]
+      : [];
 
   return (
     <Link
@@ -57,8 +67,20 @@ export function ProductCard({ product, className, priority = false }: ProductCar
             {product.name}
           </h3>
           <p className="mt-0.5 font-hanken text-[12px] font-normal text-(--cat-on-surface-variant) uppercase tracking-wide">
-            {product.color}
+            {colorList.join(' / ')}
           </p>
+          {hexList.length > 1 && (
+            <div className="mt-1.5 flex items-center gap-1">
+              {hexList.map((hex, idx) => (
+                <span
+                  key={`${hex}-${idx}`}
+                  className="h-3 w-3 rounded-full border border-(--cat-stone)"
+                  style={{ backgroundColor: hex }}
+                  title={colorList[idx]}
+                />
+              ))}
+            </div>
+          )}
         </div>
         <div className="shrink-0 text-right">
           <p className="font-hanken text-[15px] font-medium text-(--cat-on-surface) tabular-nums">

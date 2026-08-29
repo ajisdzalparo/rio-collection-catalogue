@@ -12,17 +12,22 @@ export interface DashboardStats {
   monthlyGrowth: number;
 }
 
-async function fetchStats(): Promise<DashboardStats> {
-  const { data } = await axios.get('/api/v1/dashboard/stats');
+export interface DateFilterParams {
+  startDate?: string;
+  endDate?: string;
+}
+
+async function fetchStats(params?: DateFilterParams): Promise<DashboardStats> {
+  const { data } = await axios.get('/api/v1/dashboard/stats', { params });
   if (data.code !== 200 || !data.data) {
     throw new Error(data.message || 'Invalid stats data received');
   }
   return data.data;
 }
 
-export function useDashboardStats() {
+export function useDashboardStats(params?: DateFilterParams) {
   return useQuery<DashboardStats, Error>({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: fetchStats
+    queryKey: ['dashboard', 'stats', params?.startDate, params?.endDate],
+    queryFn: () => fetchStats(params)
   });
 }

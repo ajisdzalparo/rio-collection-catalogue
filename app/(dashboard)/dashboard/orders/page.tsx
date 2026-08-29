@@ -52,8 +52,10 @@ function OrdersPageContent() {
     try {
       await cleanupStaleOrders();
       toast.success('Pembersihan Cron Job Berhasil! Pesanan pending > 24 jam ditandai EXPIRED.');
-    } catch (err) {
-      toast.error('Gagal menjalankan pembersihan Cron');
+    } catch (err: unknown) {
+      toast.error('Gagal menjalankan pembersihan Cron', {
+        description: err instanceof Error ? err.message : 'Terjadi kesalahan saat menjalankan Cron Job'
+      });
     }
   };
 

@@ -1,7 +1,6 @@
-'use client';
-
-import React from 'react';
+import React, { useState } from 'react';
 import { DataTable, type Column, CMSBadge } from '@/components/shared';
+import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Edit, Trash2, ShieldCheck, CheckCircle2, Eye } from 'lucide-react';
@@ -16,6 +15,7 @@ interface RoleTableProps {
 
 export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   const { roles, deleteRole, updateRole } = useRbacStore();
+  const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
 
   const totalActionsCount = PERMISSION_TREE.reduce(
     (acc, menu) => acc + menu.actions.length,
@@ -23,8 +23,13 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   );
 
   const handleDelete = (roleName: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus master role "${roleName}"?`)) {
-      deleteRole(roleName);
+    setDeleteTargetRole(roleName);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTargetRole) {
+      deleteRole(deleteTargetRole);
+      setDeleteTargetRole(null);
     }
   };
 
@@ -140,12 +145,30 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      data={roles}
-      getRowId={(role) => role.id || role.name}
-      searchKey="name"
-      searchPlaceholder="Cari master role berdasarkan nama..."
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={roles}
+        getRowId={(role) => role.id || role.name}
+        searchKey="name"
+        searchPlaceholder="Cari master role berdasarkan nama..."
+      />
+      <ConfirmModal
+        open={Boolean(deleteTargetRole)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTargetRole(null);
+        }}
+        title="Konfirmasi Hapus Master Role"
+        description={
+          deleteTargetRole
+            ? `Apakah Anda yakin ingin menghapus master role "${deleteTargetRole}"?`
+            : ''
+        }
+        confirmText="Hapus Role"
+        cancelText="Batal"
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
+    </>
   );
 }

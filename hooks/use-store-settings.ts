@@ -20,6 +20,26 @@ export interface StoreSettings {
   heroRightImage?: string;
   heroCtaText?: string;
   heroCtaLink?: string;
+  homeFeaturedTitle?: string;
+  homeViewAllLabel?: string;
+  homeManifestoTitle?: string;
+  homeManifestoText?: string;
+  homeManifestoImage?: string;
+  homeBannerText?: string;
+  homeBannerButton?: string;
+  archiveHeaderSub?: string;
+  archiveQuoteTitle?: string;
+  archiveQuoteText?: string;
+  aboutHeroImage?: string;
+  aboutHeading?: string;
+  aboutParagraph1?: string;
+  aboutParagraph2?: string;
+  aboutValuesTitle?: string;
+  aboutValues?: Array<{ title: string; description: string }>;
+  aboutQuote?: string;
+  aboutQuoteText?: string;
+  aboutStudioImage?: string;
+  contactEmail?: string;
 }
 
 interface StoreSettingsState extends StoreSettings {

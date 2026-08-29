@@ -13,7 +13,9 @@ export const metadata: Metadata = {
 export default async function JournalPage() {
   const journals = await getJournals();
   const featuredArticle = journals[1] || journals[0]; // "Melihat di Balik Layar"
-  const recentArticles = journals.filter((a) => a.id !== featuredArticle.id).slice(0, 3);
+  const recentArticles = featuredArticle ? journals.filter((a) => a.id !== featuredArticle.id).slice(0, 3) : [];
+
+ if (!featuredArticle) return null;
 
   return (
     <>
