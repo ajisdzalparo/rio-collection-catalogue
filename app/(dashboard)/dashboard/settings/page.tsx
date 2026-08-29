@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Save,
   ShoppingBag,
@@ -9,7 +9,8 @@ import {
   CreditCard,
   Home,
   BookOpen,
-  Mail
+  Mail,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,10 +20,15 @@ import { VStack, Flex } from '@/components/ui/layout';
 import { useStoreSettingsStore, useStoreSettingsQuery } from '@/hooks/use-store-settings';
 import { ImageUpload } from '@/components/shared/image-upload';
 import { StoreBanksManager } from '@/components/dashboard/store-banks-manager';
+import {
+  WhatsAppTemplateEditor,
+  DEFAULT_WA_TEMPLATES,
+  type WhatsAppTemplates
+} from '@/components/dashboard/whatsapp-template-editor';
 import { toast } from 'sonner';
 import axios from 'axios';
 
-type SettingsTab = 'profile' | 'payments' | 'socials' | 'hero' | 'homepage' | 'pages';
+type SettingsTab = 'profile' | 'whatsapp' | 'payments' | 'socials' | 'hero' | 'homepage' | 'pages';
 
 export default function StoreSettingsPage() {
   const { data: mockSettings, isLoading: loadingSettings } = useStoreSettingsQuery();
@@ -36,6 +42,9 @@ export default function StoreSettingsPage() {
   const [whatsappNumber, setWhatsappNumber] = useState('628123456789');
   const [flatShippingRate, setFlatShippingRate] = useState<number>(15000);
   const [contactEmail, setContactEmail] = useState('');
+
+  // WhatsApp Follow-Up Templates state
+  const [waTemplates, setWaTemplates] = useState<WhatsAppTemplates>(DEFAULT_WA_TEMPLATES);
 
   const [instagramUrl, setInstagramUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
@@ -74,51 +83,61 @@ export default function StoreSettingsPage() {
 
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sync API data to state on load cleanly in useEffect
-  useEffect(() => {
-    if (mockSettings) {
-      setSettings(mockSettings);
-      if (mockSettings.storeName) setStoreName(mockSettings.storeName);
-      if (mockSettings.whatsappNumber) setWhatsappNumber(mockSettings.whatsappNumber);
-      if (mockSettings.flatShippingRate !== undefined) setFlatShippingRate(mockSettings.flatShippingRate);
-      if (mockSettings.contactEmail) setContactEmail(mockSettings.contactEmail);
+  // Sync API data to state on load cleanly during render phase to avoid cascading renders in useEffect
+  const [prevSettings, setPrevSettings] = useState<typeof mockSettings | null>(null);
 
-      setInstagramUrl(mockSettings.instagramUrl || '');
-      setTiktokUrl(mockSettings.tiktokUrl || '');
-      setFacebookUrl(mockSettings.facebookUrl || '');
-      setPinterestUrl(mockSettings.pinterestUrl || '');
-      setXTwitterUrl(mockSettings.xTwitterUrl || '');
+  if (mockSettings && mockSettings !== prevSettings) {
+    setPrevSettings(mockSettings);
+    setSettings(mockSettings);
+    if (mockSettings.storeName) setStoreName(mockSettings.storeName);
+    if (mockSettings.whatsappNumber) setWhatsappNumber(mockSettings.whatsappNumber);
+    if (mockSettings.flatShippingRate !== undefined)
+      setFlatShippingRate(mockSettings.flatShippingRate);
+    if (mockSettings.contactEmail) setContactEmail(mockSettings.contactEmail);
 
-      setHeroTitle(mockSettings.heroTitle || 'EDITION 001');
-      setHeroSubtitle(mockSettings.heroSubtitle || 'ARCHIVAL COTTON SILHOUETTE');
-      setHeroLeftImage(mockSettings.heroLeftImage || '');
-      setHeroRightImage(mockSettings.heroRightImage || '');
-      setHeroCtaText(mockSettings.heroCtaText || 'Eksplor Koleksi Terkini');
-      setHeroCtaLink(mockSettings.heroCtaLink || '/catalogue');
+    setWaTemplates({
+      waTemplatePending: mockSettings.waTemplatePending || DEFAULT_WA_TEMPLATES.waTemplatePending,
+      waTemplatePayment: mockSettings.waTemplatePayment || DEFAULT_WA_TEMPLATES.waTemplatePayment,
+      waTemplateShipping:
+        mockSettings.waTemplateShipping || DEFAULT_WA_TEMPLATES.waTemplateShipping,
+      waTemplateRemind: mockSettings.waTemplateRemind || DEFAULT_WA_TEMPLATES.waTemplateRemind
+    });
 
-      setHomeFeaturedTitle(mockSettings.homeFeaturedTitle || '');
-      setHomeViewAllLabel(mockSettings.homeViewAllLabel || '');
-      setHomeManifestoTitle(mockSettings.homeManifestoTitle || '');
-      setHomeManifestoText(mockSettings.homeManifestoText || '');
-      setHomeManifestoImage(mockSettings.homeManifestoImage || '');
-      setHomeBannerText(mockSettings.homeBannerText || '');
-      setHomeBannerButton(mockSettings.homeBannerButton || '');
+    setInstagramUrl(mockSettings.instagramUrl || '');
+    setTiktokUrl(mockSettings.tiktokUrl || '');
+    setFacebookUrl(mockSettings.facebookUrl || '');
+    setPinterestUrl(mockSettings.pinterestUrl || '');
+    setXTwitterUrl(mockSettings.xTwitterUrl || '');
 
-      setArchiveHeaderSub(mockSettings.archiveHeaderSub || '');
-      setArchiveQuoteTitle(mockSettings.archiveQuoteTitle || '');
-      setArchiveQuoteText(mockSettings.archiveQuoteText || '');
+    setHeroTitle(mockSettings.heroTitle || 'EDITION 001');
+    setHeroSubtitle(mockSettings.heroSubtitle || 'ARCHIVAL COTTON SILHOUETTE');
+    setHeroLeftImage(mockSettings.heroLeftImage || '');
+    setHeroRightImage(mockSettings.heroRightImage || '');
+    setHeroCtaText(mockSettings.heroCtaText || 'Eksplor Koleksi Terkini');
+    setHeroCtaLink(mockSettings.heroCtaLink || '/catalogue');
 
-      setAboutHeroImage(mockSettings.aboutHeroImage || '');
-      setAboutHeading(mockSettings.aboutHeading || '');
-      setAboutParagraph1(mockSettings.aboutParagraph1 || '');
-      setAboutParagraph2(mockSettings.aboutParagraph2 || '');
-      setAboutValuesTitle(mockSettings.aboutValuesTitle || '');
-      setAboutValues(Array.isArray(mockSettings.aboutValues) ? mockSettings.aboutValues : []);
-      setAboutQuote(mockSettings.aboutQuote || '');
-      setAboutQuoteText(mockSettings.aboutQuoteText || '');
-      setAboutStudioImage(mockSettings.aboutStudioImage || '');
-    }
-  }, [mockSettings, setSettings]);
+    setHomeFeaturedTitle(mockSettings.homeFeaturedTitle || '');
+    setHomeViewAllLabel(mockSettings.homeViewAllLabel || '');
+    setHomeManifestoTitle(mockSettings.homeManifestoTitle || '');
+    setHomeManifestoText(mockSettings.homeManifestoText || '');
+    setHomeManifestoImage(mockSettings.homeManifestoImage || '');
+    setHomeBannerText(mockSettings.homeBannerText || '');
+    setHomeBannerButton(mockSettings.homeBannerButton || '');
+
+    setArchiveHeaderSub(mockSettings.archiveHeaderSub || '');
+    setArchiveQuoteTitle(mockSettings.archiveQuoteTitle || '');
+    setArchiveQuoteText(mockSettings.archiveQuoteText || '');
+
+    setAboutHeroImage(mockSettings.aboutHeroImage || '');
+    setAboutHeading(mockSettings.aboutHeading || '');
+    setAboutParagraph1(mockSettings.aboutParagraph1 || '');
+    setAboutParagraph2(mockSettings.aboutParagraph2 || '');
+    setAboutValuesTitle(mockSettings.aboutValuesTitle || '');
+    setAboutValues(Array.isArray(mockSettings.aboutValues) ? mockSettings.aboutValues : []);
+    setAboutQuote(mockSettings.aboutQuote || '');
+    setAboutQuoteText(mockSettings.aboutQuoteText || '');
+    setAboutStudioImage(mockSettings.aboutStudioImage || '');
+  }
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -128,6 +147,10 @@ export default function StoreSettingsPage() {
         whatsappNumber,
         flatShippingRate: Number(flatShippingRate) || 0,
         contactEmail,
+        waTemplatePending: waTemplates.waTemplatePending,
+        waTemplatePayment: waTemplates.waTemplatePayment,
+        waTemplateShipping: waTemplates.waTemplateShipping,
+        waTemplateRemind: waTemplates.waTemplateRemind,
         instagramUrl,
         tiktokUrl,
         facebookUrl,
@@ -161,7 +184,7 @@ export default function StoreSettingsPage() {
       };
       await axios.put('/api/v1/settings', payload);
       updateSettings(payload);
-      toast.success('Pengaturan toko & konten CMS berhasil disimpan!');
+      toast.success('Pengaturan toko & template WhatsApp berhasil disimpan!');
     } catch (error) {
       console.error('Failed to save settings:', error);
       toast.error('Gagal menyimpan pengaturan toko ke database');
@@ -172,6 +195,7 @@ export default function StoreSettingsPage() {
 
   const tabsNav = [
     { id: 'profile', label: 'Profil Toko & Kontak', icon: ShoppingBag },
+    { id: 'whatsapp', label: 'Template Followup WA', icon: MessageSquare },
     { id: 'payments', label: 'Rekening Pembayaran', icon: CreditCard },
     { id: 'socials', label: 'Media Sosial', icon: Share2 },
     { id: 'hero', label: 'Banner Hero CMS', icon: LayoutTemplate },
@@ -187,7 +211,8 @@ export default function StoreSettingsPage() {
           Store Settings & CMS
         </h1>
         <p className="text-sm text-muted-foreground pt-1">
-          Kelola profil toko, rekening pembayaran, media sosial, dan konfigurasi konten publik secara rapi.
+          Kelola profil toko, rekening pembayaran, media sosial, dan konfigurasi konten publik
+          secara rapi.
         </p>
       </VStack>
 
@@ -222,6 +247,16 @@ export default function StoreSettingsPage() {
           </div>
         ) : (
           <>
+            {/* TAB: Template Followup WA */}
+            {activeTab === 'whatsapp' && (
+              <WhatsAppTemplateEditor
+                templates={waTemplates}
+                onChange={setWaTemplates}
+                onSave={handleSave}
+                isSaving={isSaving}
+              />
+            )}
+
             {/* TAB 1: Profil Toko & Kontak */}
             {activeTab === 'profile' && (
               <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
@@ -262,7 +297,10 @@ export default function StoreSettingsPage() {
                   </div>
 
                   <div className="space-y-1.5 md:col-span-2">
-                    <Label htmlFor="contact-email" className="text-xs font-bold text-foreground flex items-center gap-1">
+                    <Label
+                      htmlFor="contact-email"
+                      className="text-xs font-bold text-foreground flex items-center gap-1"
+                    >
                       <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                       Email Kontak Resmi
                     </Label>
@@ -468,7 +506,9 @@ export default function StoreSettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Judul Section Produk</Label>
+                    <Label className="text-xs font-bold text-foreground">
+                      Judul Section Produk
+                    </Label>
                     <Input
                       value={homeFeaturedTitle}
                       onChange={(e) => setHomeFeaturedTitle(e.target.value)}
@@ -522,7 +562,9 @@ export default function StoreSettingsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Teks Tombol Banner CTA</Label>
+                    <Label className="text-xs font-bold text-foreground">
+                      Teks Tombol Banner CTA
+                    </Label>
                     <Input
                       value={homeBannerButton}
                       onChange={(e) => setHomeBannerButton(e.target.value)}
@@ -553,7 +595,9 @@ export default function StoreSettingsPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Judul Quote Archive</Label>
+                      <Label className="text-xs font-bold text-foreground">
+                        Judul Quote Archive
+                      </Label>
                       <Input
                         value={archiveQuoteTitle}
                         onChange={(e) => setArchiveQuoteTitle(e.target.value)}
@@ -562,7 +606,9 @@ export default function StoreSettingsPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Teks Quote Archive</Label>
+                      <Label className="text-xs font-bold text-foreground">
+                        Teks Quote Archive
+                      </Label>
                       <Textarea
                         value={archiveQuoteText}
                         onChange={(e) => setArchiveQuoteText(e.target.value)}
@@ -584,14 +630,18 @@ export default function StoreSettingsPage() {
                       <ImageUpload value={aboutHeroImage} onChange={setAboutHeroImage} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Judul Utama / Heading</Label>
+                      <Label className="text-xs font-bold text-foreground">
+                        Judul Utama / Heading
+                      </Label>
                       <Input
                         value={aboutHeading}
                         onChange={(e) => setAboutHeading(e.target.value)}
                         className="h-10 rounded-xl text-xs"
                         placeholder="Independent. Archival. Uncompromising."
                       />
-                      <Label className="text-xs font-bold text-foreground block pt-3">Judul Section Nilai</Label>
+                      <Label className="text-xs font-bold text-foreground block pt-3">
+                        Judul Section Nilai
+                      </Label>
                       <Input
                         value={aboutValuesTitle}
                         onChange={(e) => setAboutValuesTitle(e.target.value)}
@@ -622,26 +672,37 @@ export default function StoreSettingsPage() {
                   {/* Brand Values */}
                   <div className="space-y-3 pt-2 border-t border-border/20">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-foreground">Nilai-Nilai Brand (Values)</Label>
+                      <Label className="text-xs font-bold text-foreground">
+                        Nilai-Nilai Brand (Values)
+                      </Label>
                       <Button
                         type="button"
                         variant="outline"
                         className="h-8 px-3 rounded-lg text-xs"
-                        onClick={() => setAboutValues((v) => [...v, { title: '', description: '' }])}
+                        onClick={() =>
+                          setAboutValues((v) => [...v, { title: '', description: '' }])
+                        }
                       >
                         + Tambah Nilai
                       </Button>
                     </div>
 
                     {aboutValues.map((val, idx) => (
-                      <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_2fr_auto] gap-2 items-start p-3 border border-border/20 rounded-xl">
+                      <div
+                        key={idx}
+                        className="grid grid-cols-1 sm:grid-cols-[1fr_2fr_auto] gap-2 items-start p-3 border border-border/20 rounded-xl"
+                      >
                         <div className="space-y-1">
-                          <Label className="text-[10px] font-bold text-muted-foreground">Judul Nilai</Label>
+                          <Label className="text-[10px] font-bold text-muted-foreground">
+                            Judul Nilai
+                          </Label>
                           <Input
                             value={val.title}
                             onChange={(e) =>
                               setAboutValues((prev) =>
-                                prev.map((item, i) => (i === idx ? { ...item, title: e.target.value } : item))
+                                prev.map((item, i) =>
+                                  i === idx ? { ...item, title: e.target.value } : item
+                                )
                               )
                             }
                             className="h-9 rounded-lg text-xs"
@@ -649,12 +710,16 @@ export default function StoreSettingsPage() {
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-[10px] font-bold text-muted-foreground">Deskripsi Nilai</Label>
+                          <Label className="text-[10px] font-bold text-muted-foreground">
+                            Deskripsi Nilai
+                          </Label>
                           <Textarea
                             value={val.description}
                             onChange={(e) =>
                               setAboutValues((prev) =>
-                                prev.map((item, i) => (i === idx ? { ...item, description: e.target.value } : item))
+                                prev.map((item, i) =>
+                                  i === idx ? { ...item, description: e.target.value } : item
+                                )
                               )
                             }
                             className="min-h-16 rounded-xl text-xs"
@@ -677,11 +742,21 @@ export default function StoreSettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold text-foreground">Quote About</Label>
-                      <Input value={aboutQuote} onChange={(e) => setAboutQuote(e.target.value)} className="h-10 rounded-xl text-xs" />
+                      <Input
+                        value={aboutQuote}
+                        onChange={(e) => setAboutQuote(e.target.value)}
+                        className="h-10 rounded-xl text-xs"
+                      />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Teks di Bawah Quote</Label>
-                      <Input value={aboutQuoteText} onChange={(e) => setAboutQuoteText(e.target.value)} className="h-10 rounded-xl text-xs" />
+                      <Label className="text-xs font-bold text-foreground">
+                        Teks di Bawah Quote
+                      </Label>
+                      <Input
+                        value={aboutQuoteText}
+                        onChange={(e) => setAboutQuoteText(e.target.value)}
+                        className="h-10 rounded-xl text-xs"
+                      />
                     </div>
                   </div>
 

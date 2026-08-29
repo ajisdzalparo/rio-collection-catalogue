@@ -9,6 +9,9 @@ export interface StoreSettings {
   storeName: string;
   whatsappNumber: string;
   flatShippingRate: number;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountOwner?: string;
   instagramUrl?: string;
   tiktokUrl?: string;
   facebookUrl?: string;
@@ -40,6 +43,10 @@ export interface StoreSettings {
   aboutQuoteText?: string;
   aboutStudioImage?: string;
   contactEmail?: string;
+  waTemplatePending?: string;
+  waTemplatePayment?: string;
+  waTemplateShipping?: string;
+  waTemplateRemind?: string;
 }
 
 interface StoreSettingsState extends StoreSettings {

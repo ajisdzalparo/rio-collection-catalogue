@@ -469,11 +469,22 @@ export default function OrderPage() {
         fullName: formData.fullName,
         whatsapp: formData.whatsapp,
         address: fullAddress,
-        items: [{ productId: product.id, size: selectedSize, quantity: 1 }]
+        notes: '',
+        totalPrice,
+        items: [
+          {
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            size: selectedSize || 'M',
+            quantity: 1
+          }
+        ]
       });
       const orderNum = res?.data?.orderNumber || 'RC-8802';
       router.push(`/order/confirmation/${orderNum}`);
-    } catch {
+    } catch (error) {
+      console.error('Failed to submit order:', error);
       router.push('/order/confirmation/RC-8802');
     }
   };

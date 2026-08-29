@@ -23,10 +23,57 @@ export async function GET() {
   }
 }
 
+interface OrderItemPayload {
+  productId?: string;
+  name?: string;
+  size?: string;
+  price?: number | string;
+  quantity?: number | string;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { fullName, whatsapp, address, notes, items, totalPrice } = body;
+
+    if (!fullName || !whatsapp || !address) {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: 'Data pelanggan (nama, whatsapp, alamat) wajib diisi' },
+        { status: 400 }
+      );
+    }
+
+    // Process items & resolve product details if missing from payload
+    let computedTotal = 0;
+    const resolvedItems = await Promise.all(
+      ((items as OrderItemPayload[]) || []).map(async (item: OrderItemPayload) => {
+        let name = item.name;
+        let price = Number(item.price || 0);
+
+        if (item.productId && (!name || !price)) {
+          const dbProduct = await prisma.product.findUnique({
+            where: { id: item.productId }
+          });
+          if (dbProduct) {
+            if (!name) name = dbProduct.name;
+            if (!price) price = dbProduct.price;
+          }
+        }
+
+        const qty = Number(item.quantity || 1);
+        computedTotal += price * qty;
+
+        return {
+          productId: item.productId || null,
+          name: name || 'Produk RIO Collection',
+          size: item.size || 'M',
+          price,
+          quantity: qty
+        };
+      })
+    );
+
+    const finalTotalPrice = Number(totalPrice) > 0 ? Number(totalPrice) : computedTotal;
 
     const count = await prisma.order.count();
     const orderNumber = `RC-${String(8800 + count + 1).padStart(4, '0')}`;
@@ -38,18 +85,10 @@ export async function POST(request: Request) {
         whatsapp,
         address,
         notes: notes || '',
-        totalPrice: Number(totalPrice),
+        totalPrice: finalTotalPrice,
         status: 'PENDING',
         items: {
-          create: (items || []).map(
-            (item: { productId?: string; name: string; size: string; price: number; quantity: number }) => ({
-              productId: item.productId || null,
-              name: item.name,
-              size: item.size,
-              price: Number(item.price),
-              quantity: Number(item.quantity)
-            })
-          )
+          create: resolvedItems
         }
       },
       include: {
@@ -73,7 +112,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error creating order:', error);
+    console.error('Error creating order in DB:', error);
     return NextResponse.json(
       { code: 500, status: 'error', message: 'Failed to submit order request' },
       { status: 500 }

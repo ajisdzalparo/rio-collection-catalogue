@@ -75,7 +75,11 @@ export async function PUT(request: Request) {
       aboutQuote,
       aboutQuoteText,
       aboutStudioImage,
-      contactEmail
+      contactEmail,
+      waTemplatePending,
+      waTemplatePayment,
+      waTemplateShipping,
+      waTemplateRemind
     } = body;
 
     const updatedSettings = await prisma.storeSettings.upsert({
@@ -117,7 +121,11 @@ export async function PUT(request: Request) {
         ...(aboutQuote !== undefined && { aboutQuote }),
         ...(aboutQuoteText !== undefined && { aboutQuoteText }),
         ...(aboutStudioImage !== undefined && { aboutStudioImage }),
-        ...(contactEmail !== undefined && { contactEmail })
+        ...(contactEmail !== undefined && { contactEmail }),
+        ...(waTemplatePending !== undefined && { waTemplatePending }),
+        ...(waTemplatePayment !== undefined && { waTemplatePayment }),
+        ...(waTemplateShipping !== undefined && { waTemplateShipping }),
+        ...(waTemplateRemind !== undefined && { waTemplateRemind })
       },
       create: {
         id: 'default',

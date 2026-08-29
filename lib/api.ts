@@ -189,7 +189,9 @@ export async function submitOrder(orderPayload: {
   fullName: string;
   whatsapp: string;
   address: string;
-  items: Array<{ productId: string; size: string; quantity: number }>;
+  notes?: string;
+  totalPrice?: number;
+  items: Array<{ productId?: string; name?: string; price?: number; size: string; quantity: number }>;
 }) {
   const baseUrl = getBaseUrl();
   const res = await fetch(`${baseUrl}/v1/orders`, {

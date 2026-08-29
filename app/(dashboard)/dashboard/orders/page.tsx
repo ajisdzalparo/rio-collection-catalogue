@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useOrders, type Order } from '@/hooks/use-orders';
+import { useStoreSettingsStore } from '@/hooks/use-store-settings';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import {
   Dialog,
@@ -46,7 +47,14 @@ function OrdersPageContent() {
   const router = useRouter();
   const paramOrderId = searchParams.get('id');
 
-  const { data: orders = [], isLoading: loading, updateOrder, isUpdating, cleanupStaleOrders, isCleaningUp } = useOrders();
+  const {
+    data: orders = [],
+    isLoading: loading,
+    updateOrder,
+    isUpdating,
+    cleanupStaleOrders,
+    isCleaningUp
+  } = useOrders();
 
   const handleRunCronCleanup = async () => {
     try {
@@ -54,7 +62,8 @@ function OrdersPageContent() {
       toast.success('Pembersihan Cron Job Berhasil! Pesanan pending > 24 jam ditandai EXPIRED.');
     } catch (err: unknown) {
       toast.error('Gagal menjalankan pembersihan Cron', {
-        description: err instanceof Error ? err.message : 'Terjadi kesalahan saat menjalankan Cron Job'
+        description:
+          err instanceof Error ? err.message : 'Terjadi kesalahan saat menjalankan Cron Job'
       });
     }
   };
@@ -154,7 +163,9 @@ function OrdersPageContent() {
         await updateOrder({
           id: order.id,
           status: 'REJECTED',
-          adminNotes: order.adminNotes ? `${order.adminNotes} (Ditolak Admin / Anti-Spam)` : 'Ditolak (Spam Protection)'
+          adminNotes: order.adminNotes
+            ? `${order.adminNotes} (Ditolak Admin / Anti-Spam)`
+            : 'Ditolak (Spam Protection)'
         });
         toast.error(`Order ${order.orderNumber} telah ditolak (REJECTED)`);
         if (selectedOrder?.id === order.id) {
@@ -370,18 +381,31 @@ function OrdersPageContent() {
     [handleOpenDetail, handleApproveOrder, handleRejectOrder, isUpdating]
   );
 
-  // Generate WhatsApp message template link
+  // Generate WhatsApp message template link using custom settings templates
+  const storeSettings = useStoreSettingsStore();
+
   const getWhatsAppLink = (order: Order) => {
-    const message =
-      `Halo ${order.fullName},\n\nTerima kasih telah memesan dari RIO COLLECTION.\nKami mengonfirmasi pesanan Anda dengan nomor ${order.orderNumber}:\n\n` +
-      order.items
-        .map((item) => `- ${item.name} (Size: ${item.size}, Qty: ${item.quantity})`)
-        .join('\n') +
-      `\n\nSubtotal: ${formatIDR(order.subtotal || 0)}` +
-      `\nOngkos Kirim (${order.courierName || 'JNE'}): ${formatIDR(order.shippingFee || 15000)}` +
-      `\nTotal Tagihan: ${formatIDR(order.totalPrice)}` +
-      (order.trackingNumber ? `\n\nNo. Resi Pengiriman: ${order.trackingNumber}` : '') +
-      `\n\nSilakan melakukan pembayaran via transfer ke rekening kami:\nBCA: 1234567890 (a.n RIO COLLECTION)\n\nHarap kirimkan bukti transfer ke WhatsApp ini setelah melakukan pembayaran. Terima kasih!`;
+    let template = storeSettings.waTemplatePending;
+    const statusStr = String(order.status);
+    if (statusStr === 'CONFIRMED' || statusStr === 'PAID') {
+      template = storeSettings.waTemplatePayment || template;
+    } else if (statusStr === 'SHIPPED' || statusStr === 'FULFILLED') {
+      template = storeSettings.waTemplateShipping || template;
+    }
+
+    if (!template) {
+      template = `Halo {nama_pelanggan},\n\nTerima kasih telah memesan dari RIO COLLECTION.\nKami mengonfirmasi pesanan Anda dengan nomor #{nomor_order}.\n\nTotal Tagihan: {total_pembayaran}\nSilakan melakukan pembayaran via transfer bank:\n{rekening_bank}\n\nHarap kirimkan bukti transfer ke WhatsApp ini setelah melakukan pembayaran. Terima kasih!`;
+    }
+
+    const bankText = `${storeSettings.bankName || 'BCA'}: ${storeSettings.bankAccountNumber || '1234567890'} a.n ${storeSettings.bankAccountOwner || 'RIO COLLECTION'}`;
+
+    const message = template
+      .replaceAll('{nama_pelanggan}', order.fullName)
+      .replaceAll('{nomor_order}', order.orderNumber)
+      .replaceAll('{total_pembayaran}', formatIDR(order.totalPrice))
+      .replaceAll('{rekening_bank}', bankText)
+      .replaceAll('{kurir}', order.courierName || 'JNE')
+      .replaceAll('{nomor_resi}', order.trackingNumber || '-');
 
     return `https://wa.me/${order.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
   };
@@ -391,7 +415,8 @@ function OrdersPageContent() {
       <VStack gap="xs">
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Kelola Pesanan</h1>
         <p className="text-sm text-muted-foreground pt-1">
-          Review request pesanan masuk, lakukan aksi Setujui/Tolak untuk cegah spam, kelola resi pengiriman & WhatsApp
+          Review request pesanan masuk, lakukan aksi Setujui/Tolak untuk cegah spam, kelola resi
+          pengiriman & WhatsApp
         </p>
       </VStack>
 
@@ -400,9 +425,13 @@ function OrdersPageContent() {
         <div className="flex items-center gap-3">
           <Clock className="h-5 w-5 text-amber-500 shrink-0" />
           <div className="text-xs space-y-0.5">
-            <span className="font-bold text-foreground block">Cron Job Auto-Cleanup Pesanan Spam (24 Jam Expiry)</span>
+            <span className="font-bold text-foreground block">
+              Cron Job Auto-Cleanup Pesanan Spam (24 Jam Expiry)
+            </span>
             <span className="text-muted-foreground text-[11px] leading-relaxed">
-              Pesanan berstatus <strong className="text-amber-500">PENDING &gt; 24 jam</strong> secara otomatis ditandai <strong className="text-red-500">EXPIRED</strong> via Cron Job untuk mencegah penumpukan spam.
+              Pesanan berstatus <strong className="text-amber-500">PENDING &gt; 24 jam</strong>{' '}
+              secara otomatis ditandai <strong className="text-red-500">EXPIRED</strong> via Cron
+              Job untuk mencegah penumpukan spam.
             </span>
           </div>
         </div>

@@ -196,6 +196,10 @@ model StoreSettings {
   aboutQuoteText    String?
   aboutStudioImage  String?
   contactEmail      String?
+  waTemplatePending  String?  @default("Halo {nama_pelanggan},\n\nTerima kasih telah memesan dari RIO COLLECTION!\nKami telah menerima pesanan Anda (#{nomor_order}).\n\nTotal Tagihan: {total_pembayaran}\nSilakan melakukan pembayaran via transfer bank:\n{rekening_bank}\n\nHarap kirimkan bukti transfer ke WhatsApp ini setelah melakukan pembayaran. Terima kasih!")
+  waTemplatePayment  String?  @default("Halo {nama_pelanggan},\n\nKami dari RIO COLLECTION mengonfirmasi bahwa pembayaran untuk pesanan #{nomor_order} sebesar {total_pembayaran} telah DITERIMA & LUNAS.\n\nPesanan Anda sedang kami siapkan untuk pengiriman. Terima kasih!")
+  waTemplateShipping String?  @default("Halo {nama_pelanggan},\n\nPesanan Anda (#{nomor_order}) dari RIO COLLECTION telah dikirim via {kurir}!\nNomor Resi: {nomor_resi}\n\nTerima kasih telah berbelanja di RIO COLLECTION!")
+  waTemplateRemind   String?  @default("Halo {nama_pelanggan},\n\nKami dari RIO COLLECTION menginformasikan bahwa pesanan (#{nomor_order}) dengan total {total_pembayaran} sedang menunggu pembayaran.\n\nApakah ada kendala saat melakukan proses pembayaran?\nMohon konfirmasi/kirimkan bukti bayar agar pesanan dapat segera dikirim. Terima kasih!")
   updatedAt         DateTime @updatedAt
 }
 
