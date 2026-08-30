@@ -340,8 +340,11 @@ export function DataTable<T extends object>({
             )}
 
             {columns.map((col, idx) => {
+              const isActionColumn =
+                typeof col.header === 'string' &&
+                ['aksi', 'action', 'actions', 'aksi review'].includes(col.header.toLowerCase().trim());
               const isSortable = Boolean(
-                enableSorting && col.sortable !== false && col.accessorKey
+                enableSorting && col.sortable !== false && col.accessorKey && !isActionColumn
               );
               const isCurrentSorted = col.accessorKey && activeSortKey === col.accessorKey;
 

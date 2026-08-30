@@ -25,10 +25,14 @@ export default async function HomePage() {
     prisma.storeSettings.findUnique({ where: { id: 'default' } }).catch(() => null)
   ]);
   const featuredProducts = products.slice(0, 3);
-  const featuredTitle = settings?.homeFeaturedTitle || 'Koleksi Terkini';
-  const viewAllLabel = settings?.homeViewAllLabel || 'Lihat Semua';
-  const bannerText = settings?.homeBannerText || '';
-  const bannerButton = settings?.homeBannerButton || '';
+  const rawBannerText = settings?.homeBannerText || '';
+  const bannerText =
+    rawBannerText && rawBannerText !== 'ya'
+      ? rawBannerText
+      : 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.';
+  const rawBannerBtn = settings?.homeBannerButton || '';
+  const bannerButton =
+    rawBannerBtn && rawBannerBtn !== 'gdfgdfg' ? rawBannerBtn : 'Jelajahi Katalog Lengkap';
 
   return (
     <>
@@ -40,13 +44,13 @@ export default async function HomePage() {
         {/* Section header */}
         <div className="flex items-end justify-between mb-10 md:mb-14">
           <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
-            {featuredTitle}
+            Koleksi Terkini
           </h2>
           <Link
             href="/catalogue"
             className="hidden md:inline-flex items-center gap-1.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
           >
-            {viewAllLabel}
+            Lihat Semua
             <ArrowRight size={12} strokeWidth={2} />
           </Link>
         </div>
@@ -72,41 +76,47 @@ export default async function HomePage() {
             href="/catalogue"
             className="inline-flex items-center gap-1.5 font-hanken text-[12px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
           >
-            {viewAllLabel}
+            Lihat Semua
             <ArrowRight size={12} strokeWidth={2} />
           </Link>
         </div>
       </section>
 
       {/* ═══ Brand Manifesto — fully CMS-driven, hidden when empty ═══ */}
-      {(settings?.homeManifestoTitle || settings?.homeManifestoText) && (
-        <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-            {settings?.homeManifestoImage && (
-              <div className="relative aspect-4/5 md:aspect-3/4 overflow-hidden">
+      {/* ═══ Brand Manifesto Section ═══ */}
+      {(() => {
+        const title = settings?.homeManifestoTitle || 'Mendefinisikan Ulang Esensi Kualitas & Estetika.';
+        const text = settings?.homeManifestoText || 'Setiap karya pakaian dari RIO COLLECTION lahir dari kombinasi riset bahan katun berbobot tinggi (240-280 GSM), siluet kaku modern, serta detail jahitan presisi. Kami menghadirkan pakaian esensial tahan lama yang berkarakter.';
+        const image = settings?.homeManifestoImage || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80';
+
+        return (
+          <section className="mx-auto max-w-350 px-4 md:px-16 py-12 md:py-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+              <div className="relative aspect-4/5 md:aspect-3/4 overflow-hidden bg-(--cat-surface-container-low)">
                 <Image
-                  src={settings.homeManifestoImage}
-                  alt={settings.homeManifestoTitle || 'Brand manifesto'}
+                  src={image}
+                  alt={title}
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover"
                 />
               </div>
-            )}
 
-            <div className="flex flex-col justify-center py-4 md:py-12">
-              <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
-                {settings?.homeManifestoTitle}
-              </h2>
-              {settings?.homeManifestoText && (
+              <div className="flex flex-col justify-center py-4 md:py-12">
+                <span className="font-hanken text-[11px] font-bold uppercase tracking-[0.15em] text-(--cat-on-surface-variant) mb-3">
+                  MANIFESTO &amp; FILOSOFI
+                </span>
+                <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
+                  {title}
+                </h2>
                 <p className="mt-6 font-hanken text-[15px] md:text-[16px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
-                  {settings.homeManifestoText}
+                  {text}
                 </p>
-              )}
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        );
+      })()}
 
       {/* ═══ Testimony Section ═══ */}
       <TestimonySection testimonies={testimonies} />

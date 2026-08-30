@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
-import { getProducts, getArchives } from '@/lib/api';
+import { getProducts, getArchives, getJournals } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = {
@@ -12,9 +12,10 @@ export const metadata: Metadata = {
 };
 
 export default async function ArchivePage() {
-  const [products, archives, settings] = await Promise.all([
+  const [products, archives, journals, settings] = await Promise.all([
     getProducts(),
     getArchives(),
+    getJournals(),
     prisma.storeSettings.findUnique({ where: { id: 'default' } }).catch(() => null)
   ]);
   const archivedProducts = products.filter((p) => p.status === 'SOLD_OUT');
@@ -97,32 +98,52 @@ export default async function ArchivePage() {
       {/* Archive Collections */}
       <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          {archives.map((archive) => (
-            <div key={archive.id} className="group">
-              <div className="relative aspect-3/2 overflow-hidden bg-(--cat-surface-container-low)">
-                <SafeImage
-                  src={archive.imageUrl}
-                  alt={archive.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300"
-                />
-              </div>
-              <div className="mt-3 flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-hanken text-[15px] font-medium text-(--cat-on-surface)">
-                    {archive.name}
-                  </h3>
-                  <p className="mt-0.5 font-hanken text-[12px] text-(--cat-on-surface-variant)">
-                    {archive.description}
-                  </p>
+          {archives.map((archive) => {
+            const matchingJournal =
+              journals.find((j) => j.slug === archive.slug) ||
+              journals.find((j) =>
+                archive.name.toLowerCase().includes(j.title.toLowerCase().split(' ')[0])
+              ) ||
+              journals[0];
+
+            const articleHref = matchingJournal
+              ? `/journal/${matchingJournal.slug}`
+              : `/journal/${archive.slug}`;
+
+            return (
+              <Link
+                key={archive.id}
+                href={articleHref}
+                className="group block cursor-pointer transition-all"
+              >
+                <div className="relative aspect-3/2 overflow-hidden bg-(--cat-surface-container-low)">
+                  <SafeImage
+                    src={archive.imageUrl}
+                    alt={archive.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover opacity-85 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-500 ease-out"
+                  />
+                  <div className="absolute bottom-3 left-3 bg-background/90 text-foreground backdrop-blur-xs px-3 py-1 text-[11px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 shadow-md">
+                    Baca Artikel Jurnal &rarr;
+                  </div>
                 </div>
-                <span className="shrink-0 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-secondary-container)">
-                  Sold Out
-                </span>
-              </div>
-            </div>
-          ))}
+                <div className="mt-3 flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-hanken text-[15px] font-medium text-(--cat-on-surface) group-hover:underline underline-offset-4 decoration-1">
+                      {archive.name}
+                    </h3>
+                    <p className="mt-0.5 font-hanken text-[12px] text-(--cat-on-surface-variant)">
+                      {archive.description}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-secondary-container)">
+                    Sold Out
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 

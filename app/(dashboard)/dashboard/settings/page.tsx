@@ -692,28 +692,6 @@ export default function StoreSettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">
-                      Judul Section Produk
-                    </Label>
-                    <Input
-                      value={homeFeaturedTitle}
-                      onChange={(e) => setHomeFeaturedTitle(e.target.value)}
-                      className="h-10 rounded-xl text-xs"
-                      placeholder="Koleksi Terkini"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Label Lihat Semua</Label>
-                    <Input
-                      value={homeViewAllLabel}
-                      onChange={(e) => setHomeViewAllLabel(e.target.value)}
-                      className="h-10 rounded-xl text-xs"
-                      placeholder="Lihat Semua"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-foreground">Judul Manifesto</Label>
                     <Input
                       value={homeManifestoTitle}

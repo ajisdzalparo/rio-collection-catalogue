@@ -391,7 +391,28 @@ async function main() {
       bankName: 'BCA',
       bankAccountNumber: '1234567890',
       bankAccountOwner: 'RIO COLLECTION',
-      flatShippingRate: 15000
+      flatShippingRate: 15000,
+      homeManifestoTitle: 'Mendefinisikan Ulang Esensi Kualitas & Estetika.',
+      homeManifestoText: 'Setiap karya pakaian dari RIO COLLECTION lahir dari kombinasi riset bahan katun berbobot tinggi (240-280 GSM), siluet kaku modern, serta detail jahitan presisi. Kami menghadirkan pakaian esensial tahan lama yang berkarakter.',
+      homeManifestoImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+      homeBannerText: 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.',
+      homeBannerButton: 'Jelajahi Katalog Lengkap',
+      archiveHeaderSub: 'Desain masa lalu dan koleksi arsip rilisan terdahulu yang kami lestarikan.',
+      archiveQuoteTitle: 'Merekam jejak perjalanan estetika dan eksperimen material kami.',
+      archiveQuoteText: 'Setiap siluet yang telah habis tidak pernah benar-benar hilang, melainkan menjadi bagian dari sejarah dan fondasi karya kami berikutnya.',
+      aboutHeroImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+      aboutHeading: 'Independen. Archival. Uncompromising.',
+      aboutParagraph1: 'RIO COLLECTION berdiri sebagai studio independen yang berfokus pada eksplorasi pakaian katun berkonstruksi kaku dan bernilai arsip.',
+      aboutParagraph2: 'Kami percaya bahwa pakaian esensial tidak harus polos tanpa karakter. Melalui pemilihan kain berkualitas tinggi, potong jahitan yang presisi, serta kuantitas rilisan yang terbatas, setiap produk dirancang untuk tahan lama.',
+      aboutValuesTitle: 'Prinsip & Nilai Kami',
+      aboutValues: [
+        { title: 'Slow & Conscious Design', description: 'Memilih kualitas bahan dan kerapian konstruksi dibanding produksi cepat masal.' },
+        { title: 'Archival Cotton Silhouette', description: 'Mengembangkan katun berbobot 240-280 GSM yang mempertahankan struktur kaku siluet.' },
+        { title: 'Limited Batch Quantity', description: 'Setiap rilisan dibuat dalam kuantitas terbatas untuk menjaga eksklusivitas karya.' }
+      ],
+      aboutQuote: 'Bukan tentang menciptakan sesuatu yang baru, melainkan menyempurnakan sesuatu yang mendasar.',
+      aboutQuoteText: 'RIO COLLECTION Editorial & Design Team',
+      aboutStudioImage: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80'
     },
     create: {
       id: 'default',
@@ -400,7 +421,28 @@ async function main() {
       bankName: 'BCA',
       bankAccountNumber: '1234567890',
       bankAccountOwner: 'RIO COLLECTION',
-      flatShippingRate: 15000
+      flatShippingRate: 15000,
+      homeManifestoTitle: 'Mendefinisikan Ulang Esensi Kualitas & Estetika.',
+      homeManifestoText: 'Setiap karya pakaian dari RIO COLLECTION lahir dari kombinasi riset bahan katun berbobot tinggi (240-280 GSM), siluet kaku modern, serta detail jahitan presisi. Kami menghadirkan pakaian esensial tahan lama yang berkarakter.',
+      homeManifestoImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+      homeBannerText: 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.',
+      homeBannerButton: 'Jelajahi Katalog Lengkap',
+      archiveHeaderSub: 'Desain masa lalu dan koleksi arsip rilisan terdahulu yang kami lestarikan.',
+      archiveQuoteTitle: 'Merekam jejak perjalanan estetika dan eksperimen material kami.',
+      archiveQuoteText: 'Setiap siluet yang telah habis tidak pernah benar-benar hilang, melainkan menjadi bagian dari sejarah dan fondasi karya kami berikutnya.',
+      aboutHeroImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+      aboutHeading: 'Independen. Archival. Uncompromising.',
+      aboutParagraph1: 'RIO COLLECTION berdiri sebagai studio independen yang berfokus pada eksplorasi pakaian katun berkonstruksi kaku dan bernilai arsip.',
+      aboutParagraph2: 'Kami percaya bahwa pakaian esensial tidak harus polos tanpa karakter. Melalui pemilihan kain berkualitas tinggi, potong jahitan yang presisi, serta kuantitas rilisan yang terbatas, setiap produk dirancang untuk tahan lama.',
+      aboutValuesTitle: 'Prinsip & Nilai Kami',
+      aboutValues: [
+        { title: 'Slow & Conscious Design', description: 'Memilih kualitas bahan dan kerapian konstruksi dibanding produksi cepat masal.' },
+        { title: 'Archival Cotton Silhouette', description: 'Mengembangkan katun berbobot 240-280 GSM yang mempertahankan struktur kaku siluet.' },
+        { title: 'Limited Batch Quantity', description: 'Setiap rilisan dibuat dalam kuantitas terbatas untuk menjaga eksklusivitas karya.' }
+      ],
+      aboutQuote: 'Bukan tentang menciptakan sesuatu yang baru, melainkan menyempurnakan sesuatu yang mendasar.',
+      aboutQuoteText: 'RIO COLLECTION Editorial & Design Team',
+      aboutStudioImage: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80'
     }
   });
 

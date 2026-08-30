@@ -12,11 +12,31 @@ import {
   Quote,
   Minus,
   Link as LinkIcon,
+  Image as ImageIcon,
+  Upload,
   Undo,
   Redo,
-  Type
+  Type,
+  Loader2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Trash2,
+  Maximize2,
+  Move
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 
 interface RichTextEditorProps {
   value?: string;
@@ -42,10 +62,50 @@ export function RichTextEditor({
   minHeight = '360px'
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const savedRangeRef = useRef<Range | null>(null);
   const [isEmpty, setIsEmpty] = useState(true);
   const [isSerif, setIsSerif] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
+
+  // Range save & restore helpers
+  const saveSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      if (editorRef.current?.contains(range.startContainer)) {
+        savedRangeRef.current = range.cloneRange();
+      }
+    }
+  }, []);
+
+  const restoreSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (sel && savedRangeRef.current) {
+      sel.removeAllRanges();
+      sel.addRange(savedRangeRef.current);
+    }
+  }, []);
+
+  // Image insertion states
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [imageAltInput, setImageAltInput] = useState('');
+  const [imageSizeInput, setImageSizeInput] = useState<'sm' | 'md' | 'lg'>('md');
+
+  // Link insertion states
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkUrlInput, setLinkUrlInput] = useState('https://');
+  const [linkTextInput, setLinkTextInput] = useState('');
+  const [openInNewTab, setOpenInNewTab] = useState(true);
+
+  // Interactive selected image state & controls
+  const [selectedImgEl, setSelectedImgEl] = useState<HTMLImageElement | null>(null);
+  const selectedImgRef = useRef<HTMLImageElement | null>(null);
+  const [imgWidthPct, setImgWidthPct] = useState<number>(80);
+  const [imgAlign, setImgAlign] = useState<'left' | 'center' | 'right'>('center');
 
   // Keep track of active formatting states
   const [activeStates, setActiveStates] = useState({
@@ -93,47 +153,262 @@ export function RichTextEditor({
     if (!editorRef.current) return;
     const html = editorRef.current.innerHTML;
     const textContent = editorRef.current.textContent || '';
-
-    setIsEmpty(!textContent.trim() && !html.includes('<img') && !html.includes('<hr'));
+    setIsEmpty(!html.trim() || html === '<p></p>' || html === '<p><br></p>');
     setCharCount(textContent.length);
     setWordCount(textContent.trim().split(/\s+/).filter(Boolean).length);
 
-    onChange?.(html);
-    updateActiveStates();
-  }, [onChange, updateActiveStates]);
+    if (onChange) {
+      onChange(html);
+    }
+  }, [onChange]);
 
   const execCommand = useCallback(
-    (command: string, arg?: string) => {
+    (command: string, value: string | undefined = undefined) => {
       editorRef.current?.focus();
-      document.execCommand(command, false, arg);
+      document.execCommand(command, false, value);
+      handleInput();
+      updateActiveStates();
+    },
+    [handleInput, updateActiveStates]
+  );
+
+  const sanitizeUrl = (url: string): string => {
+    const trimmed = url.trim();
+    if (/^(https?:\/\/|mailto:|\/)/i.test(trimmed)) {
+      return trimmed;
+    }
+    if (/^javascript:/i.test(trimmed)) {
+      return '#';
+    }
+    return `https://${trimmed}`;
+  };
+
+  const escapeAttr = (str: string): string => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  };
+
+  const insertImageTag = useCallback(
+    (src: string, altText: string = '') => {
+      restoreSelection();
+      editorRef.current?.focus();
+      const safeSrc = sanitizeUrl(src);
+      const safeAlt = escapeAttr(altText);
+      const figureHtml = `<figure class="my-4 text-center cursor-pointer select-none group relative inline-block max-w-full" contenteditable="false"><img src="${safeSrc}" alt="${safeAlt}" style="width: 80%; max-width: 100%; height: auto; margin: 0 auto; display: block;" class="rounded-2xl border border-border/20 shadow-sm transition-all hover:shadow-md cursor-pointer" /><figcaption class="text-xs text-muted-foreground mt-2 italic text-center font-sans opacity-80">${safeAlt || 'Keterangan gambar'}</figcaption></figure><p><br></p>`;
+      execCommand('insertHTML', figureHtml);
+    },
+    [restoreSelection, execCommand]
+  );
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran gambar maksimal 5MB');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('purpose', 'journal-image');
+
+      const res = await fetch('/api/v1/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const json = await res.json();
+      if (json.code === 200 && json.data?.url) {
+        insertImageTag(json.data.url, file.name.replace(/\.[^/.]+$/, ''));
+      } else {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            insertImageTag(String(event.target.result), file.name.replace(/\.[^/.]+$/, ''));
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          insertImageTag(String(event.target.result), file.name.replace(/\.[^/.]+$/, ''));
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setIsImageModalOpen(false);
+    }
+  };
+
+  const handleUrlInsert = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!imageUrlInput.trim()) return;
+    insertImageTag(imageUrlInput.trim(), imageAltInput.trim());
+    setImageUrlInput('');
+    setImageAltInput('');
+    setIsImageModalOpen(false);
+  };
+
+  const openLinkModal = useCallback(() => {
+    saveSelection();
+    const selection = window.getSelection();
+    const selectedText = selection?.toString() || '';
+    setLinkTextInput(selectedText);
+    setLinkUrlInput('https://');
+    setIsLinkModalOpen(true);
+  }, [saveSelection]);
+
+  const handleLinkSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkUrlInput.trim()) return;
+
+    restoreSelection();
+    editorRef.current?.focus();
+    const rawUrl = linkUrlInput.trim();
+    const safeUrl = sanitizeUrl(rawUrl);
+    const rawText = linkTextInput.trim() || rawUrl;
+    const safeText = escapeAttr(rawText);
+    const targetAttr = openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : '';
+
+    const linkHtml = `<a href="${safeUrl}" ${targetAttr} class="text-foreground underline underline-offset-2 font-medium">${safeText}</a>`;
+    execCommand('insertHTML', linkHtml);
+
+    setLinkUrlInput('https://');
+    setLinkTextInput('');
+    setIsLinkModalOpen(false);
+  };
+
+  // Image Selection & Resizing Handlers
+  const handleEditorClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target && target.tagName === 'IMG') {
+      const img = target as HTMLImageElement;
+      selectedImgRef.current = img;
+      setSelectedImgEl(img);
+      const parentWidth = editorRef.current?.clientWidth || 600;
+      const widthPx = img.clientWidth || parentWidth;
+      const pct = Math.min(100, Math.max(15, Math.round((widthPx / parentWidth) * 100)));
+      setImgWidthPct(pct);
+
+      const figure = img.closest('figure');
+      if (figure) {
+        if (figure.style.textAlign === 'left') setImgAlign('left');
+        else if (figure.style.textAlign === 'right') setImgAlign('right');
+        else setImgAlign('center');
+      }
+    } else {
+      selectedImgRef.current = null;
+      setSelectedImgEl(null);
+    }
+  }, []);
+
+  const updateSelectedImageWidth = useCallback(
+    (pct: number) => {
+      const img = selectedImgRef.current;
+      if (!img) return;
+      setImgWidthPct(pct);
+      img.style.width = pct === 100 ? '100%' : `${pct}%`;
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
       handleInput();
     },
     [handleInput]
   );
 
-  const handleInsertLink = useCallback(() => {
-    const selection = window.getSelection();
-    const selectedText = selection?.toString() || '';
-    const url = prompt('Masukkan URL Link:', 'https://');
-    if (url) {
-      if (!selectedText) {
-        execCommand(
-          'insertHTML',
-          `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
-        );
-      } else {
-        execCommand('createLink', url);
-        const links = editorRef.current?.querySelectorAll('a');
-        if (links) {
-          const lastLink = links[links.length - 1];
-          if (lastLink && lastLink.href === url) {
-            lastLink.setAttribute('target', '_blank');
-            lastLink.setAttribute('rel', 'noopener noreferrer');
-          }
+  const updateSelectedImageAlign = useCallback(
+    (align: 'left' | 'center' | 'right') => {
+      const img = selectedImgRef.current;
+      if (!img) return;
+      setImgAlign(align);
+      const figure = img.closest('figure');
+      if (figure) {
+        figure.style.textAlign = align;
+        if (align === 'left') {
+          img.style.margin = '0 auto 0 0';
+        } else if (align === 'right') {
+          img.style.margin = '0 0 0 auto';
+        } else {
+          img.style.margin = '0 auto';
         }
       }
+      handleInput();
+    },
+    [handleInput]
+  );
+
+  // Active outline ring effect for selected image
+  useEffect(() => {
+    if (!editorRef.current) return;
+    const imgs = editorRef.current.querySelectorAll('img');
+    const selected = selectedImgRef.current;
+    imgs.forEach((img) => {
+      if (selected && img === selected) {
+        img.style.outline = '3px solid var(--primary, #000)';
+        img.style.outlineOffset = '2px';
+        img.style.borderRadius = '1rem';
+      } else {
+        img.style.outline = 'none';
+      }
+    });
+  }, [selectedImgEl]);
+
+  const handleCornerDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const img = selectedImgRef.current;
+      if (!img || !editorRef.current) return;
+
+      const startX = e.clientX;
+      const startWidthPx = img.clientWidth;
+      const parentWidthPx = editorRef.current.clientWidth || 600;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const deltaX = moveEvent.clientX - startX;
+        const newWidthPx = Math.max(80, startWidthPx + deltaX);
+        const newPct = Math.min(100, Math.max(15, Math.round((newWidthPx / parentWidthPx) * 100)));
+        setImgWidthPct(newPct);
+        img.style.width = newPct === 100 ? '100%' : `${newPct}%`;
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+      };
+
+      const handleMouseUp = () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+        handleInput();
+      };
+
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    },
+    [handleInput]
+  );
+
+  const deleteSelectedImage = useCallback(() => {
+    const img = selectedImgRef.current;
+    if (!img) return;
+    const figure = img.closest('figure');
+    if (figure) {
+      figure.remove();
+    } else {
+      img.remove();
     }
-  }, [execCommand]);
+    selectedImgRef.current = null;
+    setSelectedImgEl(null);
+    handleInput();
+  }, [handleInput]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -231,7 +506,12 @@ export function RichTextEditor({
         command: 'insertHorizontalRule',
         label: 'Garis Pembatas'
       },
-      { icon: <LinkIcon className="h-3.5 w-3.5" />, command: 'createLink', label: 'Sisipkan Link' }
+      { icon: <LinkIcon className="h-3.5 w-3.5" />, command: 'createLink', label: 'Sisipkan Link' },
+      {
+        icon: <ImageIcon className="h-3.5 w-3.5" />,
+        command: 'insertImage',
+        label: 'Sisipkan / Upload Gambar'
+      }
     ]
   ];
 
@@ -256,14 +536,24 @@ export function RichTextEditor({
                     type="button"
                     title={btn.label}
                     onMouseDown={(e) => {
+                      if (btn.command === 'createLink' || btn.command === 'insertImage') {
+                        // Modal opening is handled in onClick after mouseup completes
+                        return;
+                      }
                       e.preventDefault();
-                      if (btn.command === 'createLink') {
-                        handleInsertLink();
-                      } else if (btn.command === 'formatBlock' && btn.arg) {
+                      if (btn.command === 'formatBlock' && btn.arg) {
                         const isActive = btn.isActive;
                         execCommand(btn.command, isActive ? '<p>' : `<${btn.arg}>`);
                       } else {
                         execCommand(btn.command, btn.arg);
+                      }
+                    }}
+                    onClick={() => {
+                      if (btn.command === 'createLink') {
+                        openLinkModal();
+                      } else if (btn.command === 'insertImage') {
+                        saveSelection();
+                        setIsImageModalOpen(true);
                       }
                     }}
                     className={cn(
@@ -299,6 +589,117 @@ export function RichTextEditor({
         </button>
       </div>
 
+      {/* Selected Image Action Control Floating Bar */}
+      {selectedImgEl && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-foreground text-background text-xs font-semibold rounded-2xl shadow-lg mx-3 my-2 animate-in fade-in-0 zoom-in-95 duration-150 border border-foreground/20">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-background/80 flex items-center gap-1">
+              <Move className="h-3.5 w-3.5" />
+              Tarik / Geser Ukuran ({imgWidthPct}%):
+            </span>
+
+            {/* Drag Slider Resizer */}
+            <input
+              type="range"
+              min={15}
+              max={100}
+              step={5}
+              value={imgWidthPct}
+              onChange={(e) => updateSelectedImageWidth(Number(e.target.value))}
+              className="w-28 accent-background cursor-pointer h-1.5 rounded-lg bg-background/30"
+            />
+
+            {/* Direct Mouse Drag Handle Button */}
+            <button
+              type="button"
+              onMouseDown={handleCornerDragStart}
+              title="Klik dan tahan/geser mouse ke kanan/kiri untuk mengubah ukuran gambar secara bebas"
+              className="px-2.5 py-1 rounded-lg bg-background text-foreground text-[10px] font-bold flex items-center gap-1 cursor-ew-resize hover:bg-background/90 transition-all shadow-xs"
+            >
+              <Maximize2 className="h-3 w-3" />
+              <span>Tarik Mouse</span>
+            </button>
+
+            {/* Quick Width Presets */}
+            <div className="flex items-center gap-1 ml-1">
+              {[25, 50, 75, 100].map((pct) => (
+                <button
+                  key={pct}
+                  type="button"
+                  onClick={() => updateSelectedImageWidth(pct)}
+                  className={cn(
+                    'px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer',
+                    imgWidthPct === pct
+                      ? 'bg-background text-foreground shadow-2xs font-extrabold'
+                      : 'bg-background/20 text-background hover:bg-background/30'
+                  )}
+                >
+                  {pct}%
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {/* Alignment Options */}
+            <div className="flex items-center gap-0.5 bg-background/20 p-0.5 rounded-lg">
+              <button
+                type="button"
+                onClick={() => updateSelectedImageAlign('left')}
+                title="Rata Kiri"
+                className={cn(
+                  'p-1 rounded-md transition-all cursor-pointer',
+                  imgAlign === 'left'
+                    ? 'bg-background text-foreground'
+                    : 'text-background/80 hover:text-background'
+                )}
+              >
+                <AlignLeft className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => updateSelectedImageAlign('center')}
+                title="Rata Tengah"
+                className={cn(
+                  'p-1 rounded-md transition-all cursor-pointer',
+                  imgAlign === 'center'
+                    ? 'bg-background text-foreground'
+                    : 'text-background/80 hover:text-background'
+                )}
+              >
+                <AlignCenter className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => updateSelectedImageAlign('right')}
+                title="Rata Kanan"
+                className={cn(
+                  'p-1 rounded-md transition-all cursor-pointer',
+                  imgAlign === 'right'
+                    ? 'bg-background text-foreground'
+                    : 'text-background/80 hover:text-background'
+                )}
+              >
+                <AlignRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="w-px h-4 bg-background/30 mx-1" />
+
+            {/* Delete Image */}
+            <button
+              type="button"
+              onClick={deleteSelectedImage}
+              title="Hapus Gambar"
+              className="p-1 px-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer transition-all"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Hapus</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Editor Content Area */}
       <div className="relative bg-card">
         {isEmpty && (
@@ -315,6 +716,7 @@ export function RichTextEditor({
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
+          onClick={handleEditorClick}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
           onFocus={updateActiveStates}
@@ -335,7 +737,8 @@ export function RichTextEditor({
             '[&_hr]:border-border/40 [&_hr]:my-6',
             '[&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-2 [&_a]:font-medium',
             '[&_strong]:font-bold [&_strong]:text-foreground',
-            '[&_em]:italic'
+            '[&_em]:italic',
+            '[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/20 [&_img]:shadow-sm [&_img]:my-4 [&_img]:block [&_img]:cursor-pointer [&_img]:transition-all'
           )}
           style={{ minHeight }}
         />
@@ -352,6 +755,245 @@ export function RichTextEditor({
           <span>Shift + Enter untuk baris baru</span>
         </div>
       </div>
+
+      {/* Hidden file input for image upload */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      {/* Link Insertion Modal */}
+      <Dialog open={isLinkModalOpen} onOpenChange={setIsLinkModalOpen}>
+        <DialogContent className="max-w-md rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
+              <LinkIcon className="h-5 w-5 text-foreground" />
+              <span>Sisipkan Link / Tautan</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Isikan alamat URL target dan teks tautan yang ingin dimasukkan ke artikel.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleLinkSubmit} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="link-url-input" className="text-xs font-bold text-foreground">
+                URL Alamat Tautan (HTTPS)
+              </Label>
+              <Input
+                id="link-url-input"
+                type="url"
+                placeholder="https://example.com"
+                value={linkUrlInput}
+                onChange={(e) => setLinkUrlInput(e.target.value)}
+                className="h-10 rounded-xl text-xs font-mono"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="link-text-input" className="text-xs font-bold text-foreground">
+                Teks Tautan yang Ditampilkan
+              </Label>
+              <Input
+                id="link-text-input"
+                type="text"
+                placeholder="Contoh: Baca panduan selengkapnya di sini..."
+                value={linkTextInput}
+                onChange={(e) => setLinkTextInput(e.target.value)}
+                className="h-10 rounded-xl text-xs"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="link-tab-checkbox"
+                checked={openInNewTab}
+                onChange={(e) => setOpenInNewTab(e.target.checked)}
+                className="rounded border-border text-foreground focus:ring-foreground/20 h-4 w-4 cursor-pointer"
+              />
+              <Label
+                htmlFor="link-tab-checkbox"
+                className="text-xs font-medium text-muted-foreground cursor-pointer"
+              >
+                Buka tautan di tab baru (target=&quot;_blank&quot;)
+              </Label>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsLinkModalOpen(false)}
+                className="h-9 rounded-xl text-xs cursor-pointer"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                disabled={!linkUrlInput.trim()}
+                className="h-9 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Sisipkan Link
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Upload / Embed Modal */}
+      <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent className="max-w-md rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-foreground" />
+              <span>Sisipkan / Upload Gambar</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Upload file foto dari komputer Anda atau tempelkan URL gambar langsung untuk
+              dimasukkan ke dalam isi artikel jurnal.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 pt-2">
+            {/* Upload file section */}
+            <div className="p-4 rounded-2xl border border-dashed border-border/60 bg-muted/20 text-center space-y-3">
+              <div className="mx-auto h-10 w-10 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground">
+                <Upload className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">Upload File Gambar</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Format JPG, PNG, WEBP (Maksimal 5MB)
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isUploadingImage}
+                onClick={() => fileInputRef.current?.click()}
+                className="h-9 px-4 rounded-xl text-xs font-bold gap-2 cursor-pointer w-full"
+              >
+                {isUploadingImage ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Mengunggah Gambar...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    <span>Pilih Gambar dari Komputer</span>
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="relative flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border/40" />
+              </div>
+              <span className="relative bg-card px-3 text-[10px] uppercase font-bold text-muted-foreground">
+                atau gunakan URL Gambar
+              </span>
+            </div>
+
+            {/* URL Form */}
+            <form onSubmit={handleUrlInsert} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="img-url-input" className="text-xs font-bold text-foreground">
+                  URL Gambar (HTTPS)
+                </Label>
+                <Input
+                  id="img-url-input"
+                  type="url"
+                  placeholder="https://images.unsplash.com/photo-..."
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  className="h-10 rounded-xl text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">Ukuran Tampilan Gambar</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setImageSizeInput('sm')}
+                    className={cn(
+                      'py-2 px-2.5 rounded-xl border text-[11px] font-semibold transition-all cursor-pointer text-center',
+                      imageSizeInput === 'sm'
+                        ? 'border-foreground bg-foreground text-background shadow-2xs font-bold'
+                        : 'border-border/60 bg-muted/30 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    Kecil (320px)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageSizeInput('md')}
+                    className={cn(
+                      'py-2 px-2.5 rounded-xl border text-[11px] font-semibold transition-all cursor-pointer text-center',
+                      imageSizeInput === 'md'
+                        ? 'border-foreground bg-foreground text-background shadow-2xs font-bold'
+                        : 'border-border/60 bg-muted/30 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    Sedang (640px)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageSizeInput('lg')}
+                    className={cn(
+                      'py-2 px-2.5 rounded-xl border text-[11px] font-semibold transition-all cursor-pointer text-center',
+                      imageSizeInput === 'lg'
+                        ? 'border-foreground bg-foreground text-background shadow-2xs font-bold'
+                        : 'border-border/60 bg-muted/30 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    Penuh (100%)
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="img-alt-input" className="text-xs font-bold text-foreground">
+                  Keterangan Foto / Alt Text (Opsional)
+                </Label>
+                <Input
+                  id="img-alt-input"
+                  type="text"
+                  placeholder="Contoh: Proses pembuatan garmen koleksi archive..."
+                  value={imageAltInput}
+                  onChange={(e) => setImageAltInput(e.target.value)}
+                  className="h-10 rounded-xl text-xs"
+                />
+              </div>
+
+              <DialogFooter className="pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setIsImageModalOpen(false)}
+                  className="h-9 rounded-xl text-xs cursor-pointer"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!imageUrlInput.trim()}
+                  className="h-9 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Sisipkan URL Gambar
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

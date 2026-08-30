@@ -1,3 +1,4 @@
+import DOMPurify from 'isomorphic-dompurify';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -105,34 +106,43 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
 
       {/* Article Content */}
       <article className="mx-auto max-w-3xl px-4 md:px-8 pb-16 md:pb-24">
-        {/* First two paragraphs */}
-        {article.content.slice(0, 2).map((paragraph, i) => (
-          <p
-            key={i}
-            className="mt-6 first:mt-0 font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
-          >
-            {paragraph}
-          </p>
-        ))}
+        {article.contentHtml ? (
+          <div
+            className="font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant) [&_p]:mt-6 [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[34px] [&_h2]:text-(--cat-on-surface) [&_h2]:mt-10 [&_h2]:mb-4 [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[26px] [&_h3]:text-(--cat-on-surface) [&_h3]:mt-8 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4 [&_blockquote]:my-8 [&_blockquote]:pl-4 [&_blockquote]:border-l-2 [&_blockquote]:border-(--cat-stone) [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[20px] [&_img]:w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/20 [&_img]:my-8 [&_img]:shadow-sm [&_a]:underline [&_a]:underline-offset-2"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.contentHtml) }}
+          />
+        ) : (
+          <>
+            {/* First two paragraphs */}
+            {article.content.slice(0, 2).map((paragraph, i) => (
+              <p
+                key={i}
+                className="mt-6 first:mt-0 font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
+              >
+                {paragraph}
+              </p>
+            ))}
 
-        {/* Pull Quote */}
-        {article.pullQuote && (
-          <blockquote className="my-10 md:my-14 py-8 border-t border-b border-(--cat-stone)">
-            <p className="font-eb-garamond text-[24px] md:text-[30px] font-normal leading-snug text-(--cat-on-surface) italic text-center max-w-xl mx-auto">
-              &quot;{article.pullQuote}&quot;
-            </p>
-          </blockquote>
+            {/* Pull Quote */}
+            {article.pullQuote && (
+              <blockquote className="my-10 md:my-14 py-8 border-t border-b border-(--cat-stone)">
+                <p className="font-eb-garamond text-[24px] md:text-[30px] font-normal leading-snug text-(--cat-on-surface) italic text-center max-w-xl mx-auto">
+                  &quot;{article.pullQuote}&quot;
+                </p>
+              </blockquote>
+            )}
+
+            {/* Remaining paragraphs */}
+            {article.content.slice(2).map((paragraph, i) => (
+              <p
+                key={i + 2}
+                className="mt-6 font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
+              >
+                {paragraph}
+              </p>
+            ))}
+          </>
         )}
-
-        {/* Remaining paragraphs */}
-        {article.content.slice(2).map((paragraph, i) => (
-          <p
-            key={i + 2}
-            className="mt-6 font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
-          >
-            {paragraph}
-          </p>
-        ))}
 
         {/* Inline image */}
         <div className="my-10 md:my-14 relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">

@@ -10,7 +10,8 @@ import {
   MapPin,
   MessageSquare,
   ClipboardList,
-  Shirt
+  Shirt,
+  History
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -222,15 +223,16 @@ export default function CustomersCmsPage() {
         className: 'text-right',
         cell: (customer) => (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => {
               setSelectedCustomer(customer);
               setActiveTab('orders');
             }}
-            className="h-8 px-3 rounded-lg hover:bg-muted text-xs cursor-pointer"
+            className="h-8 px-3 rounded-xl border-border/60 hover:bg-muted text-xs cursor-pointer inline-flex items-center gap-1.5 font-semibold shadow-2xs transition-all hover:scale-[1.02]"
           >
-            Riwayat
+            <History className="h-3.5 w-3.5 text-foreground/70" />
+            <span>Riwayat</span>
           </Button>
         )
       }

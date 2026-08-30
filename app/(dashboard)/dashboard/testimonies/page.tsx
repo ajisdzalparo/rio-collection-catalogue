@@ -168,8 +168,8 @@ export default function TestimoniesCmsPage() {
       )
     },
     {
-      accessorKey: 'id',
       header: 'Aksi',
+      sortable: false,
       cell: (item: Testimony) => (
         <div className="flex items-center justify-end gap-1.5">
           <Button
