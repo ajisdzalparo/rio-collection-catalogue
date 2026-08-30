@@ -12,6 +12,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product, className, priority = false }: ProductCardProps) {
   const isSoldOut = product.status === 'SOLD_OUT';
+  const isDiscontinued = product.status === 'DISCONTINUED';
+  const isUnavailable = isSoldOut || isDiscontinued;
   const colorList = product.colors?.length
     ? product.colors
     : product.color
@@ -38,7 +40,7 @@ export function ProductCard({ product, className, priority = false }: ProductCar
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className={cn(
             'object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]',
-            isSoldOut && 'opacity-70'
+            isUnavailable && 'opacity-70'
           )}
           priority={priority}
         />
@@ -46,7 +48,15 @@ export function ProductCard({ product, className, priority = false }: ProductCar
         {isSoldOut && (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="bg-(--cat-surface)/80 backdrop-blur-[2px] px-4 py-2 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-              Sold Out
+              Sold Out (Akan Restock)
+            </span>
+          </div>
+        )}
+        {/* DISCONTINUED overlay */}
+        {isDiscontinued && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="bg-(--cat-surface)/80 backdrop-blur-[2px] px-4 py-2 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground opacity-80">
+              Discontinued
             </span>
           </div>
         )}

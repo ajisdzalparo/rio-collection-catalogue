@@ -18,6 +18,7 @@ import { useCustomers, type CustomerSummary } from '@/hooks/use-customers';
 import type { Order } from '@/hooks/use-orders';
 import { VStack } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { TruncatedText } from '@/components/ui/truncated-text';
 import { formatIDR } from '@/lib/utils';
 import {
   Dialog,
@@ -139,7 +140,11 @@ export default function CustomersCmsPage() {
         accessorKey: 'fullName',
         sortable: true,
         cell: (customer) => (
-          <span className="font-semibold text-xs text-foreground">{customer.fullName}</span>
+          <TruncatedText
+            text={customer.fullName}
+            maxWidth="max-w-[180px]"
+            className="font-semibold text-xs text-foreground"
+          />
         )
       },
       {
@@ -194,13 +199,12 @@ export default function CustomersCmsPage() {
         cell: (customer) => {
           const totalAddr = customer.addresses.length;
           return (
-            <div className="space-y-0.5">
-              <p
-                className="text-xs text-muted-foreground line-clamp-1 max-w-60"
-                title={customer.latestAddress}
-              >
-                {customer.latestAddress}
-              </p>
+            <div className="space-y-0.5 max-w-65">
+              <TruncatedText
+                text={customer.latestAddress}
+                maxWidth="max-w-[240px]"
+                className="text-xs text-muted-foreground font-normal"
+              />
               {totalAddr > 1 && (
                 <Badge
                   variant="secondary"

@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { useStoreSettingsStore } from '@/hooks/use-store-settings';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { TruncatedText } from '@/components/ui/truncated-text';
 import {
   Dialog,
   DialogContent,
@@ -285,16 +286,20 @@ function OrdersPageContent() {
         accessorKey: 'fullName',
         sortable: true,
         cell: (order) => (
-          <div className="flex flex-col text-xs">
-            <span className="font-semibold text-foreground">{order.fullName}</span>
+          <div className="flex flex-col text-xs max-w-45">
+            <TruncatedText
+              text={order.fullName}
+              maxWidth="max-w-[160px]"
+              className="font-semibold text-foreground"
+            />
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-[10px] text-muted-foreground">+{order.whatsapp}</span>
               {order.waFollowedUp ? (
-                <span className="text-[9px] font-extrabold text-background bg-foreground px-1 py-0 rounded border border-transparent">
+                <span className="text-[9px] font-extrabold text-background bg-foreground px-1 py-0 rounded border border-transparent shrink-0">
                   WA OK
                 </span>
               ) : (
-                <span className="text-[9px] font-semibold text-muted-foreground bg-muted/20 px-1 py-0 rounded border border-border/10">
+                <span className="text-[9px] font-semibold text-muted-foreground bg-muted/20 px-1 py-0 rounded border border-border/10 shrink-0">
                   Belum WA
                 </span>
               )}
@@ -306,9 +311,9 @@ function OrdersPageContent() {
         header: 'Pengiriman & Resi',
         className: 'min-w-[170px]',
         cell: (order) => (
-          <div className="text-xs space-y-0.5">
+          <div className="text-xs space-y-0.5 max-w-45">
             <div className="font-semibold text-foreground flex items-center gap-1">
-              <span>{order.courierName || 'JNE Express'}</span>
+              <TruncatedText text={order.courierName || 'JNE Express'} maxWidth="max-w-[150px]" />
             </div>
             <div className="text-[10px] text-muted-foreground">
               Ongkir:{' '}
@@ -318,7 +323,12 @@ function OrdersPageContent() {
             </div>
             {order.trackingNumber ? (
               <div className="text-[10px] text-foreground font-mono font-bold">
-                Resi: {order.trackingNumber}
+                Resi:{' '}
+                <TruncatedText
+                  text={order.trackingNumber}
+                  maxWidth="max-w-[130px]"
+                  className="inline-block"
+                />
               </div>
             ) : (
               <div className="text-[10px] text-muted-foreground/60 italic">Resi: Belum diinput</div>
@@ -330,12 +340,16 @@ function OrdersPageContent() {
         header: 'Item Pesanan',
         className: 'w-full min-w-[180px]',
         cell: (order) => (
-          <div className="text-muted-foreground text-xs space-y-1">
+          <div className="text-muted-foreground text-xs space-y-1 max-w-60">
             {order.items.map((item, idx) => (
               <div key={idx} className="flex flex-wrap items-center gap-1">
-                <span className="text-foreground font-medium">{item.name}</span>
-                <span className="text-muted-foreground">({item.size})</span>
-                <span className="font-bold text-foreground">x{item.quantity}</span>
+                <TruncatedText
+                  text={item.name}
+                  maxWidth="max-w-[140px]"
+                  className="text-foreground font-medium"
+                />
+                <span className="text-muted-foreground shrink-0">({item.size})</span>
+                <span className="font-bold text-foreground shrink-0">x{item.quantity}</span>
                 {item.isPreOrder ? (
                   <Badge
                     variant="secondary"

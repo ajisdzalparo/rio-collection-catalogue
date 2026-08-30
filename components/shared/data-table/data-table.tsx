@@ -15,6 +15,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Search, ArrowUpDown, ArrowUp, ArrowDown, X, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { TruncatedText } from '@/components/ui/truncated-text';
 
 export interface Column<T> {
   header: string;
@@ -468,9 +469,12 @@ export function DataTable<T extends object>({
                       {col.cell
                         ? col.cell(row, globalIndex)
                         : col.accessorKey
-                          ? String(
-                              (row as Record<string, unknown>)[col.accessorKey as string] ?? ''
-                            )
+                          ? (() => {
+                              const val = String(
+                                (row as Record<string, unknown>)[col.accessorKey as string] ?? ''
+                              );
+                              return <TruncatedText text={val} maxWidth="max-w-[240px]" />;
+                            })()
                           : null}
                     </TableCell>
                   ))}

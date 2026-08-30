@@ -19,11 +19,13 @@ export async function GET(request: Request) {
 
     const orderWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
 
+    const successfulStatuses = ['CONFIRMED', 'PAID', 'FULFILLED'];
+
     const totalOrders = await prisma.order.count({
       where: orderWhere
     });
     const paidOrdersCount = await prisma.order.count({
-      where: { ...orderWhere, status: 'PAID' }
+      where: { ...orderWhere, status: { in: successfulStatuses } }
     });
     const pendingOrdersCount = await prisma.order.count({
       where: { ...orderWhere, status: 'PENDING' }
@@ -35,12 +37,16 @@ export async function GET(request: Request) {
       },
       where: {
         ...orderWhere,
-        status: { in: ['PAID', 'FULFILLED'] }
+        status: { in: successfulStatuses }
       }
     });
 
     const outOfStockProducts = await prisma.product.count({
-      where: { status: 'SOLD_OUT' }
+      where: {
+        status: 'AVAILABLE',
+        stockMode: 'QUANTITY',
+        stock: { lte: 0 }
+      }
     });
 
     const totalRevenue = revenueResult._sum.totalPrice || 0;

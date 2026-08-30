@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, Suspense } from 'react';
 import Image from 'next/image';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Plus,
   Tag,
@@ -14,7 +15,9 @@ import {
   Package,
   Boxes,
   Infinity as InfinityIcon,
-  Shirt
+  Shirt,
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
@@ -28,6 +31,7 @@ import { useProducts } from '@/hooks/use-products';
 import { useMasterStore } from '@/hooks/use-master-data';
 import { Flex, VStack } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { TruncatedText } from '@/components/ui/truncated-text';
 import { SafeImage, CMSBadge } from '@/components/shared';
 import { ImageUpload, MultiImageUpload } from '@/components/shared/image-upload';
 import { cn, formatIDR } from '@/lib/utils';
@@ -49,7 +53,20 @@ import {
 import { MultiSelect } from '@/components/ui/multi-select';
 import type { Product, ProductVariant, ProductStatus, StockMode } from '@/types/catalogue.types';
 
-export default function ProductsCmsPage() {
+const STATUS_LABEL_MAP: Record<ProductStatus, string> = {
+  AVAILABLE: 'Available (Ready)',
+  SOLD_OUT: 'Sold Out (Restock)',
+  DISCONTINUED: 'Discontinued',
+  COMING_SOON: 'Coming Soon',
+  PRE_ORDER: 'Pre-Order'
+};
+
+function ProductsContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const filterParam = searchParams.get('filter');
+  const isOutOfStockFilter = filterParam === 'out_of_stock';
+
   const {
     data: products = [],
     isLoading: loading,
@@ -335,10 +352,17 @@ export default function ProductsCmsPage() {
 
   const getStatusBadge = (product: Product) => {
     const isAlwaysAvailable = product.stockMode === 'ALWAYS_AVAILABLE';
-    const isOutOfStock =
-      !isAlwaysAvailable && (product.stock === 0 || product.status === 'SOLD_OUT');
+    const totalStock =
+      product.stock ??
+      product.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
 
-    if (isOutOfStock) {
+    const isNeedsUpdate = product.status === 'AVAILABLE' && !isAlwaysAvailable && totalStock <= 0;
+
+    if (isNeedsUpdate) {
+      return <CMSBadge variant="warning">STOK 0 (PERLU UPDATE)</CMSBadge>;
+    }
+
+    if (product.status === 'SOLD_OUT') {
       return <CMSBadge variant="error">SOLD OUT</CMSBadge>;
     }
 
@@ -353,8 +377,6 @@ export default function ProductsCmsPage() {
         return <CMSBadge variant="neutral">COMING SOON</CMSBadge>;
       case 'PRE_ORDER':
         return <CMSBadge variant="warning">PRE-ORDER</CMSBadge>;
-      case 'SOLD_OUT':
-        return <CMSBadge variant="error">SOLD OUT</CMSBadge>;
       default:
         return (
           <Badge variant="outline" className="font-semibold px-2.5 py-0.5 rounded-full text-[10px]">
@@ -398,9 +420,16 @@ export default function ProductsCmsPage() {
         p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.edition.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesCategory && matchesSearch;
+      const totalStock =
+        p.stock ?? p.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
+
+      const matchesOutOfStockFilter =
+        !isOutOfStockFilter ||
+        (p.status === 'AVAILABLE' && p.stockMode === 'QUANTITY' && totalStock <= 0);
+
+      return matchesCategory && matchesSearch && matchesOutOfStockFilter;
     });
-  }, [products, selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery, isOutOfStockFilter]);
 
   // Table Columns Definition for DataTable
   const columns: Column<Product>[] = useMemo(
@@ -425,9 +454,17 @@ export default function ProductsCmsPage() {
         sortable: true,
         className: 'w-full min-w-[180px]',
         cell: (product) => (
-          <div className="flex flex-col text-xs">
-            <span className="font-bold text-foreground">{product.name}</span>
-            <span className="text-[10px] text-muted-foreground">{product.color}</span>
+          <div className="flex flex-col text-xs max-w-50">
+            <TruncatedText
+              text={product.name}
+              maxWidth="max-w-[180px]"
+              className="font-bold text-foreground"
+            />
+            <TruncatedText
+              text={product.color}
+              maxWidth="max-w-[150px]"
+              className="text-[10px] text-muted-foreground font-normal"
+            />
           </div>
         )
       },
@@ -436,12 +473,20 @@ export default function ProductsCmsPage() {
         accessorKey: 'category',
         sortable: true,
         cell: (product) => (
-          <div className="space-y-1 text-xs">
+          <div className="space-y-1 text-xs max-w-45">
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-md border border-border/10">
               <Layers className="h-3 w-3 shrink-0" />
-              <span className="capitalize">{product.category.replace('-', ' ')}</span>
+              <TruncatedText
+                text={product.category.replace('-', ' ')}
+                maxWidth="max-w-[120px]"
+                className="capitalize"
+              />
             </span>
-            <div className="text-[10px] text-muted-foreground font-medium">{product.edition}</div>
+            <TruncatedText
+              text={product.edition}
+              maxWidth="max-w-[150px]"
+              className="text-[10px] text-muted-foreground font-medium"
+            />
           </div>
         )
       },
@@ -597,6 +642,33 @@ export default function ProductsCmsPage() {
           <span>Tambah Kaos Baru</span>
         </Button>
       </Flex>
+
+      {isOutOfStockFilter && (
+        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="h-5 w-5 shrink-0 text-amber-500" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-500">
+                Filter: Produk Perlu Tindakan ({filteredProducts.length} Produk)
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Menampilkan produk aktif yang stoknya habis (0 pcs). Silakan klik ikon Edit (pensil)
+                pada produk di bawah ini untuk mengisikan stok baru atau mengubah statusnya menjadi
+                SOLD OUT.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push('/dashboard/products')}
+            className="h-8 text-xs font-bold rounded-xl gap-1.5 cursor-pointer border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+          >
+            <X className="h-3.5 w-3.5" />
+            <span>Lihat Semua Produk</span>
+          </Button>
+        </div>
+      )}
 
       {/* Products DataTable */}
       <DataTable
@@ -856,7 +928,9 @@ export default function ProductsCmsPage() {
                   <Label className="text-xs font-bold text-foreground">Kategori</Label>
                   <Select value={category} onValueChange={(val) => val && setCategory(val)}>
                     <SelectTrigger className="h-10 rounded-xl">
-                      <SelectValue placeholder="Pilih Kategori" />
+                      <SelectValue placeholder="Pilih Kategori">
+                        {categories.find((c) => c.slug === category)?.name || category}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {categories
@@ -879,13 +953,16 @@ export default function ProductsCmsPage() {
                     onValueChange={(val) => val && setStatus(val as ProductStatus)}
                   >
                     <SelectTrigger className="h-10 rounded-xl">
-                      <SelectValue placeholder="Pilih Status" />
+                      <SelectValue placeholder="Pilih Status">
+                        {STATUS_LABEL_MAP[status] || status}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="AVAILABLE">Available (Ready Stock)</SelectItem>
-                      <SelectItem value="SOLD_OUT">Sold Out (Habis / Discontinued)</SelectItem>
-                      <SelectItem value="COMING_SOON">Coming Soon (Segera Hadir - Belum Bisa Order)</SelectItem>
-                      <SelectItem value="PRE_ORDER">Pre-Order (Buka PO - Bisa Order)</SelectItem>
+                      <SelectItem value="AVAILABLE">Available (Ready)</SelectItem>
+                      <SelectItem value="SOLD_OUT">Sold Out (Restock)</SelectItem>
+                      <SelectItem value="DISCONTINUED">Discontinued</SelectItem>
+                      <SelectItem value="COMING_SOON">Coming Soon</SelectItem>
+                      <SelectItem value="PRE_ORDER">Pre-Order</SelectItem>
                     </SelectContent>
                   </Select>
                   {stockMode === 'QUANTITY' && (
@@ -895,9 +972,7 @@ export default function ProductsCmsPage() {
                           ● Ready Stock ({totalFormStock} pcs)
                         </span>
                       ) : (
-                        <span className="text-red-500">
-                          ● Stok Kosong (0 pcs)
-                        </span>
+                        <span className="text-red-500">● Stok Kosong (0 pcs)</span>
                       )}
                     </div>
                   )}
@@ -1385,5 +1460,15 @@ export default function ProductsCmsPage() {
         }}
       />
     </VStack>
+  );
+}
+
+export default function ProductsCmsPage() {
+  return (
+    <Suspense
+      fallback={<div className="p-8 text-xs text-muted-foreground">Memuat data produk...</div>}
+    >
+      <ProductsContent />
+    </Suspense>
   );
 }

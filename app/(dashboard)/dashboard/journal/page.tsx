@@ -19,6 +19,7 @@ import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { useJournals } from '@/hooks/use-journals';
 import { Flex, VStack } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { TruncatedText } from '@/components/ui/truncated-text';
 import {
   Dialog,
   DialogContent,
@@ -92,12 +93,11 @@ function JournalCmsPageContent() {
         sortable: true,
         className: 'w-full min-w-[200px]',
         cell: (article) => (
-          <span
-            className="font-bold line-clamp-1 max-w-50 text-xs text-foreground"
-            title={article.title}
-          >
-            {article.title}
-          </span>
+          <TruncatedText
+            text={article.title}
+            maxWidth="max-w-[260px]"
+            className="font-bold text-xs text-foreground"
+          />
         )
       },
       {
@@ -107,7 +107,7 @@ function JournalCmsPageContent() {
         cell: (article) => (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase bg-muted/40 px-2 py-0.5 rounded-md border border-border/10">
             <Layers className="h-3 w-3 shrink-0" />
-            <span>{article.category}</span>
+            <TruncatedText text={article.category} maxWidth="max-w-[120px]" />
           </span>
         )
       },
@@ -118,7 +118,7 @@ function JournalCmsPageContent() {
         cell: (article) => (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <User className="h-3 w-3 shrink-0" />
-            <span>{article.author}</span>
+            <TruncatedText text={article.author} maxWidth="max-w-[120px]" />
           </div>
         )
       },
@@ -142,7 +142,11 @@ function JournalCmsPageContent() {
       {
         header: 'Ringkasan Excerpt',
         cell: (article) => (
-          <p className="text-xs text-muted-foreground line-clamp-2 max-w-62.5">{article.excerpt}</p>
+          <TruncatedText
+            text={article.excerpt}
+            maxWidth="max-w-[280px]"
+            className="text-xs text-muted-foreground font-normal"
+          />
         )
       },
       {

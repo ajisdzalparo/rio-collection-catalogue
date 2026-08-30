@@ -434,12 +434,11 @@ export default function DashboardPage() {
               </div>
               <p className="text-xs font-medium text-muted-foreground leading-relaxed">
                 Terdapat{' '}
-                <span className="font-bold text-foreground">{stats.outOfStockProducts} produk</span>{' '}
-                yang stoknya habis. Anda bisa mengupdate statusnya menjadi SOLD OUT di panel Produk
-                CMS agar pembeli di katalog mengetahuinya.
+                <span className="font-bold text-foreground">{stats.outOfStockProducts} produk aktif</span>{' '}
+                yang stoknya habis (0 pcs). Anda bisa mengisikan stok baru atau mengubah statusnya menjadi SOLD OUT di panel Produk CMS.
               </p>
               <Link
-                href="/dashboard/products"
+                href="/dashboard/products?filter=out_of_stock"
                 className="inline-flex px-3.5 py-1.5 bg-amber-500 text-white hover:bg-amber-600 transition-colors text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer"
               >
                 Cek Produk
