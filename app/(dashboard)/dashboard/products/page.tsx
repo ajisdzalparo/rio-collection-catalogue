@@ -47,15 +47,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { MultiSelect } from '@/components/ui/multi-select';
-import type {
-  Product,
-  ProductImage,
-  ProductVariant,
-  ProductStatus,
-  StockMode
-} from '@/types/catalogue.types';
-
-const MAX_PRODUCT_IMAGES = 3;
+import type { Product, ProductVariant, ProductStatus, StockMode } from '@/types/catalogue.types';
 
 export default function ProductsCmsPage() {
   const {
@@ -103,7 +95,8 @@ export default function ProductsCmsPage() {
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [imagesList, setImagesList] = useState<string[]>([]);
-  const [detailImageFlags, setDetailImageFlags] = useState<Record<string, boolean>>({});
+  const [isConfirmStockOpen, setIsConfirmStockOpen] = useState(false);
+  const [pendingProductPayload, setPendingProductPayload] = useState<Product | null>(null);
 
   // Materials & Care Form States
   const [fabric, setFabric] = useState('');
@@ -130,7 +123,6 @@ export default function ProductsCmsPage() {
     setDescription('');
     setImageUrl('');
     setImagesList([]);
-    setDetailImageFlags({});
 
     setFabric('');
     setTreatment('');
@@ -167,24 +159,7 @@ export default function ProductsCmsPage() {
         (image) => image && image !== product.imageUrl
       );
       setImagesList(detailImages);
-      const savedFlags = Array.isArray(product.imageDetails) ? product.imageDetails : [];
-      // Legacy products without stored imageDetails: treat every non-cover
-      // gallery image as a detail so editing + saving preserves them. When
-      // imageDetails exists, keep the stored boolean flags exactly as saved.
-      setDetailImageFlags({
-        // The cover has its own detail toggle too.
-        [product.imageUrl]: Array.isArray(product.imageDetails)
-          ? savedFlags.some((item: ProductImage) => item.url === product.imageUrl && item.isDetail)
-          : false,
-        ...Object.fromEntries(
-          detailImages.map((image) => [
-            image,
-            Array.isArray(product.imageDetails)
-              ? savedFlags.some((item: ProductImage) => item.url === image && item.isDetail)
-              : true
-          ])
-        )
-      });
+      // detailImageFlags mapping removed
 
       setFabric(product.materialsAndCare?.fabric || '100% Premium Heavyweight Cotton, 280gsm');
       setTreatment(product.materialsAndCare?.treatment || 'Pre-shrunk to minimize shrinkage');
@@ -229,6 +204,22 @@ export default function ProductsCmsPage() {
     );
   }, [sizesStock, stockMode]);
 
+  const executeSaveProduct = async (payload: Product) => {
+    try {
+      if (editingProduct) {
+        await updateProduct(payload);
+        toast.success(`Produk ${payload.name} berhasil diperbarui`);
+      } else {
+        await createProduct(payload);
+        toast.success(`Produk ${payload.name} berhasil ditambahkan`);
+      }
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error('Failed to save product:', err);
+      toast.error('Gagal menyimpan produk');
+    }
+  };
+
   const handleSaveProduct = async () => {
     if (!name || !imageUrl) {
       toast.error('Nama dan Foto Utama wajib diisi');
@@ -250,7 +241,7 @@ export default function ProductsCmsPage() {
 
     let finalStatus: ProductStatus = status;
     if (stockMode === 'ALWAYS_AVAILABLE') {
-      if (status !== 'SOLD_OUT' && status !== 'COMING_SOON') {
+      if (status !== 'SOLD_OUT' && status !== 'COMING_SOON' && status !== 'PRE_ORDER') {
         finalStatus = 'AVAILABLE';
       }
     } else {
@@ -259,8 +250,8 @@ export default function ProductsCmsPage() {
       }
     }
 
-    // Foto utama adalah cover; gallery hanya menyimpan maksimal dua foto detail.
-    const normalizedImages = imagesList.filter(Boolean).slice(0, MAX_PRODUCT_IMAGES - 1);
+    // Foto utama adalah cover; gallery menyimpan semua foto detail yang di-upload.
+    const normalizedImages = imagesList.filter(Boolean);
 
     const payload: Product = {
       id: editingProduct ? editingProduct.id : `prod-${Math.floor(Math.random() * 1000)}`,
@@ -283,10 +274,10 @@ export default function ProductsCmsPage() {
       imageUrl,
       images: [imageUrl, ...normalizedImages].filter(Boolean),
       imageDetails: [
-        { url: imageUrl, isDetail: detailImageFlags[imageUrl] === true },
+        { url: imageUrl, isDetail: true },
         ...normalizedImages.map((url) => ({
           url,
-          isDetail: detailImageFlags[url] === true
+          isDetail: true
         }))
       ].filter((item) => item.url),
       variants,
@@ -298,19 +289,33 @@ export default function ProductsCmsPage() {
       }
     };
 
-    try {
-      if (editingProduct) {
-        await updateProduct(payload);
-        toast.success(`Produk ${name} berhasil diperbarui`);
-      } else {
-        await createProduct(payload);
-        toast.success(`Produk ${name} berhasil ditambahkan`);
+    // Prompt confirmation if quantity/stock changed on edit
+    if (editingProduct && stockMode === 'QUANTITY') {
+      let stockChanged = false;
+      for (const variant of variants) {
+        const originalVariant = editingProduct.variants?.find((v) => v.size === variant.size);
+        const originalStock = originalVariant
+          ? originalVariant.inStock
+            ? originalVariant.stock
+            : 0
+          : 0;
+        const currentStock = variant.inStock ? variant.stock : 0;
+
+        if (originalStock !== currentStock) {
+          stockChanged = true;
+          break;
+        }
       }
-      setIsDialogOpen(false);
-    } catch (err) {
-      console.error('Failed to save product:', err);
-      toast.error('Gagal menyimpan produk');
+
+      if (stockChanged) {
+        setPendingProductPayload(payload);
+        setIsConfirmStockOpen(true);
+        return;
+      }
     }
+
+    // Default save if no stock changes
+    await executeSaveProduct(payload);
   };
 
   const [deleteTargetProduct, setDeleteTargetProduct] = useState<Product | null>(null);
@@ -345,6 +350,8 @@ export default function ProductsCmsPage() {
           </CMSBadge>
         );
       case 'COMING_SOON':
+        return <CMSBadge variant="neutral">COMING SOON</CMSBadge>;
+      case 'PRE_ORDER':
         return <CMSBadge variant="warning">PRE-ORDER</CMSBadge>;
       case 'SOLD_OUT':
         return <CMSBadge variant="error">SOLD OUT</CMSBadge>;
@@ -863,45 +870,38 @@ export default function ProductsCmsPage() {
                   </Select>
                 </div>
 
-                {stockMode === 'ALWAYS_AVAILABLE' ? (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">
-                      Status Availability Produk
-                    </Label>
-                    <Select
-                      value={status}
-                      onValueChange={(val) => val && setStatus(val as ProductStatus)}
-                    >
-                      <SelectTrigger className="h-10 rounded-xl">
-                        <SelectValue placeholder="Pilih Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AVAILABLE">Available (Ready Stock)</SelectItem>
-                        <SelectItem value="SOLD_OUT">Sold Out (Habis / Discontinued)</SelectItem>
-                        <SelectItem value="COMING_SOON">Coming Soon / Pre-Order</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-muted-foreground">
-                      Status Availability
-                    </Label>
-                    <div className="h-10 px-3.5 flex items-center bg-muted/20 border border-border/20 rounded-xl text-xs">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">
+                    Status Availability Produk
+                  </Label>
+                  <Select
+                    value={status}
+                    onValueChange={(val) => val && setStatus(val as ProductStatus)}
+                  >
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue placeholder="Pilih Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AVAILABLE">Available (Ready Stock)</SelectItem>
+                      <SelectItem value="SOLD_OUT">Sold Out (Habis / Discontinued)</SelectItem>
+                      <SelectItem value="COMING_SOON">Coming Soon (Segera Hadir - Belum Bisa Order)</SelectItem>
+                      <SelectItem value="PRE_ORDER">Pre-Order (Buka PO - Bisa Order)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {stockMode === 'QUANTITY' && (
+                    <div className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1 mt-1">
                       {totalFormStock > 0 ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                          Otomatis Available (Stok {totalFormStock} pcs)
+                        <span className="text-emerald-600 dark:text-emerald-400">
+                          ● Ready Stock ({totalFormStock} pcs)
                         </span>
                       ) : (
-                        <span className="text-red-500 font-bold flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-red-500" />
-                          Otomatis Sold Out (Stok 0)
+                        <span className="text-red-500">
+                          ● Stok Kosong (0 pcs)
                         </span>
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -998,30 +998,18 @@ export default function ProductsCmsPage() {
                   value={imageUrl}
                   onChange={setImageUrl}
                   placeholder="Pilih atau upload foto kaos utama"
-                  detailFlag={detailImageFlags[imageUrl] === true}
-                  onDetailFlagChange={(checked) =>
-                    setDetailImageFlags((flags) => ({ ...flags, [imageUrl]: checked }))
-                  }
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">
-                  Foto Detail (Opsional, Maks. 2)
-                </Label>
+                <Label className="text-xs font-bold text-foreground">Foto Detail (Opsional)</Label>
                 <MultiImageUpload
                   value={imagesList}
                   onChange={(images) => {
-                    const nextImages = images.slice(0, MAX_PRODUCT_IMAGES - 1);
-                    setImagesList(nextImages);
-                    setDetailImageFlags((flags) =>
-                      Object.fromEntries(nextImages.map((image) => [image, flags[image] === true]))
-                    );
+                    setImagesList(images);
                   }}
-                  maxImages={MAX_PRODUCT_IMAGES - 1}
-                  detailFlags={detailImageFlags}
-                  onDetailFlagsChange={setDetailImageFlags}
-                  slotLabels={['Foto Detail 1', 'Foto Detail 2']}
+                  maxImages={99}
+                  slotLabels={imagesList.map((_, i) => `Foto Detail ${i + 1}`)}
                 />
               </div>
 
@@ -1137,17 +1125,16 @@ export default function ProductsCmsPage() {
       >
         {detailProduct &&
           (() => {
-            const configuredDetails = (detailProduct.imageDetails ?? []).filter(
-              (image) => image.url && image.isDetail
+            const detailUrls = (detailProduct.imageDetails ?? [])
+              .map((img) => img.url)
+              .filter(Boolean);
+            const fallbackDetails = (detailProduct.images || []).filter(
+              (image) => image && image !== detailProduct.imageUrl
             );
-            const imagesList = [
-              detailProduct.imageUrl,
-              ...(Array.isArray(detailProduct.imageDetails)
-                ? configuredDetails.map((image) => image.url)
-                : (detailProduct.images || []).filter(
-                    (image) => image && image !== detailProduct.imageUrl
-                  ))
-            ].filter(Boolean);
+            const allDetails = detailUrls.length > 0 ? detailUrls : fallbackDetails;
+            const imagesList = Array.from(
+              new Set([detailProduct.imageUrl, ...allDetails].filter(Boolean))
+            );
             const activeImage = imagesList[activeImageIndex] || detailProduct.imageUrl;
             const totalStock =
               detailProduct.stock ??
@@ -1382,6 +1369,20 @@ export default function ProductsCmsPage() {
         variant="destructive"
         loading={isDeleting}
         onConfirm={confirmDeleteProduct}
+      />
+      <ConfirmModal
+        open={isConfirmStockOpen}
+        onOpenChange={setIsConfirmStockOpen}
+        title="Konfirmasi Perubahan Stok"
+        description="Anda telah mengubah jumlah stok (quantity) produk ini. Apakah Anda yakin ingin menyimpan perubahan?"
+        confirmText="Simpan"
+        cancelText="Batal"
+        variant="default"
+        onConfirm={() => {
+          if (pendingProductPayload) {
+            executeSaveProduct(pendingProductPayload);
+          }
+        }}
       />
     </VStack>
   );

@@ -48,7 +48,7 @@ export function ConfirmModal({
               'w-12 h-12 rounded-full flex items-center justify-center shrink-0 border mx-auto',
               variant === 'destructive'
                 ? 'bg-[#ef4444]/15 text-[#f87171] border-[#ef4444]/25'
-                : 'bg-primary/15 text-primary border-primary/25'
+                : 'bg-[#f59e0b]/15 text-[#fbbf24] border-[#f59e0b]/25'
             )}
           >
             <AlertTriangle className="w-5 h-5 stroke-[2.2]" />
@@ -84,10 +84,10 @@ export function ConfirmModal({
             }}
             disabled={isBusy}
             className={cn(
-              'h-10 px-7 rounded-full text-xs font-extrabold text-white transition-all cursor-pointer shadow-md disabled:opacity-50',
+              'h-10 px-7 rounded-full text-xs font-extrabold transition-all cursor-pointer shadow-md disabled:opacity-50',
               variant === 'destructive'
-                ? 'bg-[#f87171] hover:bg-[#ef4444] shadow-rose-950/50'
-                : 'bg-foreground hover:bg-foreground/90 text-background'
+                ? 'bg-[#f87171] hover:bg-[#ef4444] text-white shadow-rose-950/50'
+                : 'bg-white hover:bg-zinc-200 text-black shadow-zinc-950/50'
             )}
           >
             {isBusy ? (

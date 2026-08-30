@@ -145,7 +145,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
           />
           <div className="absolute bottom-0 left-0 right-0 bg-(--cat-surface)/80 px-4 py-2">
             <p className="font-hanken text-[10px] uppercase tracking-widest text-(--cat-on-surface-variant) text-center">
-              Detail Tekstur — Katun 240gsm, Garment Washed
+              Detail — {article.title}
             </p>
           </div>
         </div>
@@ -176,8 +176,16 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
                       <p className="font-hanken text-[15px] font-medium text-(--cat-on-surface)">
                         {relatedProduct.name}
                       </p>
-                      <p className="text-[12px] text-(--cat-on-surface-variant)">
-                        {relatedProduct.color} / 240GSM
+                      <p className="text-[12px] text-(--cat-on-surface-variant) capitalize">
+                        {relatedProduct.color} /{' '}
+                        {relatedProduct.materialsAndCare?.fabric
+                          ?.match(/\d+gsm/i)?.[0]
+                          ?.toUpperCase() ||
+                          (relatedProduct.category === 'heavy-weight'
+                            ? '240GSM'
+                            : relatedProduct.category === 'graphic-edition'
+                              ? '180GSM'
+                              : '200GSM')}
                       </p>
                     </div>
                     <p className="font-hanken text-[15px] font-medium text-(--cat-on-surface) tabular-nums">

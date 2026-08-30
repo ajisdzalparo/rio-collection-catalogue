@@ -31,7 +31,7 @@ async function fetchProducts(): Promise<Product[]> {
 
     let status = p.status;
     if (stockMode === 'ALWAYS_AVAILABLE') {
-      if (status !== 'SOLD_OUT' && status !== 'COMING_SOON') {
+      if (status !== 'SOLD_OUT' && status !== 'COMING_SOON' && status !== 'PRE_ORDER') {
         status = 'AVAILABLE';
       }
     } else {

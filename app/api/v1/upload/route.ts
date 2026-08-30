@@ -5,10 +5,23 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const purpose = formData.get('purpose');
 
     if (!file) {
       return NextResponse.json(
         { code: 400, status: 'error', message: 'No file provided' },
+        { status: 400 }
+      );
+    }
+
+    const isPaymentProof = purpose === 'payment-proof';
+    const allowedTypes = isPaymentProof
+      ? ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+      : ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+    const maxBytes = isPaymentProof ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (!allowedTypes.includes(file.type) || file.size > maxBytes) {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: 'Format atau ukuran file tidak valid' },
         { status: 400 }
       );
     }

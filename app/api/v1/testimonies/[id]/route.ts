@@ -8,13 +8,14 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { alt, imageUrl } = body;
+    const { alt, imageUrl, status } = body;
 
     const updatedTestimony = await prisma.testimony.update({
       where: { id },
       data: {
         ...(alt !== undefined && { alt }),
-        ...(imageUrl !== undefined && { imageUrl })
+        ...(imageUrl !== undefined && { imageUrl }),
+        ...(status !== undefined && { status })
       }
     });
 

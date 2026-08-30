@@ -92,7 +92,7 @@ export default function CataloguePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             {archives.map((archive) => (
-              <Link key={archive.id} href={`/archive/${archive.slug}`} className="group block">
+              <Link key={archive.id} href="/archive" className="group block">
                 <div className="relative aspect-3/2 overflow-hidden bg-(--cat-surface-container-low)">
                   <Image
                     src={archive.imageUrl}

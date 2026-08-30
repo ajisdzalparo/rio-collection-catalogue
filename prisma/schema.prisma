@@ -128,21 +128,36 @@ model Testimony {
   id        String   @id @default(cuid())
   alt       String
   imageUrl  String
+  status    String   @default("ACTIVE")
   createdAt DateTime @default(now())
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  orderNumber String      @unique
-  fullName    String
-  whatsapp    String
-  address     String
-  notes       String?
-  totalPrice  Int
-  status      String      @default("PENDING") // PENDING, PAID, FULFILLED, CANCELLED
-  items       OrderItem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id             String      @id @default(cuid())
+  orderNumber    String      @unique
+  fullName       String
+  whatsapp       String
+  address        String
+  notes          String?
+  adminNotes     String?
+  courierName                    String?
+  trackingNumber                 String?
+  quotedShippingFee              Int         @default(15000)
+  shippingFee                    Int         @default(15000)
+  shippingAdjustmentAmount       Int         @default(0)
+  shippingAdjustmentStatus       String      @default("NONE") // NONE, CUSTOMER_CONFIRMATION_PENDING, CUSTOMER_CONFIRMED, REFUNDED, REFUND_WAIVED
+  shippingAdjustmentNote         String?
+  shippingAdjustmentWaSent      Boolean     @default(false)
+  paymentProofUrl                String?
+  additionalPaymentProofUrl      String?
+  refundProofUrl                 String?
+  shippingProofUrl               String?
+  totalPrice                     Int
+  status                         String      @default("PENDING") // PENDING, PAID, FULFILLED, CANCELLED
+  waFollowedUp                   Boolean     @default(false)
+  items                          OrderItem[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 }
 
 model OrderItem {
@@ -200,6 +215,10 @@ model StoreSettings {
   waTemplatePayment  String?  @default("Halo {nama_pelanggan},\n\nKami dari RIO COLLECTION mengonfirmasi bahwa pembayaran untuk pesanan #{nomor_order} sebesar {total_pembayaran} telah DITERIMA & LUNAS.\n\nPesanan Anda sedang kami siapkan untuk pengiriman. Terima kasih!")
   waTemplateShipping String?  @default("Halo {nama_pelanggan},\n\nPesanan Anda (#{nomor_order}) dari RIO COLLECTION telah dikirim via {kurir}!\nNomor Resi: {nomor_resi}\n\nTerima kasih telah berbelanja di RIO COLLECTION!")
   waTemplateRemind   String?  @default("Halo {nama_pelanggan},\n\nKami dari RIO COLLECTION menginformasikan bahwa pesanan (#{nomor_order}) dengan total {total_pembayaran} sedang menunggu pembayaran.\n\nApakah ada kendala saat melakukan proses pembayaran?\nMohon konfirmasi/kirimkan bukti bayar agar pesanan dapat segera dikirim. Terima kasih!")
+  enabledCouriers    String?  @default("jne,pos,tiki,sicepat,jnt")
+  originCityId       String?  @default("153")
+  originCityName     String?  @default("Kota Bandung")
+  originProvinceName String?  @default("Jawa Barat")
   updatedAt         DateTime @updatedAt
 }
 
@@ -223,4 +242,20 @@ model StoreBank {
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+/// Cache tarif ongkir lokal agar hemat API limit RajaOngkir dan respon super cepat (0ms)
+model ShippingRateCache {
+  id                 String   @id @default(cuid())
+  originCityId       String
+  destinationCityId  String
+  courier            String
+  weightGrams        Int      @default(1000)
+  ratesData          Json
+  expiresAt          DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([originCityId, destinationCityId, courier, weightGrams])
+  @@index([destinationCityId, courier])
 }

@@ -10,7 +10,10 @@ import {
   Home,
   BookOpen,
   Mail,
-  MessageSquare
+  MessageSquare,
+  Truck,
+  RefreshCw,
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,10 +28,26 @@ import {
   DEFAULT_WA_TEMPLATES,
   type WhatsAppTemplates
 } from '@/components/dashboard/whatsapp-template-editor';
+import { INDONESIA_MASTER_LOCATIONS } from '@/lib/indonesia-locations';
+import { SearchableSelect } from '@/components/catalogue/searchable-select';
 import { toast } from 'sonner';
 import axios from 'axios';
 
-type SettingsTab = 'profile' | 'whatsapp' | 'payments' | 'socials' | 'hero' | 'homepage' | 'pages';
+type SettingsTab =
+  'profile' | 'couriers' | 'whatsapp' | 'payments' | 'socials' | 'hero' | 'homepage' | 'pages';
+
+const ALL_COURIERS_LIST = [
+  { code: 'jne', name: 'JNE Express', desc: 'Jalur Nugraha Ekakurir' },
+  { code: 'pos', name: 'POS Indonesia', desc: 'PT POS Indonesia' },
+  { code: 'tiki', name: 'TIKI', desc: 'Titipan Kilat' },
+  { code: 'sicepat', name: 'SiCepat Ekspres', desc: 'SiCepat Ekspres Indonesia' },
+  { code: 'jnt', name: 'J&T Express', desc: 'J&T Express Indonesia' },
+  { code: 'anteraja', name: 'Anteraja', desc: 'PT Tri Adi Bersama' },
+  { code: 'wahana', name: 'Wahana Express', desc: 'Wahana Prestasi Logistik' },
+  { code: 'lion', name: 'Lion Parcel', desc: 'Lion Parcel' },
+  { code: 'ninja', name: 'Ninja Xpress', desc: 'Ninja Logistics' },
+  { code: 'ide', name: 'ID Express', desc: 'ID Express Indonesia' }
+];
 
 export default function StoreSettingsPage() {
   const { data: mockSettings, isLoading: loadingSettings } = useStoreSettingsQuery();
@@ -42,6 +61,10 @@ export default function StoreSettingsPage() {
   const [whatsappNumber, setWhatsappNumber] = useState('628123456789');
   const [flatShippingRate, setFlatShippingRate] = useState<number>(15000);
   const [contactEmail, setContactEmail] = useState('');
+  const [enabledCouriers, setEnabledCouriers] = useState<string>('jne,pos,tiki,sicepat,jnt');
+  const [originProvinceName, setOriginProvinceName] = useState<string>('JAWA BARAT');
+  const [originCityId, setOriginCityId] = useState<string>('153');
+  const [originCityName, setOriginCityName] = useState<string>('Bandung');
 
   // WhatsApp Follow-Up Templates state
   const [waTemplates, setWaTemplates] = useState<WhatsAppTemplates>(DEFAULT_WA_TEMPLATES);
@@ -82,8 +105,8 @@ export default function StoreSettingsPage() {
   const [aboutStudioImage, setAboutStudioImage] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncingDb, setIsSyncingDb] = useState(false);
 
-  // Sync API data to state on load cleanly during render phase to avoid cascading renders in useEffect
   const [prevSettings, setPrevSettings] = useState<typeof mockSettings | null>(null);
 
   if (mockSettings && mockSettings !== prevSettings) {
@@ -94,6 +117,10 @@ export default function StoreSettingsPage() {
     if (mockSettings.flatShippingRate !== undefined)
       setFlatShippingRate(mockSettings.flatShippingRate);
     if (mockSettings.contactEmail) setContactEmail(mockSettings.contactEmail);
+    if (mockSettings.enabledCouriers) setEnabledCouriers(mockSettings.enabledCouriers);
+    if (mockSettings.originProvinceName) setOriginProvinceName(mockSettings.originProvinceName);
+    if (mockSettings.originCityId) setOriginCityId(mockSettings.originCityId);
+    if (mockSettings.originCityName) setOriginCityName(mockSettings.originCityName);
 
     setWaTemplates({
       waTemplatePending: mockSettings.waTemplatePending || DEFAULT_WA_TEMPLATES.waTemplatePending,
@@ -180,11 +207,15 @@ export default function StoreSettingsPage() {
         aboutValues,
         aboutQuote,
         aboutQuoteText,
-        aboutStudioImage
+        aboutStudioImage,
+        enabledCouriers,
+        originProvinceName,
+        originCityId,
+        originCityName
       };
       await axios.put('/api/v1/settings', payload);
       updateSettings(payload);
-      toast.success('Pengaturan toko & template WhatsApp berhasil disimpan!');
+      toast.success('Pengaturan toko & ekspedisi berhasil disimpan!');
     } catch (error) {
       console.error('Failed to save settings:', error);
       toast.error('Gagal menyimpan pengaturan toko ke database');
@@ -193,8 +224,23 @@ export default function StoreSettingsPage() {
     }
   };
 
+  const toggleCourier = (code: string) => {
+    const activeList = enabledCouriers
+      .split(',')
+      .map((c) => c.trim())
+      .filter(Boolean);
+    let newList: string[];
+    if (activeList.includes(code)) {
+      newList = activeList.filter((c) => c !== code);
+    } else {
+      newList = [...activeList, code];
+    }
+    setEnabledCouriers(newList.join(','));
+  };
+
   const tabsNav = [
     { id: 'profile', label: 'Profil Toko & Kontak', icon: ShoppingBag },
+    { id: 'couriers', label: 'Ekspedisi & Kurir', icon: Truck },
     { id: 'whatsapp', label: 'Template Followup WA', icon: MessageSquare },
     { id: 'payments', label: 'Rekening Pembayaran', icon: CreditCard },
     { id: 'socials', label: 'Media Sosial', icon: Share2 },
@@ -313,6 +359,146 @@ export default function StoreSettingsPage() {
                       placeholder="hello@riocollection.id"
                     />
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: Ekspedisi & Kurir Pengiriman */}
+            {activeTab === 'couriers' && (
+              <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
+                <div className="border-b border-border/20 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-primary" />
+                      Aktifkan Opsi Ekspedisi / Kurir Pengiriman
+                    </h3>
+                    <p className="text-xs text-muted-foreground pt-1">
+                      Pilih kurir yang ingin diaktifkan di toko Anda. Seluruh data ongkir tersimpan
+                      permanen di Database PostgreSQL toko Anda untuk menjamin respons 0ms tanpa
+                      batasan rate-limit.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isSyncingDb}
+                    onClick={async () => {
+                      setIsSyncingDb(true);
+                      try {
+                        const res = await axios.post('/api/v1/shipping/sync');
+                        if (res.data.code === 200) {
+                          toast.success(
+                            res.data.message || 'Berhasil sinkronisasi database ongkir!'
+                          );
+                        }
+                      } catch {
+                        toast.error('Gagal memproses sinkronisasi database ongkir');
+                      } finally {
+                        setIsSyncingDb(false);
+                      }
+                    }}
+                    className="h-9 px-3 text-xs font-semibold rounded-xl border-border/60 hover:bg-muted gap-2 shrink-0"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncingDb ? 'animate-spin' : ''}`} />
+                    {isSyncingDb ? 'Menyingkronkan...' : 'Sync Database Ongkir'}
+                  </Button>
+                </div>
+
+                {/* Store Origin Location Card */}
+                <div className="bg-muted/40 border border-border/30 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-bold text-foreground">Lokasi Asal Pengiriman Toko (Origin)</span>
+                    </div>
+                    <span className="text-[11px] font-mono font-medium px-2.5 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                      ID Kota Asal: {originCityId} ({originCityName}, {originProvinceName})
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground">Provinsi Asal Toko</Label>
+                      <SearchableSelect
+                        variant="dashboard"
+                        value={originProvinceName}
+                        onValueChange={(val) => {
+                          setOriginProvinceName(val);
+                          const cities = INDONESIA_MASTER_LOCATIONS[val] || [];
+                          if (cities.length > 0) {
+                            setOriginCityName(cities[0].name);
+                            setOriginCityId(cities[0].defaultId);
+                          }
+                        }}
+                        options={Object.keys(INDONESIA_MASTER_LOCATIONS).map((p) => ({ label: p, value: p }))}
+                        placeholder="Pilih Provinsi Asal Toko"
+                        searchPlaceholder="Cari provinsi asal toko..."
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground">Kota / Kabupaten Asal Toko</Label>
+                      <SearchableSelect
+                        variant="dashboard"
+                        value={originCityName}
+                        onValueChange={(val) => {
+                          const cities = INDONESIA_MASTER_LOCATIONS[originProvinceName] || [];
+                          const matched = cities.find((c) => c.name.toLowerCase() === val.toLowerCase());
+                          setOriginCityName(val);
+                          if (matched) {
+                            setOriginCityId(matched.defaultId);
+                          }
+                        }}
+                        options={(INDONESIA_MASTER_LOCATIONS[originProvinceName] || []).map((c) => ({
+                          label: `${c.type} ${c.name}`,
+                          value: c.name
+                        }))}
+                        placeholder="Pilih Kota Asal Toko"
+                        searchPlaceholder="Cari kota asal toko..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+                  {ALL_COURIERS_LIST.map((courier) => {
+                    const isChecked = enabledCouriers
+                      .split(',')
+                      .map((c) => c.trim().toLowerCase())
+                      .includes(courier.code);
+
+                    return (
+                      <div
+                        key={courier.code}
+                        onClick={() => toggleCourier(courier.code)}
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 select-none ${
+                          isChecked
+                            ? 'bg-primary/5 border-primary/40 shadow-xs'
+                            : 'bg-muted/30 border-border/40 opacity-65 hover:opacity-100'
+                        }`}
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-foreground uppercase tracking-wide">
+                              {courier.name}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-muted text-muted-foreground font-semibold">
+                              {courier.code.toUpperCase()}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">{courier.desc}</p>
+                        </div>
+
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}}
+                          className="h-4 w-4 rounded-md text-primary border-border focus:ring-primary cursor-pointer shrink-0"
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

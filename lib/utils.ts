@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,3 +14,13 @@ export function formatIDR(val: number): string {
 }
 
 export const formatPrice = formatIDR;
+
+export function formatWaNumber(raw: string): string {
+  let digits = (raw || '').replace(/[^0-9]/g, '');
+  if (digits.startsWith('0')) {
+    digits = `62${digits.slice(1)}`;
+  } else if (digits.startsWith('8')) {
+    digits = `62${digits}`;
+  }
+  return digits.replace(/^62{2,}/, '62');
+}

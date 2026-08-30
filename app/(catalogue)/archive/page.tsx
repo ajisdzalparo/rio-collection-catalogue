@@ -127,21 +127,23 @@ export default async function ArchivePage() {
       </section>
 
       {/* Archive Coming Soon */}
-      <section className="mx-auto max-w-350 px-4 md:px-16 pb-16 md:pb-24">
-        <div className="text-center py-12 border-t border-(--cat-stone)">
-          <BookOpen
-            size={24}
-            strokeWidth={1.5}
-            className="mx-auto text-(--cat-on-surface-variant) mb-4"
-          />
-          <p className="font-eb-garamond text-[22px] md:text-[28px] font-normal text-(--cat-on-surface) italic">
-            &quot;Arsip sedang menunggu babak pertamanya.&quot;
-          </p>
-          <p className="mt-2 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-            The archive is waiting for its first chapter
-          </p>
-        </div>
-      </section>
+      {archivedProducts.length === 0 && archives.length === 0 && (
+        <section className="mx-auto max-w-350 px-4 md:px-16 pb-16 md:pb-24 pt-12">
+          <div className="text-center py-12 border border-dashed border-(--cat-stone)">
+            <BookOpen
+              size={24}
+              strokeWidth={1.5}
+              className="mx-auto text-(--cat-on-surface-variant) mb-4"
+            />
+            <p className="font-eb-garamond text-[22px] md:text-[28px] font-normal text-(--cat-on-surface) italic">
+              &quot;Arsip sedang menunggu babak pertamanya.&quot;
+            </p>
+            <p className="mt-2 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+              The archive is waiting for its first chapter
+            </p>
+          </div>
+        </section>
+      )}
     </>
   );
 }

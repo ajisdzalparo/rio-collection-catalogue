@@ -79,7 +79,11 @@ export async function PUT(request: Request) {
       waTemplatePending,
       waTemplatePayment,
       waTemplateShipping,
-      waTemplateRemind
+      waTemplateRemind,
+      enabledCouriers,
+      originCityId,
+      originCityName,
+      originProvinceName
     } = body;
 
     const updatedSettings = await prisma.storeSettings.upsert({
@@ -125,7 +129,11 @@ export async function PUT(request: Request) {
         ...(waTemplatePending !== undefined && { waTemplatePending }),
         ...(waTemplatePayment !== undefined && { waTemplatePayment }),
         ...(waTemplateShipping !== undefined && { waTemplateShipping }),
-        ...(waTemplateRemind !== undefined && { waTemplateRemind })
+        ...(waTemplateRemind !== undefined && { waTemplateRemind }),
+        ...(enabledCouriers !== undefined && { enabledCouriers }),
+        ...(originCityId !== undefined && { originCityId }),
+        ...(originCityName !== undefined && { originCityName }),
+        ...(originProvinceName !== undefined && { originProvinceName })
       },
       create: {
         id: 'default',
@@ -142,10 +150,18 @@ export async function PUT(request: Request) {
         xTwitterUrl,
         heroTitle: heroTitle || 'EDITION 001',
         heroSubtitle: heroSubtitle || 'ARCHIVAL COTTON SILHOUETTE',
-        heroLeftImage: heroLeftImage || 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80',
-        heroRightImage: heroRightImage || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
+        heroLeftImage:
+          heroLeftImage ||
+          'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80',
+        heroRightImage:
+          heroRightImage ||
+          'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
         heroCtaText: heroCtaText || 'Eksplor Koleksi Terkini',
-        heroCtaLink: heroCtaLink || '/catalogue'
+        heroCtaLink: heroCtaLink || '/catalogue',
+        enabledCouriers: enabledCouriers || 'jne,pos,tiki,sicepat,jnt',
+        originCityId: originCityId || '153',
+        originCityName: originCityName || 'Kota Bandung',
+        originProvinceName: originProvinceName || 'Jawa Barat'
       }
     });
 

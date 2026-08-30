@@ -10,7 +10,15 @@ export interface OrderItem {
   quantity: number;
   price: number;
   cogs?: number;
+  isPreOrder?: boolean;
 }
+
+export type ShippingAdjustmentStatus =
+  | 'NONE'
+  | 'CUSTOMER_CONFIRMATION_PENDING'
+  | 'CUSTOMER_CONFIRMED'
+  | 'REFUNDED'
+  | 'REFUND_WAIVED';
 
 export interface Order {
   id: string;
@@ -18,10 +26,28 @@ export interface Order {
   fullName: string;
   whatsapp: string;
   address: string;
-  status: 'PENDING' | 'CONFIRMED' | 'WAITING_PAYMENT' | 'PAID' | 'FULFILLED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED';
+  status:
+    | 'PENDING'
+    | 'CONFIRMED'
+    | 'WAITING_PAYMENT'
+    | 'PAID'
+    | 'FULFILLED'
+    | 'REJECTED'
+    | 'CANCELLED'
+    | 'EXPIRED';
+  waFollowedUp: boolean;
   items: OrderItem[];
   subtotal?: number;
   shippingFee?: number;
+  quotedShippingFee?: number;
+  shippingAdjustmentAmount?: number;
+  shippingAdjustmentStatus?: ShippingAdjustmentStatus;
+  shippingAdjustmentNote?: string;
+  shippingAdjustmentWaSent?: boolean;
+  paymentProofUrl?: string;
+  additionalPaymentProofUrl?: string;
+  refundProofUrl?: string;
+  shippingProofUrl?: string;
   courierName?: string;
   trackingNumber?: string;
   totalPrice: number;
@@ -32,7 +58,25 @@ export interface Order {
   adminNotes?: string;
 }
 
-// 24 hours threshold in milliseconds
+export interface UpdateOrderPayload {
+  id: string;
+  status?: Order['status'];
+  adminNotes?: string;
+  courierName?: string;
+  trackingNumber?: string;
+  waFollowedUp?: boolean;
+  shippingFee?: number;
+  quotedShippingFee?: number;
+  shippingAdjustmentAmount?: number;
+  shippingAdjustmentStatus?: ShippingAdjustmentStatus;
+  shippingAdjustmentNote?: string;
+  shippingAdjustmentWaSent?: boolean;
+  paymentProofUrl?: string;
+  additionalPaymentProofUrl?: string;
+  refundProofUrl?: string;
+  shippingProofUrl?: string;
+}
+
 const STALE_PENDING_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 async function fetchOrders(): Promise<Order[]> {
@@ -42,29 +86,30 @@ async function fetchOrders(): Promise<Order[]> {
   }
 
   const now = Date.now();
-
   return (data.data as Order[]).map((order) => {
-    const enrichedItems = (order.items || []).map((item) => {
-      const cogs = item.cogs ?? Math.round(item.price * 0.4);
-      return { ...item, cogs };
-    });
-
+    const enrichedItems = (order.items || []).map((item) => ({
+      ...item,
+      cogs: item.cogs ?? Math.round(item.price * 0.4)
+    }));
     const itemsSubtotal = enrichedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const totalCogs = enrichedItems.reduce((acc, item) => acc + (item.cogs ?? 0) * item.quantity, 0);
+    const totalCogs = enrichedItems.reduce(
+      (acc, item) => acc + (item.cogs ?? 0) * item.quantity,
+      0
+    );
     const shippingFee = order.shippingFee ?? 15000;
-    const courierName = order.courierName ?? 'JNE Express (REG)';
-    const trackingNumber = order.trackingNumber ?? (order.status === 'FULFILLED' ? `JNE8820${order.id.slice(-4)}ID` : undefined);
-    const totalPrice = order.totalPrice || (itemsSubtotal + shippingFee);
-    const subtotal = order.subtotal || itemsSubtotal;
-    const estimatedProfit = subtotal - totalCogs;
-
-    // Check if order is stale PENDING (>24 hours old)
+    const quotedShippingFee = order.quotedShippingFee ?? shippingFee;
+    const totalPrice = order.totalPrice ?? itemsSubtotal + shippingFee;
+    const subtotal = order.subtotal ?? itemsSubtotal;
     const createdTime = new Date(order.createdAt).getTime();
-    const isStale = (order.status === 'PENDING' || order.status === 'WAITING_PAYMENT') && (now - createdTime > STALE_PENDING_THRESHOLD_MS);
+    const isStale =
+      (order.status === 'PENDING' || order.status === 'WAITING_PAYMENT') &&
+      now - createdTime > STALE_PENDING_THRESHOLD_MS;
     const status: Order['status'] = isStale ? 'EXPIRED' : order.status;
     const adminNotes = isStale
-      ? (order.adminNotes ? `${order.adminNotes} (Otomatis Expired via Cron)` : 'Otomatis Kadaluarsa via Cron Job (Pending > 24 jam)')
-      : order.adminNotes;
+      ? order.adminNotes
+        ? `${order.adminNotes} (Otomatis Expired via Cron)`
+        : 'Otomatis Kadaluarsa via Cron Job (Pending > 24 jam)'
+      : order.adminNotes || undefined;
 
     return {
       ...order,
@@ -73,44 +118,24 @@ async function fetchOrders(): Promise<Order[]> {
       items: enrichedItems,
       subtotal,
       shippingFee,
-      courierName,
-      trackingNumber,
+      quotedShippingFee,
       totalPrice,
       totalCogs,
-      estimatedProfit
+      estimatedProfit: subtotal - totalCogs,
+      courierName: order.courierName || undefined,
+      trackingNumber: order.trackingNumber || undefined
     };
   });
 }
 
 export function useOrders() {
   const queryClient = useQueryClient();
-
-  const query = useQuery<Order[], Error>({
-    queryKey: ['orders'],
-    queryFn: fetchOrders
-  });
+  const query = useQuery<Order[], Error>({ queryKey: ['orders'], queryFn: fetchOrders });
 
   const updateMutation = useMutation({
-    mutationFn: async ({
-      id,
-      status,
-      adminNotes,
-      courierName,
-      trackingNumber
-    }: {
-      id: string;
-      status: Order['status'];
-      adminNotes?: string;
-      courierName?: string;
-      trackingNumber?: string;
-    }) => {
-      const { data } = await axios.patch(`/api/v1/orders/${id}`, {
-        status,
-        adminNotes,
-        courierName,
-        trackingNumber
-      });
-      return data.data;
+    mutationFn: async ({ id, ...payload }: UpdateOrderPayload) => {
+      const { data } = await axios.patch(`/api/v1/orders/${id}`, payload);
+      return data.data as Order;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -123,26 +148,28 @@ export function useOrders() {
       try {
         await axios.get('/api/cron/cleanup-orders');
       } catch {
-        // Ignore API proxy error in dev mode
+        // Ignore API proxy error in dev mode.
       }
-      await new Promise((resolve) => setTimeout(resolve, 400));
       return true;
     },
     onSuccess: () => {
       queryClient.setQueryData<Order[]>(['orders'], (old) => {
         if (!old) return [];
         const now = Date.now();
-        return old.map((o) => {
-          const createdTime = new Date(o.createdAt).getTime();
-          const isStale = (o.status === 'PENDING' || o.status === 'WAITING_PAYMENT') && (now - createdTime > STALE_PENDING_THRESHOLD_MS);
-          if (isStale) {
-            return {
-              ...o,
-              status: 'EXPIRED',
-              adminNotes: o.adminNotes ? `${o.adminNotes} (Expired via Cron)` : 'Otomatis Kadaluarsa via Cron Job (Pending > 24 jam)'
-            };
-          }
-          return o;
+        return old.map((order) => {
+          const createdTime = new Date(order.createdAt).getTime();
+          const isStale =
+            (order.status === 'PENDING' || order.status === 'WAITING_PAYMENT') &&
+            now - createdTime > STALE_PENDING_THRESHOLD_MS;
+          return isStale
+            ? {
+                ...order,
+                status: 'EXPIRED',
+                adminNotes: order.adminNotes
+                  ? `${order.adminNotes} (Expired via Cron)`
+                  : 'Otomatis Kadaluarsa via Cron Job (Pending > 24 jam)'
+              }
+            : order;
         });
       });
     }

@@ -12,10 +12,22 @@ export const metadata: Metadata = {
 
 export default async function JournalPage() {
   const journals = await getJournals();
+
+  if (journals.length === 0) {
+    return (
+      <div className="mx-auto max-w-350 px-4 md:px-16 py-32 text-center">
+        <h1 className="font-eb-garamond text-[32px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface)">
+          Journal
+        </h1>
+        <p className="mt-4 font-hanken text-[14px] text-(--cat-on-surface-variant)">
+          Belum ada cerita yang dibagikan. Silakan tambahkan artikel dari CMS dashboard.
+        </p>
+      </div>
+    );
+  }
+
   const featuredArticle = journals[1] || journals[0]; // "Melihat di Balik Layar"
   const recentArticles = featuredArticle ? journals.filter((a) => a.id !== featuredArticle.id).slice(0, 3) : [];
-
- if (!featuredArticle) return null;
 
   return (
     <>

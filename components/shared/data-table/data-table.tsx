@@ -29,6 +29,8 @@ export interface DataTableProps<T> {
   data: T[];
 
   searchKey?: keyof T;
+  /** Additional keys searched together with searchKey (case-insensitive, partial match). */
+  extraSearchKeys?: Array<keyof T>;
   searchPlaceholder?: string;
   showSearch?: boolean;
 
@@ -63,6 +65,7 @@ export function DataTable<T extends object>({
   data,
   getRowId,
   searchKey,
+  extraSearchKeys,
   searchPlaceholder = 'Search records...',
   showSearch,
   showRowNumbers = false,
@@ -99,15 +102,37 @@ export function DataTable<T extends object>({
   const isSearchVisible = showSearch !== undefined ? showSearch : Boolean(searchKey);
 
   const filteredData = useMemo(() => {
-    if (!searchKey || !searchQuery.trim() || !isSearchVisible) return data;
+    if (!searchQuery.trim() || !isSearchVisible) return data;
     const query = searchQuery.toLowerCase();
+    const keys = [searchKey, ...(extraSearchKeys ?? [])].filter(Boolean) as Array<keyof T>;
+    if (keys.length === 0) return data;
     return data.filter((item) => {
-      const val = (item as Record<string, unknown>)[searchKey as string];
-      return String(val ?? '')
-        .toLowerCase()
-        .includes(query);
+      const record = item as Record<string, unknown>;
+      return keys.some((key) => {
+        const val = record[key as string];
+        return String(val ?? '')
+          .toLowerCase()
+          .includes(query);
+      });
     });
-  }, [data, searchKey, searchQuery, isSearchVisible]);
+  }, [data, searchKey, extraSearchKeys, searchQuery, isSearchVisible]);
+
+  // Reset pagination whenever the underlying data set changes (e.g. the
+  // status filter changes), so users always land on a valid first page.
+  const dataSignature = data
+    .map((item) => {
+      const record = item as Record<string, unknown>;
+      if (record && record.id !== undefined && record.id !== null) return String(record.id);
+      if (record && record.name !== undefined && record.name !== null) return String(record.name);
+      if (record && record.key !== undefined && record.key !== null) return String(record.key);
+      return '';
+    })
+    .join('|');
+  const [lastDataSignature, setLastDataSignature] = useState(dataSignature);
+  if (dataSignature !== lastDataSignature) {
+    setLastDataSignature(dataSignature);
+    setCurrentPage(1);
+  }
 
   const sortedData = useMemo(() => {
     if (manualSorting || !activeSortKey || !activeSortDirection) return filteredData;
@@ -146,6 +171,12 @@ export function DataTable<T extends object>({
     const start = (currentPage - 1) * currentSize;
     return sortedData.slice(start, start + currentSize);
   }, [sortedData, currentPage, currentSize]);
+
+  // Keep the current page in a valid range when the data set shrinks
+  // (e.g. after filtering or status changes) so rows never disappear.
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
 
   const handleSort = (key?: keyof T, sortable?: boolean) => {
     if (!key || !sortable) return;

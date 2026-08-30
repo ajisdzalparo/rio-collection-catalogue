@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Truck, MapPin, Calculator } from 'lucide-react';
+import { ArrowRight, Truck, MapPin, Calculator, Loader2 } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import { getProducts, submitOrder } from '@/lib/api';
 import { useStoreSettingsStore } from '@/hooks/use-store-settings';
@@ -17,8 +17,9 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { CaptchaChallenge } from '@/components/catalogue/captcha-challenge';
+import { SearchableSelect } from '@/components/catalogue/searchable-select';
 
-// Dynamic Indonesian Region Shipping Tariff Rules Engine
+// Offline Fallback Data Engine (Used when RAJAONGKIR_API_KEY is not configured)
 const PROVINCES_DATA = [
   { name: 'DKI Jakarta', baseRate: 10000 },
   { name: 'Jawa Barat', baseRate: 12000 },
@@ -57,320 +58,90 @@ const INDONESIA_REGIONS_DATA: Record<
         'Pesanggrahan',
         'Pasar Minggu',
         'Jagakarsa',
-        'Mampang Prapatan',
-        'Pancoran',
-        'Tebet',
-        'Setiabudi'
+        'Tebet'
       ],
-      'Jakarta Pusat': [
-        'Gambir',
-        'Tanah Abang',
-        'Menteng',
-        'Senen',
-        'Cempaka Putih',
-        'Johar Baru',
-        'Kemayoran',
-        'Sawah Besar'
-      ],
-      'Jakarta Barat': [
-        'Cengkareng',
-        'Grogol Petamburan',
-        'Taman Sari',
-        'Tambora',
-        'Kebon Jeruk',
-        'Kalideres',
-        'Palmerah',
-        'Kembangan'
-      ],
+      'Jakarta Pusat': ['Gambir', 'Tanah Abang', 'Menteng', 'Senen', 'Cempaka Putih', 'Kemayoran'],
+      'Jakarta Barat': ['Cengkareng', 'Grogol Petamburan', 'Taman Sari', 'Kebon Jeruk', 'Palmerah'],
       'Jakarta Timur': [
         'Matraman',
         'Pulo Gadung',
         'Jatinegara',
         'Duren Sawit',
         'Kramat Jati',
-        'Makasar',
-        'Ciracas',
-        'Cipayung',
         'Cakung'
       ],
-      'Jakarta Utara': [
-        'Penjaringan',
-        'Pademangan',
-        'Tanjung Priok',
-        'Koja',
-        'Kelapa Gading',
-        'Cilincing'
-      ],
-      'Kepulauan Seribu': ['Kepulauan Seribu Selatan', 'Kepulauan Seribu Utara']
+      'Jakarta Utara': ['Penjaringan', 'Pademangan', 'Tanjung Priok', 'Kelapa Gading']
     }
   },
   'Jawa Barat': {
     cities: {
-      'Kota Bandung': [
-        'Coblong',
-        'Sukajadi',
-        'Cicendo',
-        'Andir',
-        'Lengkong',
-        'Sumur Bandung',
-        'Bandung Wetan',
-        'Cibeunying Kaler'
-      ],
-      'Kabupaten Bandung': [
-        'Baleendah',
-        'Dayeuhkolot',
-        'Bojongsoang',
-        'Margahayu',
-        'Katapang',
-        'Soreang'
-      ],
-      'Kota Bekasi': [
-        'Bekasi Barat',
-        'Bekasi Timur',
-        'Bekasi Utara',
-        'Bekasi Selatan',
-        'Pondok Gede',
-        'Jatiasih'
-      ],
-      'Kabupaten Bekasi': [
-        'Cikarang Pusat',
-        'Cikarang Barat',
-        'Cikarang Utara',
-        'Cikarang Selatan',
-        'Tambun Selatan'
-      ],
-      'Kota Bogor': [
-        'Bogor Tengah',
-        'Bogor Utara',
-        'Bogor Selatan',
-        'Bogor Timur',
-        'Bogor Barat',
-        'Tanah Sareal'
-      ],
-      'Kabupaten Bogor': ['Cibinong', 'Citeureup', 'Sentul', 'Cileungsi', 'Gunung Putri', 'Parung'],
-      'Kota Depok': [
-        'Beji',
-        'Pancasoran Mas',
-        'Cipayung',
-        'Sukmajaya',
-        'Cilodong',
-        'Cimanggis',
-        'Sawangan'
-      ],
-      'Kota Cimahi': ['Cimahi Utara', 'Cimahi Tengah', 'Cimahi Selatan'],
-      'Kabupaten Cirebon': ['Sumber', 'Kedawung', 'Cirebon Barat'],
-      'Kota Cirebon': ['Kejaksan', 'Lemahwungkuk', 'Harjamukti']
+      'Kota Bandung': ['Coblong', 'Sukajadi', 'Cicendo', 'Andir', 'Lengkong', 'Sumur Bandung'],
+      'Kabupaten Bandung': ['Baleendah', 'Dayeuhkolot', 'Bojongsoang', 'Soreang'],
+      'Kota Bekasi': ['Bekasi Barat', 'Bekasi Timur', 'Bekasi Utara', 'Bekasi Selatan'],
+      'Kota Bogor': ['Bogor Tengah', 'Bogor Utara', 'Bogor Selatan', 'Tanah Sareal'],
+      'Kota Depok': ['Beji', 'Pancasoran Mas', 'Sukmajaya', 'Cimanggis', 'Sawangan']
     }
   },
   Banten: {
     cities: {
-      'Kota Tangerang': [
-        'Tangerang',
-        'Karawaci',
-        'Cibodas',
-        'Jatiuwung',
-        'Batuceper',
-        'Cipondoh',
-        'Ciledug'
-      ],
-      'Kota Tangerang Selatan': [
-        'BSD City / Serpong',
-        'Pondok Aren',
-        'Ciputat',
-        'Ciputat Timur',
-        'Pamulang',
-        'Setu'
-      ],
-      'Kabupaten Tangerang': [
-        'Tigaraksa',
-        'Cikupa',
-        'Balaraja',
-        'Pasar Kemis',
-        'Curug',
-        'Kelapa Dua'
-      ],
-      'Kota Serang': ['Serang', 'Cipocok Jaya', 'Tactakan'],
-      'Kota Cilegon': ['Cilegon', 'Jombang', 'Ciwandan']
+      'Kota Tangerang': ['Tangerang', 'Karawaci', 'Cibodas', 'Ciledug'],
+      'Kota Tangerang Selatan': ['BSD City / Serpong', 'Pondok Aren', 'Ciputat', 'Pamulang'],
+      'Kabupaten Tangerang': ['Tigaraksa', 'Cikupa', 'Balaraja', 'Kelapa Dua']
     }
   },
   'Jawa Tengah': {
     cities: {
-      'Kota Semarang': [
-        'Semarang Tengah',
-        'Semarang Barat',
-        'Semarang Timur',
-        'Semarang Selatan',
-        'Semarang Utara',
-        'Banyumanik'
-      ],
-      'Kota Surakarta (Solo)': ['Banjarsari', 'Jebres', 'Laweyan', 'Pasar Kliwon', 'Serengan'],
-      'Kabupaten Magelang': ['Muntilan', 'Borobudur', 'Mertoyudan'],
-      'Kota Magelang': ['Magelang Utara', 'Magelang Tengah', 'Magelang Selatan'],
-      'Kabupaten Banyumas': [
-        'Purwokerto Timur',
-        'Purwokerto Barat',
-        'Purwokerto Selatan',
-        'Purwokerto Utara'
-      ],
-      'Kabupaten Kudus': ['Kudus Kota', 'Jati', 'Bae']
+      'Kota Semarang': ['Semarang Tengah', 'Semarang Barat', 'Semarang Timur', 'Banyumanik'],
+      'Kota Surakarta (Solo)': ['Banjarsari', 'Jebres', 'Laweyan', 'Pasar Kliwon']
     }
   },
   'DI Yogyakarta': {
     cities: {
-      'Kota Yogyakarta': [
-        'Gondokusuman',
-        'Danurejan',
-        'Malioboro / Sosromenduran',
-        'Kraton',
-        'Mergagangsan',
-        'Umbulharjo'
-      ],
-      'Kabupaten Sleman': ['Depok (Gejayan/Seturan)', 'Sleman', 'Mlati', 'Kalasan', 'Ngaglik'],
-      'Kabupaten Bantul': ['Bantul', 'Sewon', 'Kasihan', 'Piyungan'],
-      'Kabupaten Gunungkidul': ['Wonosari', 'Playen'],
-      'Kabupaten Kulon Progo': ['Wates', 'Pengasih']
+      'Kota Yogyakarta': ['Gondokusuman', 'Danurejan', 'Malioboro', 'Kraton', 'Umbulharjo'],
+      'Kabupaten Sleman': ['Depok (Gejayan/Seturan)', 'Sleman', 'Mlati', 'Kalasan']
     }
   },
   'Jawa Timur': {
     cities: {
-      'Kota Surabaya': [
-        'Tegalsari',
-        'Genteng',
-        'Gubeng',
-        'Wonokromo',
-        'Sukolilo',
-        'Rungkut',
-        'Sawahan',
-        'Mulyorejo'
-      ],
-      'Kota Malang': ['Klojen', 'Lowokwaru', 'Blimbing', 'Sukun', 'Kedungkandang'],
-      'Kabupaten Malang': ['Kepanjen', 'Singosari', 'Lawang'],
-      'Kota Batu': ['Batu', 'Bumiaji', 'Junrejo'],
-      'Kabupaten Sidoarjo': ['Sidoarjo', 'Warudoyong', 'Candi', 'Gedangan', 'Taman'],
-      'Kabupaten Gresik': ['Gresik', 'Kebomas', 'Manyar']
+      'Kota Surabaya': ['Tegalsari', 'Genteng', 'Gubeng', 'Wonokromo', 'Rungkut'],
+      'Kota Malang': ['Klojen', 'Lowokwaru', 'Blimbing', 'Sukun']
     }
   },
   Bali: {
     cities: {
-      'Kota Denpasar': ['Denpasar Barat', 'Denpasar Timur', 'Denpasar Selatan', 'Denpasar Utara'],
-      'Kabupaten Badung': [
-        'Kuta',
-        'Kuta Utara (Canggu/Seminyak)',
-        'Kuta Selatan (Nusa Dua/Uluwatu)',
-        'Mengwi'
-      ],
-      'Kabupaten Gianyar': ['Ubud', 'Gianyar', 'Sukawati'],
-      'Kabupaten Tabanan': ['Tabanan', 'Kediri']
-    }
-  },
-  'Sumatera Utara': {
-    cities: {
-      'Kota Medan': [
-        'Medan Kota',
-        'Medan Barat',
-        'Medan Petisah',
-        'Medan Helvetia',
-        'Medan Selayang',
-        'Medan Johor'
-      ],
-      'Kota Binjai': ['Binjai Kota', 'Binjai Barat'],
-      'Kabupaten Deli Serdang': ['Lubuk Pakam', 'Tanjung Morawa']
-    }
-  },
-  'Sumatera Selatan': {
-    cities: {
-      'Kota Palembang': ['Ilir Timur I', 'Ilir Barat I', 'Seberang Ulu I', 'Sako', 'Sukarami']
-    }
-  },
-  'Sumatera Barat': {
-    cities: {
-      'Kota Padang': ['Padang Barat', 'Padang Timur', 'Padang Utara', 'Koto Tangah'],
-      'Kota Bukittinggi': ['Guguk Panjang', 'Mandiangin Koto Selayan']
-    }
-  },
-  'Riau / Kep. Riau': {
-    cities: {
-      'Kota Pekanbaru': ['Pekanbaru Kota', 'Tampan', 'Marpoyan Damai', 'Payung Sekaki'],
-      'Kota Batam': ['Batam Kota', 'Lubuk Baja', 'Sekupang', 'Nongsa'],
-      'Kota Tanjungpinang': ['Tanjungpinang Kota', 'Tanjungpinang Timur']
-    }
-  },
-  Lampung: {
-    cities: {
-      'Kota Bandar Lampung': [
-        'Tanjung Karang Pusat',
-        'Tanjung Karang Timur',
-        'Kedaton',
-        'Rajabasa',
-        'Sukarame'
-      ]
-    }
-  },
-  'Kalimantan Barat': {
-    cities: {
-      'Kota Pontianak': [
-        'Pontianak Kota',
-        'Pontianak Selatan',
-        'Pontianak Barat',
-        'Pontianak Utara'
-      ]
-    }
-  },
-  'Kalimantan Timur': {
-    cities: {
-      'Kota Samarinda': ['Samarinda Kota', 'Samarinda Utara', 'Sungai Kunjang'],
-      'Kota Balikpapan': ['Balikpapan Kota', 'Balikpapan Selatan', 'Balikpapan Utara']
-    }
-  },
-  'Sulawesi Selatan': {
-    cities: {
-      'Kota Makassar': ['Ujung Pandang', 'Panakkukang', 'Rappocini', 'Tamalanrea', 'Biringkanaya']
-    }
-  },
-  'Sulawesi Utara': {
-    cities: {
-      'Kota Manado': ['Wenang', 'Wanea', 'Malalayang', 'Tuminting']
-    }
-  },
-  'Nusa Tenggara Barat': {
-    cities: {
-      'Kota Mataram': ['Mataram', 'Ampenan', 'Cakranegara']
-    }
-  },
-  'Nusa Tenggara Timur': {
-    cities: {
-      'Kota Kupang': ['Oebobo', 'Maulafa', 'Kelapa Lima']
-    }
-  },
-  'Maluku / Maluku Utara': {
-    cities: {
-      'Kota Ambon': ['Sirimau', 'Nuani', 'Teluk Ambon'],
-      'Kota Ternate': ['Ternate Tengah', 'Ternate Utara']
-    }
-  },
-  'Papua / Papua Barat': {
-    cities: {
-      'Kota Jayapura': ['Jayapura Utara', 'Jayapura Selatan', 'Abepura'],
-      'Kota Sorong': ['Sorong Kota', 'Sorong Timur']
+      'Kota Denpasar': ['Denpasar Barat', 'Denpasar Timur', 'Denpasar Selatan'],
+      'Kabupaten Badung': ['Kuta', 'Kuta Utara (Canggu/Seminyak)', 'Nusa Dua']
     }
   }
 };
 
-const SERVICE_SURCHARGES: Record<string, number> = {
-  'JNE Regular (2-3 Hari)': 0,
-  'JNE YES - Express (1 Hari)': 15000,
-  'J&T Express Standard': 2000,
-  'SiCepat REG': 0,
-  'SiCepat BEST (1 Hari)': 12000,
-  'POS Kilat Khusus': -2000
+const SERVICE_SURCHARGES: Record<string, { code: string; fee: number }> = {
+  'JNE Regular (2-3 Hari)': { code: 'jne', fee: 0 },
+  'JNE YES - Express (1 Hari)': { code: 'jne', fee: 15000 },
+  'J&T Express Standard': { code: 'jnt', fee: 2000 },
+  'SiCepat REG': { code: 'sicepat', fee: 0 },
+  'SiCepat BEST (1 Hari)': { code: 'sicepat', fee: 12000 },
+  'POS Kilat Khusus': { code: 'pos', fee: -2000 },
+  'TIKI Reguler': { code: 'tiki', fee: 0 }
 };
 
 export default function OrderPage() {
   const router = useRouter();
   const flatShippingRate = useStoreSettingsStore((s) => s.flatShippingRate);
+  const enabledCouriersSetting = useStoreSettingsStore((s) => s.enabledCouriers);
+
+  const activeCourierCodes = useMemo(() => {
+    const raw = enabledCouriersSetting || 'jne,pos,tiki,sicepat,jnt';
+    return raw
+      .split(',')
+      .map((c) => c.trim().toLowerCase())
+      .filter(Boolean);
+  }, [enabledCouriersSetting]);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [quantity, setQuantity] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
     whatsapp: '',
@@ -384,13 +155,42 @@ export default function OrderPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
+  // Hybrid Shipping API States (RajaOngkir Sandbox / Live Mode + Offline Fallback)
+  const [isRajaActive, setIsRajaActive] = useState(false);
+  const [rajaProvinces, setRajaProvinces] = useState<
+    Array<{ province_id: string; province: string }>
+  >([]);
+  const [rajaCities, setRajaCities] = useState<
+    Array<{ city_id: string; province_id: string; city_name: string; type: string }>
+  >([]);
+  const [rajaSubdistricts, setRajaSubdistricts] = useState<
+    Array<{ subdistrict_id: string; subdistrict_name: string; postal_code?: string }>
+  >([]);
+  const [rajaRates, setRajaRates] = useState<
+    Array<{ key: string; label: string; cost: number; courier: string; etd: string }>
+  >([]);
+  const [isShippingLoading, setIsShippingLoading] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sizeParam = params.get('size');
-    if (sizeParam) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedSize(sizeParam);
-    }
+    const colorParam = params.get('color');
+    const quantityParam = params.get('quantity');
+
+    queueMicrotask(() => {
+      if (sizeParam) {
+        setSelectedSize(sizeParam);
+      }
+      if (colorParam) {
+        setSelectedColor(colorParam);
+      }
+      if (quantityParam) {
+        const parsedQty = parseInt(quantityParam, 10);
+        if (!isNaN(parsedQty) && parsedQty > 0 && parsedQty <= 99) {
+          setQuantity(parsedQty);
+        }
+      }
+    });
 
     const productSlug = params.get('product');
     getProducts().then((prods) => {
@@ -399,62 +199,302 @@ export default function OrderPage() {
         setProduct(found || prods[0]);
       }
     });
+
+    // Check if RajaOngkir API is active (Sandbox key or Live key in .env)
+    fetch('/api/v1/shipping/provinces')
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
+          setIsRajaActive(true);
+          setRajaProvinces(res.data);
+          const defaultProv = res.data[0];
+          setFormData((prev) => ({ ...prev, province: defaultProv.province }));
+
+          // Fetch cities for initial RajaOngkir province
+          fetch(
+            `/api/v1/shipping/cities?provinceId=${defaultProv.province_id}&provinceName=${encodeURIComponent(defaultProv.province)}`
+          )
+            .then((cRes) => cRes.json())
+            .then((cRes) => {
+              if (cRes.code === 200 && Array.isArray(cRes.data) && cRes.data.length > 0) {
+                setRajaCities(cRes.data);
+                const defaultCity = `${cRes.data[0].type} ${cRes.data[0].city_name}`;
+                setFormData((prev) => ({ ...prev, city: defaultCity }));
+              }
+            })
+            .catch(() => {});
+        } else {
+          setIsRajaActive(false);
+        }
+      })
+      .catch(() => {
+        setIsRajaActive(false);
+      });
   }, []);
 
-  // Derived Cities list based on selected Province
   const availableCities = useMemo(() => {
+    if (isRajaActive && rajaCities.length > 0) {
+      return rajaCities.map((c) => {
+        if (c.city_name.toLowerCase().startsWith(c.type.toLowerCase())) {
+          return c.city_name;
+        }
+        return `${c.type} ${c.city_name}`;
+      });
+    }
     const provinceObj = INDONESIA_REGIONS_DATA[formData.province];
     if (provinceObj) {
       return Object.keys(provinceObj.cities);
     }
     return [];
-  }, [formData.province]);
+  }, [formData.province, isRajaActive, rajaCities]);
 
-  // Derived Districts list based on selected City
   const availableDistricts = useMemo(() => {
+    if (isRajaActive && rajaSubdistricts.length > 0) {
+      return rajaSubdistricts.map((s) => s.subdistrict_name);
+    }
     const provinceObj = INDONESIA_REGIONS_DATA[formData.province];
     if (provinceObj && formData.city) {
       return provinceObj.cities[formData.city] || [];
     }
     return [];
-  }, [formData.province, formData.city]);
+  }, [formData.province, formData.city, isRajaActive, rajaSubdistricts]);
+
+  const availablePostalCodes = useMemo(() => {
+    if (isRajaActive && rajaSubdistricts.length > 0) {
+      const set = new Set<string>();
+      rajaSubdistricts.forEach((s) => {
+        if (s.postal_code && s.postal_code.trim()) {
+          set.add(s.postal_code.trim());
+        }
+      });
+      return Array.from(set);
+    }
+    return [];
+  }, [isRajaActive, rajaSubdistricts]);
 
   const handleProvinceChange = (newProvince: string) => {
-    const provinceObj = INDONESIA_REGIONS_DATA[newProvince];
-    const cities = provinceObj ? Object.keys(provinceObj.cities) : [];
-    const defaultCity = cities[0] || '';
-    const districts = provinceObj && defaultCity ? provinceObj.cities[defaultCity] || [] : [];
-    const defaultDistrict = districts[0] || '';
+    if (isRajaActive) {
+      const matchedRajaProv = rajaProvinces.find(
+        (p) => p.province.toLowerCase() === newProvince.toLowerCase()
+      );
 
-    setFormData((prev) => ({
-      ...prev,
-      province: newProvince,
-      city: defaultCity,
-      district: defaultDistrict
-    }));
+      setFormData((prev) => ({
+        ...prev,
+        province: newProvince,
+        city: '',
+        district: '',
+        courierService: ''
+      }));
+
+      if (matchedRajaProv) {
+        setIsShippingLoading(true);
+        fetch(
+          `/api/v1/shipping/cities?provinceId=${matchedRajaProv.province_id}&provinceName=${encodeURIComponent(matchedRajaProv.province)}`
+        )
+          .then((res) => res.json())
+          .then((res) => {
+            if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
+              setRajaCities(res.data);
+              const defaultCity = `${res.data[0].type} ${res.data[0].city_name}`;
+              setFormData((prev) => ({ ...prev, city: defaultCity }));
+            }
+          })
+          .catch(() => {})
+          .finally(() => setIsShippingLoading(false));
+      }
+    } else {
+      const provinceObj = INDONESIA_REGIONS_DATA[newProvince];
+      const cities = provinceObj ? Object.keys(provinceObj.cities) : [];
+      const defaultCity = cities[0] || '';
+      const districts = provinceObj && defaultCity ? provinceObj.cities[defaultCity] || [] : [];
+      const defaultDistrict = districts[0] || '';
+
+      setFormData((prev) => ({
+        ...prev,
+        province: newProvince,
+        city: defaultCity,
+        district: defaultDistrict
+      }));
+    }
   };
 
   const handleCityChange = (newCity: string) => {
-    const provinceObj = INDONESIA_REGIONS_DATA[formData.province];
-    const districts = provinceObj && newCity ? provinceObj.cities[newCity] || [] : [];
-    const defaultDistrict = districts[0] || '';
+    if (isRajaActive) {
+      const matchedCity = rajaCities.find(
+        (c) =>
+          `${c.type} ${c.city_name}`.toLowerCase() === newCity.toLowerCase() ||
+          c.city_name.toLowerCase() === newCity.toLowerCase()
+      );
 
-    setFormData((prev) => ({
-      ...prev,
-      city: newCity,
-      district: defaultDistrict
-    }));
+      setFormData((prev) => ({
+        ...prev,
+        city: newCity,
+        district: '',
+        courierService: ''
+      }));
+
+      if (matchedCity) {
+        fetch(
+          `/api/v1/shipping/subdistricts?cityId=${matchedCity.city_id}&cityName=${encodeURIComponent(matchedCity.city_name)}`
+        )
+          .then((res) => res.json())
+          .then((res) => {
+            if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
+              setRajaSubdistricts(res.data);
+              const defaultSub = res.data[0];
+              setFormData((prev) => ({
+                ...prev,
+                district: defaultSub.subdistrict_name,
+                postalCode: defaultSub.postal_code || prev.postalCode
+              }));
+            } else {
+              setRajaSubdistricts([]);
+            }
+          })
+          .catch(() => setRajaSubdistricts([]));
+      }
+    } else {
+      const provinceObj = INDONESIA_REGIONS_DATA[formData.province];
+      const districts = provinceObj && newCity ? provinceObj.cities[newCity] || [] : [];
+      const defaultDistrict = districts[0] || '';
+
+      setFormData((prev) => ({
+        ...prev,
+        city: newCity,
+        district: defaultDistrict
+      }));
+    }
   };
 
-  // Automatic Shipping Fee Calculator based on Province & Service
+  const handleDistrictChange = (newDistrict: string) => {
+    if (isRajaActive) {
+      const matchedSub = rajaSubdistricts.find((s) => s.subdistrict_name === newDistrict);
+      setFormData((prev) => ({
+        ...prev,
+        district: newDistrict,
+        postalCode: matchedSub?.postal_code || prev.postalCode
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, district: newDistrict }));
+    }
+  };
+
+  useEffect(() => {
+    if (!isRajaActive || !formData.city || rajaCities.length === 0) return;
+
+    const matchedCity = rajaCities.find(
+      (c) =>
+        `${c.type} ${c.city_name}`.toLowerCase() === formData.city.toLowerCase() ||
+        c.city_name.toLowerCase() === formData.city.toLowerCase()
+    );
+
+    if (!matchedCity) return;
+
+    let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) {
+        setIsShippingLoading(true);
+      }
+    });
+
+    const weightInGrams = Math.max(1000, quantity * 350);
+
+    const storeCouriers =
+      useStoreSettingsStore.getState().enabledCouriers || 'jne,pos,tiki,sicepat,jnt';
+    const activeCouriers = storeCouriers
+      .split(',')
+      .map((c) => c.trim().toLowerCase())
+      .filter(Boolean);
+
+    Promise.all(
+      activeCouriers.map((courier) =>
+        fetch('/api/v1/shipping/cost', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            destination: matchedCity.city_id,
+            destinationType: 'city',
+            weight: weightInGrams,
+            courier
+          })
+        }).then((res) => res.json())
+      )
+    )
+      .then((results) => {
+        if (!isMounted) return;
+        const options: Array<{
+          key: string;
+          label: string;
+          cost: number;
+          courier: string;
+          etd: string;
+        }> = [];
+
+        results.forEach((res) => {
+          if (res.code === 200 && Array.isArray(res.data)) {
+            res.data.forEach(
+              (courierItem: {
+                code: string;
+                name: string;
+                costs: Array<{
+                  service: string;
+                  description: string;
+                  cost: Array<{ value: number; etd: string }>;
+                }>;
+              }) => {
+                courierItem.costs.forEach((costItem) => {
+                  const price = costItem.cost[0]?.value || 0;
+                  const rawEtd = costItem.cost[0]?.etd || '';
+                  const etdText = rawEtd ? ` (${rawEtd.replace(/hari/i, '').trim()} Hari)` : '';
+                  const keyName = `${courierItem.code.toUpperCase()} ${costItem.service}`;
+                  const labelText = `${courierItem.code.toUpperCase()} ${costItem.service}${etdText} — ${formatPrice(price)}`;
+
+                  options.push({
+                    key: keyName,
+                    label: labelText,
+                    cost: price,
+                    courier: courierItem.name,
+                    etd: rawEtd
+                  });
+                });
+              }
+            );
+          }
+        });
+
+        if (options.length > 0) {
+          setRajaRates(options);
+          setFormData((prev) => ({ ...prev, courierService: options[0].key }));
+        } else {
+          setRajaRates([]);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch RajaOngkir rates:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsShippingLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [formData.city, isRajaActive, quantity, rajaCities]);
+
+  // Dynamic Shipping Fee (RajaOngkir live cost or store setting / offline tariff)
   const shippingFee = useMemo(() => {
+    if (isRajaActive && rajaRates.length > 0) {
+      const activeRate = rajaRates.find((r) => r.key === formData.courierService) || rajaRates[0];
+      return activeRate ? activeRate.cost : 15000;
+    }
     const provData = PROVINCES_DATA.find((p) => p.name === formData.province);
     const base = provData ? provData.baseRate : flatShippingRate || 15000;
-    const surcharge = SERVICE_SURCHARGES[formData.courierService] || 0;
+    const surchargeInfo = SERVICE_SURCHARGES[formData.courierService];
+    const surcharge = typeof surchargeInfo === 'number' ? surchargeInfo : surchargeInfo?.fee || 0;
     return Math.max(10000, base + surcharge);
-  }, [formData.province, formData.courierService, flatShippingRate]);
+  }, [formData.courierService, formData.province, flatShippingRate, isRajaActive, rajaRates]);
 
-  const subtotal = product ? product.price : 450000;
+  const subtotal = (product ? product.price : 450000) * quantity;
   const totalPrice = subtotal + shippingFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -471,13 +511,14 @@ export default function OrderPage() {
         address: fullAddress,
         notes: '',
         totalPrice,
+        shippingFee,
         items: [
           {
             productId: product.id,
-            name: product.name,
+            name: selectedColor ? `${product.name} — ${selectedColor}` : product.name,
             price: product.price,
             size: selectedSize || 'M',
-            quantity: 1
+            quantity
           }
         ]
       });
@@ -549,11 +590,14 @@ export default function OrderPage() {
                       {product?.name || 'Heavy-Weight Boxy Tee'}
                     </h3>
                     <p className="mt-0.5 font-hanken text-[13px] text-(--cat-on-surface-variant)">
-                      M / {product?.color || 'Hitam'}
+                      {selectedSize || 'M'} /{' '}
+                      <span className="capitalize">
+                        {selectedColor || product?.color || 'Hitam'}
+                      </span>
                     </p>
                     <div className="mt-2 flex items-center justify-between">
                       <span className="font-hanken text-[13px] text-(--cat-on-surface-variant)">
-                        Qty: 1
+                        Qty: {quantity}
                       </span>
                       <span className="font-hanken text-[16px] font-medium text-(--cat-on-surface) tabular-nums">
                         {formatPrice(subtotal)}
@@ -584,7 +628,11 @@ export default function OrderPage() {
                       </div>
                     </span>
                     <span className="font-hanken text-[14px] text-(--cat-on-surface) tabular-nums font-semibold">
-                      {formatPrice(shippingFee)}
+                      {isShippingLoading ? (
+                        <Loader2 size={14} className="animate-spin text-amber-600 inline" />
+                      ) : (
+                        formatPrice(shippingFee)
+                      )}
                     </span>
                   </div>
                 </div>
@@ -601,8 +649,9 @@ export default function OrderPage() {
                 <div className="mt-4 p-3 bg-(--cat-surface-container-low) border border-(--cat-stone) text-[11px] text-(--cat-on-surface-variant) leading-normal flex items-center gap-2">
                   <Calculator size={14} className="shrink-0 opacity-70" />
                   <span>
-                    Tarif ongkir dihitung otomatis berdasarkan provinsi dan layanan kurir yang Anda
-                    pilih.
+                    {isRajaActive
+                      ? 'Tarif ongkir dihitung otomatis secara real-time via RajaOngkir.'
+                      : 'Tarif ongkir dihitung otomatis berdasarkan provinsi dan layanan kurir yang Anda pilih.'}
                   </span>
                 </div>
               </div>
@@ -665,28 +714,17 @@ export default function OrderPage() {
                     <MapPin size={12} className="opacity-70" />
                     Provinsi Tujuan *
                   </label>
-                  <Select
+                  <SearchableSelect
                     value={formData.province}
-                    onValueChange={(val) => val && handleProvinceChange(val)}
-                  >
-                    <SelectTrigger className="w-full bg-transparent border-0 border-b border-(--cat-stone) rounded-none px-0 py-2 h-auto font-hanken text-[14px] text-(--cat-on-surface) shadow-none focus-visible:ring-0 focus-visible:border-(--cat-charcoal) cursor-pointer">
-                      <SelectValue placeholder="Pilih Provinsi Tujuan" />
-                    </SelectTrigger>
-                    <SelectContent
-                      alignItemWithTrigger={false}
-                      className="max-h-64 bg-white dark:bg-zinc-950 border border-stone-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl shadow-2xl z-50 p-1.5"
-                    >
-                      {PROVINCES_DATA.map((prov) => (
-                        <SelectItem
-                          key={prov.name}
-                          value={prov.name}
-                          className="cursor-pointer text-xs py-2"
-                        >
-                          {prov.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(val) => handleProvinceChange(val)}
+                    options={
+                      isRajaActive && rajaProvinces.length > 0
+                        ? rajaProvinces.map((p) => p.province)
+                        : PROVINCES_DATA.map((p) => p.name)
+                    }
+                    placeholder="Pilih Provinsi Tujuan"
+                    searchPlaceholder="Cari provinsi..."
+                  />
                 </div>
 
                 <div>
@@ -696,28 +734,14 @@ export default function OrderPage() {
                   >
                     Kabupaten / Kota *
                   </label>
-                  <Select
+                  <SearchableSelect
                     value={formData.city}
-                    onValueChange={(val) => val && handleCityChange(val)}
-                  >
-                    <SelectTrigger className="w-full bg-transparent border-0 border-b border-(--cat-stone) rounded-none px-0 py-2 h-auto font-hanken text-[14px] text-(--cat-on-surface) shadow-none focus-visible:ring-0 focus-visible:border-(--cat-charcoal) cursor-pointer">
-                      <SelectValue placeholder="Pilih Kota / Kabupaten" />
-                    </SelectTrigger>
-                    <SelectContent
-                      alignItemWithTrigger={false}
-                      className="max-h-64 bg-white dark:bg-zinc-950 border border-stone-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl shadow-2xl z-50 p-1.5"
-                    >
-                      {availableCities.map((cityName) => (
-                        <SelectItem
-                          key={cityName}
-                          value={cityName}
-                          className="cursor-pointer text-xs py-2"
-                        >
-                          {cityName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(val) => handleCityChange(val)}
+                    options={availableCities}
+                    placeholder="Pilih Kota / Kabupaten"
+                    searchPlaceholder="Cari kota / kabupaten..."
+                    isLoading={isShippingLoading && rajaCities.length === 0}
+                  />
                 </div>
               </div>
 
@@ -728,30 +752,15 @@ export default function OrderPage() {
                     htmlFor="district"
                     className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
                   >
-                    Kecamatan *
+                    {isRajaActive ? 'Kecamatan & Desa / Kelurahan *' : 'Kecamatan *'}
                   </label>
-                  <Select
+                  <SearchableSelect
                     value={formData.district}
-                    onValueChange={(val) => val && setFormData({ ...formData, district: val })}
-                  >
-                    <SelectTrigger className="w-full bg-transparent border-0 border-b border-(--cat-stone) rounded-none px-0 py-2 h-auto font-hanken text-[14px] text-(--cat-on-surface) shadow-none focus-visible:ring-0 focus-visible:border-(--cat-charcoal) cursor-pointer">
-                      <SelectValue placeholder="Pilih Kecamatan" />
-                    </SelectTrigger>
-                    <SelectContent
-                      alignItemWithTrigger={false}
-                      className="max-h-64 bg-white dark:bg-zinc-950 border border-stone-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl shadow-2xl z-50 p-1.5"
-                    >
-                      {availableDistricts.map((distName) => (
-                        <SelectItem
-                          key={distName}
-                          value={distName}
-                          className="cursor-pointer text-xs py-2"
-                        >
-                          {distName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(val) => handleDistrictChange(val)}
+                    options={availableDistricts}
+                    placeholder="Pilih Kecamatan / Desa"
+                    searchPlaceholder="Cari kecamatan / desa..."
+                  />
                 </div>
 
                 <div>
@@ -759,16 +768,31 @@ export default function OrderPage() {
                     htmlFor="postalCode"
                     className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
                   >
-                    Kode Pos
+                    Kode Pos{' '}
+                    {isRajaActive && availablePostalCodes.length > 0 && (
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal lowercase tracking-normal">
+                        (otomatis terisi)
+                      </span>
+                    )}
                   </label>
-                  <input
-                    id="postalCode"
-                    type="text"
-                    value={formData.postalCode}
-                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                    className="w-full bg-transparent border-0 border-b border-(--cat-stone) pb-2 text-[15px] font-mono text-(--cat-on-surface) outline-none focus:border-(--cat-charcoal) transition-colors placeholder:text-(--cat-outline-variant)"
-                    placeholder="5 digit kode pos"
-                  />
+                  {availablePostalCodes.length > 0 ? (
+                    <SearchableSelect
+                      value={formData.postalCode}
+                      onValueChange={(val) => setFormData({ ...formData, postalCode: val })}
+                      options={availablePostalCodes}
+                      placeholder="Pilih Kode Pos"
+                      searchPlaceholder="Cari kode pos..."
+                    />
+                  ) : (
+                    <input
+                      id="postalCode"
+                      type="text"
+                      value={formData.postalCode}
+                      onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                      className="w-full bg-transparent border-0 border-b border-(--cat-stone) pb-2 text-[15px] font-mono text-(--cat-on-surface) outline-none focus:border-(--cat-charcoal) transition-colors placeholder:text-(--cat-outline-variant)"
+                      placeholder="5 digit kode pos"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -776,37 +800,46 @@ export default function OrderPage() {
               <div>
                 <label
                   htmlFor="courierService"
-                  className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
+                  className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2 flex items-center justify-between"
                 >
-                  Opsi Kurir & Layanan Pengiriman *
+                  <span>Opsi Kurir & Layanan Pengiriman *</span>
+                  {isShippingLoading && (
+                    <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-normal lowercase tracking-normal">
+                      <Loader2 size={12} className="animate-spin" /> Menghitung ongkir...
+                    </span>
+                  )}
                 </label>
-                <Select
+                <SearchableSelect
                   value={formData.courierService}
-                  onValueChange={(val) => val && setFormData({ ...formData, courierService: val })}
-                >
-                  <SelectTrigger className="w-full bg-transparent border-0 border-b border-(--cat-stone) rounded-none px-0 py-2 h-auto font-hanken text-[14px] font-medium text-(--cat-on-surface) shadow-none focus-visible:ring-0 focus-visible:border-(--cat-charcoal) cursor-pointer">
-                    <SelectValue placeholder="Pilih Layanan Pengiriman" />
-                  </SelectTrigger>
-                  <SelectContent
-                    alignItemWithTrigger={false}
-                    className="max-h-64 bg-white dark:bg-zinc-950 border border-stone-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl shadow-2xl z-50 p-1.5"
-                  >
-                    {Object.keys(SERVICE_SURCHARGES).map((serviceName) => {
-                      const provData = PROVINCES_DATA.find((p) => p.name === formData.province);
-                      const base = provData ? provData.baseRate : 15000;
-                      const fee = Math.max(10000, base + SERVICE_SURCHARGES[serviceName]);
-                      return (
-                        <SelectItem
-                          key={serviceName}
-                          value={serviceName}
-                          className="cursor-pointer text-xs py-2"
-                        >
-                          {serviceName} — {formatPrice(fee)}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                  onValueChange={(val) => setFormData({ ...formData, courierService: val })}
+                  options={
+                    isRajaActive && rajaRates.length > 0
+                      ? rajaRates
+                          .filter((rate) => {
+                            const code = (rate.key.split(' ')[0] || '').toLowerCase();
+                            return activeCourierCodes.includes(code);
+                          })
+                          .map((rate) => ({ label: rate.label, value: rate.key }))
+                      : Object.entries(SERVICE_SURCHARGES)
+                          .filter(([, info]) => activeCourierCodes.includes(info.code))
+                          .map(([serviceName, info]) => {
+                            const provData = PROVINCES_DATA.find(
+                              (p) => p.name === formData.province
+                            );
+                            const base = provData ? provData.baseRate : flatShippingRate || 15000;
+                            const fee = Math.max(10000, base + info.fee);
+                            return {
+                              label: `${serviceName} — ${formatPrice(fee)}`,
+                              value: serviceName
+                            };
+                          })
+                  }
+                  placeholder={
+                    isShippingLoading ? 'Memuat tarif ongkir...' : 'Pilih Layanan Pengiriman'
+                  }
+                  searchPlaceholder="Cari kurir / layanan..."
+                  isLoading={isShippingLoading}
+                />
               </div>
 
               {/* Detailed Street Address */}
@@ -820,34 +853,48 @@ export default function OrderPage() {
                 <textarea
                   id="streetAddress"
                   required
-                  rows={2}
+                  rows={3}
                   value={formData.streetAddress}
                   onChange={(e) => setFormData({ ...formData, streetAddress: e.target.value })}
-                  className="w-full bg-transparent border-0 border-b border-(--cat-stone) pb-2 font-hanken text-[15px] text-(--cat-on-surface) outline-none focus:border-(--cat-charcoal) transition-colors resize-none placeholder:text-(--cat-outline-variant)"
-                  placeholder="Nama jalan, nomor rumah, RT/RW, gedung, atau patokan"
+                  className="w-full bg-transparent border border-(--cat-stone) p-3 font-hanken text-[14px] text-(--cat-on-surface) outline-none focus:border-(--cat-charcoal) transition-colors placeholder:text-(--cat-outline-variant) resize-none"
+                  placeholder="Nama jalan, nomor rumah, RT/RW, gedung, atau patokan lokasi"
                 />
               </div>
 
-              {/* CAPTCHA Anti-Spam Challenge */}
-              <CaptchaChallenge
-                onVerify={(verified) => setIsCaptchaVerified(verified)}
-                isVerified={isCaptchaVerified}
-              />
+              {/* CAPTCHA Challenge */}
+              <div className="pt-4 border-t border-(--cat-stone)">
+                <CaptchaChallenge
+                  onVerify={(verified) => setIsCaptchaVerified(verified)}
+                  isVerified={isCaptchaVerified}
+                />
+              </div>
 
               {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={!isValid || !isCaptchaVerified || isSubmitting}
-                className={cn(
-                  'inline-flex items-center justify-center gap-2 px-12 py-3.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity duration-150',
-                  isValid && isCaptchaVerified && !isSubmitting
-                    ? 'bg-(--cat-charcoal) text-white hover:opacity-85 cursor-pointer'
-                    : 'bg-(--cat-secondary-container) text-(--cat-on-secondary-container) cursor-not-allowed'
-                )}
-              >
-                {isSubmitting ? 'Memproses...' : 'Lanjutkan ke Tinjauan'}
-                {!isSubmitting && <ArrowRight size={14} strokeWidth={2} />}
-              </button>
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={!isValid || !isCaptchaVerified || isSubmitting}
+                  className={cn(
+                    'w-full py-4 px-8 font-hanken text-[12px] font-semibold uppercase tracking-[0.12em] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer',
+                    isValid && isCaptchaVerified && !isSubmitting
+                      ? 'bg-(--cat-charcoal) text-white hover:opacity-90'
+                      : 'bg-(--cat-secondary-container) text-(--cat-on-secondary-container) opacity-50 cursor-not-allowed'
+                  )}
+                >
+                  {isSubmitting ? (
+                    <span>Memproses Pesanan...</span>
+                  ) : (
+                    <>
+                      <span>Konfirmasi & Buat Pesanan</span>
+                      <ArrowRight size={16} />
+                    </>
+                  )}
+                </button>
+                <p className="mt-3 text-center font-hanken text-[11px] text-(--cat-on-surface-variant)">
+                  Setelah membuat pesanan, tim kami akan menghubungi Anda melalui WhatsApp untuk
+                  konfirmasi & instruksi pembayaran.
+                </p>
+              </div>
             </div>
           </div>
         </form>

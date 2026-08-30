@@ -18,6 +18,10 @@ const STATUS_CONFIG: Record<ProductStatus, { label: string; className: string }>
   COMING_SOON: {
     label: 'Segera Hadir',
     className: 'text-(--cat-accent-cobalt)'
+  },
+  PRE_ORDER: {
+    label: 'Pre-Order',
+    className: 'text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-0.5 border border-amber-500/20'
   }
 };
 

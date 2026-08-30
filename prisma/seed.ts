@@ -38,7 +38,7 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.user.create({
     data: {
-      id: 'usr-admin-1',
+      id: 'clt1usr00000008j7dj3l8dns',
       name: 'Admin RIO COLLECTION',
       email: 'admin@riocollection.id',
       role: 'Admin',
@@ -50,19 +50,19 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.category.createMany({
     data: [
-      { id: 'cat-1', name: 'Heavy-Weight', slug: 'heavy-weight', description: 'Kaos berbobot tebal berkualitas tinggi' },
-      { id: 'cat-2', name: 'Graphic Edition', slug: 'graphic-edition', description: 'Kaos dengan sablon seni visual grafis' },
-      { id: 'cat-3', name: 'Core Silhouette', slug: 'core-silhouette', description: 'Potongan siluet dasar brand' }
+      { id: 'clt1cat00000108j7dj3l8dns', name: 'Heavy-Weight', slug: 'heavy-weight', description: 'Kaos berbobot tebal berkualitas tinggi' },
+      { id: 'clt1cat00000208j7dj3l8dns', name: 'Graphic Edition', slug: 'graphic-edition', description: 'Kaos dengan sablon seni visual grafis' },
+      { id: 'clt1cat00000308j7dj3l8dns', name: 'Core Silhouette', slug: 'core-silhouette', description: 'Potongan siluet dasar brand' }
     ]
   });
 
   await prisma.color.deleteMany();
   await prisma.color.createMany({
     data: [
-      { id: 'col-1', name: 'Hitam', hex: '#1A1A1A' },
-      { id: 'col-2', name: 'Putih', hex: '#FAFAFA' },
-      { id: 'col-3', name: 'Abu-abu', hex: '#B0B0B0' },
-      { id: 'col-4', name: 'Navy', hex: '#1B2A4A' }
+      { id: 'clt1col00000108j7dj3l8dns', name: 'Hitam', hex: '#1A1A1A' },
+      { id: 'clt1col00000208j7dj3l8dns', name: 'Putih', hex: '#FAFAFA' },
+      { id: 'clt1col00000308j7dj3l8dns', name: 'Abu-abu', hex: '#B0B0B0' },
+      { id: 'clt1col00000408j7dj3l8dns', name: 'Navy', hex: '#1B2A4A' }
     ]
   });
 
@@ -84,7 +84,7 @@ async function main() {
 
   const productsData = [
     {
-      id: 'prod-001',
+      id: 'clt1prd00000108j7dj3l8dns',
       name: 'Heavy-Weight Boxy Tee',
       slug: 'heavy-weight-boxy-tee',
       color: 'Hitam',
@@ -109,7 +109,7 @@ async function main() {
       ]
     },
     {
-      id: 'prod-002',
+      id: 'clt1prd00000208j7dj3l8dns',
       name: 'Graphic Edition 01',
       slug: 'graphic-edition-01',
       color: 'Putih',
@@ -134,7 +134,7 @@ async function main() {
       ]
     },
     {
-      id: 'prod-003',
+      id: 'clt1prd00000308j7dj3l8dns',
       name: 'Core Silhouette',
       slug: 'core-silhouette',
       color: 'Abu-abu',
@@ -158,7 +158,7 @@ async function main() {
       ]
     },
     {
-      id: 'prod-004',
+      id: 'clt1prd00000408j7dj3l8dns',
       name: 'Essential Oversized',
       slug: 'essential-oversized',
       color: 'Putih',
@@ -183,7 +183,7 @@ async function main() {
       ]
     },
     {
-      id: 'prod-005',
+      id: 'clt1prd00000508j7dj3l8dns',
       name: 'Midnight Structure',
       slug: 'midnight-structure',
       color: 'Navy',
@@ -227,7 +227,7 @@ async function main() {
   await prisma.archive.createMany({
     data: [
       {
-        id: 'arch-001',
+        id: 'clt1arc00000108j7dj3l8dns',
         name: 'Edition 00 — Genesis',
         slug: 'edition-00-genesis',
         status: 'SOLD_OUT',
@@ -235,7 +235,7 @@ async function main() {
         description: 'The inaugural drop that started it all. Raw construction, zero compromise.'
       },
       {
-        id: 'arch-002',
+        id: 'clt1arc00000208j7dj3l8dns',
         name: 'Edition 00 — Proto',
         slug: 'edition-00-proto',
         status: 'SOLD_OUT',
@@ -249,11 +249,11 @@ async function main() {
   await prisma.topic.deleteMany();
   await prisma.topic.createMany({
     data: [
-      { id: 'top-1', name: 'PROSES KREATIF', description: 'Dokumentasi proses perancangan produk' },
-      { id: 'top-2', name: 'CULTURE', description: 'Artikel seputar budaya dan brand lifestyle' },
-      { id: 'top-3', name: 'PROCESS', description: 'Langkah pengerjaan sablon dan bahan' },
-      { id: 'top-4', name: 'DESIGN', description: 'Estetika desain pakaian minimalis' },
-      { id: 'top-5', name: 'MATERIAL STUDY', description: 'Pembahasan jenis kain katun bersertifikat' }
+      { id: 'clt1top00000108j7dj3l8dns', name: 'PROSES KREATIF', description: 'Dokumentasi proses perancangan produk' },
+      { id: 'clt1top00000208j7dj3l8dns', name: 'CULTURE', description: 'Artikel seputar budaya dan brand lifestyle' },
+      { id: 'clt1top00000308j7dj3l8dns', name: 'PROCESS', description: 'Langkah pengerjaan sablon dan bahan' },
+      { id: 'clt1top00000408j7dj3l8dns', name: 'DESIGN', description: 'Estetika desain pakaian minimalis' },
+      { id: 'clt1top00000508j7dj3l8dns', name: 'MATERIAL STUDY', description: 'Pembahasan jenis kain katun bersertifikat' }
     ]
   });
 
@@ -261,7 +261,7 @@ async function main() {
   await prisma.journal.createMany({
     data: [
       {
-        id: 'journal-001',
+        id: 'clt1jrn00000108j7dj3l8dns',
         date: '12 Oktober 2024',
         slug: 'pencarian-katun-sempurna',
         title: 'Pencarian Katun Sempurna',
@@ -280,7 +280,7 @@ async function main() {
         ]
       },
       {
-        id: 'journal-002',
+        id: 'clt1jrn00000208j7dj3l8dns',
         date: '28 September 2024',
         slug: 'melihat-di-balik-layar',
         title: 'Melihat di Balik Layar: Arsitektur Sebuah Koleksi',
@@ -301,9 +301,9 @@ async function main() {
   await prisma.testimony.deleteMany();
   await prisma.testimony.createMany({
     data: [
-      { id: 'test-1', alt: 'Customer WhatsApp Chat Screenshot 1', imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80' },
-      { id: 'test-2', alt: 'Customer WhatsApp Chat Screenshot 2', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80' },
-      { id: 'test-3', alt: 'Customer WhatsApp Chat Screenshot 3', imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&auto=format&fit=crop&q=80' }
+      { id: 'clt1tst00000108j7dj3l8dns', alt: 'Customer WhatsApp Chat Screenshot 1', imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80' },
+      { id: 'clt1tst00000208j7dj3l8dns', alt: 'Customer WhatsApp Chat Screenshot 2', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80' },
+      { id: 'clt1tst00000308j7dj3l8dns', alt: 'Customer WhatsApp Chat Screenshot 3', imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&auto=format&fit=crop&q=80' }
     ]
   });
 
@@ -313,7 +313,7 @@ async function main() {
 
   await prisma.order.create({
     data: {
-      id: 'ord-001',
+      id: 'clt1ord00000108j7dj3l8dns',
       orderNumber: 'RC-8801',
       fullName: 'Budi Santoso',
       whatsapp: '628123456789',
@@ -328,7 +328,7 @@ async function main() {
             size: 'L',
             price: 450000,
             quantity: 1,
-            productId: 'prod-001'
+            productId: 'clt1prd00000108j7dj3l8dns'
           }
         ]
       }
@@ -337,7 +337,7 @@ async function main() {
 
   await prisma.order.create({
     data: {
-      id: 'ord-002',
+      id: 'clt1ord00000208j7dj3l8dns',
       orderNumber: 'RC-8802',
       fullName: 'Clara Sinta',
       whatsapp: '628987654321',
@@ -352,7 +352,7 @@ async function main() {
             size: 'M',
             price: 550000,
             quantity: 2,
-            productId: 'prod-002'
+            productId: 'clt1prd00000208j7dj3l8dns'
           }
         ]
       }

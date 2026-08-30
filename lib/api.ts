@@ -191,6 +191,7 @@ export async function submitOrder(orderPayload: {
   address: string;
   notes?: string;
   totalPrice?: number;
+  shippingFee?: number;
   items: Array<{ productId?: string; name?: string; price?: number; size: string; quantity: number }>;
 }) {
   const baseUrl = getBaseUrl();

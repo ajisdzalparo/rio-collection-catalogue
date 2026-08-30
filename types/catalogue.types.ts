@@ -1,4 +1,4 @@
-export type ProductStatus = 'AVAILABLE' | 'SOLD_OUT' | 'COMING_SOON';
+export type ProductStatus = 'AVAILABLE' | 'SOLD_OUT' | 'COMING_SOON' | 'PRE_ORDER';
 export type StockMode = 'QUANTITY' | 'ALWAYS_AVAILABLE';
 
 export interface ProductVariant {

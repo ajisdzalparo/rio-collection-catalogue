@@ -47,6 +47,10 @@ export interface StoreSettings {
   waTemplatePayment?: string;
   waTemplateShipping?: string;
   waTemplateRemind?: string;
+  enabledCouriers?: string;
+  originCityId?: string;
+  originCityName?: string;
+  originProvinceName?: string;
 }
 
 interface StoreSettingsState extends StoreSettings {

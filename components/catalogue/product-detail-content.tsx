@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowRight, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import { StatusBadge } from '@/components/catalogue/status-badge';
+import { SizeGuideModal } from '@/components/catalogue/size-guide-modal';
 import type { Product } from '@/types/catalogue.types';
 
 interface ProductDetailContentProps {
@@ -16,6 +17,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const colorsList = useMemo(
     () => (product.colors?.length ? product.colors : [product.color].filter(Boolean)),
@@ -29,21 +31,18 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
 
-  // The cover is always the first image. Photos flagged "Jadikan foto detail"
-  // in the CMS are added after it; if none are flagged, the cover doubles as
-  // the detail image.
+  // Read all images entered in the CMS (cover image + all uploaded detail images)
   const imagesList = useMemo(() => {
-    const configuredDetails = (product.imageDetails ?? []).filter(
-      (image) => image.url && image.isDetail
-    );
-    const hasCmsImageSettings = Array.isArray(product.imageDetails);
-    const detailImages = hasCmsImageSettings
-      ? configuredDetails
-      : (product.images ?? [])
-          .filter((image) => image && image !== product.imageUrl)
-          .map((url) => ({ url, isDetail: true }));
+    const detailUrls = (product.imageDetails ?? [])
+      .map((img) => img.url)
+      .filter(Boolean);
 
-    return [product.imageUrl, ...detailImages.map((image) => image.url)];
+    const fallbackDetails = (product.images ?? [])
+      .filter((img) => img && img !== product.imageUrl);
+
+    const allDetails = detailUrls.length > 0 ? detailUrls : fallbackDetails;
+
+    return Array.from(new Set([product.imageUrl, ...allDetails].filter(Boolean)));
   }, [product.imageDetails, product.images, product.imageUrl]);
 
   const activeImage = imagesList[activeImageIndex] || product.imageUrl;
@@ -56,7 +55,9 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
     setActiveImageIndex((prev) => (prev === imagesList.length - 1 ? 0 : prev + 1));
   };
 
-  const canOrder = product.status === 'AVAILABLE' && selectedSize !== null;
+  const canOrder =
+    (product.status === 'AVAILABLE' || product.status === 'PRE_ORDER') && selectedSize !== null;
+  const selectedColorName = colorsList[selectedColorIndex] || product.color;
 
   return (
     <>
@@ -226,7 +227,10 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
                   Size / Ukuran
                 </p>
-                <button className="font-hanken text-[12px] text-(--cat-on-surface-variant) underline hover:text-(--cat-on-surface) cursor-pointer">
+                <button
+                  onClick={() => setSizeGuideOpen(true)}
+                  className="font-hanken text-[12px] text-(--cat-on-surface-variant) underline hover:text-(--cat-on-surface) cursor-pointer"
+                >
                   Size Guide
                 </button>
               </div>
@@ -280,7 +284,11 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             {/* CTA Button */}
             <div className="mt-8">
               <Link
-                href={canOrder ? `/order` : '#'}
+                href={
+                  canOrder
+                    ? `/order?product=${product.slug}&size=${encodeURIComponent(selectedSize || 'M')}&color=${encodeURIComponent(selectedColorName)}&quantity=${quantity}`
+                    : '#'
+                }
                 onClick={(e) => {
                   if (!canOrder) e.preventDefault();
                 }}
@@ -295,12 +303,14 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                   ? 'Habis'
                   : product.status === 'COMING_SOON'
                     ? 'Segera Hadir'
-                    : selectedSize === null
-                      ? 'Pilih Ukuran'
-                      : 'Request to Order'}
+                    : product.status === 'PRE_ORDER'
+                      ? (selectedSize === null ? 'Pilih Ukuran' : 'Pre-Order Now')
+                      : selectedSize === null
+                        ? 'Pilih Ukuran'
+                        : 'Request to Order'}
                 {canOrder && <ArrowRight size={14} strokeWidth={2} />}
               </Link>
-              {product.status === 'AVAILABLE' && (
+              {(product.status === 'AVAILABLE' || product.status === 'PRE_ORDER') && (
                 <p className="mt-2 font-hanken text-[12px] text-(--cat-on-surface-variant)">
                   Submit your order request. We&apos;ll confirm availability and contact you via
                   WhatsApp for payment.
@@ -372,6 +382,8 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
           </div>
         </div>
       </section>
+
+      <SizeGuideModal isOpen={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
     </>
   );
 }
