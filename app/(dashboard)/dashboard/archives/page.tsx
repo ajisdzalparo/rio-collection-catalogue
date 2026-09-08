@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { MoreHorizontal, Edit, Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +11,14 @@ import { ImageUpload } from '@/components/shared/image-upload';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 import { useArchives, type ArchiveInput } from '@/hooks/use-archives';
 import { useJournals } from '@/hooks/use-journals';
 import { useRbac } from '@/features/users/hooks/use-rbac';
@@ -51,10 +60,47 @@ export default function ArchivesPage() {
     { header: 'Nama Arsip', accessorKey: 'name' },
     { header: 'Slug', accessorKey: 'slug' },
     { header: 'Artikel', cell: (item) => journals.find((journal) => journal.id === item.journalId)?.title || 'Belum ditautkan' },
-    { header: 'Aksi', cell: (item) => <div className="flex gap-2">
-      {hasPermission('products.edit') && <Button variant="outline" onClick={() => edit(item)}>Edit</Button>}
-      {hasPermission('products.delete') && <Button variant="destructive" onClick={() => setDeleting(item)}>Hapus</Button>}
-    </div> }
+    {
+      header: 'Aksi',
+      cell: (item) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Buka menu</span>
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" className="w-40 rounded-2xl border-border/40 p-1.5 shadow-lg">
+            <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">
+              Aksi Arsip
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-border/20 -mx-1 my-1" />
+
+            {hasPermission('products.edit') && (
+              <DropdownMenuItem
+                className="cursor-pointer gap-2 text-xs font-semibold rounded-xl py-2 px-2.5"
+                onClick={() => edit(item)}
+              >
+                <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>Edit Arsip</span>
+              </DropdownMenuItem>
+            )}
+
+            {hasPermission('products.delete') && (
+              <DropdownMenuItem
+                className="cursor-pointer gap-2 text-xs font-semibold rounded-xl py-2 px-2.5 text-destructive focus:text-destructive"
+                onClick={() => setDeleting(item)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Hapus Arsip</span>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    }
   ];
 
   if (!hasPermission('products.view')) return <p>Akses arsip tidak tersedia untuk peran Anda.</p>;
@@ -63,7 +109,12 @@ export default function ArchivesPage() {
     <header className="flex items-center justify-between gap-4">
       <div><h1 className="text-2xl font-bold">Historical Archive</h1>
         <p className="text-sm text-muted-foreground">Kelola koleksi arsip dan pilih artikel jurnal yang dituju.</p></div>
-      {hasPermission('products.create') && <Button onClick={() => edit()}>Tambah Arsip</Button>}
+      {hasPermission('products.create') && (
+        <Button onClick={() => edit()}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          <span>Tambah Arsip</span>
+        </Button>
+      )}
     </header>
     {error && <p role="alert">{error.message}</p>}
     <DataTable columns={columns} data={data} isLoading={isLoading} />
