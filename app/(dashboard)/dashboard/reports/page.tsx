@@ -133,28 +133,31 @@ function ReportsPageContent() {
   }, [orders, period]);
 
   // Calculate Metrics (Revenue, HPP, Profit, Margin)
-  const calculateMetrics = useCallback((orderList: typeof orders) => {
-    let revenue = 0;
-    let totalHpp = 0;
-    let totalQty = 0;
+  const calculateMetrics = useCallback(
+    (orderList: typeof orders) => {
+      let revenue = 0;
+      let totalHpp = 0;
+      let totalQty = 0;
 
-    orderList.forEach((o) => {
-      o.items.forEach((item) => {
-        if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
+      orderList.forEach((o) => {
+        o.items.forEach((item) => {
+          if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
 
-        const rev = item.price * item.quantity;
-        const hpp = (item.cogs || 180000) * item.quantity;
-        revenue += rev;
-        totalHpp += hpp;
-        totalQty += item.quantity;
+          const rev = item.price * item.quantity;
+          const hpp = (item.cogs || 180000) * item.quantity;
+          revenue += rev;
+          totalHpp += hpp;
+          totalQty += item.quantity;
+        });
       });
-    });
 
-    const netProfit = revenue - totalHpp;
-    const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+      const netProfit = revenue - totalHpp;
+      const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
 
-    return { revenue, totalHpp, netProfit, profitMargin, totalQty };
-  }, [selectedProduct]);
+      return { revenue, totalHpp, netProfit, profitMargin, totalQty };
+    },
+    [selectedProduct]
+  );
 
   const currentMetrics = useMemo(
     () => calculateMetrics(currentOrders),
@@ -904,7 +907,7 @@ function ReportsPageContent() {
               </span>
             </div>
 
-            <div className="space-y-3 flex-1 overflow-y-auto max-h-[460px] pr-1">
+            <div className="space-y-3 flex-1 overflow-y-auto max-h-115 pr-1">
               {currentOrders.map((o) => {
                 const matchingItems = o.items.filter(
                   (item) => selectedProduct === 'ALL' || item.name === selectedProduct
