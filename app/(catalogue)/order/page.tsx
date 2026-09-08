@@ -18,101 +18,6 @@ interface ShippingOption {
   courierCode: string; service: string; destination: string;
 }
 
-const PROVINCES_DATA = [
-  { name: 'DKI Jakarta', baseRate: 10000 },
-  { name: 'Jawa Barat', baseRate: 12000 },
-  { name: 'Banten', baseRate: 12000 },
-  { name: 'Jawa Tengah', baseRate: 15000 },
-  { name: 'DI Yogyakarta', baseRate: 15000 },
-  { name: 'Jawa Timur', baseRate: 18000 },
-  { name: 'Bali', baseRate: 22000 },
-  { name: 'Sumatera Utara', baseRate: 28000 },
-  { name: 'Sumatera Selatan', baseRate: 25000 },
-  { name: 'Sumatera Barat', baseRate: 26000 },
-  { name: 'Riau / Kep. Riau', baseRate: 30000 },
-  { name: 'Lampung', baseRate: 22000 },
-  { name: 'Kalimantan Barat', baseRate: 35000 },
-  { name: 'Kalimantan Timur', baseRate: 38000 },
-  { name: 'Sulawesi Selatan', baseRate: 36000 },
-  { name: 'Sulawesi Utara', baseRate: 42000 },
-  { name: 'Nusa Tenggara Barat', baseRate: 28000 },
-  { name: 'Nusa Tenggara Timur', baseRate: 35000 },
-  { name: 'Maluku / Maluku Utara', baseRate: 55000 },
-  { name: 'Papua / Papua Barat', baseRate: 70000 }
-];
-
-const INDONESIA_REGIONS_DATA: Record<
-  string,
-  {
-    cities: Record<string, string[]>;
-  }
-> = {
-  'DKI Jakarta': {
-    cities: {
-      'Jakarta Selatan': [
-        'Kebayoran Baru',
-        'Kebayoran Lama',
-        'Cilandak',
-        'Pesanggrahan',
-        'Pasar Minggu',
-        'Jagakarsa',
-        'Tebet'
-      ],
-      'Jakarta Pusat': ['Gambir', 'Tanah Abang', 'Menteng', 'Senen', 'Cempaka Putih', 'Kemayoran'],
-      'Jakarta Barat': ['Cengkareng', 'Grogol Petamburan', 'Taman Sari', 'Kebon Jeruk', 'Palmerah'],
-      'Jakarta Timur': [
-        'Matraman',
-        'Pulo Gadung',
-        'Jatinegara',
-        'Duren Sawit',
-        'Kramat Jati',
-        'Cakung'
-      ],
-      'Jakarta Utara': ['Penjaringan', 'Pademangan', 'Tanjung Priok', 'Kelapa Gading']
-    }
-  },
-  'Jawa Barat': {
-    cities: {
-      'Kota Bandung': ['Coblong', 'Sukajadi', 'Cicendo', 'Andir', 'Lengkong', 'Sumur Bandung'],
-      'Kabupaten Bandung': ['Baleendah', 'Dayeuhkolot', 'Bojongsoang', 'Soreang'],
-      'Kota Bekasi': ['Bekasi Barat', 'Bekasi Timur', 'Bekasi Utara', 'Bekasi Selatan'],
-      'Kota Bogor': ['Bogor Tengah', 'Bogor Utara', 'Bogor Selatan', 'Tanah Sareal'],
-      'Kota Depok': ['Beji', 'Pancasoran Mas', 'Sukmajaya', 'Cimanggis', 'Sawangan']
-    }
-  },
-  Banten: {
-    cities: {
-      'Kota Tangerang': ['Tangerang', 'Karawaci', 'Cibodas', 'Ciledug'],
-      'Kota Tangerang Selatan': ['BSD City / Serpong', 'Pondok Aren', 'Ciputat', 'Pamulang'],
-      'Kabupaten Tangerang': ['Tigaraksa', 'Cikupa', 'Balaraja', 'Kelapa Dua']
-    }
-  },
-  'Jawa Tengah': {
-    cities: {
-      'Kota Semarang': ['Semarang Tengah', 'Semarang Barat', 'Semarang Timur', 'Banyumanik'],
-      'Kota Surakarta (Solo)': ['Banjarsari', 'Jebres', 'Laweyan', 'Pasar Kliwon']
-    }
-  },
-  'DI Yogyakarta': {
-    cities: {
-      'Kota Yogyakarta': ['Gondokusuman', 'Danurejan', 'Malioboro', 'Kraton', 'Umbulharjo'],
-      'Kabupaten Sleman': ['Depok (Gejayan/Seturan)', 'Sleman', 'Mlati', 'Kalasan']
-    }
-  },
-  'Jawa Timur': {
-    cities: {
-      'Kota Surabaya': ['Tegalsari', 'Genteng', 'Gubeng', 'Wonokromo', 'Rungkut'],
-      'Kota Malang': ['Klojen', 'Lowokwaru', 'Blimbing', 'Sukun']
-    }
-  },
-  Bali: {
-    cities: {
-      'Kota Denpasar': ['Denpasar Barat', 'Denpasar Timur', 'Denpasar Selatan'],
-      'Kabupaten Badung': ['Kuta', 'Kuta Utara (Canggu/Seminyak)', 'Nusa Dua']
-    }
-  }
-};
-
 export default function OrderPage() {
   const router = useRouter();
   const enabledCouriersSetting = useStoreSettingsStore((s) => s.enabledCouriers);
@@ -132,12 +37,12 @@ export default function OrderPage() {
   const [formData, setFormData] = useState({
     fullName: '',
     whatsapp: '',
-    province: 'DKI Jakarta',
-    city: 'Jakarta Selatan',
-    district: 'Kebayoran Baru',
+    province: '',
+    city: '',
+    district: '',
     postalCode: '',
     streetAddress: '',
-    courierService: 'JNE Regular (2-3 Hari)'
+    courierService: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
@@ -145,15 +50,14 @@ export default function OrderPage() {
   const [captchaReset, setCaptchaReset] = useState(0);
   const [submitError, setSubmitError] = useState('');
 
-  // Hybrid Shipping API States (RajaOngkir Sandbox / Live Mode + Offline Fallback)
-  const [isRajaActive, setIsRajaActive] = useState(false);
-  const [rajaProvinces, setRajaProvinces] = useState<
+  // Dynamic Shipping Locations & Rates
+  const [provinces, setProvinces] = useState<
     Array<{ province_id: string; province: string }>
   >([]);
-  const [rajaCities, setRajaCities] = useState<
+  const [cities, setCities] = useState<
     Array<{ city_id: string; province_id: string; city_name: string; type: string }>
   >([]);
-  const [rajaSubdistricts, setRajaSubdistricts] = useState<
+  const [subdistricts, setSubdistricts] = useState<
     Array<{ subdistrict_id: string; subdistrict_name: string; postal_code?: string }>
   >([]);
   const [rajaRates, setRajaRates] = useState<
@@ -190,189 +94,180 @@ export default function OrderPage() {
       }
     });
 
-    // Check if RajaOngkir API is active (Sandbox key or Live key in .env)
+    // Fetch dynamic provinces
     fetch('/api/v1/shipping/provinces')
       .then((res) => res.json())
       .then((res) => {
         if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
-          setIsRajaActive(true);
-          setRajaProvinces(res.data);
+          setProvinces(res.data);
           const defaultProv = res.data[0];
           setFormData((prev) => ({ ...prev, province: defaultProv.province }));
 
-          // Fetch cities for initial RajaOngkir province
+          // Fetch cities for initial province
           fetch(
             `/api/v1/shipping/cities?provinceId=${defaultProv.province_id}&provinceName=${encodeURIComponent(defaultProv.province)}`
           )
             .then((cRes) => cRes.json())
             .then((cRes) => {
               if (cRes.code === 200 && Array.isArray(cRes.data) && cRes.data.length > 0) {
-                setRajaCities(cRes.data);
+                setCities(cRes.data);
                 const defaultCity = `${cRes.data[0].type} ${cRes.data[0].city_name}`;
                 setFormData((prev) => ({ ...prev, city: defaultCity }));
+
+                // Fetch subdistricts for initial city
+                fetch(
+                  `/api/v1/shipping/subdistricts?cityId=${cRes.data[0].city_id}&cityName=${encodeURIComponent(cRes.data[0].city_name)}`
+                )
+                  .then((sRes) => sRes.json())
+                  .then((sRes) => {
+                    if (sRes.code === 200 && Array.isArray(sRes.data) && sRes.data.length > 0) {
+                      setSubdistricts(sRes.data);
+                      setFormData((prev) => ({
+                        ...prev,
+                        district: sRes.data[0].subdistrict_name,
+                        postalCode: sRes.data[0].postal_code || prev.postalCode
+                      }));
+                    }
+                  })
+                  .catch(() => {});
               }
             })
             .catch(() => {});
-        } else {
-          setIsRajaActive(false);
         }
       })
-      .catch(() => {
-        setIsRajaActive(false);
+      .catch((err) => {
+        console.error('Failed to load provinces:', err);
       });
   }, []);
 
   const availableCities = useMemo(() => {
-    if (isRajaActive && rajaCities.length > 0) {
-      return rajaCities.map((c) => {
-        if (c.city_name.toLowerCase().startsWith(c.type.toLowerCase())) {
-          return c.city_name;
-        }
-        return `${c.type} ${c.city_name}`;
-      });
-    }
-    const provinceObj = INDONESIA_REGIONS_DATA[formData.province];
-    if (provinceObj) {
-      return Object.keys(provinceObj.cities);
-    }
-    return [];
-  }, [formData.province, isRajaActive, rajaCities]);
+    return cities.map((c) => {
+      if (c.city_name.toLowerCase().startsWith(c.type.toLowerCase())) {
+        return c.city_name;
+      }
+      return `${c.type} ${c.city_name}`;
+    });
+  }, [cities]);
 
   const availableDistricts = useMemo(() => {
-    if (isRajaActive && rajaSubdistricts.length > 0) {
-      return rajaSubdistricts.map((s) => s.subdistrict_name);
-    }
-    const provinceObj = INDONESIA_REGIONS_DATA[formData.province];
-    if (provinceObj && formData.city) {
-      return provinceObj.cities[formData.city] || [];
-    }
-    return [];
-  }, [formData.province, formData.city, isRajaActive, rajaSubdistricts]);
+    return subdistricts.map((s) => s.subdistrict_name);
+  }, [subdistricts]);
 
   const availablePostalCodes = useMemo(() => {
-    if (isRajaActive && rajaSubdistricts.length > 0) {
-      const set = new Set<string>();
-      rajaSubdistricts.forEach((s) => {
-        if (s.postal_code && s.postal_code.trim()) {
-          set.add(s.postal_code.trim());
-        }
-      });
-      return Array.from(set);
-    }
-    return [];
-  }, [isRajaActive, rajaSubdistricts]);
+    const set = new Set<string>();
+    subdistricts.forEach((s) => {
+      if (s.postal_code && s.postal_code.trim()) {
+        set.add(s.postal_code.trim());
+      }
+    });
+    return Array.from(set);
+  }, [subdistricts]);
 
   const handleProvinceChange = (newProvince: string) => {
-    if (isRajaActive) {
-      const matchedRajaProv = rajaProvinces.find(
-        (p) => p.province.toLowerCase() === newProvince.toLowerCase()
-      );
+    const matchedProv = provinces.find(
+      (p) => p.province.toLowerCase() === newProvince.toLowerCase()
+    );
 
-      setFormData((prev) => ({
-        ...prev,
-        province: newProvince,
-        city: '',
-        district: '',
-        courierService: ''
-      }));
+    setFormData((prev) => ({
+      ...prev,
+      province: newProvince,
+      city: '',
+      district: '',
+      postalCode: '',
+      courierService: ''
+    }));
 
-      if (matchedRajaProv) {
-        setIsShippingLoading(true);
-        fetch(
-          `/api/v1/shipping/cities?provinceId=${matchedRajaProv.province_id}&provinceName=${encodeURIComponent(matchedRajaProv.province)}`
-        )
-          .then((res) => res.json())
-          .then((res) => {
-            if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
-              setRajaCities(res.data);
-              const defaultCity = `${res.data[0].type} ${res.data[0].city_name}`;
-              setFormData((prev) => ({ ...prev, city: defaultCity }));
-            }
-          })
-          .catch(() => {})
-          .finally(() => setIsShippingLoading(false));
-      }
-    } else {
-      const provinceObj = INDONESIA_REGIONS_DATA[newProvince];
-      const cities = provinceObj ? Object.keys(provinceObj.cities) : [];
-      const defaultCity = cities[0] || '';
-      const districts = provinceObj && defaultCity ? provinceObj.cities[defaultCity] || [] : [];
-      const defaultDistrict = districts[0] || '';
+    if (matchedProv) {
+      setIsShippingLoading(true);
+      fetch(
+        `/api/v1/shipping/cities?provinceId=${matchedProv.province_id}&provinceName=${encodeURIComponent(matchedProv.province)}`
+      )
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
+            setCities(res.data);
+            const defaultCity = `${res.data[0].type} ${res.data[0].city_name}`;
+            setFormData((prev) => ({ ...prev, city: defaultCity }));
 
-      setFormData((prev) => ({
-        ...prev,
-        province: newProvince,
-        city: defaultCity,
-        district: defaultDistrict
-      }));
+            // Fetch subdistricts for new first city
+            fetch(
+              `/api/v1/shipping/subdistricts?cityId=${res.data[0].city_id}&cityName=${encodeURIComponent(res.data[0].city_name)}`
+            )
+              .then((sRes) => sRes.json())
+              .then((sRes) => {
+                if (sRes.code === 200 && Array.isArray(sRes.data) && sRes.data.length > 0) {
+                  setSubdistricts(sRes.data);
+                  setFormData((prev) => ({
+                    ...prev,
+                    district: sRes.data[0].subdistrict_name,
+                    postalCode: sRes.data[0].postal_code || prev.postalCode
+                  }));
+                }
+              })
+              .catch(() => {});
+          } else {
+            setCities([]);
+            setSubdistricts([]);
+          }
+        })
+        .catch(() => {
+          setCities([]);
+          setSubdistricts([]);
+        })
+        .finally(() => setIsShippingLoading(false));
     }
   };
 
   const handleCityChange = (newCity: string) => {
-    if (isRajaActive) {
-      const matchedCity = rajaCities.find(
-        (c) =>
-          `${c.type} ${c.city_name}`.toLowerCase() === newCity.toLowerCase() ||
-          c.city_name.toLowerCase() === newCity.toLowerCase()
-      );
+    const matchedCity = cities.find(
+      (c) =>
+        `${c.type} ${c.city_name}`.toLowerCase() === newCity.toLowerCase() ||
+        c.city_name.toLowerCase() === newCity.toLowerCase()
+    );
 
-      setFormData((prev) => ({
-        ...prev,
-        city: newCity,
-        district: '',
-        courierService: ''
-      }));
+    setFormData((prev) => ({
+      ...prev,
+      city: newCity,
+      district: '',
+      postalCode: '',
+      courierService: ''
+    }));
 
-      if (matchedCity) {
-        fetch(
-          `/api/v1/shipping/subdistricts?cityId=${matchedCity.city_id}&cityName=${encodeURIComponent(matchedCity.city_name)}`
-        )
-          .then((res) => res.json())
-          .then((res) => {
-            if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
-              setRajaSubdistricts(res.data);
-              const defaultSub = res.data[0];
-              setFormData((prev) => ({
-                ...prev,
-                district: defaultSub.subdistrict_name,
-                postalCode: defaultSub.postal_code || prev.postalCode
-              }));
-            } else {
-              setRajaSubdistricts([]);
-            }
-          })
-          .catch(() => setRajaSubdistricts([]));
-      }
-    } else {
-      const provinceObj = INDONESIA_REGIONS_DATA[formData.province];
-      const districts = provinceObj && newCity ? provinceObj.cities[newCity] || [] : [];
-      const defaultDistrict = districts[0] || '';
-
-      setFormData((prev) => ({
-        ...prev,
-        city: newCity,
-        district: defaultDistrict
-      }));
+    if (matchedCity) {
+      fetch(
+        `/api/v1/shipping/subdistricts?cityId=${matchedCity.city_id}&cityName=${encodeURIComponent(matchedCity.city_name)}`
+      )
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
+            setSubdistricts(res.data);
+            const defaultSub = res.data[0];
+            setFormData((prev) => ({
+              ...prev,
+              district: defaultSub.subdistrict_name,
+              postalCode: defaultSub.postal_code || prev.postalCode
+            }));
+          } else {
+            setSubdistricts([]);
+          }
+        })
+        .catch(() => setSubdistricts([]));
     }
   };
 
   const handleDistrictChange = (newDistrict: string) => {
-    if (isRajaActive) {
-      const matchedSub = rajaSubdistricts.find((s) => s.subdistrict_name === newDistrict);
-      setFormData((prev) => ({
-        ...prev,
-        district: newDistrict,
-        postalCode: matchedSub?.postal_code || prev.postalCode
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, district: newDistrict }));
-    }
+    const matchedSub = subdistricts.find((s) => s.subdistrict_name === newDistrict);
+    setFormData((prev) => ({
+      ...prev,
+      district: newDistrict,
+      postalCode: matchedSub?.postal_code || prev.postalCode
+    }));
   };
 
   useEffect(() => {
-    if (!isRajaActive || !formData.city || rajaCities.length === 0) return;
+    if (!formData.city || cities.length === 0) return;
 
-    const matchedCity = rajaCities.find(
+    const matchedCity = cities.find(
       (c) =>
         `${c.type} ${c.city_name}`.toLowerCase() === formData.city.toLowerCase() ||
         c.city_name.toLowerCase() === formData.city.toLowerCase()
@@ -462,7 +357,7 @@ export default function OrderPage() {
     return () => {
       isMounted = false;
     };
-  }, [formData.city, isRajaActive, quantity, rajaCities, activeCourierCodes]);
+  }, [formData.city, quantity, cities, activeCourierCodes]);
 
   // Only use a tariff returned by the server; the same service is checked at submission.
   const shippingFee = useMemo(() => {
@@ -707,11 +602,7 @@ export default function OrderPage() {
                   <SearchableSelect
                     value={formData.province}
                     onValueChange={(val) => handleProvinceChange(val)}
-                    options={
-                      isRajaActive && rajaProvinces.length > 0
-                        ? rajaProvinces.map((p) => p.province)
-                        : PROVINCES_DATA.map((p) => p.name)
-                    }
+                    options={provinces.map((p) => p.province)}
                     placeholder="Pilih Provinsi Tujuan"
                     searchPlaceholder="Cari provinsi..."
                   />
@@ -730,7 +621,7 @@ export default function OrderPage() {
                     options={availableCities}
                     placeholder="Pilih Kota / Kabupaten"
                     searchPlaceholder="Cari kota / kabupaten..."
-                    isLoading={isShippingLoading && rajaCities.length === 0}
+                    isLoading={isShippingLoading && cities.length === 0}
                   />
                 </div>
               </div>
@@ -742,7 +633,7 @@ export default function OrderPage() {
                     htmlFor="district"
                     className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
                   >
-                    {isRajaActive ? 'Kecamatan & Desa / Kelurahan *' : 'Kecamatan *'}
+                    Kecamatan & Desa / Kelurahan *
                   </label>
                   <SearchableSelect
                     value={formData.district}
@@ -759,7 +650,7 @@ export default function OrderPage() {
                     className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
                   >
                     Kode Pos{' '}
-                    {isRajaActive && availablePostalCodes.length > 0 && (
+                    {availablePostalCodes.length > 0 && (
                       <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal lowercase tracking-normal">
                         (otomatis terisi)
                       </span>

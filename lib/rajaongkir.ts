@@ -4,6 +4,7 @@ import {
   getFallbackSubdistricts
 } from './indonesia-locations';
 import { prisma } from './prisma';
+import { Prisma } from '@prisma/client';
 
 export interface RajaOngkirProvince {
   province_id: string;
@@ -275,8 +276,10 @@ function scaleRatesDataForWeight(
 }
 
 /**
- * Calculate shipping cost: Reads DB cache first, falls back to offline calculation.
- * Zero live API delays during checkout.
+ * Calculate shipping cost:
+ * 1. Reads DB cache first (0ms latency).
+ * 2. On cache miss / expiry, fetches live official rate from RajaOngkir and auto-saves to DB cache.
+ * 3. Falls back to offline calculation if API key is not configured or network fails.
  */
 export async function calculateShippingCost({
   origin,
@@ -318,7 +321,51 @@ export async function calculateShippingCost({
     console.warn('DB Shipping Cache read error:', err);
   }
 
-  // 2. Offline Fallback Calculation (0ms)
+  // 2. Cache-Aside: Fetch live official rate on demand and save to DB
+  if (getApiKey()) {
+    try {
+      const liveRates = await fetchLiveRajaOngkirRatesForSync(
+        originId,
+        destination,
+        courierCode,
+        1000
+      );
+
+      if (liveRates && liveRates.length > 0 && liveRates[0].costs?.length > 0) {
+        const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days valid cache
+        prisma.shippingRateCache
+          .upsert({
+            where: {
+              originCityId_destinationCityId_courier_weightGrams: {
+                originCityId: originId,
+                destinationCityId: destination,
+                courier: courierCode,
+                weightGrams: 1000
+              }
+            },
+            update: {
+              ratesData: liveRates as unknown as Prisma.InputJsonValue,
+              expiresAt
+            },
+            create: {
+              originCityId: originId,
+              destinationCityId: destination,
+              courier: courierCode,
+              weightGrams: 1000,
+              ratesData: liveRates as unknown as Prisma.InputJsonValue,
+              expiresAt
+            }
+          })
+          .catch((saveErr) => console.warn('Failed to auto-cache live shipping rates:', saveErr));
+
+        return scaleRatesDataForWeight(liveRates, 1000, weightGrams);
+      }
+    } catch (apiErr) {
+      console.warn('Live RajaOngkir on-demand query failed, falling back to regional calculation:', apiErr);
+    }
+  }
+
+  // 3. Offline Fallback Calculation (0ms)
   return getOfflineCalculatedRate(destination, courierCode, weightGrams);
 }
 
