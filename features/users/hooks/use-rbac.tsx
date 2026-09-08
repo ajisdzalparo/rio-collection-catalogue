@@ -24,8 +24,22 @@ interface RbacState {
 
 const DEFAULT_ROLES: UserRole[] = [
   {
+    name: 'Super Admin',
+    description: 'Akses tertinggi ke seluruh sistem, manajemen akun, dan konfigurasi master role',
+    isSystemRole: true,
+    isActive: true,
+    permissions: {
+      viewOverview: true,
+      manageOrders: true,
+      manageProducts: true,
+      manageJournal: true,
+      manageSettings: true,
+      viewReports: true
+    }
+  },
+  {
     name: 'Admin',
-    description: 'Akses penuh ke seluruh sistem dan konfigurasi',
+    description: 'Akses penuh ke seluruh sistem dan operasional manajemen',
     isSystemRole: true,
     isActive: true,
     permissions: {
@@ -40,7 +54,7 @@ const DEFAULT_ROLES: UserRole[] = [
   {
     name: 'Developer',
     description: 'Akses penuh teknikal dan debug sistem',
-    isSystemRole: true,
+    isSystemRole: false,
     isActive: true,
     permissions: {
       viewOverview: true,
@@ -54,7 +68,7 @@ const DEFAULT_ROLES: UserRole[] = [
   {
     name: 'Manager',
     description: 'Pengelola operasional toko dan laporan harian',
-    isSystemRole: true,
+    isSystemRole: false,
     isActive: true,
     permissions: {
       viewOverview: true,
@@ -68,7 +82,7 @@ const DEFAULT_ROLES: UserRole[] = [
   {
     name: 'Sales',
     description: 'Pengelola transaksi dan pesanan pelanggan',
-    isSystemRole: true,
+    isSystemRole: false,
     isActive: true,
     permissions: {
       viewOverview: true,
@@ -82,7 +96,7 @@ const DEFAULT_ROLES: UserRole[] = [
   {
     name: 'Designer',
     description: 'Pengelola konten produk dan artikel jurnal',
-    isSystemRole: true,
+    isSystemRole: false,
     isActive: true,
     permissions: {
       viewOverview: true,
@@ -99,7 +113,7 @@ export const useRbacStore = create<RbacState>()(
   persist(
     (set) => ({
       roles: DEFAULT_ROLES,
-      activeRoleName: 'Admin',
+      activeRoleName: 'Super Admin',
       setRoles: (roles) => set({ roles }),
       setActiveRole: (roleName) => set({ activeRoleName: roleName }),
       updateRolePermissions: (roleName, updatedPerms) =>
@@ -149,10 +163,12 @@ export const useRbacStore = create<RbacState>()(
         })),
       deleteRole: (roleName) =>
         set((state) => {
-          const filtered = state.roles.filter((r) => r.name !== roleName || r.isSystemRole);
+          const lower = roleName.toLowerCase();
+          if (lower === 'admin' || lower === 'super admin' || lower === 'superadmin') return state;
+          const filtered = state.roles.filter((r) => r.name.toLowerCase() !== lower);
           return {
             roles: filtered,
-            activeRoleName: state.activeRoleName === roleName ? 'Admin' : state.activeRoleName
+            activeRoleName: state.activeRoleName.toLowerCase() === lower ? 'Super Admin' : state.activeRoleName
           };
         })
     }),
@@ -210,7 +226,14 @@ export function RbacGate({ permission, children, fallback = null }: RbacGateProp
 export function syncRolePermissions(permissions?: RolePermissions, roleName?: string): RolePermissions {
   const synced: RolePermissions = {};
   
-  if (roleName === 'Admin') {
+  const normalizedRole = (roleName || '').toLowerCase().trim();
+  if (
+    normalizedRole === 'admin' ||
+    normalizedRole === 'super admin' ||
+    normalizedRole === 'owner' ||
+    normalizedRole === 'developer' ||
+    normalizedRole.includes('admin')
+  ) {
     PERMISSION_TREE.forEach((menu) => {
       menu.actions.forEach((act) => {
         synced[act.key] = true;
@@ -262,6 +285,14 @@ export function syncRolePermissions(permissions?: RolePermissions, roleName?: st
 
   const reportsVal = hasLegacy('viewReports');
   checkAndSync('reports.view', reportsVal);
+
+  // Fallback for user management permissions
+  if (normalizedRole === 'manager') {
+    checkAndSync('users.view', true);
+    checkAndSync('users.manage', true);
+    checkAndSync('users.reset_password', true);
+    checkAndSync('users.delete', false);
+  }
 
   return synced;
 }

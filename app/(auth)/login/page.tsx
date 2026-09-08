@@ -5,12 +5,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { Lock, Mail, ArrowRight, ShieldCheck, Shirt, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ForgotPasswordDialog } from '@/components/auth/forgot-password-dialog';
 
 export default function LoginPage() {
   const { login, isLoggingIn, loginError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,9 +96,18 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                <span>Kata Sandi (Password)</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-foreground">
+                  <span>Kata Sandi (Password)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                >
+                  Lupa kata sandi?
+                </button>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -162,6 +173,13 @@ export default function LoginPage() {
           <span>Sistem Otorisasi RIO COLLECTION Admin v1.0</span>
         </div>
       </div>
+
+      {/* Forgot Password Recovery Dialog */}
+      <ForgotPasswordDialog
+        open={showForgotPassword}
+        onOpenChange={setShowForgotPassword}
+        defaultEmail={email}
+      />
     </div>
   );
 }

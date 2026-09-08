@@ -1,5 +1,6 @@
 export { default as UserTable } from './components/user-table';
 export * from './components/user-form-dialog';
+export * from './components/reset-password-dialog';
 export * from './components/role-form-dialog';
 export * from './components/role-detail-dialog';
 export * from './components/role-table';

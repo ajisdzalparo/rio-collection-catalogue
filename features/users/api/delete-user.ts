@@ -1,5 +1,5 @@
-import { apiClient } from '@/lib/api/client';
+import axios from 'axios';
 
 export async function deleteUser(id: string): Promise<void> {
-  await apiClient.delete(`/users/${id}`);
+  await axios.delete(`/api/v1/users/${id}`);
 }

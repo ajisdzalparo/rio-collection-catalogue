@@ -124,6 +124,33 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
         description: 'Melihat rincian laporan omzet, profit margin, & HPP toko'
       }
     ]
+  },
+  {
+    id: 'users',
+    menuName: '8. Pengguna & Keamanan (RBAC)',
+    description: 'Akses pengelolaan akun staf, hak akses role, & reset password',
+    actions: [
+      {
+        key: 'users.view',
+        label: 'Lihat Daftar Pengguna',
+        description: 'Melihat akun staf terdaftar dan status aktif'
+      },
+      {
+        key: 'users.manage',
+        label: 'Tambah & Edit Pengguna',
+        description: 'Menambah staf baru atau mengubah detail peran'
+      },
+      {
+        key: 'users.reset_password',
+        label: 'Reset Kata Sandi Staf',
+        description: 'Mereset dan membuat kata sandi baru untuk akun staf'
+      },
+      {
+        key: 'users.delete',
+        label: 'Hapus Akun Pengguna',
+        description: 'Menghapus akun staf dari sistem login dashboard'
+      }
+    ]
   }
 ];
 
@@ -143,6 +170,10 @@ export const DEFAULT_ADMIN_PERMISSIONS: RolePermissions = {
   'settings.view': true,
   'settings.manage': true,
   'reports.view': true,
+  'users.view': true,
+  'users.manage': true,
+  'users.reset_password': true,
+  'users.delete': true,
   // legacy
   viewOverview: true,
   manageOrders: true,

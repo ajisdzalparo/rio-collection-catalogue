@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DataTable, type Column, CMSBadge } from '@/components/shared';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Edit, Trash2, ShieldCheck, CheckCircle2, Eye } from 'lucide-react';
+import { Edit, Trash2, ShieldCheck, CheckCircle2, Eye, Lock } from 'lucide-react';
 import type { UserRole } from '../types/roles.types';
 import { PERMISSION_TREE } from '../data/permission-tree';
 import { useRbacStore, syncRolePermissions } from '../hooks/use-rbac';
+import { toast } from 'sonner';
 
 interface RoleTableProps {
   onEditRole: (role: UserRole) => void;
-  onViewRoleDetail: (role: UserRole) => void;
+  onViewRoleDetail?: (role: UserRole) => void;
 }
 
 export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
+  const router = useRouter();
   const { roles, deleteRole, updateRole } = useRbacStore();
   const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
 
@@ -22,13 +25,36 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
     0
   );
 
+  const isProtectedSystemRole = (name: string) => {
+    const lower = name.toLowerCase().trim();
+    return lower === 'admin' || lower === 'super admin' || lower === 'superadmin';
+  };
+
+  const handleViewDetail = (role: UserRole) => {
+    if (onViewRoleDetail) {
+      onViewRoleDetail(role);
+    } else {
+      router.push(`/users/roles/${encodeURIComponent(role.name.toLowerCase())}`);
+    }
+  };
+
   const handleDelete = (roleName: string) => {
+    if (isProtectedSystemRole(roleName)) {
+      toast.error(`Master role "${roleName}" adalah role sistem utama dan tidak dapat dihapus.`);
+      return;
+    }
     setDeleteTargetRole(roleName);
   };
 
   const confirmDelete = () => {
     if (deleteTargetRole) {
+      if (isProtectedSystemRole(deleteTargetRole)) {
+        toast.error(`Master role "${deleteTargetRole}" adalah role sistem utama dan tidak dapat dihapus.`);
+        setDeleteTargetRole(null);
+        return;
+      }
       deleteRole(deleteTargetRole);
+      toast.success(`Master role "${deleteTargetRole}" berhasil dihapus.`);
       setDeleteTargetRole(null);
     }
   };
@@ -65,7 +91,7 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
           });
         });
 
-        const isFullAccess = activeCount >= totalActionsCount || role.name === 'Admin';
+        const isFullAccess = activeCount >= totalActionsCount || isProtectedSystemRole(role.name);
 
         return (
           <div className="flex items-center py-1">
@@ -94,6 +120,7 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
         <div className="flex items-center justify-center">
           <Switch
             checked={role.isActive ?? true}
+            disabled={isProtectedSystemRole(role.name)}
             onCheckedChange={(checked) => {
               updateRole(role.name, { isActive: checked });
             }}
@@ -109,7 +136,7 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => onViewRoleDetail(role)}
+            onClick={() => handleViewDetail(role)}
             className="h-8 px-2 cursor-pointer gap-1.5 text-xs font-semibold hover:bg-muted"
             title="Lihat Detail Role"
           >
@@ -128,7 +155,17 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
             <span className="hidden sm:inline">Edit</span>
           </Button>
 
-          {!role.isSystemRole && (
+          {isProtectedSystemRole(role.name) ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled
+              className="h-8 w-8 p-0 opacity-40 cursor-not-allowed text-muted-foreground"
+              title={`Role sistem ${role.name} tidak dapat dihapus`}
+            >
+              <Lock className="h-3.5 w-3.5" />
+            </Button>
+          ) : (
             <Button
               size="sm"
               variant="ghost"

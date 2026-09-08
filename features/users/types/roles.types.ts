@@ -28,6 +28,12 @@ export interface RolePermissions {
   // Reports
   'reports.view'?: boolean;
 
+  // Users & Security RBAC
+  'users.view'?: boolean;
+  'users.manage'?: boolean;
+  'users.reset_password'?: boolean;
+  'users.delete'?: boolean;
+
   // Legacy fallback keys
   viewOverview?: boolean;
   manageOrders?: boolean;

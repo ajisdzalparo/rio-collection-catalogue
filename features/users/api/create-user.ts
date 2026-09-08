@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api/client';
+import axios from 'axios';
 import { userKeys } from '../keys';
 import type { User } from '../types/user.types';
 import type { CreateUserSchema } from '../schemas/schema';
@@ -10,15 +10,15 @@ export function useCreateUserMutation() {
 
   return useMutation({
     mutationFn: async (payload: CreateUserSchema) => {
-      const response = await apiClient.post<User>('/users', payload);
-      return response.data;
+      const response = await axios.post<{ data: User }>('/api/v1/users', payload);
+      return response.data.data;
     },
     onSuccess: () => {
-      toast.success('User created successfully');
+      toast.success('Pengguna berhasil ditambahkan.');
       queryClient.invalidateQueries({ queryKey: userKeys.all });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create user');
+      toast.error(error.message || 'Gagal menambahkan pengguna.');
     }
   });
 }

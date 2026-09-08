@@ -5,7 +5,15 @@ async function handleProxy(request: NextRequest, props: { params: Promise<{ path
   const params = await props.params;
   const pathStr = params.path ? params.path.join('/') : '';
   const searchParams = request.nextUrl.search;
-  const targetUrl = `${env.backendUrl.replace(/\/$/, '')}/${pathStr}${searchParams}`;
+
+  // Resolve target absolute URL
+  let targetUrl: string;
+  if (env.backendUrl.startsWith('http')) {
+    targetUrl = `${env.backendUrl.replace(/\/$/, '')}/${pathStr}${searchParams}`;
+  } else {
+    const origin = request.nextUrl.origin || 'http://localhost:3000';
+    targetUrl = `${origin}/api/v1/${pathStr}${searchParams}`;
+  }
 
   const token = request.cookies.get('auth_token')?.value || request.headers.get('authorization')?.replace('Bearer ', '');
 
