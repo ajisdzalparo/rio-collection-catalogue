@@ -68,6 +68,7 @@ function MasterDataPageContent() {
     updateColor,
     deleteColor,
     toggleSize,
+    addSize,
     addTopic,
     updateTopic,
     deleteTopic,
@@ -227,6 +228,15 @@ function MasterDataPageContent() {
           addTopic(itemName, itemDesc);
         } else if (activeTab === 'editions') {
           addEdition(itemName, itemDesc);
+        } else if (activeTab === 'sizes') {
+          const upperSize = itemName.trim().toUpperCase();
+          if (upperSize) {
+            try {
+              await masterMutations.addSize({ size: upperSize });
+            } catch {}
+            addSize(upperSize);
+            toast.success(`Ukuran "${upperSize}" berhasil ditambahkan`);
+          }
         } else if (activeTab === 'banks') {
           await masterMutations.addBank({
             name: itemName,
@@ -600,15 +610,13 @@ function MasterDataPageContent() {
           <p className="text-sm text-muted-foreground pt-1">{currentInfo.desc}</p>
         </VStack>
 
-        {activeTab !== 'sizes' && (
-          <Button
-            onClick={handleOpenCreate}
-            className="gap-2 h-10 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Tambah Data</span>
-          </Button>
-        )}
+        <Button
+          onClick={handleOpenCreate}
+          className="gap-2 h-10 px-4 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs"
+        >
+          <Plus className="h-4 w-4" />
+          <span>{activeTab === 'sizes' ? 'Tambah Ukuran' : 'Tambah Data'}</span>
+        </Button>
       </Flex>
 
       {/* Tab Panels */}
@@ -725,6 +733,14 @@ function MasterDataPageContent() {
                 )}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="h-14 flex items-center justify-center gap-2 px-4 font-bold border border-dashed border-border/60 hover:border-primary text-primary hover:bg-primary/5 rounded-2xl transition-all cursor-pointer select-none text-xs"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Tambah Ukuran</span>
+            </button>
           </div>
         </div>
       )}
@@ -734,19 +750,23 @@ function MasterDataPageContent() {
         <DialogContent className="max-w-md bg-card border-border/40 rounded-2xl">
           <DialogHeader className="border-b border-border/20 pb-4">
             <DialogTitle className="text-sm font-extrabold flex items-center gap-2 uppercase tracking-widest text-muted-foreground/80">
-              {editingItem ? 'Edit Data Master' : 'Tambah Data Master Baru'}
+              {editingItem ? 'Edit Data Master' : activeTab === 'sizes' ? 'Tambah Ukuran Kaos' : 'Tambah Data Master Baru'}
             </DialogTitle>
             <DialogDescription className="text-xs pt-1">
               {editingItem
                 ? 'Update detail parameter master data Anda.'
-                : `Lengkapi parameter baru untuk tab ${activeTab === 'categories' ? 'Kategori Kaos' : activeTab === 'colors' ? 'Warna' : activeTab === 'banks' ? 'Master Bank' : 'Topik Jurnal'}.`}
+                : `Lengkapi parameter baru untuk tab ${activeTab === 'categories' ? 'Kategori Kaos' : activeTab === 'colors' ? 'Warna' : activeTab === 'sizes' ? 'Ukuran Kaos' : activeTab === 'banks' ? 'Master Bank' : 'Topik Jurnal'}.`}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
               <Label htmlFor="item-name" className="text-xs font-bold text-foreground">
-                Nama / Label Bank
+                {activeTab === 'banks'
+                  ? 'Nama / Label Bank'
+                  : activeTab === 'sizes'
+                    ? 'Nama / Kode Ukuran (misal: XS, 3XL, All Size)'
+                    : 'Nama'}
               </Label>
               <Input
                 id="item-name"
@@ -756,7 +776,9 @@ function MasterDataPageContent() {
                 placeholder={
                   activeTab === 'banks'
                     ? 'Misal: Bank BCA, Mandiri, Bank Jago...'
-                    : 'Misal: Heavy-Weight, Crimson Red, Culture...'
+                    : activeTab === 'sizes'
+                      ? 'Misal: XS, 3XL, 4XL, All Size...'
+                      : 'Misal: Heavy-Weight, Crimson Red, Culture...'
                 }
                 className="h-10 rounded-xl"
                 required

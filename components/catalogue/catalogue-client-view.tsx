@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { FilterTabs } from '@/components/catalogue/filter-tabs';
 import { ProductCard } from '@/components/catalogue/product-card';
+import { cn } from '@/lib/utils';
 import type { Product, ArchiveCollection } from '@/types/catalogue.types';
 
 const FILTER_TABS = ['ALL', 'AVAILABLE', 'ARCHIVE'];
@@ -16,23 +17,75 @@ interface CatalogueClientViewProps {
 
 export function CatalogueClientView({ products, archives }: CatalogueClientViewProps) {
   const [activeTab, setActiveTab] = useState('ALL');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set);
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
-    switch (activeTab) {
-      case 'AVAILABLE':
-        return products.filter((p) => p.status === 'AVAILABLE');
-      case 'ARCHIVE':
-        return products.filter((p) => p.status === 'SOLD_OUT');
-      default:
-        return products;
+    let list = products;
+    if (activeTab === 'AVAILABLE') {
+      list = list.filter((p) => p.status === 'AVAILABLE');
+    } else if (activeTab === 'ARCHIVE') {
+      list = list.filter((p) => p.status === 'SOLD_OUT');
     }
-  }, [activeTab, products]);
+
+    if (selectedCategory !== 'ALL') {
+      list = list.filter(
+        (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
+
+    return list;
+  }, [activeTab, selectedCategory, products]);
 
   return (
     <>
-      {/* Filter tabs */}
-      <section className="mx-auto max-w-350 px-4 md:px-16 pb-8 md:pb-12">
-        <FilterTabs tabs={FILTER_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+      {/* Filter tabs & Category filter */}
+      <section className="mx-auto max-w-350 px-4 md:px-16 pb-8 md:pb-10 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <FilterTabs tabs={FILTER_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+
+          {categories.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap" aria-label="Kategori">
+              <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mr-1">
+                Kategori:
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('ALL')}
+                className={cn(
+                  'px-3 py-1.5 rounded-full font-hanken text-[12px] font-medium transition-colors cursor-pointer',
+                  selectedCategory === 'ALL'
+                    ? 'bg-(--cat-on-surface) text-(--cat-surface)'
+                    : 'bg-(--cat-surface-container-low) text-(--cat-on-surface-variant) hover:text-(--cat-on-surface)'
+                )}
+              >
+                Semua Kategori
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full font-hanken text-[12px] font-medium transition-colors cursor-pointer',
+                    selectedCategory === cat
+                      ? 'bg-(--cat-on-surface) text-(--cat-surface)'
+                      : 'bg-(--cat-surface-container-low) text-(--cat-on-surface-variant) hover:text-(--cat-on-surface)'
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Product Grid */}

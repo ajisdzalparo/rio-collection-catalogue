@@ -402,9 +402,11 @@ export default function OrderPage() {
       router.push(`/order/confirmation/${orderNum}`);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Pesanan gagal dikirim. Silakan coba lagi.');
-      setIsCaptchaVerified(false);
-      setCaptchaToken('');
-      setCaptchaReset((value) => value + 1);
+      if (process.env.NODE_ENV === 'production') {
+        setIsCaptchaVerified(false);
+        setCaptchaToken('');
+        setCaptchaReset((value) => value + 1);
+      }
     } finally {
       setIsSubmitting(false);
     }

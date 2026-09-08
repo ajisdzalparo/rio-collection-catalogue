@@ -81,6 +81,7 @@ interface MasterDataState {
 
   // Sizes Actions
   toggleSize: (size: string) => void;
+  addSize: (size: string) => void;
 
   // Topics CRUD
   addTopic: (name: string, description?: string) => void;
@@ -176,6 +177,17 @@ export const useMasterStore = create<MasterDataState>()(
           s.size === size ? { ...s, isActive: !s.isActive } : s
         )
       })),
+      addSize: (size) => set((state) => {
+        const normalized = size.trim().toUpperCase();
+        if (state.sizes.some((s) => s.size === normalized)) {
+          return {
+            sizes: state.sizes.map((s) => s.size === normalized ? { ...s, isActive: true } : s)
+          };
+        }
+        return {
+          sizes: [...state.sizes, { size: normalized, isActive: true }]
+        };
+      }),
 
       // Topics
       addTopic: (name, description) => set((state) => ({
@@ -408,6 +420,14 @@ export function useMasterMutations() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sizes'] })
   });
 
+  const addSizeMutation = useMutation({
+    mutationFn: async ({ size }: { size: string }) => {
+      const { data } = await axios.post('/api/v1/sizes', { size });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sizes'] })
+  });
+
   const addBankMutation = useMutation({
     mutationFn: async ({ name, code, logoUrl, isActive }: { name: string; code?: string; logoUrl?: string; isActive?: boolean }) => {
       const { data } = await axios.post('/api/v1/banks', { name, code, logoUrl, isActive });
@@ -443,6 +463,7 @@ export function useMasterMutations() {
     updateTopic: updateTopicMutation.mutateAsync,
     deleteTopic: deleteTopicMutation.mutateAsync,
     toggleSize: toggleSizeMutation.mutateAsync,
+    addSize: addSizeMutation.mutateAsync,
     addBank: addBankMutation.mutateAsync,
     updateBank: updateBankMutation.mutateAsync,
     deleteBank: deleteBankMutation.mutateAsync
