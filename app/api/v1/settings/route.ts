@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 export async function GET() {
   try {
@@ -158,6 +159,30 @@ export async function PUT(request: Request) {
           'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
         heroCtaText: heroCtaText || 'Eksplor Koleksi Terkini',
         heroCtaLink: heroCtaLink || '/catalogue',
+        homeFeaturedTitle,
+        homeViewAllLabel,
+        homeManifestoTitle,
+        homeManifestoText,
+        homeManifestoImage,
+        homeBannerText,
+        homeBannerButton,
+        archiveHeaderSub,
+        archiveQuoteTitle,
+        archiveQuoteText,
+        aboutHeroImage,
+        aboutHeading,
+        aboutParagraph1,
+        aboutParagraph2,
+        aboutValuesTitle,
+        aboutValues,
+        aboutQuote,
+        aboutQuoteText,
+        aboutStudioImage,
+        contactEmail,
+        waTemplatePending,
+        waTemplatePayment,
+        waTemplateShipping,
+        waTemplateRemind,
         enabledCouriers: enabledCouriers || 'jne,pos,tiki,sicepat,jnt',
         originCityId: originCityId || '153',
         originCityName: originCityName || 'Kota Bandung',
@@ -165,11 +190,8 @@ export async function PUT(request: Request) {
       }
     });
 
-    return NextResponse.json({
-      code: 200,
-      status: 'success',
-      data: updatedSettings
-    });
+    revalidatePath('/(catalogue)', 'layout');
+    return NextResponse.json({ code: 200, status: 'success', data: updatedSettings });
   } catch (error) {
     console.error('Error updating settings:', error);
     return NextResponse.json(

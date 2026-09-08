@@ -89,6 +89,7 @@ export const useStoreSettingsStore = create<StoreSettingsState>()(
 export function useStoreSettingsQuery() {
   return useQuery({
     queryKey: ['store-settings'],
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data } = await axios.get('/api/v1/settings');
       if (data.code === 200 && data.data) {

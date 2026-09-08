@@ -97,6 +97,8 @@ model Archive {
   status      String   @default("SOLD_OUT")
   imageUrl    String
   description String
+  journalId   String?
+  journal     Journal? @relation(fields: [journalId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
 }
 
@@ -110,6 +112,8 @@ model Journal {
   imageUrl           String
   excerpt            String
   content            String[]
+  contentHtml        String?
+  archives           Archive[]
   pullQuote          String?
   relatedProductSlug String?
   createdAt          DateTime @default(now())
@@ -169,6 +173,7 @@ model OrderItem {
   size      String
   price     Int
   quantity  Int
+  isPreOrder Boolean?
   createdAt DateTime @default(now())
 }
 

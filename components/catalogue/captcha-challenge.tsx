@@ -30,6 +30,7 @@ export function CaptchaChallenge({ onVerify }: CaptchaChallengeProps) {
         sitekey={siteKey}
         onChange={handleCaptchaChange}
         onExpired={handleCaptchaExpired}
+        onErrored={handleCaptchaExpired}
         theme="light"
       />
     </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { normalizeProductAvailability } from '@/lib/product-availability';
 
 export async function GET() {
   try {
@@ -19,7 +20,7 @@ export async function GET() {
     return NextResponse.json({
       code: 200,
       status: 'success',
-      data: products
+      data: products.map(normalizeProductAvailability)
     });
   } catch (error) {
     console.error('Error fetching products:', error);

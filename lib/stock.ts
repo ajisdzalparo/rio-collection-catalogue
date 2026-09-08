@@ -34,23 +34,18 @@ export async function deductStock(items: OrderItemInfo[], tx: Prisma.Transaction
       throw new Error(`Stok untuk produk ${product.name} (Ukuran ${item.size}) tidak mencukupi. Tersedia: ${variant.stock}, diminta: ${item.quantity}.`);
     }
 
-    const newVariantStock = variant.stock - item.quantity;
-
-    // Update variant stock and inStock status
-    await tx.productVariant.update({
-      where: { id: variant.id },
-      data: {
-        stock: newVariantStock,
-        inStock: newVariantStock > 0
-      }
+    const deduction = await tx.productVariant.updateMany({
+      where: { id: variant.id, stock: { gte: item.quantity } },
+      data: { stock: { decrement: item.quantity } }
     });
+    if (deduction.count !== 1) throw new Error(`Stok ${product.name} tidak mencukupi. Silakan pilih ulang ukuran.`);
+    await tx.productVariant.updateMany({ where: { id: variant.id, stock: 0 }, data: { inStock: false } });
 
-    // Update overall product total stock
-    const newProductStock = Math.max(0, product.stock - item.quantity);
+    const totals = await tx.productVariant.aggregate({ where: { productId: product.id }, _sum: { stock: true } });
     await tx.product.update({
       where: { id: product.id },
       data: {
-        stock: newProductStock
+        stock: totals._sum.stock ?? 0
       }
     });
   }
@@ -75,23 +70,21 @@ export async function restoreStock(items: OrderItemInfo[], tx: Prisma.Transactio
 
     if (!variant) continue;
 
-    const newVariantStock = variant.stock + item.quantity;
-
     // Update variant stock and inStock status
     await tx.productVariant.update({
       where: { id: variant.id },
       data: {
-        stock: newVariantStock,
+        stock: { increment: item.quantity },
         inStock: true // Since we added stock back, it is definitely in stock
       }
     });
 
     // Update overall product total stock
-    const newProductStock = product.stock + item.quantity;
+    const totals = await tx.productVariant.aggregate({ where: { productId: product.id }, _sum: { stock: true } });
     await tx.product.update({
       where: { id: product.id },
       data: {
-        stock: newProductStock
+        stock: totals._sum.stock ?? 0
       }
     });
   }

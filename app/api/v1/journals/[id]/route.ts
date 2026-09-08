@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { journalSchema } from '@/lib/journal-schema';
+import { revalidatePath } from 'next/cache';
 
 export async function PUT(
   request: Request,
@@ -7,23 +9,13 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { title, slug, author, category, imageUrl, excerpt, content, pullQuote, relatedProductSlug } = body;
-
+    const parsed = journalSchema.safeParse(await request.json());
+    if (!parsed.success) return NextResponse.json({ message: 'Data jurnal tidak valid', details: parsed.error.flatten() }, { status: 400 });
     const updatedJournal = await prisma.journal.update({
       where: { id },
-      data: {
-        title,
-        slug,
-        author,
-        category,
-        imageUrl,
-        excerpt,
-        content: Array.isArray(content) ? content : [content],
-        pullQuote,
-        relatedProductSlug
-      }
+      data: parsed.data
     });
+    revalidatePath('/journal', 'layout');
 
     return NextResponse.json({
       code: 200,
@@ -48,6 +40,8 @@ export async function DELETE(
     await prisma.journal.delete({
       where: { id }
     });
+    revalidatePath('/journal', 'layout');
+    revalidatePath('/archive');
     return NextResponse.json({
       code: 200,
       status: 'success',

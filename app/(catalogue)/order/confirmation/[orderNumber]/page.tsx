@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { CheckCircle2, MessageCircle } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { formatPrice } from '@/lib/utils';
+import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
+import { getOrderStatusLabel, getOrderStatusMessage } from '@/lib/order-status';
 
 export const metadata: Metadata = {
   title: 'Permintaan Pesanan Diterima',
@@ -15,14 +18,14 @@ interface OrderConfirmationProps {
 }
 
 export default async function OrderConfirmationPage({ params }: OrderConfirmationProps) {
+  await connection();
   const { orderNumber } = await params;
   const [order, settings, storeBanks] = await Promise.all([
     prisma.order
       .findUnique({
         where: { orderNumber },
         include: {items: true }
-      })
-      .catch(() => null),
+      }),
     prisma.storeSettings
       .findUnique({ where: {id: 'default' } })
       .catch(() => null),
@@ -30,6 +33,9 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
       .findMany({ where: { isActive: true }, orderBy: [{ sortOrder: 'asc' }] })
       .catch(() => [])
   ]);
+  if (!order) notFound();
+  const statusLabel = getOrderStatusLabel(order.status);
+  const paymentPending = ['CONFIRMED', 'WAITING_PAYMENT'].includes(order.status);
 
   const whatsappNumber = (settings?.whatsappNumber || '').replace(/[^0-9]/g, '');
 
@@ -42,16 +48,13 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
         {/* Status Badge */}
         <div className="inline-block border border-(--cat-stone) px-6 py-2 mb-6">
           <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-            Menunggu
-          </p>
-          <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-            Konfirmasi
+            {statusLabel}
           </p>
         </div>
 
         {/* Title */}
         <h1 className="font-eb-garamond text-[32px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface)">
-          Permintaan Pesanan Diterima
+          {order.status === 'PENDING' ? 'Permintaan Pesanan Diterima' : statusLabel}
         </h1>
       </div>
 
@@ -94,7 +97,7 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
       </div>
 
       {/* Bank Payment Section */}
-      {storeBanks && storeBanks.length > 0 && (
+      {paymentPending && storeBanks.length > 0 && (
         <div className="mt-10 pt-8 border-t border-(--cat-stone)">
           <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-4">
             Rekening Bank Pembayaran (Transfer Manual)
@@ -120,9 +123,10 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
       {/* Next Steps */}
       <div className="mt-10 pt-8 border-t border-(--cat-stone) text-center">
         <p className="font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-lg mx-auto">
-          Permintaan pesanan Anda telah kami terima. Tim kami akan segera menghubungi Anda melalui
-          WhatsApp untuk konfirmasi ketersediaan stok dan instruksi pembayaran manual.
+          {getOrderStatusMessage(order.status)}
         </p>
+        {order.courierName && <p className="mt-4">Pengiriman: {order.courierName}</p>}
+        {order.trackingNumber && <p className="mt-2">Nomor resi: {order.trackingNumber}</p>}
 
         {/* WhatsApp CTA — number from CMS store settings */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">

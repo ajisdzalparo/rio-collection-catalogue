@@ -56,6 +56,7 @@ export interface ArchiveCollection {
   imageUrl: string;
   status: 'SOLD_OUT';
   description: string;
+  journalId?: string | null;
 }
 
 export type JournalCategory =

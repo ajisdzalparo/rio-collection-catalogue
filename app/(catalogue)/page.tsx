@@ -25,14 +25,8 @@ export default async function HomePage() {
     prisma.storeSettings.findUnique({ where: { id: 'default' } }).catch(() => null)
   ]);
   const featuredProducts = products.slice(0, 3);
-  const rawBannerText = settings?.homeBannerText || '';
-  const bannerText =
-    rawBannerText && rawBannerText !== 'ya'
-      ? rawBannerText
-      : 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.';
-  const rawBannerBtn = settings?.homeBannerButton || '';
-  const bannerButton =
-    rawBannerBtn && rawBannerBtn !== 'gdfgdfg' ? rawBannerBtn : 'Jelajahi Katalog Lengkap';
+  const bannerText = settings?.homeBannerText ?? 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.';
+  const bannerButton = settings?.homeBannerButton ?? 'Jelajahi Katalog Lengkap';
 
   return (
     <>
@@ -44,13 +38,13 @@ export default async function HomePage() {
         {/* Section header */}
         <div className="flex items-end justify-between mb-10 md:mb-14">
           <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
-            Koleksi Terkini
+            {settings?.homeFeaturedTitle || 'Koleksi Terkini'}
           </h2>
           <Link
             href="/catalogue"
             className="hidden md:inline-flex items-center gap-1.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
           >
-            Lihat Semua
+            {settings?.homeViewAllLabel || 'Lihat Semua'}
             <ArrowRight size={12} strokeWidth={2} />
           </Link>
         </div>
@@ -76,7 +70,7 @@ export default async function HomePage() {
             href="/catalogue"
             className="inline-flex items-center gap-1.5 font-hanken text-[12px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) transition-colors duration-150"
           >
-            Lihat Semua
+            {settings?.homeViewAllLabel || 'Lihat Semua'}
             <ArrowRight size={12} strokeWidth={2} />
           </Link>
         </div>

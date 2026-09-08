@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Product, StockMode } from '@/types/catalogue.types';
+import type { Product } from '@/types/catalogue.types';
+import { normalizeProductAvailability } from '@/lib/product-availability';
 import axios from 'axios';
 
 async function fetchProducts(): Promise<Product[]> {
@@ -15,41 +16,7 @@ async function fetchProducts(): Promise<Product[]> {
     throw new Error('Invalid products data received');
   }
 
-  return prods.map((p) => {
-    const stockMode: StockMode = p.stockMode ?? 'QUANTITY';
-
-    const variants = (p.variants || []).map((v) => {
-      const stock = v.stock ?? (v.inStock ? 10 : 0);
-      return {
-        ...v,
-        stock,
-        inStock: stockMode === 'ALWAYS_AVAILABLE' ? true : stock > 0
-      };
-    });
-
-    const totalStock = p.stock ?? variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-
-    let status = p.status;
-    if (stockMode === 'ALWAYS_AVAILABLE') {
-      if (status !== 'SOLD_OUT' && status !== 'COMING_SOON' && status !== 'PRE_ORDER') {
-        status = 'AVAILABLE';
-      }
-    } else {
-      if (totalStock === 0 && status === 'AVAILABLE') {
-        status = 'SOLD_OUT';
-      }
-    }
-
-    return {
-      ...p,
-      hpp: p.hpp ?? Math.round(p.price * 0.4),
-      stock: totalStock,
-      stockMode,
-      status,
-      variants,
-      materialsAndCare: p.materialsAndCare
-    };
-  });
+  return prods.map(normalizeProductAvailability);
 }
 
 export function useProducts() {

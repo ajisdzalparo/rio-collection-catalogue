@@ -32,6 +32,7 @@ import { INDONESIA_MASTER_LOCATIONS } from '@/lib/indonesia-locations';
 import { SearchableSelect } from '@/components/catalogue/searchable-select';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 
 type SettingsTab =
   'profile' | 'couriers' | 'whatsapp' | 'payments' | 'socials' | 'hero' | 'homepage' | 'pages';
@@ -50,6 +51,7 @@ const ALL_COURIERS_LIST = [
 ];
 
 export default function StoreSettingsPage() {
+  const queryClient = useQueryClient();
   const { data: mockSettings, isLoading: loadingSettings } = useStoreSettingsQuery();
   const setSettings = useStoreSettingsStore((s) => s.setSettings);
   const updateSettings = useStoreSettingsStore((s) => s.updateSettings);
@@ -213,8 +215,9 @@ export default function StoreSettingsPage() {
         originCityId,
         originCityName
       };
-      await axios.put('/api/v1/settings', payload);
-      updateSettings(payload);
+      const { data } = await axios.put('/api/v1/settings', payload);
+      updateSettings(data.data);
+      queryClient.setQueryData(['store-settings'], data.data);
       toast.success('Pengaturan toko & ekspedisi berhasil disimpan!');
     } catch (error) {
       console.error('Failed to save settings:', error);
@@ -691,6 +694,16 @@ export default function StoreSettingsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="home-featured-title">Judul Koleksi Terkini</Label>
+                    <Input id="home-featured-title" value={homeFeaturedTitle}
+                      onChange={(e) => setHomeFeaturedTitle(e.target.value)} placeholder="Koleksi Terkini" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="home-view-all-label">Teks Lihat Semua</Label>
+                    <Input id="home-view-all-label" value={homeViewAllLabel}
+                      onChange={(e) => setHomeViewAllLabel(e.target.value)} placeholder="Lihat Semua" />
+                  </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-foreground">Judul Manifesto</Label>
                     <Input

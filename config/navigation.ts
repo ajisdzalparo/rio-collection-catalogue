@@ -35,6 +35,7 @@ export const navigation: NavigationItem[] = [
     icon: Database,
     subMenu: [
       { title: 'Products', href: '/dashboard/products' },
+      { title: 'Historical Archive', href: '/dashboard/archives' },
       { title: 'Kategori Kaos', href: '/dashboard/master?tab=categories' },
       { title: 'Warna (Hex)', href: '/dashboard/master?tab=colors' },
       { title: 'Ukuran (Sizes)', href: '/dashboard/master?tab=sizes' },

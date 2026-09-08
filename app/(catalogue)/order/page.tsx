@@ -11,6 +11,12 @@ import { useStoreSettingsStore } from '@/hooks/use-store-settings';
 import type { Product } from '@/types/catalogue.types';
 import { CaptchaChallenge } from '@/components/catalogue/captcha-challenge';
 import { SearchableSelect } from '@/components/catalogue/searchable-select';
+import { isOrderableStatus } from '@/lib/product-availability';
+
+interface ShippingOption {
+  key: string; label: string; cost: number; courier: string; etd: string;
+  courierCode: string; service: string; destination: string;
+}
 
 const PROVINCES_DATA = [
   { name: 'DKI Jakarta', baseRate: 10000 },
@@ -107,23 +113,12 @@ const INDONESIA_REGIONS_DATA: Record<
   }
 };
 
-const SERVICE_SURCHARGES: Record<string, { code: string; fee: number }> = {
-  'JNE Regular (2-3 Hari)': { code: 'jne', fee: 0 },
-  'JNE YES - Express (1 Hari)': { code: 'jne', fee: 15000 },
-  'J&T Express Standard': { code: 'jnt', fee: 2000 },
-  'SiCepat REG': { code: 'sicepat', fee: 0 },
-  'SiCepat BEST (1 Hari)': { code: 'sicepat', fee: 12000 },
-  'POS Kilat Khusus': { code: 'pos', fee: -2000 },
-  'TIKI Reguler': { code: 'tiki', fee: 0 }
-};
-
 export default function OrderPage() {
   const router = useRouter();
-  const flatShippingRate = useStoreSettingsStore((s) => s.flatShippingRate);
   const enabledCouriersSetting = useStoreSettingsStore((s) => s.enabledCouriers);
 
   const activeCourierCodes = useMemo(() => {
-    const raw = enabledCouriersSetting || 'jne,pos,tiki,sicepat,jnt';
+    const raw = enabledCouriersSetting ?? 'jne,pos,tiki,sicepat,jnt';
     return raw
       .split(',')
       .map((c) => c.trim().toLowerCase())
@@ -146,6 +141,9 @@ export default function OrderPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const [submitError, setSubmitError] = useState('');
 
   // Hybrid Shipping API States (RajaOngkir Sandbox / Live Mode + Offline Fallback)
   const [isRajaActive, setIsRajaActive] = useState(false);
@@ -159,7 +157,7 @@ export default function OrderPage() {
     Array<{ subdistrict_id: string; subdistrict_name: string; postal_code?: string }>
   >([]);
   const [rajaRates, setRajaRates] = useState<
-    Array<{ key: string; label: string; cost: number; courier: string; etd: string }>
+    ShippingOption[]
   >([]);
   const [isShippingLoading, setIsShippingLoading] = useState(false);
 
@@ -188,7 +186,7 @@ export default function OrderPage() {
     getProducts().then((prods) => {
       if (prods.length > 0) {
         const found = productSlug ? prods.find((p) => p.slug === productSlug) : null;
-        setProduct(found || prods[0]);
+        setProduct(productSlug ? found || null : prods.find((p) => isOrderableStatus(p.status)) || null);
       }
     });
 
@@ -386,17 +384,13 @@ export default function OrderPage() {
     queueMicrotask(() => {
       if (isMounted) {
         setIsShippingLoading(true);
+        setRajaRates([]);
       }
     });
 
     const weightInGrams = Math.max(1000, quantity * 350);
 
-    const storeCouriers =
-      useStoreSettingsStore.getState().enabledCouriers || 'jne,pos,tiki,sicepat,jnt';
-    const activeCouriers = storeCouriers
-      .split(',')
-      .map((c) => c.trim().toLowerCase())
-      .filter(Boolean);
+    const activeCouriers = activeCourierCodes;
 
     Promise.all(
       activeCouriers.map((courier) =>
@@ -414,13 +408,7 @@ export default function OrderPage() {
     )
       .then((results) => {
         if (!isMounted) return;
-        const options: Array<{
-          key: string;
-          label: string;
-          cost: number;
-          courier: string;
-          etd: string;
-        }> = [];
+        const options: ShippingOption[] = [];
 
         results.forEach((res) => {
           if (res.code === 200 && Array.isArray(res.data)) {
@@ -446,7 +434,10 @@ export default function OrderPage() {
                     label: labelText,
                     cost: price,
                     courier: courierItem.name,
-                    etd: rawEtd
+                    etd: rawEtd,
+                    courierCode: courierItem.code.toLowerCase(),
+                    service: costItem.service,
+                    destination: matchedCity.city_id
                   });
                 });
               }
@@ -471,28 +462,21 @@ export default function OrderPage() {
     return () => {
       isMounted = false;
     };
-  }, [formData.city, isRajaActive, quantity, rajaCities]);
+  }, [formData.city, isRajaActive, quantity, rajaCities, activeCourierCodes]);
 
-  // Dynamic Shipping Fee (RajaOngkir live cost or store setting / offline tariff)
+  // Only use a tariff returned by the server; the same service is checked at submission.
   const shippingFee = useMemo(() => {
-    if (isRajaActive && rajaRates.length > 0) {
-      const activeRate = rajaRates.find((r) => r.key === formData.courierService) || rajaRates[0];
-      return activeRate ? activeRate.cost : 15000;
-    }
-    const provData = PROVINCES_DATA.find((p) => p.name === formData.province);
-    const base = provData ? provData.baseRate : flatShippingRate || 15000;
-    const surchargeInfo = SERVICE_SURCHARGES[formData.courierService];
-    const surcharge = typeof surchargeInfo === 'number' ? surchargeInfo : surchargeInfo?.fee || 0;
-    return Math.max(10000, base + surcharge);
-  }, [formData.courierService, formData.province, flatShippingRate, isRajaActive, rajaRates]);
+    return rajaRates.find((rate) => rate.key === formData.courierService)?.cost ?? 0;
+  }, [formData.courierService, rajaRates]);
 
   const subtotal = (product ? product.price : 450000) * quantity;
   const totalPrice = subtotal + shippingFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!product || !isValid || !isCaptchaVerified) return;
+    if (!product || !isValid || !isCaptchaVerified || isSubmitting) return;
     setIsSubmitting(true);
+    setSubmitError('');
 
     const fullAddress = `${formData.streetAddress}${formData.district ? `, Kec. ${formData.district}` : ''}, ${formData.city}, ${formData.province}${formData.postalCode ? ` ${formData.postalCode}` : ''}`;
 
@@ -504,26 +488,41 @@ export default function OrderPage() {
         notes: '',
         totalPrice,
         shippingFee,
+        captchaToken,
+        shipping: {
+          destination: selectedRate!.destination,
+          courier: selectedRate!.courierCode,
+          service: selectedRate!.service
+        },
         items: [
           {
             productId: product.id,
-            name: selectedColor ? `${product.name} — ${selectedColor}` : product.name,
-            price: product.price,
+            color: selectedColor || product.color,
             size: selectedSize || 'M',
             quantity
           }
         ]
       });
-      const orderNum = res?.data?.orderNumber || 'RC-8802';
+      const orderNum = res.data.orderNumber;
       router.push(`/order/confirmation/${orderNum}`);
     } catch (error) {
-      console.error('Failed to submit order:', error);
-      router.push('/order/confirmation/RC-8802');
+      setSubmitError(error instanceof Error ? error.message : 'Pesanan gagal dikirim. Silakan coba lagi.');
+      setIsCaptchaVerified(false);
+      setCaptchaToken('');
+      setCaptchaReset((value) => value + 1);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const selectedRate = rajaRates.find((rate) => rate.key === formData.courierService);
+  const selectedVariant = product?.variants.find((variant) => variant.size === selectedSize);
   const isValid =
     !!product &&
+    isOrderableStatus(product.status) &&
+    !!selectedVariant?.inStock &&
+    (product.stockMode === 'ALWAYS_AVAILABLE' || (selectedVariant.stock ?? 0) >= quantity) &&
+    !!selectedRate && !isShippingLoading &&
     !!formData.fullName.trim() &&
     !!formData.whatsapp.trim() &&
     !!formData.province &&
@@ -803,28 +802,8 @@ export default function OrderPage() {
                 <SearchableSelect
                   value={formData.courierService}
                   onValueChange={(val) => setFormData({ ...formData, courierService: val })}
-                  options={
-                    isRajaActive && rajaRates.length > 0
-                      ? rajaRates
-                          .filter((rate) => {
-                            const code = (rate.key.split(' ')[0] || '').toLowerCase();
-                            return activeCourierCodes.includes(code);
-                          })
-                          .map((rate) => ({ label: rate.label, value: rate.key }))
-                      : Object.entries(SERVICE_SURCHARGES)
-                          .filter(([, info]) => activeCourierCodes.includes(info.code))
-                          .map(([serviceName, info]) => {
-                            const provData = PROVINCES_DATA.find(
-                              (p) => p.name === formData.province
-                            );
-                            const base = provData ? provData.baseRate : flatShippingRate || 15000;
-                            const fee = Math.max(10000, base + info.fee);
-                            return {
-                              label: `${serviceName} — ${formatPrice(fee)}`,
-                              value: serviceName
-                            };
-                          })
-                  }
+                  options={rajaRates.filter((rate) => activeCourierCodes.includes(rate.courierCode))
+                    .map((rate) => ({ label: rate.label, value: rate.key }))}
                   placeholder={
                     isShippingLoading ? 'Memuat tarif ongkir...' : 'Pilih Layanan Pengiriman'
                   }
@@ -855,12 +834,16 @@ export default function OrderPage() {
               {/* CAPTCHA Challenge */}
               <div className="pt-4 border-t border-(--cat-stone)">
                 <CaptchaChallenge
-                  onVerify={(verified) => setIsCaptchaVerified(verified)}
+                  key={captchaReset}
+                  onVerify={(verified, token) => { setIsCaptchaVerified(verified); setCaptchaToken(token || ''); }}
                   isVerified={isCaptchaVerified}
                 />
               </div>
 
               {/* Submit Button */}
+              {submitError && <p role="alert" className="text-sm text-red-700">{submitError}</p>}
+              {!isShippingLoading && !selectedRate && <p role="status" className="text-sm">Tarif pengiriman belum tersedia. Pilih ulang kota atau muat ulang halaman.</p>}
+              {product && (!isOrderableStatus(product.status) || !selectedVariant?.inStock) && <p role="alert" className="text-sm">Produk atau ukuran tidak tersedia. <Link href={`/products/${product.slug}`} className="underline">Pilih ulang produk</Link>.</p>}
               <div className="pt-4">
                 <button
                   type="submit"

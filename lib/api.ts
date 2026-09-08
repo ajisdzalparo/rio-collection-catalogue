@@ -1,4 +1,5 @@
 import type { Product, ArchiveCollection, JournalArticle, Testimony } from '@/types/catalogue.types';
+import { normalizeProductAvailability } from '@/lib/product-availability';
 
 export function getBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -68,7 +69,7 @@ export async function getProducts(): Promise<Product[]> {
       },
       orderBy: { createdAt: 'desc' }
     });
-    return products as unknown as Product[];
+    return (products as unknown as Product[]).map(normalizeProductAvailability);
   } catch (error) {
     console.error('Server products fetch failed:', error);
     return [];
@@ -98,7 +99,7 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
         }
       }
     });
-    return (product as unknown as Product) || undefined;
+    return product ? normalizeProductAvailability(product as unknown as Product) : undefined;
   } catch (error) {
     console.error(`Server getProductBySlug failed for ${slug}:`, error);
     return undefined;
@@ -192,7 +193,9 @@ export async function submitOrder(orderPayload: {
   notes?: string;
   totalPrice?: number;
   shippingFee?: number;
-  items: Array<{ productId?: string; name?: string; price?: number; size: string; quantity: number }>;
+  captchaToken: string;
+  shipping: { destination: string; courier: string; service: string };
+  items: Array<{ productId: string; color?: string; size: string; quantity: number }>;
 }) {
   const baseUrl = getBaseUrl();
   const res = await fetch(`${baseUrl}/v1/orders`, {
@@ -200,6 +203,8 @@ export async function submitOrder(orderPayload: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(orderPayload)
   });
-  if (!res.ok) throw new Error(`Order submission error: ${res.status}`);
-  return await res.json();
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || 'Pesanan gagal dikirim. Silakan coba lagi.');
+  if (!result.data?.orderNumber) throw new Error('Respons pesanan tidak valid. Hubungi toko sebelum mencoba lagi.');
+  return result;
 }

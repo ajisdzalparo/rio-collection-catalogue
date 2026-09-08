@@ -3,8 +3,10 @@ import { CatalogueFooter } from '@/components/catalogue/footer';
 import { prisma } from '@/lib/prisma';
 import { StoreSettingsInitializer } from '@/components/catalogue/store-settings-initializer';
 import type { StoreSettings } from '@/hooks/use-store-settings';
+import { connection } from 'next/server';
 
 export default async function CatalogueLayout({ children }: { children: React.ReactNode }) {
+  await connection();
   const settings = await prisma.storeSettings
     .findUnique({ where: { id: 'default' } })
     .catch(() => null);

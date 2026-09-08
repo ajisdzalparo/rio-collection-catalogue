@@ -41,7 +41,7 @@ export default async function ArchivePage() {
           Archive
         </h1>
         <p className="mt-2 font-hanken text-[14px] md:text-[16px] text-(--cat-on-surface-variant)">
-          Previous designs and past drops.
+          {settings?.archiveHeaderSub || 'Previous designs and past drops.'}
         </p>
       </section>
 
@@ -99,16 +99,8 @@ export default async function ArchivePage() {
       <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {archives.map((archive) => {
-            const matchingJournal =
-              journals.find((j) => j.slug === archive.slug) ||
-              journals.find((j) =>
-                archive.name.toLowerCase().includes(j.title.toLowerCase().split(' ')[0])
-              ) ||
-              journals[0];
-
-            const articleHref = matchingJournal
-              ? `/journal/${matchingJournal.slug}`
-              : `/journal/${archive.slug}`;
+            const matchingJournal = journals.find((j) => j.id === archive.journalId);
+            const articleHref = matchingJournal ? `/journal/${matchingJournal.slug}` : '/journal';
 
             return (
               <Link
@@ -125,7 +117,7 @@ export default async function ArchivePage() {
                     className="object-cover opacity-85 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-500 ease-out"
                   />
                   <div className="absolute bottom-3 left-3 bg-background/90 text-foreground backdrop-blur-xs px-3 py-1 text-[11px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 shadow-md">
-                    Baca Artikel Jurnal &rarr;
+                    {matchingJournal ? 'Baca Artikel Jurnal' : 'Jelajahi Jurnal'} &rarr;
                   </div>
                 </div>
                 <div className="mt-3 flex items-start justify-between gap-2">

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { journalSchema } from '@/lib/journal-schema';
+import { revalidatePath } from 'next/cache';
 
 export async function GET() {
   try {
@@ -22,23 +24,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { title, slug, author, date, category, imageUrl, excerpt, content, pullQuote, relatedProductSlug } = body;
-
-    const journal = await prisma.journal.create({
-      data: {
-        title,
-        slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        author: author || 'RIO COLLECTION Editorial Team',
-        date: date || new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-        category: category || 'PROCESS',
-        imageUrl: imageUrl || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
-        excerpt: excerpt || '',
-        content: Array.isArray(content) ? content : [content],
-        pullQuote,
-        relatedProductSlug
-      }
-    });
+    const parsed = journalSchema.safeParse(await request.json());
+    if (!parsed.success) return NextResponse.json({ message: 'Data jurnal tidak valid', details: parsed.error.flatten() }, { status: 400 });
+    const journal = await prisma.journal.create({ data: parsed.data });
+    revalidatePath('/journal', 'layout');
 
     return NextResponse.json({
       code: 201,
