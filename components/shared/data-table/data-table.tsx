@@ -296,7 +296,7 @@ export function DataTable<T extends object>({
       {enableSelection && selectedIds.size > 0 && bulkActions && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-3.5 py-2 rounded-full bg-zinc-950 text-zinc-100 border border-zinc-800 shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-5 duration-350 ease-out">
           <div className="flex items-center gap-2 pl-1.5">
-            <span className="flex h-5 min-w-[20px] px-1 shrink-0 items-center justify-center rounded-md bg-zinc-800 text-zinc-300 font-mono text-[10px] border border-zinc-700/50 font-bold">
+            <span className="flex h-5 min-w-5 px-1 shrink-0 items-center justify-center rounded-md bg-zinc-800 text-zinc-300 font-mono text-[10px] border border-zinc-700/50 font-bold">
               {selectedIds.size}
             </span>
             <span className="text-zinc-400 text-xs font-medium whitespace-nowrap">terpilih</span>
@@ -342,7 +342,9 @@ export function DataTable<T extends object>({
             {columns.map((col, idx) => {
               const isActionColumn =
                 typeof col.header === 'string' &&
-                ['aksi', 'action', 'actions', 'aksi review'].includes(col.header.toLowerCase().trim());
+                ['aksi', 'action', 'actions', 'aksi review'].includes(
+                  col.header.toLowerCase().trim()
+                );
               const isSortable = Boolean(
                 enableSorting && col.sortable !== false && col.accessorKey && !isActionColumn
               );

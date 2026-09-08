@@ -13,7 +13,6 @@ import {
   TrendingUp,
   ChevronRight
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { useAuth } from '@/hooks/use-auth';

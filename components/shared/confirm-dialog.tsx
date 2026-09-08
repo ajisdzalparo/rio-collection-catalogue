@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ConfirmModal, type ConfirmModalProps } from './confirm-modal';
+import { ConfirmModal } from './confirm-modal';
 
 export interface ConfirmDialogProps {
   open: boolean;

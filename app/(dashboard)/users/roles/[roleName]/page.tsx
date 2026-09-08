@@ -11,9 +11,7 @@ import {
   FolderTree,
   CheckCircle2,
   XCircle,
-  Lock,
-  Layers,
-  Sparkles
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +20,6 @@ import { cn } from '@/lib/utils';
 import { useRbacStore, syncRolePermissions } from '@/features/users/hooks/use-rbac';
 import { PERMISSION_TREE } from '@/features/users/data/permission-tree';
 import { RoleFormDialog } from '@/features/users/components/role-form-dialog';
-import type { UserRole } from '@/features/users/types/roles.types';
 
 interface RoleDetailPageProps {
   params: Promise<{ roleName: string }>;

@@ -47,7 +47,6 @@ import { OrderStatusBadge } from '@/components/shared/order-status-badge';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { useStoreSettingsStore } from '@/hooks/use-store-settings';
 import { formatIDR, formatWaNumber } from '@/lib/utils';
-import { getOrderStatusLabel, getOrderStatusMessage } from '@/lib/order-status';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -69,7 +68,6 @@ export default function OrderDetailPage({ params }: PageProps) {
   const [actualShippingFee, setActualShippingFee] = useState<number>(15000);
   const [cancelReason, setCancelReason] = useState('');
   const [refundReason, setRefundReason] = useState('');
-  const [shippingProofUrl, setShippingProofUrl] = useState('');
   const [refundProofUrl, setRefundProofUrl] = useState('');
   const [additionalPaymentProofUrl, setAdditionalPaymentProofUrl] = useState('');
   const [shippingAdjustmentChoice, setShippingAdjustmentChoice] = useState<'REFUND' | 'WAIVE' | null>(null);
@@ -92,7 +90,6 @@ export default function OrderDetailPage({ params }: PageProps) {
     setActualShippingFee(order.shippingFee ?? order.quotedShippingFee ?? 15000);
     setAdditionalPaymentProofUrl(order.additionalPaymentProofUrl || '');
     setRefundProofUrl(order.refundProofUrl || '');
-    setShippingProofUrl(order.shippingProofUrl || '');
   }
 
   const quotedShippingFee = order?.quotedShippingFee ?? order?.shippingFee ?? 15000;

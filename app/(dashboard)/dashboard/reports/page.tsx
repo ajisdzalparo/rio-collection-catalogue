@@ -6,14 +6,10 @@ import {
   Coins,
   Receipt,
   Percent,
-  FileSpreadsheet,
   Download,
   Calendar,
   Flame,
-  Package,
   Filter,
-  ArrowUpRight,
-  ArrowDownRight,
   BarChart3,
   LineChart,
   Sparkles,
@@ -137,7 +133,7 @@ function ReportsPageContent() {
   }, [orders, period]);
 
   // Calculate Metrics (Revenue, HPP, Profit, Margin)
-  const calculateMetrics = (orderList: typeof orders) => {
+  const calculateMetrics = useCallback((orderList: typeof orders) => {
     let revenue = 0;
     let totalHpp = 0;
     let totalQty = 0;
@@ -158,15 +154,15 @@ function ReportsPageContent() {
     const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
 
     return { revenue, totalHpp, netProfit, profitMargin, totalQty };
-  };
+  }, [selectedProduct]);
 
   const currentMetrics = useMemo(
     () => calculateMetrics(currentOrders),
-    [currentOrders, selectedProduct]
+    [currentOrders, calculateMetrics]
   );
   const previousMetrics = useMemo(
     () => calculateMetrics(previousOrders),
-    [previousOrders, selectedProduct]
+    [previousOrders, calculateMetrics]
   );
 
   // Growth percentages

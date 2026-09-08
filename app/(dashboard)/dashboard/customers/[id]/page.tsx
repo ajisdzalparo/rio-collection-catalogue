@@ -5,9 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
-  Users,
   Calendar,
-  ShoppingBag,
   DollarSign,
   Phone,
   MapPin,
@@ -21,9 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCustomers } from '@/hooks/use-customers';
-import type { Order } from '@/hooks/use-orders';
-import { formatIDR, formatWaNumber } from '@/lib/utils';
-import { getOrderStatusLabel } from '@/lib/order-status';
+import { formatIDR } from '@/lib/utils';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
 
 interface PageProps {

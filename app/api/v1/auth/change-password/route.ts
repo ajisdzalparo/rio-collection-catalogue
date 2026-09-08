@@ -16,6 +16,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { currentPassword, newPassword } = body;
 
+    if (!currentPassword) {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: 'Kata sandi saat ini wajib diisi' },
+        { status: 400 }
+      );
+    }
+
     if (!newPassword || newPassword.length < 6) {
       return NextResponse.json(
         { code: 400, status: 'error', message: 'Kata sandi baru minimal 6 karakter' },

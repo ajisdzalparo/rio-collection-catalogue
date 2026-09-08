@@ -19,7 +19,7 @@ export async function GET() {
       status: 'success',
       data: userData
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { code: 401, status: 'error', message: 'Sesi tidak valid' },
       { status: 401 }

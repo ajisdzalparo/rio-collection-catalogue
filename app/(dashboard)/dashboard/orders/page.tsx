@@ -11,11 +11,8 @@ import {
   Clock,
   RefreshCw,
   AlertTriangle,
-  ClipboardList,
   Eye,
-  ExternalLink,
-  MessageSquare,
-  ShoppingBag
+  MessageSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -48,7 +45,6 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { formatIDR, formatWaNumber } from '@/lib/utils';
-import { getOrderStatusLabel } from '@/lib/order-status';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
 
 function OrdersPageContent() {
@@ -167,7 +163,10 @@ function OrdersPageContent() {
               <TruncatedText text={order.courierName || 'JNE Express'} maxWidth="max-w-[150px]" />
             </div>
             <div className="text-[10px] text-muted-foreground">
-              Ongkir: <span className="font-bold text-foreground">{formatIDR(order.shippingFee || 15000)}</span>
+              Ongkir:{' '}
+              <span className="font-bold text-foreground">
+                {formatIDR(order.shippingFee || 15000)}
+              </span>
             </div>
             {order.trackingNumber ? (
               <div className="text-[10px] text-foreground font-mono font-bold">
@@ -220,7 +219,9 @@ function OrdersPageContent() {
           <div className="flex flex-col text-xs">
             <span className="font-extrabold text-foreground">{formatIDR(order.totalPrice)}</span>
             <div className="flex gap-1.5 text-[10px] mt-0.5">
-              <span className="text-muted-foreground/75">HPP: {formatIDR(order.totalCogs || 0)}</span>
+              <span className="text-muted-foreground/75">
+                HPP: {formatIDR(order.totalCogs || 0)}
+              </span>
               <span className="text-emerald-500 font-bold">
                 +{formatIDR(order.estimatedProfit || 0)}
               </span>
@@ -393,8 +394,8 @@ function OrdersPageContent() {
                 Konfirmasi Tolak Pesanan
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
-                Apakah Anda yakin ingin menolak pesanan #{cancelTargetOrder.orderNumber}? Pesanan akan
-                ditandai sebagai REJECTED.
+                Apakah Anda yakin ingin menolak pesanan #{cancelTargetOrder.orderNumber}? Pesanan
+                akan ditandai sebagai REJECTED.
               </DialogDescription>
             </DialogHeader>
 

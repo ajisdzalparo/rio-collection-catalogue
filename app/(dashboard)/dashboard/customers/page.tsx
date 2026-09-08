@@ -2,12 +2,10 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   Calendar,
   ShoppingBag,
   History,
-  MapPin,
   MessageSquare
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +16,6 @@ import { TruncatedText } from '@/components/ui/truncated-text';
 import { formatIDR, formatWaNumber } from '@/lib/utils';
 
 export default function CustomersCmsPage() {
-  const router = useRouter();
   const { data: customersList = [], isLoading: loading } = useCustomers();
 
   // Table Columns Definition for DataTable
