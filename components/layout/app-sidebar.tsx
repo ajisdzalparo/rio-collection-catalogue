@@ -7,7 +7,6 @@ import { navigation } from '@/config/navigation';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -18,7 +17,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton
 } from '@/components/ui/sidebar';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRbac } from '@/features/users/hooks/use-rbac';
 import type { RolePermissions } from '@/features/users/types/roles.types';
@@ -196,16 +195,6 @@ export default function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="p-3 group-data-[collapsible=icon]:px-2 border-t border-border/40">
-        <SidebarMenuButton
-          tooltip="Logout"
-          className="h-10 rounded-2xl px-3.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors font-semibold"
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          <span className="text-sm group-data-[collapsible=icon]:hidden">Logout</span>
-        </SidebarMenuButton>
-      </SidebarFooter>
     </Sidebar>
   );
 }

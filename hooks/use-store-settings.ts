@@ -9,48 +9,48 @@ export interface StoreSettings {
   storeName: string;
   whatsappNumber: string;
   flatShippingRate: number;
-  bankName?: string;
-  bankAccountNumber?: string;
-  bankAccountOwner?: string;
-  instagramUrl?: string;
-  tiktokUrl?: string;
-  facebookUrl?: string;
-  pinterestUrl?: string;
-  xTwitterUrl?: string;
-  heroTitle?: string;
-  heroSubtitle?: string;
-  heroLeftImage?: string;
-  heroRightImage?: string;
-  heroCtaText?: string;
-  heroCtaLink?: string;
-  homeFeaturedTitle?: string;
-  homeViewAllLabel?: string;
-  homeManifestoTitle?: string;
-  homeManifestoText?: string;
-  homeManifestoImage?: string;
-  homeBannerText?: string;
-  homeBannerButton?: string;
-  archiveHeaderSub?: string;
-  archiveQuoteTitle?: string;
-  archiveQuoteText?: string;
-  aboutHeroImage?: string;
-  aboutHeading?: string;
-  aboutParagraph1?: string;
-  aboutParagraph2?: string;
-  aboutValuesTitle?: string;
-  aboutValues?: Array<{ title: string; description: string }>;
-  aboutQuote?: string;
-  aboutQuoteText?: string;
-  aboutStudioImage?: string;
-  contactEmail?: string;
-  waTemplatePending?: string;
-  waTemplatePayment?: string;
-  waTemplateShipping?: string;
-  waTemplateRemind?: string;
-  enabledCouriers?: string;
-  originCityId?: string;
-  originCityName?: string;
-  originProvinceName?: string;
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountOwner?: string | null;
+  instagramUrl?: string | null;
+  tiktokUrl?: string | null;
+  facebookUrl?: string | null;
+  pinterestUrl?: string | null;
+  xTwitterUrl?: string | null;
+  heroTitle?: string | null;
+  heroSubtitle?: string | null;
+  heroLeftImage?: string | null;
+  heroRightImage?: string | null;
+  heroCtaText?: string | null;
+  heroCtaLink?: string | null;
+  homeFeaturedTitle?: string | null;
+  homeViewAllLabel?: string | null;
+  homeManifestoTitle?: string | null;
+  homeManifestoText?: string | null;
+  homeManifestoImage?: string | null;
+  homeBannerText?: string | null;
+  homeBannerButton?: string | null;
+  archiveHeaderSub?: string | null;
+  archiveQuoteTitle?: string | null;
+  archiveQuoteText?: string | null;
+  aboutHeroImage?: string | null;
+  aboutHeading?: string | null;
+  aboutParagraph1?: string | null;
+  aboutParagraph2?: string | null;
+  aboutValuesTitle?: string | null;
+  aboutValues?: Array<{ title: string; description: string }> | null | unknown;
+  aboutQuote?: string | null;
+  aboutQuoteText?: string | null;
+  aboutStudioImage?: string | null;
+  contactEmail?: string | null;
+  waTemplatePending?: string | null;
+  waTemplatePayment?: string | null;
+  waTemplateShipping?: string | null;
+  waTemplateRemind?: string | null;
+  enabledCouriers?: string | null;
+  originCityId?: string | null;
+  originCityName?: string | null;
+  originProvinceName?: string | null;
 }
 
 interface StoreSettingsState extends StoreSettings {
@@ -69,11 +69,11 @@ export const useStoreSettingsStore = create<StoreSettingsState>()(
       facebookUrl: '',
       pinterestUrl: '',
       xTwitterUrl: '',
-      heroTitle: 'EDITION 001',
-      heroSubtitle: 'ARCHIVAL COTTON SILHOUETTE',
-      heroLeftImage: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80',
-      heroRightImage: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
-      heroCtaText: 'Eksplor Koleksi Terkini',
+      heroTitle: '',
+      heroSubtitle: '',
+      heroLeftImage: '',
+      heroRightImage: '',
+      heroCtaText: '',
       heroCtaLink: '/catalogue',
 
       setSettings: (settings) => set({ ...settings }),
