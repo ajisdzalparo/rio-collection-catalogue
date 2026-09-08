@@ -5,9 +5,9 @@ import Link from 'next/link';
 import {
   Calendar,
   ShoppingBag,
-  History,
-  MessageSquare
+  History
 } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { Badge } from '@/components/ui/badge';
 import { useCustomers, type CustomerSummary } from '@/hooks/use-customers';
 import { VStack } from '@/components/ui/layout';
@@ -50,10 +50,10 @@ export default function CustomersCmsPage() {
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-emerald-500 hover:text-emerald-600 transition-colors"
+              className="text-emerald-500 hover:text-emerald-600 transition-colors inline-flex items-center"
               title="Chat WhatsApp"
             >
-              <MessageSquare className="h-3.5 w-3.5" />
+              <WhatsAppIcon size={14} className="h-3.5 w-3.5" />
             </a>
           </div>
         )

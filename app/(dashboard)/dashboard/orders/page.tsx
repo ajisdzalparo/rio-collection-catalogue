@@ -11,9 +11,9 @@ import {
   Clock,
   RefreshCw,
   AlertTriangle,
-  Eye,
-  MessageSquare
+  Eye
 } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -269,7 +269,7 @@ function OrdersPageContent() {
                   }}
                   className="gap-2 cursor-pointer font-medium"
                 >
-                  <MessageSquare className="h-3.5 w-3.5 text-emerald-500" />
+                  <WhatsAppIcon size={14} className="h-3.5 w-3.5 text-emerald-500" />
                   <span>Chat WA Pelanggan</span>
                 </DropdownMenuItem>
 

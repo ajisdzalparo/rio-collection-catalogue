@@ -1,13 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
-import { MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   InstagramIcon,
   TikTokIcon,
   PinterestIcon,
   FacebookIcon,
-  XTwitterIcon
+  XTwitterIcon,
+  WhatsAppIcon
 } from '@/components/icons/social-icons';
 import type { StoreSettings } from '@/hooks/use-store-settings';
 
@@ -59,7 +59,7 @@ export function CatalogueFooter({ settings, className }: CatalogueFooterProps) {
     {
       name: 'WhatsApp',
       url: whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}` : undefined,
-      icon: <MessageCircle size={14} className="shrink-0" />
+      icon: <WhatsAppIcon size={14} className="shrink-0" />
     }
   ];
 

@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Calendar,
-  Phone,
-  MessageSquare,
   Copy,
   CheckCircle2,
   XCircle,
@@ -21,6 +19,7 @@ import {
   Loader2,
   ExternalLink
 } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -256,7 +255,7 @@ export default function OrderDetailPage({ params }: PageProps) {
             rel="noreferrer"
             className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
           >
-            <MessageSquare className="h-4 w-4" />
+            <WhatsAppIcon size={16} className="h-4 w-4" />
             <span>Chat WhatsApp Customer</span>
           </a>
           <Button
@@ -530,7 +529,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       }}
                       className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
                     >
-                      <MessageSquare className="h-4 w-4" />
+                      <WhatsAppIcon size={16} className="h-4 w-4" />
                       <span>1. Kirim WA (Notifikasi Setuju)</span>
                     </a>
 
@@ -573,7 +572,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       }}
                       className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
                     >
-                      <MessageSquare className="h-4 w-4" />
+                      <WhatsAppIcon size={16} className="h-4 w-4" />
                       <span>1. Kirim WA (Tagihan Rekening)</span>
                     </a>
 
@@ -628,7 +627,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       }}
                       className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
                     >
-                      <MessageSquare className="h-4 w-4" />
+                      <WhatsAppIcon size={16} className="h-4 w-4" />
                       <span>1. Kirim WA (Pembayaran Diterima)</span>
                     </a>
 
@@ -710,7 +709,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       }}
                       className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
                     >
-                      <MessageSquare className="h-4 w-4" />
+                      <WhatsAppIcon size={16} className="h-4 w-4" />
                       <span>1. Kirim WA (Resi &amp; Dikirim)</span>
                     </a>
 
@@ -804,7 +803,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                     rel="noreferrer"
                     className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
                   >
-                    <Phone className="h-3 w-3" />
+                    <WhatsAppIcon size={12} className="h-3 w-3" />
                     <span>Chat WA</span>
                   </a>
                 </div>
@@ -1017,7 +1016,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                   onClick={() => setWaFollowedUp(true)}
                   className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-bold bg-foreground text-background w-full"
                 >
-                  <MessageSquare className="h-3.5 w-3.5" />
+                  <WhatsAppIcon size={14} className="h-3.5 w-3.5" />
                   <span>1. Kirim WA Kekurangan Ongkir</span>
                 </a>
                 <PaymentProofUpload
@@ -1041,7 +1040,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                   onClick={() => setWaFollowedUp(true)}
                   className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-bold bg-foreground text-background w-full"
                 >
-                  <MessageSquare className="h-3.5 w-3.5" />
+                  <WhatsAppIcon size={14} className="h-3.5 w-3.5" />
                   <span>1. Kirim WA Tawaran Refund</span>
                 </a>
                 <div className="grid grid-cols-2 gap-2">

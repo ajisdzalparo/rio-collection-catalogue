@@ -9,13 +9,13 @@ import {
   DollarSign,
   Phone,
   MapPin,
-  MessageSquare,
   ClipboardList,
   Shirt,
   ExternalLink,
   AlertTriangle,
   Loader2
 } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCustomers } from '@/hooks/use-customers';
@@ -147,7 +147,7 @@ export default function CustomerDetailPage({ params }: PageProps) {
             rel="noreferrer"
             className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
           >
-            <MessageSquare className="h-4 w-4" />
+            <WhatsAppIcon size={16} className="h-4 w-4" />
             <span>Chat WhatsApp (+{customer.whatsapp})</span>
           </a>
           <Button
