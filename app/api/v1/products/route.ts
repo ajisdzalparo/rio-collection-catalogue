@@ -76,7 +76,13 @@ export async function POST(request: Request) {
         imageUrl:
           imageUrl ||
           'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
-        images: Array.isArray(images) && images.length > 0 ? images : [imageUrl || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80'],
+        images:
+          Array.isArray(images) && images.length > 0
+            ? images
+            : [
+                imageUrl ||
+                  'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80'
+              ],
         imageDetails: imageDetails || null,
         description: description || '',
         storyTitle: storyTitle || null,
@@ -103,10 +109,27 @@ export async function POST(request: Request) {
       status: 'success',
       data: newProduct
     });
-  } catch (error) {
-    console.error('Error creating product:', error);
+  } catch (error: unknown) {
+    console.error('Error creating product:', JSON.stringify(error, Object.getOwnPropertyNames(error as object), 2));
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      const target =
+        'meta' in error && error.meta && typeof error.meta === 'object' && 'target' in error.meta
+          ? (error.meta as { target: string[] }).target
+          : ['unknown'];
+      return NextResponse.json(
+        {
+          code: 409,
+          status: 'error',
+          message: `Duplicate value: field ${Array.isArray(target) ? target.join(', ') : target} already exists`
+        },
+        { status: 409 }
+      );
+    }
+
+    const errCode = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined;
+    const errMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { code: 500, status: 'error', message: 'Failed to create product' },
+      { code: 500, status: 'error', message: 'Failed to create product', detail: errMsg, prismaCode: errCode },
       { status: 500 }
     );
   }

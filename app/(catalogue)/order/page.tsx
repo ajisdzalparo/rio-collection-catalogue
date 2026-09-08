@@ -9,17 +9,9 @@ import { cn, formatPrice } from '@/lib/utils';
 import { getProducts, submitOrder } from '@/lib/api';
 import { useStoreSettingsStore } from '@/hooks/use-store-settings';
 import type { Product } from '@/types/catalogue.types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { CaptchaChallenge } from '@/components/catalogue/captcha-challenge';
 import { SearchableSelect } from '@/components/catalogue/searchable-select';
 
-// Offline Fallback Data Engine (Used when RAJAONGKIR_API_KEY is not configured)
 const PROVINCES_DATA = [
   { name: 'DKI Jakarta', baseRate: 10000 },
   { name: 'Jawa Barat', baseRate: 12000 },
@@ -649,9 +641,8 @@ export default function OrderPage() {
                 <div className="mt-4 p-3 bg-(--cat-surface-container-low) border border-(--cat-stone) text-[11px] text-(--cat-on-surface-variant) leading-normal flex items-center gap-2">
                   <Calculator size={14} className="shrink-0 opacity-70" />
                   <span>
-                    {isRajaActive
-                      ? 'Tarif ongkir dihitung otomatis secara real-time via RajaOngkir.'
-                      : 'Tarif ongkir dihitung otomatis berdasarkan provinsi dan layanan kurir yang Anda pilih.'}
+                    Tarif ongkir dihitung otomatis berdasarkan provinsi dan layanan kurir yang Anda
+                    pilih.
                   </span>
                 </div>
               </div>
