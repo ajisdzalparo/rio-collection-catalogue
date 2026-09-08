@@ -886,13 +886,25 @@ function ReportsPageContent() {
             </div>
           </div>
 
-          <div className="lg:col-span-4 bg-card border border-border/40 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-2xs h-full">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border/10 pb-3 flex items-center gap-2 shrink-0">
-              <Receipt className="h-4 w-4 text-primary" />
-              <span>Catatan Rincian Penjualan</span>
-            </h4>
+          <div className="lg:col-span-4 bg-card border border-border/40 rounded-2xl p-5 flex flex-col space-y-4 shadow-2xs h-full">
+            <div className="flex items-center justify-between border-b border-border/10 pb-3 shrink-0">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-primary" />
+                <span>Catatan Rincian Penjualan</span>
+              </h4>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                {
+                  currentOrders.filter((o) =>
+                    o.items.some(
+                      (item) => selectedProduct === 'ALL' || item.name === selectedProduct
+                    )
+                  ).length
+                }{' '}
+                Pesanan
+              </span>
+            </div>
 
-            <div className="space-y-3 flex-1 min-h-70 max-h-80 overflow-y-auto pr-1">
+            <div className="space-y-3 flex-1 overflow-y-auto max-h-[460px] pr-1">
               {currentOrders.map((o) => {
                 const matchingItems = o.items.filter(
                   (item) => selectedProduct === 'ALL' || item.name === selectedProduct
@@ -938,7 +950,9 @@ function ReportsPageContent() {
                   </div>
                 );
               })}
-              {currentOrders.length === 0 && (
+              {currentOrders.filter((o) =>
+                o.items.some((item) => selectedProduct === 'ALL' || item.name === selectedProduct)
+              ).length === 0 && (
                 <div className="text-center py-6 text-xs text-muted-foreground">
                   Belum ada order pada filter produk & periode ini.
                 </div>
