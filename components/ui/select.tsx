@@ -6,7 +6,48 @@ import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { cn } from '@/lib/utils';
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from 'lucide-react';
 
-const Select = SelectPrimitive.Root;
+interface SelectContextValue {
+  labels: Record<string, React.ReactNode>;
+}
+
+const SelectLabelContext = React.createContext<SelectContextValue | null>(null);
+
+function extractLabelsFromChildren(
+  children: React.ReactNode,
+  map: Record<string, React.ReactNode> = {}
+): Record<string, React.ReactNode> {
+  React.Children.forEach(children, (child) => {
+    if (!child) return;
+    if (Array.isArray(child)) {
+      extractLabelsFromChildren(child, map);
+      return;
+    }
+    if (!React.isValidElement(child)) return;
+
+    const props = child.props as Record<string, unknown>;
+    if (props && props.value !== undefined && props.children !== undefined) {
+      map[String(props.value)] = props.children as React.ReactNode;
+    }
+
+    if (props && props.children) {
+      extractLabelsFromChildren(props.children as React.ReactNode, map);
+    }
+  });
+  return map;
+}
+
+function Select<Value = string, Multiple extends boolean | undefined = false>({
+  children,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  const labels = React.useMemo(() => extractLabelsFromChildren(children), [children]);
+
+  return (
+    <SelectLabelContext.Provider value={{ labels }}>
+      <SelectPrimitive.Root<Value, Multiple> {...props}>{children}</SelectPrimitive.Root>
+    </SelectLabelContext.Provider>
+  );
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -18,13 +59,33 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   );
 }
 
-function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({ className, children, placeholder, ...props }: SelectPrimitive.Value.Props) {
+  const ctx = React.useContext(SelectLabelContext);
+
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
       className={cn('flex flex-1 text-left', className)}
+      placeholder={placeholder}
       {...props}
-    />
+    >
+      {(selectedValue: unknown) => {
+        if (typeof children === 'function') {
+          return children(selectedValue);
+        }
+        if (children) {
+          return children;
+        }
+        if (selectedValue !== undefined && selectedValue !== null && selectedValue !== '') {
+          const key = String(selectedValue);
+          if (ctx?.labels[key] !== undefined && ctx.labels[key] !== null) {
+            return ctx.labels[key];
+          }
+          return selectedValue as React.ReactNode;
+        }
+        return placeholder;
+      }}
+    </SelectPrimitive.Value>
   );
 }
 
