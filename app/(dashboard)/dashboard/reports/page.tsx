@@ -13,7 +13,16 @@ import {
   Package,
   Filter,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  BarChart3,
+  LineChart,
+  Sparkles,
+  Eye,
+  EyeOff,
+  Activity,
+  CalendarDays,
+  Trophy,
+  ShoppingBag
 } from 'lucide-react';
 import { VStack } from '@/components/ui/layout';
 import { Button } from '@/components/ui/button';
@@ -34,26 +43,28 @@ import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
+  BarElement,
   PointElement,
   LineElement,
+  Filler,
   Title,
   Tooltip,
   Legend,
-  Filler,
   type ChartOptions,
-  type ChartDataset
+  type ChartData
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Chart } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
+  BarElement,
   PointElement,
   LineElement,
+  Filler,
   Title,
   Tooltip,
-  Legend,
-  Filler
+  Legend
 );
 
 type PeriodFilter = '7D' | '30D' | 'THIS_MONTH' | 'ALL';
@@ -69,6 +80,10 @@ function ReportsPageContent() {
   const { data: orders = [] } = useOrders();
   const [period, setPeriod] = useState<PeriodFilter>('7D');
   const [selectedProduct, setSelectedProduct] = useState<string>('ALL');
+  const [chartType, setChartType] = useState<'bar' | 'area'>('bar');
+  const [showRevenue, setShowRevenue] = useState(true);
+  const [showProfit, setShowProfit] = useState(true);
+  const [showComparison, setShowComparison] = useState(true);
 
   // Extract unique product list for filter dropdown
   const availableProducts = useMemo(() => {
@@ -79,108 +94,82 @@ function ReportsPageContent() {
     return Array.from(names);
   }, [orders]);
 
-  // Successful orders list
-  const successfulOrders = useMemo(() => {
-    return orders.filter(
-      (o) => o.status === 'CONFIRMED' || o.status === 'PAID' || o.status === 'FULFILLED'
-    );
-  }, [orders]);
-
-  // Current Period Orders
-  const currentOrders = useMemo(() => {
+  // Filter Orders by Period
+  const { currentOrders, previousOrders } = useMemo(() => {
     const now = new Date();
+    let startDate: Date;
+    let prevStartDate: Date;
+    let prevEndDate: Date;
 
-    return successfulOrders.filter((o) => {
-      const orderDate = new Date(o.createdAt);
+    if (period === '7D') {
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      prevEndDate = new Date(startDate.getTime());
+      prevStartDate = new Date(startDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (period === '30D') {
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      prevEndDate = new Date(startDate.getTime());
+      prevStartDate = new Date(startDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else if (period === 'THIS_MONTH') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      prevEndDate = new Date(startDate.getTime() - 1);
+      prevStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    } else {
+      // ALL
+      startDate = new Date(0);
+      prevEndDate = new Date(0);
+      prevStartDate = new Date(0);
+    }
 
-      if (period === '7D') {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(now.getDate() - 7);
-        return orderDate >= sevenDaysAgo;
-      }
-      if (period === '30D') {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(now.getDate() - 30);
-        return orderDate >= thirtyDaysAgo;
-      }
-      if (period === 'THIS_MONTH') {
-        return (
-          orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()
-        );
-      }
-      return true;
+    const current = orders.filter((o) => {
+      const d = new Date(o.createdAt);
+      return d >= startDate && d <= now;
     });
-  }, [successfulOrders, period]);
 
-  // Previous Period Orders (for Comparison Analytics)
-  const previousOrders = useMemo(() => {
-    const now = new Date();
+    const previous =
+      period === 'ALL'
+        ? []
+        : orders.filter((o) => {
+            const d = new Date(o.createdAt);
+            return d >= prevStartDate && d <= prevEndDate;
+          });
 
-    return successfulOrders.filter((o) => {
-      const orderDate = new Date(o.createdAt);
+    return { currentOrders: current, previousOrders: previous };
+  }, [orders, period]);
 
-      if (period === '7D') {
-        const fourteenDaysAgo = new Date();
-        fourteenDaysAgo.setDate(now.getDate() - 14);
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(now.getDate() - 7);
-        return orderDate >= fourteenDaysAgo && orderDate < sevenDaysAgo;
-      }
-      if (period === '30D') {
-        const sixtyDaysAgo = new Date();
-        sixtyDaysAgo.setDate(now.getDate() - 60);
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(now.getDate() - 30);
-        return orderDate >= sixtyDaysAgo && orderDate < thirtyDaysAgo;
-      }
-      if (period === 'THIS_MONTH') {
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-        return orderDate >= lastMonth && orderDate <= endLastMonth;
-      }
-      return false;
-    });
-  }, [successfulOrders, period]);
+  // Calculate Metrics (Revenue, HPP, Profit, Margin)
+  const calculateMetrics = (orderList: typeof orders) => {
+    let revenue = 0;
+    let totalHpp = 0;
+    let totalQty = 0;
 
-  const calculateMetrics = useCallback(
-    (orderList: typeof successfulOrders) => {
-      let revenue = 0;
-      let totalHpp = 0;
-      let totalQty = 0;
+    orderList.forEach((o) => {
+      o.items.forEach((item) => {
+        if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
 
-      orderList.forEach((order) => {
-        order.items.forEach((item) => {
-          if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
-
-          const itemRevenue = item.price * item.quantity;
-          const itemHppUnit = item.cogs || 180000;
-          const itemHppTotal = itemHppUnit * item.quantity;
-
-          revenue += itemRevenue;
-          totalHpp += itemHppTotal;
-          totalQty += item.quantity;
-        });
+        const rev = item.price * item.quantity;
+        const hpp = (item.cogs || 180000) * item.quantity;
+        revenue += rev;
+        totalHpp += hpp;
+        totalQty += item.quantity;
       });
+    });
 
-      const netProfit = revenue - totalHpp;
-      const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+    const netProfit = revenue - totalHpp;
+    const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
 
-      return { revenue, totalHpp, netProfit, profitMargin, totalQty };
-    },
-    [selectedProduct]
+    return { revenue, totalHpp, netProfit, profitMargin, totalQty };
+  };
+
+  const currentMetrics = useMemo(
+    () => calculateMetrics(currentOrders),
+    [currentOrders, selectedProduct]
+  );
+  const previousMetrics = useMemo(
+    () => calculateMetrics(previousOrders),
+    [previousOrders, selectedProduct]
   );
 
-  // Current Metrics
-  const currentMetrics = useMemo(() => {
-    return calculateMetrics(currentOrders);
-  }, [calculateMetrics, currentOrders]);
-
-  // Previous Metrics (Comparative Data)
-  const previousMetrics = useMemo(() => {
-    return calculateMetrics(previousOrders);
-  }, [calculateMetrics, previousOrders]);
-
-  // Growth percentage calculation
+  // Growth percentages
   const growth = useMemo(() => {
     const calcGrowth = (curr: number, prev: number) => {
       if (prev === 0) return curr > 0 ? 100 : 0;
@@ -227,15 +216,28 @@ function ReportsPageContent() {
 
   // Chart data points per day for Current vs Previous Period
   const chartDataPoints = useMemo(() => {
-    const daysCount = period === '30D' ? 14 : 7;
-    const dates: string[] = [];
+    let daysCount = 7;
+    if (period === '30D' || period === 'ALL') daysCount = 30;
+    if (period === 'THIS_MONTH') {
+      const now = new Date();
+      daysCount = Math.max(7, now.getDate());
+    }
+
+    const dates: { dateStr: string; fullDate: Date; prevDate: Date }[] = [];
     for (let i = daysCount - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      dates.push(d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+      const prevD = new Date();
+      prevD.setDate(prevD.getDate() - (daysCount + i));
+
+      dates.push({
+        dateStr: d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+        fullDate: d,
+        prevDate: prevD
+      });
     }
 
-    return dates.map((dateStr, idx) => {
+    return dates.map(({ dateStr, prevDate }) => {
       let dailyRevenue = 0;
       let dailyProfit = 0;
       let prevDailyRevenue = 0;
@@ -257,18 +259,19 @@ function ReportsPageContent() {
         }
       });
 
-      // Previous period revenue mapping for comparison line
+      // Previous period revenue mapping
       if (previousOrders.length > 0) {
-        const prevDateStr = new Date(
-          new Date().setDate(new Date().getDate() - (daysCount + (daysCount - 1 - idx)))
-        ).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        const prevTargetStr = prevDate.toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short'
+        });
 
         previousOrders.forEach((o) => {
           const orderDate = new Date(o.createdAt).toLocaleDateString('id-ID', {
             day: 'numeric',
             month: 'short'
           });
-          if (orderDate === prevDateStr) {
+          if (orderDate === prevTargetStr) {
             o.items.forEach((item) => {
               if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
               prevDailyRevenue += item.price * item.quantity;
@@ -286,49 +289,122 @@ function ReportsPageContent() {
     });
   }, [currentOrders, previousOrders, period, selectedProduct]);
 
-  // Chart.js Datasets Configuration
-  const lineChartData = useMemo(() => {
-    const datasets: ChartDataset<'line'>[] = [
-      {
-        label: 'Omset Periode Ini',
-        data: chartDataPoints.map((d) => d.revenue),
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.12)',
-        fill: true,
-        tension: 0.35,
-        pointBackgroundColor: '#3b82f6',
-        pointBorderColor: '#ffffff',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      },
-      {
-        label: 'Laba Kotor Periode Ini',
-        data: chartDataPoints.map((d) => d.profit),
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16, 185, 129, 0.12)',
-        fill: true,
-        tension: 0.35,
-        pointBackgroundColor: '#10b981',
-        pointBorderColor: '#ffffff',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      }
-    ];
+  // Executive Insights for Business Owner
+  const chartInsights = useMemo(() => {
+    let peakRevenue = 0;
+    let peakLabel = '-';
+    let totalRev = 0;
+    let daysWithSales = 0;
 
-    // Add Comparison Dataset if Previous Period Data Available
-    if (period !== 'ALL') {
+    chartDataPoints.forEach((d) => {
+      totalRev += d.revenue;
+      if (d.revenue > peakRevenue) {
+        peakRevenue = d.revenue;
+        peakLabel = d.label;
+      }
+      if (d.revenue > 0) daysWithSales++;
+    });
+
+    const avgDaily = chartDataPoints.length > 0 ? totalRev / chartDataPoints.length : 0;
+
+    return {
+      peakRevenue,
+      peakLabel,
+      avgDaily,
+      daysWithSales,
+      totalPoints: chartDataPoints.length
+    };
+  }, [chartDataPoints]);
+
+  // Chart.js Datasets Configuration with Combo Bar & Line Support
+  const mixedChartData: ChartData<'bar' | 'line'> = useMemo(() => {
+    const datasets: ChartData<'bar' | 'line'>['datasets'] = [];
+
+    // Dataset 1: Revenue (Omset)
+    if (showRevenue) {
+      if (chartType === 'bar') {
+        datasets.push({
+          type: 'bar',
+          label: 'Omset Periode Ini',
+          data: chartDataPoints.map((d) => d.revenue),
+          backgroundColor: '#3b82f6',
+          hoverBackgroundColor: '#2563eb',
+          borderRadius: 8,
+          borderSkipped: false,
+          maxBarThickness: 34,
+          order: 2
+        });
+      } else {
+        datasets.push({
+          type: 'line',
+          label: 'Omset Periode Ini',
+          data: chartDataPoints.map((d) => d.revenue),
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.16)',
+          fill: true,
+          tension: 0.38,
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#3b82f6',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1.5,
+          order: 2
+        });
+      }
+    }
+
+    // Dataset 2: Gross Profit (Laba Kotor)
+    if (showProfit) {
+      if (chartType === 'bar') {
+        datasets.push({
+          type: 'bar',
+          label: 'Laba Kotor',
+          data: chartDataPoints.map((d) => d.profit),
+          backgroundColor: '#10b981',
+          hoverBackgroundColor: '#059669',
+          borderRadius: 8,
+          borderSkipped: false,
+          maxBarThickness: 34,
+          order: 3
+        });
+      } else {
+        datasets.push({
+          type: 'line',
+          label: 'Laba Kotor',
+          data: chartDataPoints.map((d) => d.profit),
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          fill: true,
+          tension: 0.38,
+          borderWidth: 2,
+          pointRadius: 3.5,
+          pointHoverRadius: 5.5,
+          pointBackgroundColor: '#10b981',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1.5,
+          order: 3
+        });
+      }
+    }
+
+    // Dataset 3: Comparison Line (Omset Periode Lalu)
+    if (showComparison && period !== 'ALL') {
       datasets.push({
-        label: 'Omset Periode Lalu (Komparasi)',
+        type: 'line',
+        label: 'Komparasi Periode Lalu',
         data: chartDataPoints.map((d) => d.prevRevenue),
         borderColor: '#a855f7',
-        borderDash: [5, 5],
-        backgroundColor: 'transparent',
+        borderWidth: 2,
+        borderDash: [6, 6],
+        pointRadius: 3,
+        pointHoverRadius: 5.5,
+        pointBackgroundColor: '#a855f7',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 1.5,
         fill: false,
         tension: 0.35,
-        pointBackgroundColor: '#a855f7',
-        pointRadius: 3
+        order: 1
       });
     }
 
@@ -336,38 +412,62 @@ function ReportsPageContent() {
       labels: chartDataPoints.map((d) => d.label),
       datasets
     };
-  }, [chartDataPoints, period]);
+  }, [chartDataPoints, period, chartType, showRevenue, showProfit, showComparison]);
 
   // Chart.js Options
-  const lineChartOptions: ChartOptions<'line'> = useMemo(() => {
+  const chartOptions: ChartOptions<'bar' | 'line'> = useMemo(() => {
     return {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
       plugins: {
         legend: {
-          display: true,
-          position: 'top',
-          align: 'end',
-          labels: {
-            usePointStyle: true,
-            boxWidth: 8,
-            boxHeight: 8,
-            font: {
-              size: 11,
-              weight: 'bold'
-            }
-          }
+          display: false
         },
         tooltip: {
           mode: 'index',
           intersect: false,
-          padding: 10,
-          boxPadding: 4,
+          backgroundColor: 'rgba(15, 23, 42, 0.96)',
+          titleColor: '#f8fafc',
+          titleFont: {
+            size: 12,
+            weight: 'bold'
+          },
+          bodyColor: '#e2e8f0',
+          bodyFont: {
+            size: 11
+          },
+          borderColor: 'rgba(255, 255, 255, 0.15)',
+          borderWidth: 1,
+          padding: 14,
+          cornerRadius: 14,
+          boxPadding: 6,
+          usePointStyle: true,
           callbacks: {
+            title: (items) => {
+              if (!items.length) return '';
+              return `Tanggal: ${items[0].label}`;
+            },
             label: (context) => {
               const label = context.dataset.label || '';
-              const value = context.parsed.y || 0;
-              return `${label}: ${formatIDR(value)}`;
+              const value = Number(context.parsed.y || 0);
+              return ` ${label}: ${formatIDR(value)}`;
+            },
+            afterBody: (items) => {
+              const revItem = items.find((i) => i.dataset.label?.includes('Omset Periode Ini'));
+              const profitItem = items.find((i) => i.dataset.label?.includes('Laba Kotor'));
+              if (revItem && profitItem) {
+                const rev = Number(revItem.parsed.y || 0);
+                const profit = Number(profitItem.parsed.y || 0);
+                if (rev > 0) {
+                  const margin = ((profit / rev) * 100).toFixed(1);
+                  return [`Margin Laba: ${margin}%`];
+                }
+              }
+              return [];
             }
           }
         }
@@ -379,27 +479,32 @@ function ReportsPageContent() {
           },
           ticks: {
             font: {
-              size: 10,
+              size: 11,
               weight: 'bold'
-            }
+            },
+            color: 'rgba(148, 163, 184, 0.9)'
           }
         },
         y: {
+          beginAtZero: true,
           border: {
             dash: [4, 4]
           },
           grid: {
-            color: 'rgba(120, 120, 128, 0.15)'
+            color: 'rgba(148, 163, 184, 0.08)'
           },
           ticks: {
             font: {
-              size: 10
+              size: 10,
+              weight: 'bold'
             },
+            color: 'rgba(148, 163, 184, 0.85)',
             callback: (val) => {
               const num = Number(val);
-              if (num >= 1000000) return `${(num / 1000000).toFixed(1)}jt`;
-              if (num >= 1000) return `${(num / 1000).toFixed(0)}rb`;
-              return num;
+              if (num === 0) return 'Rp 0';
+              if (num >= 1000000) return `Rp ${(num / 1000000).toFixed(1).replace('.0', '')} jt`;
+              if (num >= 1000) return `Rp ${(num / 1000).toFixed(0)} rb`;
+              return `Rp ${num}`;
             }
           }
         }
@@ -464,23 +569,25 @@ function ReportsPageContent() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
-    const filterTag = selectedProduct !== 'ALL' ? selectedProduct.replace(/\s+/g, '_') : 'Semua';
-    link.setAttribute('download', `Laporan_Penjualan_${filterTag}_${period}.csv`);
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `Laporan_Penjualan_RIO_${period}_${selectedProduct.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Laporan penjualan CSV berhasil diunduh!');
+    toast.success('Laporan CSV berhasil diunduh.');
   };
 
   return (
-    <VStack gap="lg" className="w-full pb-10">
-      {/* Header & Controls Row */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
-        <div className="space-y-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-              Laporan Keuangan
+    <VStack gap="lg" className="w-full pb-12">
+      {/* Header and Filter Controls */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-5">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl font-black tracking-tight text-foreground">
+              Laporan Keuangan & Penjualan
             </h1>
             {selectedProduct !== 'ALL' && (
               <Badge
@@ -491,14 +598,12 @@ function ReportsPageContent() {
               </Badge>
             )}
           </div>
-          <p className="text-sm text-muted-foreground pt-0.5">
-            Pantau ringkasan omset, komparasi periode, serta analisis per produk toko RIO
-            COLLECTION.
+          <p className="text-sm text-muted-foreground">
+            Ringkasan performa bisnis dan analisis tren produk.
           </p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0 flex-wrap">
-          {/* Product Filter Selector */}
           <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl px-3 py-1 shadow-2xs">
             <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
             <Select value={selectedProduct} onValueChange={(val) => val && setSelectedProduct(val)}>
@@ -516,7 +621,6 @@ function ReportsPageContent() {
             </Select>
           </div>
 
-          {/* Period Filter Selector */}
           <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl px-3 py-1 shadow-2xs">
             <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
             <Select value={period} onValueChange={(val) => val && setPeriod(val as PeriodFilter)}>
@@ -532,153 +636,264 @@ function ReportsPageContent() {
             </Select>
           </div>
 
-          {/* Export CSV Button */}
           <Button
             onClick={handleExportCsv}
-            className="gap-2 h-10 rounded-full px-5 font-bold uppercase tracking-wider text-xs cursor-pointer shadow-xs"
+            className="gap-2 h-9 rounded-xl px-5 font-bold uppercase tracking-wider text-[10px] shadow-xs"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-3.5 w-3.5" />
             <span>Ekspor CSV</span>
           </Button>
         </div>
       </div>
 
       <div className="w-full space-y-6">
-        {/* Metrics Summary Cards with Comparison Badges */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-          {/* Revenue card */}
-          <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-3 shadow-2xs hover:shadow-xs transition-shadow">
+        {/* Metrics Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">
-                Revenue / Omset
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Revenue
               </span>
-              <div className="h-7 w-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Receipt className="h-4 w-4 text-blue-500" />
-              </div>
+              <Receipt className="h-4 w-4 text-blue-500" />
             </div>
             <h3 className="text-xl font-black text-foreground tabular-nums">
               {formatIDR(currentMetrics.revenue)}
             </h3>
-            <div className="flex items-center justify-between pt-1">
-              <p className="text-[9px] text-muted-foreground/70 leading-normal">
-                {currentMetrics.totalQty} pcs terjual
+            {period !== 'ALL' && (
+              <p
+                className={`text-[10px] font-bold ${growth.revenue >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+              >
+                {growth.revenue >= 0 ? '+' : ''}
+                {growth.revenue.toFixed(1)}% vs lalu
               </p>
-              {period !== 'ALL' && (
-                <div
-                  className={`flex items-center gap-0.5 text-[10px] font-bold ${
-                    growth.revenue >= 0 ? 'text-emerald-500' : 'text-rose-500'
-                  }`}
-                >
-                  {growth.revenue >= 0 ? (
-                    <ArrowUpRight className="h-3 w-3" />
-                  ) : (
-                    <ArrowDownRight className="h-3 w-3" />
-                  )}
-                  <span>{Math.abs(growth.revenue).toFixed(1)}%</span>
-                </div>
-              )}
-            </div>
+            )}
           </div>
-
-          {/* HPP total card */}
-          <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-3 shadow-2xs hover:shadow-xs transition-shadow">
+          <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">
-                Total HPP (COGS)
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Total HPP
               </span>
-              <div className="h-7 w-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <Coins className="h-4 w-4 text-amber-500" />
-              </div>
+              <Coins className="h-4 w-4 text-amber-500" />
             </div>
             <h3 className="text-xl font-black text-foreground tabular-nums">
               {formatIDR(currentMetrics.totalHpp)}
             </h3>
-            <p className="text-[9px] text-muted-foreground/70 leading-normal">
-              Akumulasi modal produksi baju terjual.
-            </p>
+            <p className="text-[10px] text-muted-foreground">Akumulasi modal produksi.</p>
           </div>
-
-          {/* Net profit card */}
-          <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-3 shadow-2xs hover:shadow-xs transition-shadow">
+          <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">
-                Laba Kotor / Profit
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Laba Kotor
               </span>
-              <div className="h-7 w-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-emerald-500" />
-              </div>
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
             </div>
             <h3 className="text-xl font-black text-foreground tabular-nums">
               {formatIDR(currentMetrics.netProfit)}
             </h3>
-            <div className="flex items-center justify-between pt-1">
-              <p className="text-[9px] text-muted-foreground/70 leading-normal">
-                Sisa bersih keuntungan kotor
+            {period !== 'ALL' && (
+              <p
+                className={`text-[10px] font-bold ${growth.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+              >
+                {growth.profit >= 0 ? '+' : ''}
+                {growth.profit.toFixed(1)}% vs lalu
               </p>
-              {period !== 'ALL' && (
-                <div
-                  className={`flex items-center gap-0.5 text-[10px] font-bold ${
-                    growth.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'
-                  }`}
-                >
-                  {growth.profit >= 0 ? (
-                    <ArrowUpRight className="h-3 w-3" />
-                  ) : (
-                    <ArrowDownRight className="h-3 w-3" />
-                  )}
-                  <span>{Math.abs(growth.profit).toFixed(1)}%</span>
-                </div>
-              )}
-            </div>
+            )}
           </div>
-
-          {/* Profit margin card */}
-          <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-3 shadow-2xs hover:shadow-xs transition-shadow">
+          <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest">
-                Profit Margin (%)
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Profit Margin
               </span>
-              <div className="h-7 w-7 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                <Percent className="h-4 w-4 text-purple-500" />
-              </div>
+              <Percent className="h-4 w-4 text-purple-500" />
             </div>
             <h3 className="text-xl font-black text-foreground tabular-nums">
               {currentMetrics.profitMargin.toFixed(1)}%
             </h3>
-            <p className="text-[9px] text-muted-foreground/70 leading-normal">
-              Rasio efisiensi margin keuntungan kotor.
-            </p>
+            <p className="text-[10px] text-muted-foreground">Rasio efisiensi margin.</p>
           </div>
         </div>
 
         {/* Chart & Detailed Log Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Chart.js Line Chart Display (8 cols) */}
           <div className="lg:col-span-8 bg-card border border-border/40 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-2xs">
-            <div className="flex items-center justify-between border-b border-border/10 pb-3 flex-wrap gap-2">
-              <div className="space-y-0.5">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                  Analisis Tren Penjualan & Komparasi
-                </h4>
+            <div className="flex items-center justify-between border-b border-border/10 pb-3.5 flex-wrap gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Analisis Tren Penjualan & Komparasi
+                  </h4>
+                  <Badge variant="outline" className="text-[10px] py-0 px-2 font-mono">
+                    {PERIOD_LABELS[period]}
+                  </Badge>
+                </div>
                 <p className="text-[10px] text-muted-foreground">
                   {selectedProduct === 'ALL'
-                    ? 'Menampilkan grafik pergerakan omset & laba seluruh produk'
+                    ? 'Perbandingan omset, laba kotor, dan komparasi periode sebelumnya'
                     : `Analisis spesifik produk: ${selectedProduct}`}
                 </p>
               </div>
+
+              <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/40">
+                <button
+                  type="button"
+                  onClick={() => setChartType('bar')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    chartType === 'bar'
+                      ? 'bg-card text-foreground shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  <span>Batang</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartType('area')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    chartType === 'area'
+                      ? 'bg-card text-foreground shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <LineChart className="h-3.5 w-3.5" />
+                  <span>Tren Area</span>
+                </button>
+              </div>
             </div>
 
-            {/* Interactive Chart.js canvas */}
-            <div className="w-full h-72 relative pt-2">
-              <Line data={lineChartData} options={lineChartOptions} />
+            {/* KPI Mini Insight Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="bg-muted/25 hover:bg-muted/35 border border-border/40 rounded-xl p-3 flex items-center gap-3 transition-colors">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                    Puncak Penjualan
+                  </span>
+                  <p className="text-xs font-bold text-foreground truncate">
+                    {chartInsights.peakRevenue > 0
+                      ? `${chartInsights.peakLabel} • ${formatIDR(chartInsights.peakRevenue)}`
+                      : 'Belum ada transaksi'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-muted/25 hover:bg-muted/35 border border-border/40 rounded-xl p-3 flex items-center gap-3 transition-colors">
+                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                  <Activity className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                    Rata-rata / Hari
+                  </span>
+                  <p className="text-xs font-bold text-foreground tabular-nums truncate">
+                    {formatIDR(chartInsights.avgDaily)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-muted/25 hover:bg-muted/35 border border-border/40 rounded-xl p-3 flex items-center gap-3 transition-colors">
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <CalendarDays className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                    Hari Transaksi Aktif
+                  </span>
+                  <p className="text-xs font-bold text-foreground tabular-nums truncate">
+                    {chartInsights.daysWithSales} dari {chartInsights.totalPoints} hari
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Dataset Toggle Legend */}
+            <div className="flex items-center justify-start sm:justify-end gap-2 flex-wrap pt-1 border-t border-border/10">
+              <button
+                type="button"
+                onClick={() => setShowRevenue(!showRevenue)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  showRevenue
+                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 shadow-2xs'
+                    : 'bg-muted/20 text-muted-foreground/60 border-border/30 hover:text-muted-foreground'
+                }`}
+              >
+                <span
+                  className={`size-2 rounded-full transition-colors ${
+                    showRevenue ? 'bg-blue-500 shadow-xs' : 'bg-muted-foreground/30'
+                  }`}
+                />
+                <span>Omset Periode Ini</span>
+                {showRevenue ? (
+                  <Eye className="size-3.5 opacity-70 ml-0.5" />
+                ) : (
+                  <EyeOff className="size-3.5 opacity-50 ml-0.5" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowProfit(!showProfit)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  showProfit
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-2xs'
+                    : 'bg-muted/20 text-muted-foreground/60 border-border/30 hover:text-muted-foreground'
+                }`}
+              >
+                <span
+                  className={`size-2 rounded-full transition-colors ${
+                    showProfit ? 'bg-emerald-500 shadow-xs' : 'bg-muted-foreground/30'
+                  }`}
+                />
+                <span>Laba Kotor</span>
+                {showProfit ? (
+                  <Eye className="size-3.5 opacity-70 ml-0.5" />
+                ) : (
+                  <EyeOff className="size-3.5 opacity-50 ml-0.5" />
+                )}
+              </button>
+
+              {period !== 'ALL' && (
+                <button
+                  type="button"
+                  onClick={() => setShowComparison(!showComparison)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                    showComparison
+                      ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30 shadow-2xs'
+                      : 'bg-muted/20 text-muted-foreground/60 border-border/30 hover:text-muted-foreground'
+                  }`}
+                >
+                  <span
+                    className={`h-0.5 w-3.5 border-t-2 border-dashed transition-colors ${
+                      showComparison ? 'border-purple-500' : 'border-muted-foreground/40'
+                    }`}
+                  />
+                  <span>Komparasi Periode Lalu</span>
+                  {showComparison ? (
+                    <Eye className="size-3.5 opacity-70 ml-0.5" />
+                  ) : (
+                    <EyeOff className="size-3.5 opacity-50 ml-0.5" />
+                  )}
+                </button>
+              )}
+            </div>
+
+            <div className="w-full h-80 relative pt-2">
+              <Chart
+                type={chartType === 'area' ? 'line' : 'bar'}
+                data={mixedChartData}
+                options={chartOptions}
+                role="img"
+                aria-label="Grafik tren penjualan, laba kotor, dan komparasi periode lalu"
+              />
             </div>
           </div>
 
-          {/* Sales breakdown summary (4 cols) */}
           <div className="lg:col-span-4 bg-card border border-border/40 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-2xs h-full">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border/10 pb-3 flex items-center gap-1.5 shrink-0">
-              <FileSpreadsheet className="h-4 w-4 text-muted-foreground/75" />
-              Catatan Rincian Penjualan
+            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border/10 pb-3 flex items-center gap-2 shrink-0">
+              <Receipt className="h-4 w-4 text-primary" />
+              <span>Catatan Rincian Penjualan</span>
             </h4>
 
             <div className="space-y-3 flex-1 min-h-70 max-h-80 overflow-y-auto pr-1">
@@ -699,7 +914,7 @@ function ReportsPageContent() {
                 return (
                   <div
                     key={o.id}
-                    className="border border-border/20 p-3 rounded-xl space-y-2 bg-muted/10"
+                    className="border border-border/25 p-3.5 rounded-xl space-y-2 bg-muted/15 hover:bg-muted/25 transition-colors"
                   >
                     <div className="flex justify-between items-center text-[10px] font-bold">
                       <span className="font-mono text-foreground">{o.orderNumber}</span>
@@ -755,35 +970,42 @@ function ReportsPageContent() {
           {topProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {topProducts.map((p, idx) => {
-                const rankColor =
-                  idx === 0
-                    ? 'bg-amber-500/15 text-amber-600 border-amber-500/30'
-                    : idx === 1
-                      ? 'bg-slate-400/15 text-slate-600 border-slate-400/30'
-                      : idx === 2
-                        ? 'bg-amber-700/15 text-amber-800 border-amber-700/30'
-                        : 'bg-muted text-muted-foreground border-border/40';
+                const rankBadge =
+                  idx === 0 ? (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-black tracking-wider">
+                      <Trophy className="h-3 w-3" />
+                      <span>#1</span>
+                    </span>
+                  ) : idx === 1 ? (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-md border border-slate-400/30 bg-slate-400/15 text-slate-600 dark:text-slate-300 text-[10px] font-black tracking-wider">
+                      <span>#2</span>
+                    </span>
+                  ) : idx === 2 ? (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-md border border-amber-700/30 bg-amber-700/15 text-amber-800 dark:text-amber-500 text-[10px] font-black tracking-wider">
+                      <span>#3</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-md border border-border/40 bg-muted/40 text-muted-foreground text-[10px] font-bold">
+                      <span>#{idx + 1}</span>
+                    </span>
+                  );
 
                 return (
                   <div
                     key={p.name}
-                    className="border border-border/30 rounded-xl p-3 space-y-2 bg-card/60 flex flex-col justify-between hover:border-primary/30 transition-colors"
+                    className="border border-border/30 rounded-xl p-3.5 space-y-2.5 bg-card/60 hover:bg-muted/10 flex flex-col justify-between hover:border-primary/30 transition-all shadow-2xs"
                   >
                     <div className="flex items-center justify-between">
-                      <span
-                        className={`px-2 py-0.5 rounded-md border text-[10px] font-black tracking-wider ${rankColor}`}
-                      >
-                        #{idx + 1}
-                      </span>
+                      {rankBadge}
                       <div className="flex items-center gap-1 text-[11px] font-extrabold text-foreground">
-                        <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                        <ShoppingBag className="h-3.5 w-3.5 text-muted-foreground" />
                         <span>{p.totalQty} Pcs</span>
                       </div>
                     </div>
 
-                    <div className="space-y-0.5 pt-1">
+                    <div className="space-y-1 pt-1">
                       <h5 className="text-xs font-bold text-foreground line-clamp-1">{p.name}</h5>
-                      <p className="text-[10px] font-medium text-emerald-500">
+                      <p className="text-[11px] font-extrabold text-emerald-500">
                         {formatIDR(p.revenue)}
                       </p>
                     </div>

@@ -23,6 +23,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import type { DateRange, DatePickerPreset } from '@/types/date-picker.types';
 import { subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { formatIDR } from '@/lib/utils';
+import { OrderStatusBadge } from '@/components/shared/order-status-badge';
 
 const INDONESIAN_PRESETS: DatePickerPreset[] = [
   {
@@ -98,60 +99,8 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [orders, dateFilterRange]);
 
-  const getStatusBadge = (
-    status:
-      | 'PENDING'
-      | 'CONFIRMED'
-      | 'WAITING_PAYMENT'
-      | 'PAID'
-      | 'FULFILLED'
-      | 'REJECTED'
-      | 'CANCELLED'
-      | 'EXPIRED'
-  ) => {
-    switch (status) {
-      case 'PENDING':
-        return (
-          <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
-            Pending
-          </Badge>
-        );
-      case 'CONFIRMED':
-        return (
-          <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-            Confirmed
-          </Badge>
-        );
-      case 'WAITING_PAYMENT':
-        return (
-          <Badge
-            variant="secondary"
-            className="bg-purple-500/10 text-purple-500 border-purple-500/20"
-          >
-            Waiting Payment
-          </Badge>
-        );
-      case 'PAID':
-        return (
-          <Badge
-            variant="secondary"
-            className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-          >
-            Paid
-          </Badge>
-        );
-      case 'FULFILLED':
-        return (
-          <Badge variant="secondary" className="bg-gray-500/10 text-gray-400 border-gray-500/20">
-            Fulfilled
-          </Badge>
-        );
-      case 'REJECTED':
-      case 'CANCELLED':
-        return <Badge variant="destructive">Cancelled</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  const getStatusBadge = (status: string) => {
+    return <OrderStatusBadge status={status} />;
   };
 
   const recentOrderColumns: Column<Order>[] = useMemo(
@@ -206,7 +155,7 @@ export default function DashboardPage() {
         className: 'text-right',
         cell: (order) => (
           <Link
-            href={`/dashboard/orders?id=${order.id}`}
+            href={`/dashboard/orders/${order.id}`}
             className="inline-flex h-7.5 w-7.5 items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             title="Detail Pesanan"
           >
