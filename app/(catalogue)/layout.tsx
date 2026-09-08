@@ -22,9 +22,9 @@ export default async function CatalogueLayout({ children }: { children: React.Re
       <div className="pointer-events-none absolute bottom-40 left-1/4 h-125 w-125 rounded-full bg-linear-to-tr from-(--cat-stone)/15 via-neutral-100/5 to-transparent blur-3xl opacity-60 z-0" />
 
       <div className="relative z-10 flex flex-col min-h-screen flex-1">
-        <CatalogueNavbar />
+        <CatalogueNavbar storeName={settings?.storeName} />
         <main className="flex-1">{children}</main>
-        <CatalogueFooter />
+        <CatalogueFooter settings={settings} />
       </div>
     </div>
   );

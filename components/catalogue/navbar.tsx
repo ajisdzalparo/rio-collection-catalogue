@@ -16,13 +16,15 @@ const NAV_LINKS = [
 ];
 
 interface CatalogueNavbarProps {
+  storeName?: string;
   className?: string;
 }
 
-export function CatalogueNavbar({ className }: CatalogueNavbarProps) {
+export function CatalogueNavbar({ storeName: serverStoreName, className }: CatalogueNavbarProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const storeName = useStoreSettingsStore((s) => s.storeName);
+  const clientStoreName = useStoreSettingsStore((s) => s.storeName);
+  const storeName = serverStoreName || clientStoreName || 'RIO COLLECTION';
 
   return (
     <>

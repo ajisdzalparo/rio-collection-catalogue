@@ -1,10 +1,7 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import { MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useStoreSettingsStore } from '@/hooks/use-store-settings';
 import {
   InstagramIcon,
   TikTokIcon,
@@ -12,8 +9,10 @@ import {
   FacebookIcon,
   XTwitterIcon
 } from '@/components/icons/social-icons';
+import type { StoreSettings } from '@/hooks/use-store-settings';
 
 interface CatalogueFooterProps {
+  settings?: Partial<StoreSettings> | null;
   className?: string;
 }
 
@@ -42,16 +41,16 @@ const FOOTER_LINKS = [
   }
 ];
 
-export function CatalogueFooter({ className }: CatalogueFooterProps) {
-  const storeName = useStoreSettingsStore((s) => s.storeName) || 'RIO COLLECTION';
-  const instagramUrl = useStoreSettingsStore((s) => s.instagramUrl);
-  const tiktokUrl = useStoreSettingsStore((s) => s.tiktokUrl);
-  const facebookUrl = useStoreSettingsStore((s) => s.facebookUrl);
-  const pinterestUrl = useStoreSettingsStore((s) => s.pinterestUrl);
-  const xTwitterUrl = useStoreSettingsStore((s) => s.xTwitterUrl);
-  const whatsappNumber = useStoreSettingsStore((s) => s.whatsappNumber);
+export function CatalogueFooter({ settings, className }: CatalogueFooterProps) {
+  const storeName = settings?.storeName || 'RIO COLLECTION';
+  const instagramUrl = settings?.instagramUrl;
+  const tiktokUrl = settings?.tiktokUrl;
+  const facebookUrl = settings?.facebookUrl;
+  const pinterestUrl = settings?.pinterestUrl;
+  const xTwitterUrl = settings?.xTwitterUrl;
+  const whatsappNumber = settings?.whatsappNumber;
 
-  const rawSocials: { name: string; url: string | undefined; icon: React.ReactNode }[] = [
+  const rawSocials: { name: string; url: string | null | undefined; icon: React.ReactNode }[] = [
     { name: 'Instagram', url: instagramUrl, icon: <InstagramIcon className="shrink-0" /> },
     { name: 'TikTok', url: tiktokUrl, icon: <TikTokIcon className="shrink-0" /> },
     { name: 'Pinterest', url: pinterestUrl, icon: <PinterestIcon className="shrink-0" /> },

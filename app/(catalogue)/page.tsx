@@ -31,7 +31,7 @@ export default async function HomePage() {
   return (
     <>
       {/* ═══ Hero Section ═══ */}
-      <HeroSection />
+      <HeroSection settings={settings} />
 
       {/* ═══ Featured Products — "Koleksi Terkini" ═══ */}
       <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">
