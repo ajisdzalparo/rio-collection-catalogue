@@ -45,8 +45,8 @@ export default function OrderPage() {
     courierService: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState('');
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(process.env.NODE_ENV !== 'production');
+  const [captchaToken, setCaptchaToken] = useState(process.env.NODE_ENV !== 'production' ? 'dev-testing-token' : '');
   const [captchaReset, setCaptchaReset] = useState(0);
   const [submitError, setSubmitError] = useState('');
 
