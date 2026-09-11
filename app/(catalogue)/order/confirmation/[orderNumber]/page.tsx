@@ -10,7 +10,19 @@ import { getOrderStatusLabel, getOrderStatusMessage } from '@/lib/order-status';
 export const metadata: Metadata = {
   title: 'Permintaan Pesanan Diterima',
   description:
-    'Your purchase request has been received. We will contact you via WhatsApp for confirmation.'
+    'Your purchase request has been received. We will contact you via WhatsApp for confirmation.',
+  openGraph: {
+    title: 'Permintaan Pesanan Diterima — RIO COLLECTION',
+    description: 'Your purchase request has been received.',
+    images: [
+      {
+        url: '/ms-icon-310x310.png',
+        width: 310,
+        height: 310,
+        alt: 'RIO COLLECTION Order Confirmation',
+      },
+    ],
+  },
 };
 
 interface OrderConfirmationProps {

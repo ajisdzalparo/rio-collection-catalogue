@@ -8,6 +8,18 @@ export const metadata: Metadata = {
   title: 'Journal',
   description:
     'Stories, ideas, and the work behind each drop. The RIO COLLECTION brand journal.',
+  openGraph: {
+    title: 'Journal — RIO COLLECTION',
+    description: 'Stories, ideas, and the work behind each drop. The RIO COLLECTION brand journal.',
+    images: [
+      {
+        url: '/ms-icon-310x310.png',
+        width: 310,
+        height: 310,
+        alt: 'RIO COLLECTION Journal',
+      },
+    ],
+  },
 };
 
 export default async function JournalPage() {

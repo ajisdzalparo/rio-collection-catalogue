@@ -21,28 +21,66 @@ const geistMono = Geist_Mono({
 const ebGaramond = EB_Garamond({
   variable: '--font-catalogue-serif',
   subsets: ['latin'],
-  display: 'swap',
+  display: 'swap'
 });
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: '--font-catalogue-sans',
   subsets: ['latin'],
-  display: 'swap',
+  display: 'swap'
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || ''),
   title: {
     default: 'RIO COLLECTION — Limited Archival T-Shirt Catalogue',
-    template: '%s — RIO COLLECTION',
+    template: '%s — RIO COLLECTION'
   },
   description:
     'Discover limited T-shirt drops, archival past designs, and brand stories from RIO COLLECTION.',
-  openGraph: {
-    title: 'RIO COLLECTION',
-    description:
-      'Independent limited T-shirt brand & archival catalogue.',
-    siteName: 'RIO COLLECTION',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+      { url: '/android-icon-192x192.png', sizes: '192x192', type: 'image/png' }
+    ],
+    apple: [
+      { url: '/apple-icon-180x180.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon.png' }
+    ],
+    other: [
+      {
+        rel: 'apple-touch-icon-precomposed',
+        url: '/apple-icon-precomposed.png'
+      }
+    ]
   },
+  manifest: '/manifest.json',
+  openGraph: {
+    title: 'RIO COLLECTION — Limited Archival T-Shirt Catalogue',
+    description:
+      'Discover limited T-shirt drops, archival past designs, and brand stories from RIO COLLECTION.',
+    siteName: 'RIO COLLECTION',
+    images: [
+      {
+        url: '/ms-icon-310x310.png',
+        width: 310,
+        height: 310,
+        alt: 'RIO COLLECTION'
+      }
+    ],
+    locale: 'id_ID',
+    type: 'website'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'RIO COLLECTION — Limited Archival T-Shirt Catalogue',
+    description:
+      'Discover limited T-shirt drops, archival past designs, and brand stories from RIO COLLECTION.',
+    images: ['/ms-icon-310x310.png']
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

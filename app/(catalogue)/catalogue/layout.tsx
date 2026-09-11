@@ -8,6 +8,14 @@ export const metadata: Metadata = {
     title: 'Catalogue — RIO COLLECTION',
     description:
       'Explore the latest limited-edition T-shirt designs.',
+    images: [
+      {
+        url: '/ms-icon-310x310.png',
+        width: 310,
+        height: 310,
+        alt: 'RIO COLLECTION Catalogue',
+      },
+    ],
   },
 };
 

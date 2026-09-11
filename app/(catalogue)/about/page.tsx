@@ -4,7 +4,19 @@ import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'Tentang kami — konten halaman ini dikelola sepenuhnya melalui CMS.'
+  description: 'Tentang kami — cerita brand dan filosofi di balik RIO COLLECTION.',
+  openGraph: {
+    title: 'About — RIO COLLECTION',
+    description: 'Tentang kami — cerita brand dan filosofi di balik RIO COLLECTION.',
+    images: [
+      {
+        url: '/ms-icon-310x310.png',
+        width: 310,
+        height: 310,
+        alt: 'RIO COLLECTION About',
+      },
+    ],
+  },
 };
 
 interface AboutValue {

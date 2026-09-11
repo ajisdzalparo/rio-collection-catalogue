@@ -14,8 +14,16 @@ export const metadata: Metadata = {
     'Discover limited T-shirt drops, archival past designs, and brand stories from RIO COLLECTION. Independent limited T-shirt brand & archival catalogue.',
   openGraph: {
     title: 'RIO COLLECTION — Limited Archival T-Shirt Catalogue',
-    description: 'Independent limited T-shirt brand & archival catalogue.'
-  }
+    description: 'Independent limited T-shirt brand & archival catalogue.',
+    images: [
+      {
+        url: '/ms-icon-310x310.png',
+        width: 310,
+        height: 310,
+        alt: 'RIO COLLECTION',
+      },
+    ],
+  },
 };
 
 export default async function HomePage() {

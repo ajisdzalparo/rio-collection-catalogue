@@ -8,7 +8,19 @@ import { prisma } from '@/lib/prisma';
 export const metadata: Metadata = {
   title: 'Archive',
   description:
-    'Explore the historical archive of past RIO COLLECTION editions. Previous designs and past drops, preserved.'
+    'Explore the historical archive of past RIO COLLECTION editions. Previous designs and past drops, preserved.',
+  openGraph: {
+    title: 'Archive — RIO COLLECTION',
+    description: 'Explore the historical archive of past RIO COLLECTION editions.',
+    images: [
+      {
+        url: '/ms-icon-310x310.png',
+        width: 310,
+        height: 310,
+        alt: 'RIO COLLECTION Archive',
+      },
+    ],
+  },
 };
 
 export default async function ArchivePage() {
