@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { useStoreSettingsQuery } from '@/hooks/use-store-settings';
 import { Lock, Mail, ArrowRight, ShieldCheck, Shirt, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { ForgotPasswordDialog } from '@/components/auth/forgot-password-dialog';
 
 export default function LoginPage() {
   const { login, isLoggingIn, loginError } = useAuth();
+  const { data: settings } = useStoreSettingsQuery();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -47,8 +49,8 @@ export default function LoginPage() {
             <Shirt className="h-7 w-7" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-              RIO COLLECTION
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground uppercase">
+              {settings?.storeName || 'RIO COLLECTION'}
             </h1>
             <p className="text-xs font-semibold text-muted-foreground mt-1">
               Dashboard CMS & Management Portal
@@ -139,7 +141,7 @@ export default function LoginPage() {
         {/* Footer Security Tag */}
         <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-          <span>Sistem Otorisasi RIO COLLECTION Admin v1.0</span>
+          <span>Sistem Otorisasi {settings?.storeName || 'RIO COLLECTION'} Admin v1.0</span>
         </div>
       </div>
 
