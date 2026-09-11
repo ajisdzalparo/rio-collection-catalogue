@@ -26,6 +26,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       hpp,
       stock,
       stockMode,
+      orderLimitMode,
+      maxPurchaseLimit,
       materialsAndCare
     } = body;
 
@@ -50,6 +52,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         hpp: hpp === undefined ? null : Number(hpp),
         stock: stock === undefined ? 0 : Number(stock),
         stockMode: stockMode || 'QUANTITY',
+        orderLimitMode: orderLimitMode || 'UNLIMITED',
+        maxPurchaseLimit: maxPurchaseLimit !== undefined ? Number(maxPurchaseLimit) : 1,
         status,
         imageUrl,
         images,
@@ -90,8 +94,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    await prisma.product.delete({
-      where: { id }
+    await prisma.product.update({
+      where: { id },
+      data: {
+        deletedAt: new Date()
+      }
     });
     return NextResponse.json({
       code: 200,

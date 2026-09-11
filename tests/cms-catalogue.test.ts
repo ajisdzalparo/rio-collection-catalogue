@@ -39,9 +39,9 @@ afterEach(() => {
 
 const input = {
   fullName: 'Test Customer',
+  email: 'test@example.com',
   whatsapp: '081234567890',
   address: 'Test address',
-  captchaToken: 'test-token',
   shippingFee: 15000,
   shipping: { destination: '151', courier: 'jne', service: 'REG' },
   items: [{ productId: 'product-test', size: 'M', quantity: 2, color: 'Black' }]
@@ -133,16 +133,16 @@ test('journal keeps rich content while removing executable markup; clearing rela
   assert.equal(parsed.relatedProductSlug, null);
 });
 
-test('order rejects missing CAPTCHA, missing service, empty items and invalid quantities', () => {
+test('order rejects invalid email, missing service, empty items and invalid quantities', () => {
   assert.equal(orderSchema.safeParse(input).success, true);
   for (const patch of [
-    { captchaToken: '' },
+    { email: 'invalid-email' },
     { shipping: undefined },
     { items: [] },
     { items: [{ ...input.items[0], quantity: -1 }] },
     { items: [{ ...input.items[0], quantity: 1.5 }] }
   ]) {
-    assert.equal(orderSchema.safeParse({ ...input, ...patch }).success, false);
+    assert.equal(orderSchema.safeParse({ ...input, ...patch } as unknown).success, false);
   }
 });
 
@@ -233,33 +233,26 @@ test('stock decrement is conditional and sold-out state recovers after cancellat
   assert.equal(inStock, true);
 });
 
-test('CAPTCHA fails closed when unconfigured or expired, and accepts a verified token', async () => {
-  const origNodeEnv = process.env.NODE_ENV;
-  (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
-  try {
-    delete process.env.RECAPTCHA_SECRET_KEY;
-    await assert.rejects(verifyRecaptcha('token'), /belum siap/);
-    process.env.RECAPTCHA_SECRET_KEY = 'test-only-secret';
-    replaceMethod(globalThis, 'fetch', async () => Response.json({ success: false }));
-    await assert.rejects(verifyRecaptcha('expired'), /kedaluwarsa/);
-    replaceMethod(globalThis, 'fetch', async () => Response.json({ success: true }));
-    await verifyRecaptcha('verified');
-  } finally {
-    (process.env as Record<string, string | undefined>).NODE_ENV = origNodeEnv;
-  }
+test('OTP verification validates code format, expiration and attempts', async () => {
+  const { verifyOtp, OtpError } = await import('../lib/otp');
+  await assert.rejects(
+    verifyOtp({ email: 'nonexistent@test.com', code: '123456' }),
+    /tidak ditemukan/
+  );
 });
 
 test('order API returns failure instead of an invented confirmation number', async () => {
   const origNodeEnv = process.env.NODE_ENV;
   (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
   try {
-    delete process.env.RECAPTCHA_SECRET_KEY;
     const response = await POST(
       new Request('http://localhost/api/v1/orders', { method: 'POST', body: JSON.stringify(input) })
     );
-    assert.equal(response.status, 503);
+    assert.equal(response.status, 400);
     const result = await response.json();
     assert.equal(result.data, undefined);
+    assert.match(result.message, /OTP/);
+
     replaceMethod(globalThis, 'fetch', async () =>
       Response.json({ message: 'Stok habis' }, { status: 400 })
     );

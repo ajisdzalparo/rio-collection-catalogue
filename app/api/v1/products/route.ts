@@ -5,6 +5,9 @@ import { normalizeProductAvailability } from '@/lib/product-availability';
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
+      where: {
+        deletedAt: null
+      },
       include: {
         variants: {
           select: {
@@ -46,6 +49,8 @@ export async function POST(request: Request) {
       hpp,
       stock,
       stockMode,
+      orderLimitMode,
+      maxPurchaseLimit,
       status,
       imageUrl,
       images,
@@ -73,6 +78,8 @@ export async function POST(request: Request) {
         hpp: hpp === undefined ? null : Number(hpp),
         stock: stock === undefined ? 0 : Number(stock),
         stockMode: stockMode || 'QUANTITY',
+        orderLimitMode: orderLimitMode || 'UNLIMITED',
+        maxPurchaseLimit: maxPurchaseLimit !== undefined ? Number(maxPurchaseLimit) : 1,
         status: status || 'AVAILABLE',
         imageUrl:
           imageUrl ||

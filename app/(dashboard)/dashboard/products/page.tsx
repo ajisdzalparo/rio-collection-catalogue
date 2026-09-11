@@ -51,7 +51,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { MultiSelect } from '@/components/ui/multi-select';
-import type { Product, ProductVariant, ProductStatus, StockMode } from '@/types/catalogue.types';
+import type { Product, ProductVariant, ProductStatus, StockMode, OrderLimitMode } from '@/types/catalogue.types';
 
 const STATUS_LABEL_MAP: Record<ProductStatus, string> = {
   AVAILABLE: 'Available (Ready)',
@@ -108,6 +108,7 @@ function ProductsContent() {
   const [category, setCategory] = useState<string>('');
   const [status, setStatus] = useState<ProductStatus>('AVAILABLE');
   const [stockMode, setStockMode] = useState<StockMode>('QUANTITY');
+  const [orderLimitMode, setOrderLimitMode] = useState<OrderLimitMode>('UNLIMITED');
   const [edition, setEdition] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -136,6 +137,7 @@ function ProductsContent() {
     setCategory('');
     setStatus('AVAILABLE');
     setStockMode('QUANTITY');
+    setOrderLimitMode('UNLIMITED');
     setEdition('');
     setDescription('');
     setImageUrl('');
@@ -168,6 +170,7 @@ function ProductsContent() {
       setCategory(product.category);
       setStatus(product.status);
       setStockMode(product.stockMode || 'QUANTITY');
+      setOrderLimitMode(product.orderLimitMode || 'UNLIMITED');
       setEdition(product.edition);
       setDescription(product.description);
       setImageUrl(product.imageUrl);
@@ -278,6 +281,7 @@ function ProductsContent() {
       hpp,
       stock: computedTotalStock,
       stockMode,
+      orderLimitMode,
       color: colorsSelected[0] || '',
       colorHex: colors.find((c) => c.name === (colorsSelected[0] || ''))?.hex || colorHex,
       colors: colorsSelected,
@@ -979,6 +983,76 @@ function ProductsContent() {
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-normal">
                       Tanpa batas stok (selalu ready stock / pre-order).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Batasan Pemesanan per Akun */}
+              <div className="space-y-2 pt-1 border-t border-border/50">
+                <Label className="text-xs font-bold text-foreground">
+                  Batas Pembelian per Akun / Customer
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div
+                    onClick={() => setOrderLimitMode('UNLIMITED')}
+                    className={cn(
+                      'p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-1',
+                      orderLimitMode === 'UNLIMITED'
+                        ? 'border-foreground bg-foreground/5 shadow-xs'
+                        : 'border-border/60 hover:border-border'
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-foreground">
+                        Bebas / Unlimited
+                      </span>
+                      <div
+                        className={cn(
+                          'w-3.5 h-3.5 rounded-full border flex items-center justify-center',
+                          orderLimitMode === 'UNLIMITED'
+                            ? 'border-foreground bg-foreground'
+                            : 'border-border/60'
+                        )}
+                      >
+                        {orderLimitMode === 'UNLIMITED' && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-background" />
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-normal">
+                      Bisa dipesan berkali-kali oleh akun/customer yang sama.
+                    </p>
+                  </div>
+
+                  <div
+                    onClick={() => setOrderLimitMode('ONCE_PER_USER')}
+                    className={cn(
+                      'p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-1',
+                      orderLimitMode === 'ONCE_PER_USER'
+                        ? 'border-amber-600 dark:border-amber-400 bg-amber-500/10 shadow-xs'
+                        : 'border-border/60 hover:border-border'
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                        Hanya 1x per Akun
+                      </span>
+                      <div
+                        className={cn(
+                          'w-3.5 h-3.5 rounded-full border flex items-center justify-center',
+                          orderLimitMode === 'ONCE_PER_USER'
+                            ? 'border-amber-600 bg-amber-600'
+                            : 'border-border/60'
+                        )}
+                      >
+                        {orderLimitMode === 'ONCE_PER_USER' && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-background" />
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-normal">
+                      Khusus Exclusive Drop / limit 1 pcs per akun email.
                     </p>
                   </div>
                 </div>

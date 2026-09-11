@@ -43,6 +43,7 @@ export async function GET(request: Request) {
 
     const outOfStockProducts = await prisma.product.count({
       where: {
+        deletedAt: null,
         status: 'AVAILABLE',
         stockMode: 'QUANTITY',
         stock: { lte: 0 }

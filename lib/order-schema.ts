@@ -2,10 +2,12 @@ import { z } from 'zod';
 
 export const orderSchema = z.object({
   fullName: z.string().trim().min(1).max(160),
+  email: z.string().trim().email('Alamat email tidak valid'),
   whatsapp: z.string().trim().min(9).max(25),
   address: z.string().trim().min(1).max(2000),
   notes: z.string().max(5000).optional(),
-  captchaToken: z.string().min(1).max(10000),
+  otpCode: z.string().trim().min(6).max(6).optional(), // required unless bypass/authenticated
+  customerId: z.string().optional(),
   shippingFee: z.number().int().nonnegative(),
   shipping: z.object({
     destination: z.string().min(1).max(100),
@@ -19,3 +21,4 @@ export const orderSchema = z.object({
     quantity: z.number().int().min(1).max(99)
   })).min(1).max(30)
 });
+

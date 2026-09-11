@@ -1,13 +1,17 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
-import { ArrowRight, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import { StatusBadge } from '@/components/catalogue/status-badge';
 import { SizeGuideModal } from '@/components/catalogue/size-guide-modal';
+import { StarRating } from '@/components/catalogue/star-rating';
+import { ProductReviews } from '@/components/catalogue/product-reviews';
+import { useCartStore } from '@/lib/cart-store';
 import type { Product } from '@/types/catalogue.types';
+import { toast } from 'sonner';
 
 interface ProductDetailContentProps {
   product: Product;
@@ -18,6 +22,26 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const { addItem } = useCartStore();
+
+  const [ratingData, setRatingData] = useState<{ averageRating: number; totalReviews: number }>({
+    averageRating: 0,
+    totalReviews: 0
+  });
+
+  useEffect(() => {
+    fetch(`/api/v1/products/${product.slug}/reviews`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.status === 'success' && json.data) {
+          setRatingData({
+            averageRating: json.data.averageRating || 0,
+            totalReviews: json.data.totalReviews || 0
+          });
+        }
+      })
+      .catch(() => {});
+  }, [product.slug]);
 
   const colorsList = useMemo(
     () => (product.colors?.length ? product.colors : [product.color].filter(Boolean)),
@@ -33,12 +57,9 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
   // Read all images entered in the CMS (cover image + all uploaded detail images)
   const imagesList = useMemo(() => {
-    const detailUrls = (product.imageDetails ?? [])
-      .map((img) => img.url)
-      .filter(Boolean);
+    const detailUrls = (product.imageDetails ?? []).map((img) => img.url).filter(Boolean);
 
-    const fallbackDetails = (product.images ?? [])
-      .filter((img) => img && img !== product.imageUrl);
+    const fallbackDetails = (product.images ?? []).filter((img) => img && img !== product.imageUrl);
 
     const allDetails = detailUrls.length > 0 ? detailUrls : fallbackDetails;
 
@@ -58,6 +79,27 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const canOrder =
     (product.status === 'AVAILABLE' || product.status === 'PRE_ORDER') && selectedSize !== null;
   const selectedColorName = colorsList[selectedColorIndex] || product.color;
+
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast.error('Silakan pilih ukuran terlebih dahulu.');
+      return;
+    }
+
+    addItem({
+      productId: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      size: selectedSize,
+      color: selectedColorName,
+      quantity,
+      isPreOrder: product.status === 'PRE_ORDER'
+    });
+
+    toast.success(`${product.name} (${selectedSize}) ditambahkan ke keranjang.`);
+  };
 
   return (
     <>
@@ -153,7 +195,18 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             <h1 className="font-eb-garamond text-[32px] md:text-[42px] font-normal leading-tight text-(--cat-on-surface)">
               {product.name}
             </h1>
-            <p className="mt-2 font-hanken text-[20px] font-medium text-(--cat-on-surface) tabular-nums">
+
+            {/* Rating summary under title */}
+            <div className="mt-2 flex items-center gap-2">
+              <StarRating
+                rating={ratingData.averageRating}
+                size={15}
+                showValue
+                totalReviews={ratingData.totalReviews}
+              />
+            </div>
+
+            <p className="mt-3 font-hanken text-[20px] font-medium text-(--cat-on-surface) tabular-nums">
               {formatPrice(product.price)}
             </p>
 
@@ -162,10 +215,17 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               {product.description}
             </p>
 
-            {/* Status */}
-            <div className="mt-4 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 bg-(--cat-charcoal)" />
-              <StatusBadge status={product.status} className="text-[12px]" />
+            {/* Status & Limit Badge */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-(--cat-charcoal)" />
+                <StatusBadge status={product.status} className="text-[12px]" />
+              </div>
+              {product.orderLimitMode === 'ONCE_PER_USER' && (
+                <span className="px-2.5 py-0.5 bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-[11px] font-hanken font-medium">
+                  Maks. 1 pcs per akun / email
+                </span>
+              )}
             </div>
 
             {/* Color Selector */}
@@ -195,7 +255,9 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                       onClick={() => setSelectedColorIndex(idx)}
                       className={cn(
                         'w-7 h-7 rounded-none transition-all cursor-pointer relative flex items-center justify-center border',
-                        isLightColor ? 'border-stone-400 dark:border-stone-500' : 'border-stone-300 dark:border-stone-700',
+                        isLightColor
+                          ? 'border-stone-400 dark:border-stone-500'
+                          : 'border-stone-300 dark:border-stone-700',
                         isSelected
                           ? 'ring-2 ring-foreground border-foreground scale-105 opacity-100 shadow-xs'
                           : 'opacity-80 hover:opacity-100'
@@ -257,23 +319,42 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
             {/* Quantity */}
             <div className="mt-6">
-              <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-2">
-                Quantity
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
+                  Quantity
+                </p>
+                {product.orderLimitMode === 'ONCE_PER_USER' && (
+                  <span className="font-hanken text-[11px] text-amber-700 dark:text-amber-400">
+                    Batas: 1 pcs / akun
+                  </span>
+                )}
+              </div>
               <div className="inline-flex items-center border border-(--cat-stone)">
                 <button
+                  disabled={product.orderLimitMode === 'ONCE_PER_USER'}
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 flex items-center justify-center text-(--cat-on-surface) hover:bg-(--cat-surface-container) transition-colors cursor-pointer"
+                  className={cn(
+                    'w-10 h-10 flex items-center justify-center text-(--cat-on-surface) transition-colors',
+                    product.orderLimitMode === 'ONCE_PER_USER'
+                      ? 'opacity-40 cursor-not-allowed'
+                      : 'hover:bg-(--cat-surface-container) cursor-pointer'
+                  )}
                   aria-label="Decrease quantity"
                 >
                   <Minus size={14} strokeWidth={1.5} />
                 </button>
                 <span className="w-12 h-10 flex items-center justify-center font-hanken text-[14px] font-medium border-x border-(--cat-stone) tabular-nums">
-                  {quantity}
+                  {product.orderLimitMode === 'ONCE_PER_USER' ? 1 : quantity}
                 </span>
                 <button
+                  disabled={product.orderLimitMode === 'ONCE_PER_USER'}
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 flex items-center justify-center text-(--cat-on-surface) hover:bg-(--cat-surface-container) transition-colors cursor-pointer"
+                  className={cn(
+                    'w-10 h-10 flex items-center justify-center text-(--cat-on-surface) transition-colors',
+                    product.orderLimitMode === 'ONCE_PER_USER'
+                      ? 'opacity-40 cursor-not-allowed'
+                      : 'hover:bg-(--cat-surface-container) cursor-pointer'
+                  )}
                   aria-label="Increase quantity"
                 >
                   <Plus size={14} strokeWidth={1.5} />
@@ -281,39 +362,59 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               </div>
             </div>
 
-            {/* CTA Button */}
-            <div className="mt-8">
-              <Link
-                href={
-                  canOrder
-                    ? `/order?product=${product.slug}&size=${encodeURIComponent(selectedSize || 'M')}&color=${encodeURIComponent(selectedColorName)}&quantity=${quantity}`
-                    : '#'
-                }
-                onClick={(e) => {
-                  if (!canOrder) e.preventDefault();
-                }}
-                className={cn(
-                  'w-full inline-flex items-center justify-center gap-2 px-12 py-3.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity duration-150',
-                  canOrder
-                    ? 'bg-(--cat-charcoal) text-white hover:opacity-85 cursor-pointer'
-                    : 'bg-(--cat-secondary-container) text-(--cat-on-secondary-container) cursor-not-allowed'
-                )}
-              >
-                {product.status === 'SOLD_OUT'
-                  ? 'Habis'
-                  : product.status === 'COMING_SOON'
-                    ? 'Segera Hadir'
-                    : product.status === 'PRE_ORDER'
-                      ? (selectedSize === null ? 'Pilih Ukuran' : 'Pre-Order Now')
-                      : selectedSize === null
-                        ? 'Pilih Ukuran'
-                        : 'Request to Order'}
-                {canOrder && <ArrowRight size={14} strokeWidth={2} />}
-              </Link>
+            {/* Dual CTA Buttons: Add to Cart & Buy Now */}
+            <div className="mt-8 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Add to Cart */}
+                <button
+                  type="button"
+                  disabled={!canOrder}
+                  onClick={handleAddToCart}
+                  className={cn(
+                    'w-full inline-flex items-center justify-center gap-2 py-3.5 border border-(--cat-charcoal) font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors',
+                    canOrder
+                      ? 'bg-transparent text-(--cat-on-surface) hover:bg-(--cat-surface-container) cursor-pointer'
+                      : 'border-(--cat-stone) text-(--cat-on-surface-variant)/50 cursor-not-allowed'
+                  )}
+                >
+                  <ShoppingBag size={14} strokeWidth={1.5} />+ Keranjang
+                </button>
+
+                {/* Buy / Pre-order Now */}
+                <Link
+                  href={
+                    canOrder
+                      ? `/order?product=${product.slug}&size=${encodeURIComponent(selectedSize || 'M')}&color=${encodeURIComponent(selectedColorName)}&quantity=${quantity}`
+                      : '#'
+                  }
+                  onClick={(e) => {
+                    if (!canOrder) e.preventDefault();
+                  }}
+                  className={cn(
+                    'w-full inline-flex items-center justify-center gap-2 py-3.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity duration-150',
+                    canOrder
+                      ? 'bg-(--cat-charcoal) text-white hover:opacity-85 cursor-pointer'
+                      : 'bg-(--cat-secondary-container) text-(--cat-on-secondary-container) cursor-not-allowed'
+                  )}
+                >
+                  {product.status === 'SOLD_OUT'
+                    ? 'Habis'
+                    : product.status === 'COMING_SOON'
+                      ? 'Segera Hadir'
+                      : product.status === 'PRE_ORDER'
+                        ? selectedSize === null
+                          ? 'Pilih Ukuran'
+                          : 'Pre-Order Now'
+                        : selectedSize === null
+                          ? 'Pilih Ukuran'
+                          : 'Beli Sekarang'}
+                  {canOrder && <ArrowRight size={14} strokeWidth={2} />}
+                </Link>
+              </div>
+
               {(product.status === 'AVAILABLE' || product.status === 'PRE_ORDER') && (
-                <p className="mt-2 font-hanken text-[12px] text-(--cat-on-surface-variant)">
-                  Submit your order request. We&apos;ll confirm availability and contact you via
-                  WhatsApp for payment.
+                <p className="font-hanken text-[12px] text-(--cat-on-surface-variant) text-center sm:text-left">
+                  Pengiriman ke seluruh Indonesia dengan opsi ekspedisi lengkap.
                 </p>
               )}
             </div>
@@ -367,7 +468,11 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 ['Fabric', product.materialsAndCare?.fabric || '100% Premium Heavyweight Cotton'],
                 ['Treatment', product.materialsAndCare?.treatment || 'Pre-washed & Bio-polished'],
                 ['Origin', product.materialsAndCare?.origin || 'Handcrafted in Indonesia'],
-                ['Care Instruction', product.materialsAndCare?.careInstruction || 'Machine wash cold, tumble dry low, do not bleach']
+                [
+                  'Care Instruction',
+                  product.materialsAndCare?.careInstruction ||
+                    'Machine wash cold, tumble dry low, do not bleach'
+                ]
               ].map(([label, value]) => (
                 <div key={label} className="flex items-start justify-between py-4 gap-8">
                   <span className="font-hanken text-[14px] text-(--cat-on-surface-variant) shrink-0">
@@ -382,6 +487,11 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
           </div>
         </div>
       </section>
+
+      {/* Customer Reviews Section */}
+      <div className="mx-auto max-w-350 px-4 md:px-16 pb-12">
+        <ProductReviews productSlug={product.slug} productName={product.name} />
+      </div>
 
       <SizeGuideModal isOpen={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
     </>

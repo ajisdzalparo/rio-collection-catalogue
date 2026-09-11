@@ -1,18 +1,20 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowRight, Truck, MapPin, Calculator, Loader2 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowRight, Truck, Loader2, Mail, CheckCircle2, Send, AlertCircle } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import { getProducts, submitOrder } from '@/lib/api';
 import { useStoreSettingsStore } from '@/hooks/use-store-settings';
+import { useCustomerStore } from '@/lib/customer-store';
+import { useCartStore } from '@/lib/cart-store';
 import type { Product } from '@/types/catalogue.types';
-import { CaptchaChallenge } from '@/components/catalogue/captcha-challenge';
 import { SearchableSelect } from '@/components/catalogue/searchable-select';
 import { isOrderableStatus } from '@/lib/product-availability';
 import { withActionLoading } from '@/hooks/use-action-loading';
+import { toast } from 'sonner';
 
 interface ShippingOption {
   key: string;
@@ -25,38 +27,53 @@ interface ShippingOption {
   destination: string;
 }
 
-export default function OrderPage() {
+function OrderContent() {
   const router = useRouter();
-  const enabledCouriersSetting = useStoreSettingsStore((s) => s.enabledCouriers);
+  const searchParams = useSearchParams();
+  const isCartMode = searchParams.get('mode') === 'cart';
+  const sizeParam = searchParams.get('size');
+  const colorParam = searchParams.get('color');
+  const quantityParam = searchParams.get('quantity');
+  const productSlug = searchParams.get('product');
 
-  const activeCourierCodes = useMemo(() => {
-    const raw = enabledCouriersSetting ?? 'jne,pos,tiki,sicepat,jnt';
-    return raw
-      .split(',')
-      .map((c) => c.trim().toLowerCase())
-      .filter(Boolean);
-  }, [enabledCouriersSetting]);
+  const enabledCouriersSetting = useStoreSettingsStore((s) => s.enabledCouriers);
+  const { customer, isAuthenticated } = useCustomerStore();
+  const { items: cartItems, clearCart } = useCartStore();
 
   const [product, setProduct] = useState<Product | null>(null);
-  const [selectedSize, setSelectedSize] = useState('M');
-  const [selectedColor, setSelectedColor] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    whatsapp: '',
+  const selectedSize = sizeParam || 'M';
+  const selectedColor = colorParam || '';
+  const quantity = useMemo(() => {
+    if (quantityParam) {
+      const parsedQty = parseInt(quantityParam, 10);
+      if (!isNaN(parsedQty) && parsedQty > 0) return parsedQty;
+    }
+    return 1;
+  }, [quantityParam]);
+
+  const [formData, setFormData] = useState(() => ({
+    fullName: customer?.fullName || '',
+    email: customer?.email || '',
+    whatsapp: customer?.whatsapp || '',
     province: '',
     city: '',
     district: '',
-    postalCode: '',
-    streetAddress: '',
-    courierService: ''
-  });
+    postalCode: customer?.postalCode || '',
+    streetAddress: customer?.address || '',
+    courierService: '',
+    notes: ''
+  }));
+
+  // OTP Verification State
+  const [otpCode, setOtpCode] = useState('');
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [devOtpHint, setDevOtpHint] = useState<string | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCaptchaVerified, setIsCaptchaVerified] = useState(process.env.NODE_ENV !== 'production');
-  const [captchaToken, setCaptchaToken] = useState(
-    process.env.NODE_ENV !== 'production' ? 'dev-testing-token' : ''
-  );
-  const [captchaReset, setCaptchaReset] = useState(0);
   const [submitError, setSubmitError] = useState('');
 
   // Dynamic Shipping Locations & Rates
@@ -70,36 +87,27 @@ export default function OrderPage() {
   const [rajaRates, setRajaRates] = useState<ShippingOption[]>([]);
   const [isShippingLoading, setIsShippingLoading] = useState(false);
 
+  // Active Couriers
+  const activeCourierCodes = useMemo(() => {
+    const raw = enabledCouriersSetting ?? 'jne,pos,tiki,sicepat,jnt';
+    return raw
+      .split(',')
+      .map((c) => c.trim().toLowerCase())
+      .filter(Boolean);
+  }, [enabledCouriersSetting]);
+
+  // Initial products & dynamic provinces setup
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sizeParam = params.get('size');
-    const colorParam = params.get('color');
-    const quantityParam = params.get('quantity');
-
-    queueMicrotask(() => {
-      if (sizeParam) {
-        setSelectedSize(sizeParam);
-      }
-      if (colorParam) {
-        setSelectedColor(colorParam);
-      }
-      if (quantityParam) {
-        const parsedQty = parseInt(quantityParam, 10);
-        if (!isNaN(parsedQty) && parsedQty > 0 && parsedQty <= 99) {
-          setQuantity(parsedQty);
+    if (!isCartMode) {
+      getProducts().then((prods) => {
+        if (prods.length > 0) {
+          const found = productSlug ? prods.find((p) => p.slug === productSlug) : null;
+          setProduct(
+            productSlug ? found || null : prods.find((p) => isOrderableStatus(p.status)) || null
+          );
         }
-      }
-    });
-
-    const productSlug = params.get('product');
-    getProducts().then((prods) => {
-      if (prods.length > 0) {
-        const found = productSlug ? prods.find((p) => p.slug === productSlug) : null;
-        setProduct(
-          productSlug ? found || null : prods.find((p) => isOrderableStatus(p.status)) || null
-        );
-      }
-    });
+      });
+    }
 
     // Fetch dynamic provinces
     fetch('/api/v1/shipping/provinces')
@@ -110,7 +118,6 @@ export default function OrderPage() {
           const defaultProv = res.data[0];
           setFormData((prev) => ({ ...prev, province: defaultProv.province }));
 
-          // Fetch cities for initial province
           fetch(
             `/api/v1/shipping/cities?provinceId=${defaultProv.province_id}&provinceName=${encodeURIComponent(defaultProv.province)}`
           )
@@ -121,7 +128,6 @@ export default function OrderPage() {
                 const defaultCity = `${cRes.data[0].type} ${cRes.data[0].city_name}`;
                 setFormData((prev) => ({ ...prev, city: defaultCity }));
 
-                // Fetch subdistricts for initial city
                 fetch(
                   `/api/v1/shipping/subdistricts?cityId=${cRes.data[0].city_id}&cityName=${encodeURIComponent(cRes.data[0].city_name)}`
                 )
@@ -142,10 +148,62 @@ export default function OrderPage() {
             .catch(() => {});
         }
       })
-      .catch((err) => {
-        console.error('Failed to load provinces:', err);
-      });
-  }, []);
+      .catch((err) => console.error('Failed to load provinces:', err));
+  }, [isCartMode, productSlug]);
+
+  // Pre-fill logged in customer
+  const isCustomerPrefilled = useRef(false);
+  useEffect(() => {
+    if (customer && isAuthenticated && !isCustomerPrefilled.current) {
+      isCustomerPrefilled.current = true;
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || customer.fullName || '',
+        email: prev.email || customer.email,
+        whatsapp: prev.whatsapp || customer.whatsapp || '',
+        streetAddress: prev.streetAddress || customer.address || '',
+        postalCode: prev.postalCode || customer.postalCode || ''
+      }));
+    }
+  }, [customer, isAuthenticated]);
+
+  // Timer countdown
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  // Order items list depending on mode
+  const orderItems = useMemo(() => {
+    if (isCartMode) {
+      return cartItems;
+    }
+    if (!product) return [];
+    return [
+      {
+        id: `${product.id}-${selectedSize}-${selectedColor}`,
+        productId: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        size: selectedSize || 'M',
+        color: selectedColor || product.color,
+        quantity,
+        isPreOrder: product.status === 'PRE_ORDER'
+      }
+    ];
+  }, [isCartMode, cartItems, product, selectedSize, selectedColor, quantity]);
+
+  const subtotal = useMemo(() => {
+    return orderItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  }, [orderItems]);
+
+  const totalItemCount = useMemo(() => {
+    return orderItems.reduce((acc, item) => acc + item.quantity, 0);
+  }, [orderItems]);
 
   const availableCities = useMemo(() => {
     return cities.map((c) => {
@@ -196,7 +254,6 @@ export default function OrderPage() {
             const defaultCity = `${res.data[0].type} ${res.data[0].city_name}`;
             setFormData((prev) => ({ ...prev, city: defaultCity }));
 
-            // Fetch subdistricts for new first city
             fetch(
               `/api/v1/shipping/subdistricts?cityId=${res.data[0].city_id}&cityName=${encodeURIComponent(res.data[0].city_name)}`
             )
@@ -271,6 +328,7 @@ export default function OrderPage() {
     }));
   };
 
+  // Fetch Shipping rates when city changes
   useEffect(() => {
     if (!formData.city || cities.length === 0) return;
 
@@ -283,32 +341,29 @@ export default function OrderPage() {
     if (!matchedCity) return;
 
     let isMounted = true;
-    queueMicrotask(() => {
-      if (isMounted) {
-        setIsShippingLoading(true);
-        setRajaRates([]);
-      }
-    });
 
-    const weightInGrams = Math.max(1000, quantity * 350);
+    const fetchRates = async () => {
+      setIsShippingLoading(true);
+      setRajaRates([]);
 
-    const activeCouriers = activeCourierCodes;
+      const weightInGrams = Math.max(1000, totalItemCount * 350);
 
-    Promise.all(
-      activeCouriers.map((courier) =>
-        fetch('/api/v1/shipping/cost', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            destination: matchedCity.city_id,
-            destinationType: 'city',
-            weight: weightInGrams,
-            courier
-          })
-        }).then((res) => res.json())
-      )
-    )
-      .then((results) => {
+      try {
+        const results = await Promise.all(
+          activeCourierCodes.map((courier) =>
+            fetch('/api/v1/shipping/cost', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                destination: matchedCity.city_id,
+                destinationType: 'city',
+                weight: weightInGrams,
+                courier
+              })
+            }).then((res) => res.json())
+          )
+        );
+
         if (!isMounted) return;
         const options: ShippingOption[] = [];
 
@@ -353,467 +408,622 @@ export default function OrderPage() {
         } else {
           setRajaRates([]);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('Failed to fetch RajaOngkir rates:', err);
-      })
-      .finally(() => {
-        if (isMounted) setIsShippingLoading(false);
-      });
+      } finally {
+        if (isMounted) {
+          setIsShippingLoading(false);
+        }
+      }
+    };
+
+    fetchRates();
 
     return () => {
       isMounted = false;
     };
-  }, [formData.city, quantity, cities, activeCourierCodes]);
+  }, [formData.city, cities, totalItemCount, activeCourierCodes]);
 
-  // Only use a tariff returned by the server; the same service is checked at submission.
-  const shippingFee = useMemo(() => {
-    return rajaRates.find((rate) => rate.key === formData.courierService)?.cost ?? 0;
-  }, [formData.courierService, rajaRates]);
+  // Request OTP
+  const handleSendOtp = async () => {
+    if (!formData.email || !formData.email.includes('@')) {
+      toast.error('Masukkan alamat email yang valid.');
+      return;
+    }
 
-  const subtotal = (product ? product.price : 450000) * quantity;
+    setIsSendingOtp(true);
+    setDevOtpHint(null);
+    try {
+      const res = await fetch('/api/v1/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email.trim(), type: 'ORDER' })
+      });
+
+      const json = await res.json();
+      if (!res.ok || json.status !== 'success') {
+        throw new Error(json.message || 'Gagal mengirim OTP.');
+      }
+
+      setOtpSent(true);
+      setCountdown(60);
+      toast.success('Kode OTP telah dikirim ke email Anda.');
+      if (json.data?.isDevMode && json.data?.message) {
+        setDevOtpHint(json.data.message);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gagal mengirim OTP.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  // Verify OTP
+  const handleVerifyOtp = async () => {
+    if (otpCode.trim().length !== 6) {
+      toast.error('Masukkan 6 digit kode OTP.');
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      const res = await fetch('/api/v1/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          code: otpCode.trim(),
+          type: 'ORDER'
+        })
+      });
+
+      const json = await res.json();
+      if (!res.ok || json.status !== 'success') {
+        throw new Error(json.message || 'Kode OTP tidak valid.');
+      }
+
+      setIsOtpVerified(true);
+      toast.success('Email berhasil diverifikasi!');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Verifikasi OTP gagal.');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  const selectedRate = rajaRates.find((rate) => rate.key === formData.courierService);
+  const shippingFee = selectedRate?.cost || 0;
   const totalPrice = subtotal + shippingFee;
 
+  // Handle final checkout submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!product || !isValid || !isCaptchaVerified || isSubmitting) return;
-    setIsSubmitting(true);
     setSubmitError('');
 
-    const cleanDistrict = formData.district
-      ? formData.district.trim().toLowerCase().startsWith('kec.')
-        ? formData.district.trim()
-        : `Kec. ${formData.district.trim()}`
-      : '';
+    if (orderItems.length === 0) {
+      setSubmitError('Tidak ada produk yang dipesan.');
+      return;
+    }
 
-    const fullAddress = [
-      formData.streetAddress.trim(),
-      cleanDistrict,
-      formData.city.trim(),
-      formData.province.trim(),
-      formData.postalCode.trim()
-    ]
-      .filter(Boolean)
-      .join(', ');
+    if (!selectedRate) {
+      setSubmitError('Pilih opsi pengiriman terlebih dahulu.');
+      return;
+    }
+
+    if (!isOtpVerified && (!customer || customer.email !== formData.email)) {
+      setSubmitError('Verifikasi email dengan kode OTP terlebih dahulu.');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
+      const fullAddress = `${formData.streetAddress.trim()}, ${formData.district}, ${formData.city}, ${formData.province} ${formData.postalCode}`;
+
       const res = await withActionLoading(
         () =>
           submitOrder({
-            fullName: formData.fullName,
-            whatsapp: formData.whatsapp,
+            fullName: formData.fullName.trim(),
+            email: formData.email.trim(),
+            whatsapp: formData.whatsapp.trim(),
             address: fullAddress,
-            notes: '',
+            notes: formData.notes.trim() || undefined,
             totalPrice,
             shippingFee,
-            captchaToken,
+            otpCode: isOtpVerified ? otpCode || '000000' : undefined,
+            customerId: customer?.id || undefined,
             shipping: {
-              destination: selectedRate!.destination,
-              courier: selectedRate!.courierCode,
-              service: selectedRate!.service
+              destination: selectedRate.destination,
+              courier: selectedRate.courierCode,
+              service: selectedRate.service
             },
-            items: [
-              {
-                productId: product.id,
-                color: selectedColor || product.color,
-                size: selectedSize || 'M',
-                quantity
-              }
-            ]
+            items: orderItems.map((item) => ({
+              productId: item.productId,
+              color: item.color,
+              size: item.size,
+              quantity: item.quantity
+            }))
           }),
         'Mengirim pesanan Anda...'
       );
+
+      // Clear cart if ordered from cart
+      if (isCartMode) {
+        clearCart();
+      }
+
       const orderNum = res.data.orderNumber;
       router.push(`/order/confirmation/${orderNum}`);
     } catch (error) {
       setSubmitError(
         error instanceof Error ? error.message : 'Pesanan gagal dikirim. Silakan coba lagi.'
       );
-      if (process.env.NODE_ENV === 'production') {
-        setIsCaptchaVerified(false);
-        setCaptchaToken('');
-        setCaptchaReset((value) => value + 1);
-      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const selectedRate = rajaRates.find((rate) => rate.key === formData.courierService);
-  const selectedVariant = product?.variants.find((variant) => variant.size === selectedSize);
   const isValid =
-    !!product &&
-    isOrderableStatus(product.status) &&
-    !!selectedVariant?.inStock &&
-    (product.stockMode === 'ALWAYS_AVAILABLE' || (selectedVariant.stock ?? 0) >= quantity) &&
+    orderItems.length > 0 &&
     !!selectedRate &&
     !isShippingLoading &&
     !!formData.fullName.trim() &&
+    !!formData.email.trim() &&
     !!formData.whatsapp.trim() &&
     !!formData.province &&
     !!formData.city &&
     !!formData.district &&
-    !!formData.streetAddress.trim();
+    !!formData.streetAddress.trim() &&
+    (isOtpVerified || (isAuthenticated && customer?.email === formData.email));
 
   return (
-    <>
-      {/* Header */}
-      <section className="mx-auto max-w-350 px-4 md:px-16 pt-8 md:pt-12 pb-6">
-        <nav
-          className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
-          aria-label="Breadcrumb"
-        >
-          <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">
-            Home
-          </Link>
-          <span className="mx-2">&gt;</span>
-          <Link href="/catalogue" className="hover:text-(--cat-on-surface) transition-colors">
-            Catalogue
-          </Link>
-          <span className="mx-2">&gt;</span>
-          <span className="text-(--cat-on-surface) font-semibold">Checkout</span>
-        </nav>
+    <div className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
+      {/* Breadcrumb & Header */}
+      <nav
+        className="mb-4 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)"
+        aria-label="Breadcrumb"
+      >
+        <Link href="/" className="hover:text-(--cat-on-surface) transition-colors">
+          Home
+        </Link>
+        <span className="mx-2">/</span>
+        <Link href="/catalogue" className="hover:text-(--cat-on-surface) transition-colors">
+          Catalogue
+        </Link>
+        <span className="mx-2">/</span>
+        <span className="text-(--cat-on-surface) font-semibold">Checkout</span>
+      </nav>
 
-        <h1 className="font-eb-garamond text-[32px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface)">
-          Lengkapi Data Pesanan
-        </h1>
-      </section>
+      <h1 className="font-eb-garamond text-[32px] md:text-[42px] font-normal text-(--cat-on-surface) mb-8">
+        Lengkapi Data Pesanan
+      </h1>
 
-      {/* Order Form */}
-      <section className="mx-auto max-w-350 px-4 md:px-16 pb-16 md:pb-24">
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-16">
-            {/* Left: Order Summary */}
-            <div className="md:col-span-5">
-              <div className="border border-(--cat-stone) p-6 sticky top-24">
-                <h2 className="font-eb-garamond text-[20px] font-normal text-(--cat-on-surface) mb-6">
-                  Ringkasan Pesanan
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-16">
+          {/* Left: Order Summary */}
+          <div className="md:col-span-5 order-2 md:order-1">
+            <div className="border border-(--cat-stone) bg-(--cat-surface-container-low) p-6 sticky top-24">
+              <div className="flex items-center justify-between pb-4 border-b border-(--cat-stone)">
+                <h2 className="font-eb-garamond text-[20px] font-normal text-(--cat-on-surface)">
+                  Ringkasan Pesanan ({totalItemCount} Item)
                 </h2>
+                {isCartMode && (
+                  <Link
+                    href="/catalogue"
+                    className="font-hanken text-[11px] text-(--cat-on-surface-variant) underline hover:text-(--cat-on-surface)"
+                  >
+                    Tambah Produk
+                  </Link>
+                )}
+              </div>
 
-                {/* Product */}
-                <div className="flex gap-4 pb-6 border-b border-(--cat-stone)">
-                  <div className="relative w-20 h-24 shrink-0 overflow-hidden bg-(--cat-surface-container-low)">
-                    <SafeImage
-                      src={product?.imageUrl}
-                      alt={product?.name || 'Product'}
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-hanken text-[15px] font-medium text-(--cat-on-surface)">
-                      {product?.name || 'Heavy-Weight Boxy Tee'}
-                    </h3>
-                    <p className="mt-0.5 font-hanken text-[13px] text-(--cat-on-surface-variant)">
-                      {selectedSize || 'M'} /{' '}
-                      <span className="capitalize">
-                        {selectedColor || product?.color || 'Hitam'}
-                      </span>
-                    </p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="font-hanken text-[13px] text-(--cat-on-surface-variant)">
-                        Qty: {quantity}
-                      </span>
-                      <span className="font-hanken text-[16px] font-medium text-(--cat-on-surface) tabular-nums">
-                        {formatPrice(subtotal)}
-                      </span>
+              {/* Items List */}
+              <div className="divide-y divide-(--cat-stone)/60 max-h-80 overflow-y-auto pr-1">
+                {orderItems.map((item) => (
+                  <div key={item.id} className="py-4 flex gap-4">
+                    <div className="relative w-16 h-20 shrink-0 overflow-hidden bg-(--cat-surface-container)">
+                      <SafeImage
+                        src={item.imageUrl}
+                        alt={item.name}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-hanken text-[14px] font-medium text-(--cat-on-surface) truncate">
+                        {item.name}
+                      </h3>
+                      <p className="mt-0.5 font-hanken text-[12px] text-(--cat-on-surface-variant)">
+                        Size: {item.size} / <span className="capitalize">{item.color}</span>
+                        {item.isPreOrder && (
+                          <span className="ml-1 text-amber-600 font-medium">(Pre-Order)</span>
+                        )}
+                      </p>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="font-hanken text-[12px] text-(--cat-on-surface-variant)">
+                          Qty: {item.quantity}
+                        </span>
+                        <span className="font-hanken text-[14px] font-medium text-(--cat-on-surface) tabular-nums">
+                          {formatPrice(item.price * item.quantity)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                {/* Totals Breakdown */}
-                <div className="mt-4 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-hanken text-[14px] text-(--cat-on-surface-variant)">
-                      Subtotal Produk
-                    </span>
-                    <span className="font-hanken text-[14px] text-(--cat-on-surface) tabular-nums font-medium">
-                      {formatPrice(subtotal)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start justify-between">
-                    <span className="font-hanken text-[14px] text-(--cat-on-surface-variant) flex items-center gap-1.5">
-                      <Truck size={14} className="opacity-70 shrink-0 mt-0.5" />
-                      <div>
-                        <span>Ongkos Kirim</span>
-                        <p className="text-[10px] opacity-75">
-                          {formData.courierService.split(' ')[0]} ({formData.province})
-                        </p>
-                      </div>
-                    </span>
-                    <span className="font-hanken text-[14px] text-(--cat-on-surface) tabular-nums font-semibold">
-                      {isShippingLoading ? (
-                        <Loader2 size={14} className="animate-spin text-amber-600 inline" />
-                      ) : (
-                        formatPrice(shippingFee)
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-(--cat-stone) flex items-center justify-between">
-                  <span className="font-hanken text-[16px] font-semibold text-(--cat-on-surface)">
-                    Total Tagihan
+              {/* Totals Breakdown */}
+              <div className="mt-4 pt-4 border-t border-(--cat-stone) space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-hanken text-[13px] text-(--cat-on-surface-variant)">
+                    Subtotal Produk
                   </span>
-                  <span className="font-hanken text-[18px] font-semibold text-(--cat-on-surface) tabular-nums">
+                  <span className="font-hanken text-[14px] text-(--cat-on-surface) tabular-nums font-medium">
+                    {formatPrice(subtotal)}
+                  </span>
+                </div>
+
+                <div className="flex items-start justify-between">
+                  <span className="font-hanken text-[13px] text-(--cat-on-surface-variant) flex items-center gap-1.5">
+                    <Truck size={14} className="opacity-70 shrink-0 mt-0.5" />
+                    <div>
+                      <span>Ongkos Kirim</span>
+                      {selectedRate && <p className="text-[11px] opacity-75">{selectedRate.key}</p>}
+                    </div>
+                  </span>
+                  <span className="font-hanken text-[14px] text-(--cat-on-surface) tabular-nums font-semibold">
+                    {isShippingLoading ? (
+                      <Loader2 size={14} className="animate-spin text-(--cat-charcoal) inline" />
+                    ) : (
+                      formatPrice(shippingFee)
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-(--cat-stone) font-hanken">
+                  <span className="text-[14px] font-semibold uppercase tracking-[0.06em] text-(--cat-on-surface)">
+                    Total Pembayaran
+                  </span>
+                  <span className="text-[20px] font-bold text-(--cat-on-surface) tabular-nums">
                     {formatPrice(totalPrice)}
                   </span>
                 </div>
-
-                <div className="mt-4 p-3 bg-(--cat-surface-container-low) border border-(--cat-stone) text-[11px] text-(--cat-on-surface-variant) leading-normal flex items-center gap-2">
-                  <Calculator size={14} className="shrink-0 opacity-70" />
-                  <span>
-                    Tarif ongkir dihitung otomatis berdasarkan provinsi dan layanan kurir yang Anda
-                    pilih.
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Structured Customer & Address Form */}
-            <div className="md:col-span-7 space-y-6">
-              <div className="border-b border-(--cat-stone) pb-3">
-                <h3 className="font-eb-garamond text-[22px] text-(--cat-on-surface)">
-                  Informasi Kontak & Pengiriman
-                </h3>
-              </div>
-
-              {/* Full Name & WhatsApp */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label
-                    htmlFor="fullName"
-                    className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
-                  >
-                    Nama Lengkap *
-                  </label>
-                  <input
-                    id="fullName"
-                    type="text"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="w-full bg-transparent border-0 border-b border-(--cat-stone) pb-2 font-hanken text-[15px] text-(--cat-on-surface) outline-none focus:border-(--cat-charcoal) transition-colors placeholder:text-(--cat-outline-variant)"
-                    placeholder="Nama penerima paket"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="whatsapp"
-                    className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
-                  >
-                    Nomor WhatsApp *
-                  </label>
-                  <input
-                    id="whatsapp"
-                    type="tel"
-                    required
-                    value={formData.whatsapp}
-                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                    className="w-full bg-transparent border-0 border-b border-(--cat-stone) pb-2 font-hanken text-[15px] text-(--cat-on-surface) outline-none focus:border-(--cat-charcoal) transition-colors placeholder:text-(--cat-outline-variant)"
-                    placeholder="08xxxxxxxxxx"
-                  />
-                </div>
-              </div>
-
-              {/* Province & City */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label
-                    htmlFor="province"
-                    className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2 flex items-center gap-1"
-                  >
-                    <MapPin size={12} className="opacity-70" />
-                    Provinsi Tujuan *
-                  </label>
-                  <SearchableSelect
-                    value={formData.province}
-                    onValueChange={(val) => handleProvinceChange(val)}
-                    options={provinces.map((p) => p.province)}
-                    placeholder="Pilih Provinsi Tujuan"
-                    searchPlaceholder="Cari provinsi..."
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="city"
-                    className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
-                  >
-                    Kabupaten / Kota *
-                  </label>
-                  <SearchableSelect
-                    value={formData.city}
-                    onValueChange={(val) => handleCityChange(val)}
-                    options={availableCities}
-                    placeholder="Pilih Kota / Kabupaten"
-                    searchPlaceholder="Cari kota / kabupaten..."
-                    isLoading={isShippingLoading && cities.length === 0}
-                  />
-                </div>
-              </div>
-
-              {/* District & Postal Code */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label
-                    htmlFor="district"
-                    className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
-                  >
-                    Kecamatan & Desa / Kelurahan *
-                  </label>
-                  <SearchableSelect
-                    value={formData.district}
-                    onValueChange={(val) => handleDistrictChange(val)}
-                    options={availableDistricts}
-                    placeholder="Pilih Kecamatan / Desa"
-                    searchPlaceholder="Cari kecamatan / desa..."
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="postalCode"
-                    className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
-                  >
-                    Kode Pos{' '}
-                    {availablePostalCodes.length > 0 && (
-                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal lowercase tracking-normal">
-                        (otomatis terisi)
-                      </span>
-                    )}
-                  </label>
-                  {availablePostalCodes.length > 0 ? (
-                    <SearchableSelect
-                      value={formData.postalCode}
-                      onValueChange={(val) => setFormData({ ...formData, postalCode: val })}
-                      options={availablePostalCodes}
-                      placeholder="Pilih Kode Pos"
-                      searchPlaceholder="Cari kode pos..."
-                    />
-                  ) : (
-                    <input
-                      id="postalCode"
-                      type="text"
-                      value={formData.postalCode}
-                      onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                      className="w-full bg-transparent border-0 border-b border-(--cat-stone) pb-2 text-[15px] font-mono text-(--cat-on-surface) outline-none focus:border-(--cat-charcoal) transition-colors placeholder:text-(--cat-outline-variant)"
-                      placeholder="5 digit kode pos"
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* Courier & Service Selection (Dynamic Pricing options) */}
-              <div>
-                <label
-                  htmlFor="courierService"
-                  className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2 flex items-center justify-between"
-                >
-                  <span>Opsi Kurir & Layanan Pengiriman *</span>
-                  {isShippingLoading && (
-                    <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-normal lowercase tracking-normal">
-                      <Loader2 size={12} className="animate-spin" /> Menghitung ongkir...
-                    </span>
-                  )}
-                </label>
-                <SearchableSelect
-                  value={formData.courierService}
-                  onValueChange={(val) => setFormData({ ...formData, courierService: val })}
-                  options={rajaRates
-                    .filter((rate) => activeCourierCodes.includes(rate.courierCode))
-                    .map((rate) => ({ label: rate.label, value: rate.key }))}
-                  placeholder={
-                    isShippingLoading ? 'Memuat tarif ongkir...' : 'Pilih Layanan Pengiriman'
-                  }
-                  searchPlaceholder="Cari kurir / layanan..."
-                  isLoading={isShippingLoading}
-                />
-              </div>
-
-              {/* Detailed Street Address */}
-              <div>
-                <label
-                  htmlFor="streetAddress"
-                  className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-2"
-                >
-                  Detail Alamat Jalan & Nomor Rumah *
-                </label>
-                <textarea
-                  id="streetAddress"
-                  required
-                  rows={3}
-                  value={formData.streetAddress}
-                  onChange={(e) => setFormData({ ...formData, streetAddress: e.target.value })}
-                  className="w-full bg-transparent border border-(--cat-stone) p-3 font-hanken text-[14px] text-(--cat-on-surface) outline-none focus:border-(--cat-charcoal) transition-colors placeholder:text-(--cat-outline-variant) resize-none"
-                  placeholder="Nama jalan, nomor rumah, RT/RW, gedung, atau patokan lokasi"
-                />
-              </div>
-
-              {/* CAPTCHA Challenge */}
-              <div className="pt-4 border-t border-(--cat-stone)">
-                <CaptchaChallenge
-                  key={captchaReset}
-                  onVerify={(verified, token) => {
-                    setIsCaptchaVerified(verified);
-                    setCaptchaToken(token || '');
-                  }}
-                  isVerified={isCaptchaVerified}
-                />
-              </div>
-
-              {/* Submit Button */}
-              {submitError && (
-                <p role="alert" className="text-sm text-red-700">
-                  {submitError}
-                </p>
-              )}
-              {!isShippingLoading && !selectedRate && (
-                <p role="status" className="text-sm">
-                  Tarif pengiriman belum tersedia. Pilih ulang kota atau muat ulang halaman.
-                </p>
-              )}
-              {product && (!isOrderableStatus(product.status) || !selectedVariant?.inStock) && (
-                <p role="alert" className="text-sm">
-                  Produk atau ukuran tidak tersedia.{' '}
-                  <Link href={`/products/${product.slug}`} className="underline">
-                    Pilih ulang produk
-                  </Link>
-                  .
-                </p>
-              )}
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={!isValid || !isCaptchaVerified || isSubmitting}
-                  className={cn(
-                    'w-full py-4 px-8 font-hanken text-[12px] font-semibold uppercase tracking-[0.12em] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer',
-                    isValid && isCaptchaVerified && !isSubmitting
-                      ? 'bg-(--cat-charcoal) text-white hover:opacity-90'
-                      : 'bg-(--cat-secondary-container) text-(--cat-on-secondary-container) opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  {isSubmitting ? (
-                    <span>Memproses Pesanan...</span>
-                  ) : (
-                    <>
-                      <span>Konfirmasi & Buat Pesanan</span>
-                      <ArrowRight size={16} />
-                    </>
-                  )}
-                </button>
-                <p className="mt-3 text-center font-hanken text-[11px] text-(--cat-on-surface-variant)">
-                  Setelah membuat pesanan, tim kami akan menghubungi Anda melalui WhatsApp untuk
-                  konfirmasi & instruksi pembayaran.
-                </p>
               </div>
             </div>
           </div>
-        </form>
-      </section>
-    </>
+
+          {/* Right: Customer Form & OTP Verification */}
+          <div className="md:col-span-7 order-1 md:order-2 space-y-6">
+            {submitError && (
+              <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 text-[13px] font-hanken flex items-start gap-2">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <span>{submitError}</span>
+              </div>
+            )}
+
+            {/* Customer Info */}
+            <div className="bg-(--cat-surface-container-low) border border-(--cat-stone) p-6">
+              <h2 className="font-eb-garamond text-[20px] font-normal text-(--cat-on-surface) mb-4">
+                Informasi Kontak Pemesan
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    Nama Lengkap <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.fullName}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, fullName: e.target.value }))}
+                    placeholder="Nama Lengkap Anda"
+                    className="w-full h-11 px-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    No. WhatsApp Aktif <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, whatsapp: e.target.value }))}
+                    placeholder="081234567890"
+                    className="w-full h-11 px-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
+                  />
+                  <p className="mt-1 font-hanken text-[11px] text-(--cat-on-surface-variant)">
+                    Kami akan mengirim konfirmasi pesanan dan instruksi pembayaran transfer bank via
+                    WhatsApp ini.
+                  </p>
+                </div>
+
+                {/* Email & OTP Section */}
+                <div className="pt-2">
+                  <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    Alamat Email (Gmail / Email Aktif) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="email"
+                        required
+                        disabled={isOtpVerified}
+                        value={formData.email}
+                        onChange={(e) => {
+                          setFormData((prev) => ({ ...prev, email: e.target.value }));
+                          if (isOtpVerified) setIsOtpVerified(false);
+                        }}
+                        placeholder="nama@email.com"
+                        className={cn(
+                          'w-full h-11 pl-10 pr-3 font-hanken text-[14px] border focus:outline-none transition-colors',
+                          isOtpVerified
+                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-950 dark:text-emerald-200'
+                            : 'bg-(--cat-surface) border-(--cat-stone) focus:border-(--cat-charcoal)'
+                        )}
+                      />
+                      <Mail
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-(--cat-on-surface-variant)"
+                        size={16}
+                      />
+                    </div>
+
+                    {!isOtpVerified && (
+                      <button
+                        type="button"
+                        disabled={isSendingOtp || countdown > 0 || !formData.email.includes('@')}
+                        onClick={handleSendOtp}
+                        className={cn(
+                          'px-4 h-11 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] shrink-0 transition-opacity cursor-pointer flex items-center gap-1.5',
+                          isSendingOtp || countdown > 0 || !formData.email.includes('@')
+                            ? 'opacity-60 cursor-not-allowed'
+                            : 'hover:opacity-90'
+                        )}
+                      >
+                        {isSendingOtp ? (
+                          <Loader2 className="animate-spin" size={13} />
+                        ) : countdown > 0 ? (
+                          `${countdown}s`
+                        ) : (
+                          <>
+                            <Send size={12} /> Kirim OTP
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {devOtpHint && !isOtpVerified && (
+                    <div className="mt-2.5 p-3 bg-amber-50 border border-amber-300 text-amber-950 text-xs font-mono rounded shadow-xs leading-relaxed">
+                      <span className="font-bold text-amber-900">⚡ DEV MODE:</span> {devOtpHint.replace('[DEV MODE] ', '')}
+                    </div>
+                  )}
+
+                  {/* OTP Verification Input Box */}
+                  {!isOtpVerified && otpSent && (
+                    <div className="mt-3 p-4 bg-(--cat-surface) border border-(--cat-stone) space-y-3 animate-in fade-in duration-200">
+                      <p className="font-hanken text-[12px] text-(--cat-on-surface)">
+                        Masukkan 6-digit kode verifikasi yang dikirim ke{' '}
+                        <strong>{formData.email}</strong>:
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                          placeholder="123456"
+                          className="w-36 h-10 text-center tracking-[6px] font-mono text-[18px] font-bold bg-(--cat-surface-container-low) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          disabled={isVerifyingOtp || otpCode.length !== 6}
+                          onClick={handleVerifyOtp}
+                          className={cn(
+                            'px-5 h-10 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] cursor-pointer transition-opacity',
+                            isVerifyingOtp || otpCode.length !== 6
+                              ? 'opacity-60 cursor-not-allowed'
+                              : 'hover:opacity-90'
+                          )}
+                        >
+                          {isVerifyingOtp ? (
+                            <Loader2 className="animate-spin" size={14} />
+                          ) : (
+                            'Verifikasi'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {isOtpVerified && (
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-hanken text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 size={14} /> Email terverifikasi
+                      </span>
+                      {!isAuthenticated && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsOtpVerified(false);
+                            setOtpSent(false);
+                            setOtpCode('');
+                          }}
+                          className="text-[11px] font-hanken text-(--cat-on-surface-variant) underline hover:text-(--cat-on-surface) cursor-pointer"
+                        >
+                          Ganti Email
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Shipping Address */}
+            <div className="bg-(--cat-surface-container-low) border border-(--cat-stone) p-6 space-y-4">
+              <h2 className="font-eb-garamond text-[20px] font-normal text-(--cat-on-surface)">
+                Alamat Pengiriman
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    Provinsi <span className="text-red-500">*</span>
+                  </label>
+                  <SearchableSelect
+                    options={provinces.map((p) => p.province)}
+                    value={formData.province}
+                    onValueChange={handleProvinceChange}
+                    placeholder="Pilih Provinsi"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    Kota / Kabupaten <span className="text-red-500">*</span>
+                  </label>
+                  <SearchableSelect
+                    options={availableCities}
+                    value={formData.city}
+                    onValueChange={handleCityChange}
+                    placeholder="Pilih Kota/Kabupaten"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    Kecamatan <span className="text-red-500">*</span>
+                  </label>
+                  <SearchableSelect
+                    options={availableDistricts}
+                    value={formData.district}
+                    onValueChange={handleDistrictChange}
+                    placeholder="Pilih Kecamatan"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    Kode Pos
+                  </label>
+                  <SearchableSelect
+                    options={availablePostalCodes}
+                    value={formData.postalCode}
+                    onValueChange={(val: string) =>
+                      setFormData((prev) => ({ ...prev, postalCode: val }))
+                    }
+                    placeholder="Kode Pos"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                  Alamat Lengkap (Nama Jalan, No. Rumah, RT/RW, Patokan){' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={formData.streetAddress}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, streetAddress: e.target.value }))
+                  }
+                  placeholder="Contoh: Jl. Kemang Raya No. 45B, RT 02/RW 04, Depan Coffee Shop"
+                  className="w-full p-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Courier Selection */}
+              <div>
+                <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                  Pilihan Ekspedisi & Layanan Ongkir <span className="text-red-500">*</span>
+                </label>
+                {isShippingLoading ? (
+                  <div className="h-11 flex items-center px-3 bg-(--cat-surface) border border-(--cat-stone) text-(--cat-on-surface-variant) text-[13px] font-hanken">
+                    <Loader2 size={14} className="animate-spin mr-2" /> Menghitung ongkir ke{' '}
+                    {formData.city}...
+                  </div>
+                ) : rajaRates.length === 0 ? (
+                  <div className="h-11 flex items-center px-3 bg-(--cat-surface) border border-(--cat-stone) text-(--cat-on-surface-variant) text-[13px] font-hanken">
+                    Pilih Kota/Kabupaten untuk melihat opsi ongkir
+                  </div>
+                ) : (
+                  <select
+                    value={formData.courierService}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, courierService: e.target.value }))
+                    }
+                    className="w-full h-11 px-3 font-hanken text-[13px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none"
+                  >
+                    {rajaRates.map((opt) => (
+                      <option key={opt.key} value={opt.key}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                  Catatan Pesanan (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.notes}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Contoh: Tolong titipkan di pos satpam jika tidak ada orang"
+                  className="w-full h-11 px-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={!isValid || isSubmitting}
+              className={cn(
+                'w-full py-4 flex items-center justify-center gap-2 bg-(--cat-charcoal) text-white font-hanken text-[12px] font-semibold uppercase tracking-[0.08em] transition-opacity duration-150',
+                isValid && !isSubmitting
+                  ? 'hover:opacity-90 cursor-pointer'
+                  : 'opacity-60 cursor-not-allowed'
+              )}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} /> Memproses Pesanan...
+                </>
+              ) : (
+                <>
+                  Kirim Permintaan Pesanan <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export default function OrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-350 px-4 md:px-16 py-16 text-center font-hanken text-[13px] text-(--cat-on-surface-variant)">
+          <Loader2 className="animate-spin inline-block mr-2" size={16} /> Memuat halaman
+          pemesanan...
+        </div>
+      }
+    >
+      <OrderContent />
+    </Suspense>
   );
 }

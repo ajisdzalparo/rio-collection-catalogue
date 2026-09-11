@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { Search, Menu } from 'lucide-react';
+import { Search, Menu, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNav } from '@/components/catalogue/mobile-nav';
 import { SearchModal } from '@/components/catalogue/search-modal';
+import { CartButton } from '@/components/catalogue/cart-button';
+import { CartDrawer } from '@/components/catalogue/cart-drawer';
+import { useCustomerStore } from '@/lib/customer-store';
+
+const emptySubscribe = () => () => {};
 
 const NAV_LINKS = [
   { href: '/catalogue', label: 'Catalogue' },
@@ -22,6 +27,12 @@ interface CatalogueNavbarProps {
 export function CatalogueNavbar({ storeName, className }: CatalogueNavbarProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const { isAuthenticated, customer } = useCustomerStore();
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   return (
     <>
@@ -40,7 +51,7 @@ export function CatalogueNavbar({ storeName, className }: CatalogueNavbarProps) 
           </Link>
 
           {/* Right: Menus & Actions */}
-          <div className="flex items-center gap-6 md:gap-8">
+          <div className="flex items-center gap-5 md:gap-8">
             {/* Desktop Navigation Links */}
             <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
               {NAV_LINKS.map((link) => (
@@ -54,8 +65,9 @@ export function CatalogueNavbar({ storeName, className }: CatalogueNavbarProps) 
               ))}
             </nav>
 
-            {/* Search Icon & Mobile Menu Trigger */}
-            <div className="flex items-center gap-3">
+            {/* Action Icons */}
+            <div className="flex items-center gap-2.5 md:gap-3.5">
+              {/* Search Icon */}
               <button
                 aria-label="Search"
                 onClick={() => setSearchModalOpen(true)}
@@ -63,6 +75,22 @@ export function CatalogueNavbar({ storeName, className }: CatalogueNavbarProps) 
               >
                 <Search size={18} strokeWidth={1.5} />
               </button>
+
+              {/* Shopping Cart Drawer Trigger */}
+              <CartButton />
+
+              {/* Customer Account / Login */}
+              <Link
+                href={mounted && isAuthenticated ? '/customer/account' : '/customer/login'}
+                aria-label={mounted && isAuthenticated ? 'Akun Saya' : 'Masuk Akun'}
+                className="p-1.5 text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer relative"
+                title={mounted && isAuthenticated ? (customer?.fullName || customer?.email || 'Akun Saya') : 'Masuk Akun'}
+              >
+                <User size={18} strokeWidth={1.5} />
+                {mounted && isAuthenticated && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-(--cat-surface)" />
+                )}
+              </Link>
 
               {/* Mobile Hamburger */}
               <button
@@ -76,6 +104,9 @@ export function CatalogueNavbar({ storeName, className }: CatalogueNavbarProps) 
           </div>
         </div>
       </header>
+
+      {/* Cart Drawer */}
+      <CartDrawer />
 
       {/* Interactive Search Modal */}
       <SearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />

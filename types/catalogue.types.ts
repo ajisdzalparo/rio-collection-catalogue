@@ -1,5 +1,6 @@
 export type ProductStatus = 'AVAILABLE' | 'SOLD_OUT' | 'COMING_SOON' | 'PRE_ORDER' | 'DISCONTINUED';
 export type StockMode = 'QUANTITY' | 'ALWAYS_AVAILABLE';
+export type OrderLimitMode = 'UNLIMITED' | 'ONCE_PER_USER';
 
 export interface ProductVariant {
   size: string;
@@ -27,6 +28,8 @@ export interface Product {
   hpp?: number;
   stock?: number;
   stockMode?: StockMode;
+  orderLimitMode?: OrderLimitMode;
+  maxPurchaseLimit?: number | null;
   color: string;
   colorHex: string;
   colors?: string[];
@@ -42,6 +45,7 @@ export interface Product {
   edition: string;
   variants: ProductVariant[];
   materialsAndCare?: MaterialsAndCare;
+  deletedAt?: string | null;
 }
 
 export interface ArchiveCollection {

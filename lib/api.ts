@@ -58,6 +58,9 @@ export async function getProducts(): Promise<Product[]> {
   try {
     const { prisma } = await import('@/lib/prisma');
     const products = await prisma.product.findMany({
+      where: {
+        deletedAt: null
+      },
       include: {
         variants: {
           select: {
@@ -88,7 +91,10 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
   try {
     const { prisma } = await import('@/lib/prisma');
     const product = await prisma.product.findFirst({
-      where: { slug },
+      where: {
+        slug,
+        deletedAt: null
+      },
       include: {
         variants: {
           select: {
@@ -188,12 +194,14 @@ export async function getJournalBySlug(slug: string): Promise<JournalArticle | u
  */
 export async function submitOrder(orderPayload: {
   fullName: string;
+  email: string;
   whatsapp: string;
   address: string;
   notes?: string;
   totalPrice?: number;
   shippingFee?: number;
-  captchaToken: string;
+  otpCode?: string;
+  customerId?: string;
   shipping: { destination: string; courier: string; service: string };
   items: Array<{ productId: string; color?: string; size: string; quantity: number }>;
 }) {
@@ -208,3 +216,4 @@ export async function submitOrder(orderPayload: {
   if (!result.data?.orderNumber) throw new Error('Respons pesanan tidak valid. Hubungi toko sebelum mencoba lagi.');
   return result;
 }
+
