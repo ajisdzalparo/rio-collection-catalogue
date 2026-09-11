@@ -34,11 +34,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('password123');
-  };
-
   return (
     <div className="min-h-screen w-full bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background Glow Accents */}
@@ -139,32 +134,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          {/* Quick Demo Login Preset Buttons */}
-          <div className="pt-2 border-t border-border/20 space-y-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-center">
-              Pilih Akun Demo (Quick Select):
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('ajis@riocollection.com')}
-                className="p-2 rounded-lg border border-border/30 bg-muted/10 hover:bg-muted/30 text-left transition-all text-[11px] cursor-pointer"
-              >
-                <div className="font-bold text-foreground">Ajis</div>
-                <div className="text-[9px] text-muted-foreground truncate">Super Admin</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin@riocollection.com')}
-                className="p-2 rounded-lg border border-border/30 bg-muted/10 hover:bg-muted/30 text-left transition-all text-[11px] cursor-pointer"
-              >
-                <div className="font-bold text-foreground">Staff Admin</div>
-                <div className="text-[9px] text-muted-foreground truncate">Staff Operational</div>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Footer Security Tag */}
