@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import { formatWaNumber } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'About',
   description: 'Tentang kami — cerita brand dan filosofi di balik RIO COLLECTION.',
