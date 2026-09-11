@@ -196,6 +196,8 @@ export async function PUT(request: Request) {
       }
     });
 
+    revalidatePath('/', 'layout');
+    revalidatePath('/about');
     revalidatePath('/(catalogue)', 'layout');
     return NextResponse.json({ code: 200, status: 'success', data: updatedSettings });
   } catch (error) {
