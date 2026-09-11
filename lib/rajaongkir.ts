@@ -302,7 +302,7 @@ export async function calculateShippingCost({
   const courierCode = courier.toLowerCase();
   const weightGrams = Math.max(1000, Math.ceil(weight / 1000) * 1000);
 
-  // 1. Check local DB cache (0ms)
+  // 1. Check local DB cache first (0ms latency priority)
   try {
     const cached = await prisma.shippingRateCache.findFirst({
       where: {
@@ -313,9 +313,26 @@ export async function calculateShippingCost({
       orderBy: { updatedAt: 'desc' }
     });
 
-    if (cached && new Date(cached.expiresAt) > new Date()) {
+    if (cached && cached.ratesData) {
       const rawRates = cached.ratesData as unknown as RajaOngkirCourierResult[];
-      return scaleRatesDataForWeight(rawRates, cached.weightGrams || 1000, weightGrams);
+      if (Array.isArray(rawRates) && rawRates.length > 0 && rawRates[0].costs?.length > 0) {
+        // If cache is expired, trigger background refresh non-blocking
+        if (new Date(cached.expiresAt) <= new Date() && getApiKey()) {
+          fetchLiveRajaOngkirRatesForSync(originId, destination, courierCode, 1000)
+            .then((freshRates) => {
+              if (freshRates && freshRates.length > 0 && freshRates[0].costs?.length > 0) {
+                const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+                prisma.shippingRateCache.update({
+                  where: { id: cached.id },
+                  data: { ratesData: freshRates as unknown as Prisma.InputJsonValue, expiresAt }
+                }).catch(() => {});
+              }
+            })
+            .catch(() => {});
+        }
+
+        return scaleRatesDataForWeight(rawRates, cached.weightGrams || 1000, weightGrams);
+      }
     }
   } catch (err) {
     console.warn('DB Shipping Cache read error:', err);
@@ -394,7 +411,8 @@ export async function fetchLiveRajaOngkirRatesForSync(
         key: apiKey,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: bodyParamsV2.toString()
+      body: bodyParamsV2.toString(),
+      signal: AbortSignal.timeout(2500)
     });
 
     const json = await res.json();
@@ -440,7 +458,8 @@ export async function fetchLiveRajaOngkirRatesForSync(
         key: apiKey,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: bodyParams.toString()
+      body: bodyParams.toString(),
+      signal: AbortSignal.timeout(2500)
     });
 
     const json2 = await res2.json();
@@ -448,7 +467,7 @@ export async function fetchLiveRajaOngkirRatesForSync(
       return json2.rajaongkir.results as RajaOngkirCourierResult[];
     }
   } catch (err) {
-    console.error('Failed to sync RajaOngkir cost from live API:', err);
+    console.warn('RajaOngkir live API query timeout or error, falling back:', err);
   }
 
   return null;
