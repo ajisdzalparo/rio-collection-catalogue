@@ -11,7 +11,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Shipping Policy — RIO COLLECTION',
     description: 'Informasi dan kebijakan pengiriman pesanan RIO COLLECTION.',
-    images: [{ url: '/ms-icon-310x310.png', width: 310, height: 310, alt: 'RIO COLLECTION Shipping' }]
+    images: [
+      { url: '/ms-icon-310x310.png', width: 310, height: 310, alt: 'RIO COLLECTION Shipping' }
+    ]
   }
 };
 
@@ -21,7 +23,7 @@ export default async function ShippingPage() {
     .catch(() => null);
 
   const storeName = settings?.storeName || 'RIO COLLECTION';
-  const originCity = settings?.originCityName || 'Bandung';
+  const originCity = settings?.originCityName || 'Majalengka';
   const couriers = (settings?.enabledCouriers || 'jne,pos,tiki,sicepat,jnt')
     .split(',')
     .map((c) => c.trim().toUpperCase())
@@ -58,7 +60,9 @@ export default async function ShippingPage() {
             1. Asal Pengiriman & Mitra Ekspedisi
           </h2>
           <p>
-            Seluruh pesanan dikemas dan dikirimkan langsung dari studio kami di <strong>{originCity}</strong>. Kami bekerja sama dengan jaringan ekspedisi terpercaya di Indonesia: <strong>{couriers}</strong>.
+            Seluruh pesanan dikemas dan dikirimkan langsung dari studio kami di{' '}
+            <strong>{originCity}</strong>. Kami bekerja sama dengan jaringan ekspedisi terpercaya di
+            Indonesia: <strong>{couriers}</strong>.
           </p>
         </section>
 
@@ -68,10 +72,12 @@ export default async function ShippingPage() {
           </h2>
           <ul className="list-disc pl-5 space-y-1.5">
             <li>
-              <strong>Produk Ready Stock:</strong> Diproses dan diserahkan ke kurir dalam waktu 1–2 hari kerja setelah verifikasi pembayaran berhasil.
+              <strong>Produk Ready Stock:</strong> Diproses dan diserahkan ke kurir dalam waktu 1–2
+              hari kerja setelah verifikasi pembayaran berhasil.
             </li>
             <li>
-              <strong>Produk Pre-Order (PO):</strong> Diproses sesuai dengan estimasi tanggal rilis yang tertera pada deskripsi produk katalog.
+              <strong>Produk Pre-Order (PO):</strong> Diproses sesuai dengan estimasi tanggal rilis
+              yang tertera pada deskripsi produk katalog.
             </li>
           </ul>
         </section>
@@ -81,7 +87,9 @@ export default async function ShippingPage() {
             3. Pelacakan Pesanan & Nomor Resi
           </h2>
           <p>
-            Setelah paket Anda diserahkan kepada pihak ekspedisi, nomor resi pengiriman akan langsung dikirimkan kepada Anda melalui pesan konfirmasi WhatsApp dan dapat dipantau di halaman status pesanan.
+            Setelah paket Anda diserahkan kepada pihak ekspedisi, nomor resi pengiriman akan
+            langsung dikirimkan kepada Anda melalui pesan konfirmasi WhatsApp dan dapat dipantau di
+            halaman status pesanan.
           </p>
         </section>
 
@@ -91,9 +99,16 @@ export default async function ShippingPage() {
           </h2>
           <p>
             {settings?.flatShippingRate ? (
-              <>Tarif ongkos kirim standar yang berlaku saat ini adalah <strong>{formatPrice(settings.flatShippingRate)}</strong> per transaksi flat ke wilayah jangkauan kami.</>
+              <>
+                Tarif ongkos kirim standar yang berlaku saat ini adalah{' '}
+                <strong>{formatPrice(settings.flatShippingRate)}</strong> per transaksi flat ke
+                wilayah jangkauan kami.
+              </>
             ) : (
-              <>Biaya pengiriman dihitung secara otomatis berdasarkan kota/kecamatan tujuan dan bobot pesanan Anda saat melakukan proses checkout.</>
+              <>
+                Biaya pengiriman dihitung secara otomatis berdasarkan kota/kecamatan tujuan dan
+                bobot pesanan Anda saat melakukan proses checkout.
+              </>
             )}
           </p>
         </section>
