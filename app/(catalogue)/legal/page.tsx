@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { formatWaNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,8 @@ export default async function LegalPage() {
     .catch(() => null);
 
   const storeName = settings?.storeName || 'RIO COLLECTION';
-  const contactEmail = settings?.contactEmail || 'support@rio-collection.com';
+  const contactEmail = settings?.contactEmail;
+  const whatsappNumber = settings?.whatsappNumber;
 
   return (
     <div className="mx-auto max-w-350 px-4 md:px-16 py-12 md:py-20">
@@ -88,10 +90,29 @@ export default async function LegalPage() {
             4. Pertanyaan Hukum
           </h2>
           <p>
-            Untuk pertanyaan atau permohonan terkait privasi dan legalitas, silakan hubungi tim kami melalui email di{' '}
-            <a href={`mailto:${contactEmail}`} className="text-(--cat-on-surface) underline font-medium">
-              {contactEmail}
-            </a>.
+            Untuk pertanyaan atau permohonan terkait privasi dan legalitas, silakan hubungi tim kami
+            {contactEmail ? (
+              <>
+                {' '}melalui email di{' '}
+                <a href={`mailto:${contactEmail}`} className="text-(--cat-on-surface) underline font-medium">
+                  {contactEmail}
+                </a>.
+              </>
+            ) : whatsappNumber ? (
+              <>
+                {' '}melalui WhatsApp resmi di{' '}
+                <a
+                  href={`https://wa.me/${formatWaNumber(whatsappNumber)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-(--cat-on-surface) underline font-medium"
+                >
+                  +{formatWaNumber(whatsappNumber)}
+                </a>.
+              </>
+            ) : (
+              <> melalui saluran kontak resmi yang tertera pada katalog {storeName}.</>
+            )}
           </p>
         </section>
       </div>
