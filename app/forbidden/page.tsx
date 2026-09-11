@@ -24,7 +24,7 @@ export default function ForbiddenPage() {
               transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute inset-0 rounded-full border-2 border-rose-500/40 bg-rose-500/10"
             />
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-rose-500/10 border border-rose-500/25 text-rose-500 shadow-xl backdrop-blur-xl">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-500 shadow-xl backdrop-blur-xl">
               <ShieldAlert className="h-10 w-10 stroke-[2.2]" />
             </div>
           </div>

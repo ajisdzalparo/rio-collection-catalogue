@@ -61,7 +61,7 @@ export default function OfflinePage() {
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute inset-0 rounded-full border-2 border-amber-500/40 bg-amber-500/10"
             />
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-500/10 border border-amber-500/30 text-amber-500 shadow-xl backdrop-blur-xl">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 shadow-xl backdrop-blur-xl">
               <WifiOff className="h-10 w-10 stroke-[2.2]" />
             </div>
           </div>
@@ -102,7 +102,7 @@ export default function OfflinePage() {
         <FadeIn
           delay={0.3}
           direction="up"
-          className="space-y-3 text-left p-5 rounded-3xl border border-border/60 bg-card/70 backdrop-blur-md shadow-xs"
+          className="space-y-3 text-left p-5 rounded-xl border border-border/60 bg-card/70 backdrop-blur-md shadow-xs"
         >
           <span className="text-xs font-bold text-foreground uppercase tracking-wider text-[11px] block text-center sm:text-left">
             Informasi Mode Offline
@@ -134,7 +134,7 @@ export default function OfflinePage() {
             variant="outline"
             disabled={isChecking}
             onClick={handleRetry}
-            className="gap-2 rounded-2xl text-xs font-bold h-11 px-5"
+            className="gap-2 rounded-lg text-xs font-bold h-11 px-5"
           >
             <RefreshCw className={cn('h-4 w-4', isChecking && 'animate-spin')} />
             <span>{isChecking ? 'Pemeriksaan...' : 'Coba Hubungkan Ulang'}</span>
@@ -142,7 +142,7 @@ export default function OfflinePage() {
 
           <Button
             render={<Link href="/dashboard" />}
-            className="gap-2 rounded-2xl text-xs font-bold h-11 px-5 shadow-md"
+            className="gap-2 rounded-lg text-xs font-bold h-11 px-5 shadow-md"
           >
             <Home className="h-4 w-4" />
             <span>Ke Dashboard</span>

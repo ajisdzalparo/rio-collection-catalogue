@@ -25,7 +25,7 @@ function SkeletonText({ lines = 3, className }: { lines?: number; className?: st
 
 function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn('rounded-2xl border border-border/50 bg-card p-5 space-y-4', className)}>
+    <div className={cn('rounded-xl border border-border/50 bg-card p-5 space-y-4', className)}>
       <div className="flex items-center gap-3">
         <Skeleton className="h-10 w-10 rounded-full" />
         <div className="space-y-2 flex-1">
@@ -35,8 +35,8 @@ function SkeletonCard({ className }: { className?: string }) {
       </div>
       <SkeletonText lines={3} />
       <div className="flex gap-2 pt-1">
-        <Skeleton className="h-7 w-20 rounded-xl" />
-        <Skeleton className="h-7 w-16 rounded-xl" />
+        <Skeleton className="h-7 w-20 rounded-md" />
+        <Skeleton className="h-7 w-16 rounded-md" />
       </div>
     </div>
   );
@@ -44,7 +44,7 @@ function SkeletonCard({ className }: { className?: string }) {
 
 function SkeletonTable({ rows = 4, cols = 4, className }: { rows?: number; cols?: number; className?: string }) {
   return (
-    <div className={cn('rounded-2xl border border-border/50 bg-card overflow-hidden', className)}>
+    <div className={cn('rounded-xl border border-border/50 bg-card overflow-hidden', className)}>
       <div className="grid gap-0">
         <div className="flex gap-4 p-3.5 border-b border-border/40 bg-muted/30">
           {Array.from({ length: cols }).map((_, i) => (

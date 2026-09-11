@@ -21,7 +21,7 @@ export function TruncatedText({
 
   return (
     <QuickTooltip content={text} side={side} delay={150}>
-      <span className={cn('block truncate cursor-pointer', maxWidth, className)}>
+      <span className={cn('block truncate cursor-pointer max-w-full min-w-0', maxWidth, className)}>
         {text}
       </span>
     </QuickTooltip>

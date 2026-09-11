@@ -31,11 +31,6 @@ export async function createOrder(input: z.infer<typeof orderSchema>) {
   if (shippingFee !== input.shippingFee) throw new OrderError('Tarif ongkir berubah. Muat ulang halaman untuk mendapatkan tarif terbaru.', 409);
 
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.order.findFirst({
-      where: { whatsapp, status: { in: ['PENDING', 'CONFIRMED', 'WAITING_PAYMENT', 'PAID', 'FULFILLED'] } },
-      select: { orderNumber: true }
-    });
-    if (existing) throw new OrderError(`Kamu sudah memiliki pesanan aktif #${existing.orderNumber}. Hubungi toko untuk melanjutkan pesanan tersebut.`, 409);
     const products = await tx.product.findMany({
       where: { id: { in: input.items.map((item) => item.productId) } }, include: { variants: true }
     });

@@ -29,8 +29,36 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
+import type { DatePickerPreset } from '@/types/date-picker.types';
 import type { JournalArticle, JournalCategory } from '@/types/catalogue.types';
 import { cn } from '@/lib/utils';
+
+const JOURNAL_DATE_PRESETS: DatePickerPreset[] = [
+  {
+    label: 'Hari Ini',
+    getValue: () => {
+      const today = new Date();
+      return { from: today, to: today };
+    }
+  },
+  {
+    label: 'Kemarin',
+    getValue: () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      return { from: yesterday, to: yesterday };
+    }
+  },
+  {
+    label: '7 Hari Lalu',
+    getValue: () => {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      return { from: d, to: d };
+    }
+  }
+];
 
 function JournalEditorContent() {
   const router = useRouter();
@@ -57,6 +85,40 @@ function JournalEditorContent() {
   const [contentHtml, setContentHtml] = useState('');
   const [pullQuote, setPullQuote] = useState('');
   const [relatedProductSlug, setRelatedProductSlug] = useState('');
+
+  const selectedDate = React.useMemo(() => {
+    if (!date) return undefined;
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) return parsed;
+
+    const indonesianMonths: Record<string, string> = {
+      januari: 'January',
+      februari: 'February',
+      maret: 'March',
+      april: 'April',
+      mei: 'May',
+      juni: 'June',
+      juli: 'July',
+      agustus: 'August',
+      september: 'September',
+      oktober: 'October',
+      nopember: 'November',
+      november: 'November',
+      desember: 'December'
+    };
+
+    const lower = date.toLowerCase();
+    let normalized = date;
+    for (const [idMonth, enMonth] of Object.entries(indonesianMonths)) {
+      if (lower.includes(idMonth)) {
+        normalized = lower.replace(idMonth, enMonth);
+        break;
+      }
+    }
+
+    const reParsed = new Date(normalized);
+    return !isNaN(reParsed.getTime()) ? reParsed : undefined;
+  }, [date]);
 
   const [initialized, setInitialized] = useState(false);
 
@@ -305,17 +367,28 @@ function JournalEditorContent() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label
-                  htmlFor="art-date"
                   className="text-xs font-bold text-foreground flex items-center gap-1"
                 >
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" /> Tanggal Rilis
                 </Label>
-                <Input
-                  id="art-date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="h-10 rounded-xl bg-muted/20 border-border/55 text-xs"
+                <DatePicker
+                  mode="single"
+                  value={selectedDate}
+                  onChange={(newDate) => {
+                    if (newDate) {
+                      const y = newDate.getFullYear();
+                      const m = String(newDate.getMonth() + 1).padStart(2, '0');
+                      const d = String(newDate.getDate()).padStart(2, '0');
+                      setDate(`${y}-${m}-${d}`);
+                    } else {
+                      setDate('');
+                    }
+                  }}
+                  showPresets={true}
+                  presets={JOURNAL_DATE_PRESETS}
+                  placeholder="dd/mm/yyyy"
+                  format="dd/MM/yyyy"
+                  className="w-full"
                 />
               </div>
               <div className="space-y-1.5">
@@ -363,6 +436,7 @@ function JournalEditorContent() {
                 value={imageUrl}
                 onChange={setImageUrl}
                 placeholder="Drop cover foto di sini atau klik untuk upload"
+                aspectRatio="16:9"
               />
             </div>
 

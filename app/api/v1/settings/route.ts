@@ -53,7 +53,9 @@ export async function PUT(request: Request) {
       xTwitterUrl,
       heroTitle,
       heroSubtitle,
+      heroLayout,
       heroLeftImage,
+      heroCenterImage,
       heroRightImage,
       heroCtaText,
       heroCtaLink,
@@ -103,7 +105,9 @@ export async function PUT(request: Request) {
         ...(xTwitterUrl !== undefined && { xTwitterUrl }),
         ...(heroTitle !== undefined && { heroTitle }),
         ...(heroSubtitle !== undefined && { heroSubtitle }),
+        ...(heroLayout !== undefined && { heroLayout }),
         ...(heroLeftImage !== undefined && { heroLeftImage }),
+        ...(heroCenterImage !== undefined && { heroCenterImage }),
         ...(heroRightImage !== undefined && { heroRightImage }),
         ...(heroCtaText !== undefined && { heroCtaText }),
         ...(heroCtaLink !== undefined && { heroCtaLink }),
@@ -151,9 +155,11 @@ export async function PUT(request: Request) {
         xTwitterUrl,
         heroTitle: heroTitle || 'EDITION 001',
         heroSubtitle: heroSubtitle || 'ARCHIVAL COTTON SILHOUETTE',
+        heroLayout: heroLayout || '2-grid',
         heroLeftImage:
           heroLeftImage ||
           'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80',
+        heroCenterImage: heroCenterImage || '',
         heroRightImage:
           heroRightImage ||
           'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',

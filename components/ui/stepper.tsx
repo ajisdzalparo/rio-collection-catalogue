@@ -35,7 +35,7 @@ export const Stepper = React.memo(function Stepper({
                   aria-current={isActive ? 'step' : undefined}
                   onClick={() => canClick && onStepClick(idx)}
                   className={cn(
-                    'flex items-center gap-3.5 p-3.5 rounded-2xl border transition-all relative overflow-hidden w-full text-left',
+                    'flex items-center gap-3.5 p-3.5 rounded-lg border transition-all relative overflow-hidden w-full text-left',
                     isActive &&
                       !isError &&
                       'border-2 border-primary bg-primary/10 shadow-xs ring-1 ring-primary/30',
@@ -47,7 +47,7 @@ export const Stepper = React.memo(function Stepper({
                 >
                   <div
                     className={cn(
-                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-all',
+                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-xs font-bold transition-all',
                       isCompleted && 'bg-primary text-primary-foreground',
                       isActive && !isError && 'bg-primary text-primary-foreground shadow-sm',
                       isError && 'bg-destructive text-destructive-foreground',
@@ -95,7 +95,7 @@ export const Stepper = React.memo(function Stepper({
   if (variant === 'pills' && isHorizontal) {
     return (
       <nav aria-label="Progress" className={cn('w-full', className)}>
-        <ol className="flex items-center gap-2 p-1.5 rounded-2xl bg-muted/40 border border-border/60 w-full overflow-x-auto list-none m-0">
+        <ol className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/40 border border-border/60 w-full overflow-x-auto list-none m-0">
           {steps.map((step, idx) => {
             const isCompleted = step.isCompleted ?? idx < currentStep;
             const isActive = idx === currentStep;
@@ -110,7 +110,7 @@ export const Stepper = React.memo(function Stepper({
                     aria-current={isActive ? 'step' : undefined}
                     onClick={() => canClick && onStepClick(idx)}
                     className={cn(
-                      'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap',
+                      'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-extrabold transition-all whitespace-nowrap',
                       isActive && 'bg-card text-foreground shadow-2xs border border-border/60',
                       isCompleted && 'text-muted-foreground hover:text-foreground',
                       !isActive && !isCompleted && 'text-muted-foreground/60',

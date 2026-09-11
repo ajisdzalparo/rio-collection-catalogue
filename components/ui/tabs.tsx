@@ -26,7 +26,7 @@ function TabsList({
       className={cn(
         'flex items-center gap-1.5 w-full',
         variant === 'pills' &&
-          'inline-flex bg-muted/50 p-1 rounded-2xl border border-border/60 text-muted-foreground w-fit',
+          'inline-flex bg-muted/50 p-1 rounded-lg border border-border/60 text-muted-foreground w-fit',
         variant === 'line' && 'border-b border-border/60 gap-4 rounded-none bg-transparent p-0',
         variant === 'cards' && 'gap-2 bg-transparent p-0',
         className
@@ -47,11 +47,11 @@ function TabsTrigger({
       className={cn(
         'inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold transition-all cursor-pointer select-none disabled:pointer-events-none disabled:opacity-50 group',
         variant === 'pills' &&
-          'rounded-xl text-muted-foreground hover:text-foreground data-selected:bg-primary data-selected:text-primary-foreground data-selected:shadow-md data-selected:shadow-primary/25',
+          'rounded-md text-muted-foreground hover:text-foreground data-selected:bg-primary data-selected:text-primary-foreground data-selected:shadow-md data-selected:shadow-primary/25',
         variant === 'line' &&
           'pb-2.5 rounded-none border-b-[3px] border-transparent text-muted-foreground hover:text-foreground data-selected:border-primary data-selected:bg-primary/10 data-selected:text-primary data-selected:font-extrabold',
         variant === 'cards' &&
-          'rounded-2xl border border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 data-selected:border-primary data-selected:bg-primary data-selected:text-primary-foreground data-selected:shadow-md data-selected:shadow-primary/25',
+          'rounded-lg border border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 data-selected:border-primary data-selected:bg-primary data-selected:text-primary-foreground data-selected:shadow-md data-selected:shadow-primary/25',
         className
       )}
       {...props}

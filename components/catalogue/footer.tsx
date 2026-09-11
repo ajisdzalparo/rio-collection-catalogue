@@ -42,13 +42,17 @@ const FOOTER_LINKS = [
 ];
 
 export function CatalogueFooter({ settings, className }: CatalogueFooterProps) {
-  const storeName = settings?.storeName || 'RIO COLLECTION';
+  const storeName = settings?.storeName;
   const instagramUrl = settings?.instagramUrl;
   const tiktokUrl = settings?.tiktokUrl;
   const facebookUrl = settings?.facebookUrl;
   const pinterestUrl = settings?.pinterestUrl;
   const xTwitterUrl = settings?.xTwitterUrl;
   const whatsappNumber = settings?.whatsappNumber;
+
+  const nameParts = storeName ? storeName.trim().split(/\s+/) : [];
+  const firstNamePart = nameParts[0] ?? '';
+  const restNamePart = nameParts.slice(1).join(' ');
 
   const rawSocials: { name: string; url: string | null | undefined; icon: React.ReactNode }[] = [
     { name: 'Instagram', url: instagramUrl, icon: <InstagramIcon className="shrink-0" /> },
@@ -76,9 +80,13 @@ export function CatalogueFooter({ settings, className }: CatalogueFooterProps) {
           <div className="md:col-span-4">
             <Link href="/" className="inline-block">
               <h2 className="font-eb-garamond text-[32px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
-                {storeName.split(' ')[0]}
-                <br />
-                {storeName.split(' ').slice(1).join(' ') || 'COLLECTION'}
+                {firstNamePart}
+                {restNamePart && (
+                  <>
+                    <br />
+                    {restNamePart}
+                  </>
+                )}
               </h2>
             </Link>
             <p className="mt-3 font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">

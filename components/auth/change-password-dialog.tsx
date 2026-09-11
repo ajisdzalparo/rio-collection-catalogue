@@ -101,7 +101,7 @@ export function ChangePasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-card border-border/50">
+      <DialogContent className="sm:max-w-md rounded-xl p-6 bg-card border-border/50">
         <DialogHeader className="space-y-1.5">
           <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
             <KeyRound className="h-4 w-4" />
@@ -124,7 +124,7 @@ export function ChangePasswordDialog({
               placeholder="Masukkan kata sandi lama"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="h-10 text-xs rounded-xl bg-muted/20 border-border/50"
+              className="h-10 text-xs rounded-lg bg-muted/20 border-border/50"
               required
             />
           </div>
@@ -148,7 +148,7 @@ export function ChangePasswordDialog({
                 placeholder="Minimal 6 karakter"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="h-10 text-xs pr-20 rounded-xl bg-muted/20 border-border/50"
+                className="h-10 text-xs pr-20 rounded-lg bg-muted/20 border-border/50"
                 required
               />
               <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
@@ -186,12 +186,12 @@ export function ChangePasswordDialog({
               placeholder="Ulangi kata sandi baru"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="h-10 text-xs rounded-xl bg-muted/20 border-border/50"
+              className="h-10 text-xs rounded-lg bg-muted/20 border-border/50"
               required
             />
           </div>
 
-          <div className="p-3 rounded-xl bg-primary/5 border border-primary/15 text-primary text-[11px] leading-relaxed flex items-start gap-2">
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/15 text-primary text-[11px] leading-relaxed flex items-start gap-2">
             <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
             <span>
               Gunakan kombinasi huruf besar, kecil, angka, dan simbol untuk keamanan maksimal.
@@ -203,14 +203,14 @@ export function ChangePasswordDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="h-9 rounded-xl text-xs font-semibold cursor-pointer"
+              className="h-9 rounded-lg text-xs font-semibold cursor-pointer"
             >
               Batal
             </Button>
             <Button
               type="submit"
               disabled={isLoading}
-              className="h-9 rounded-xl text-xs font-bold gap-1.5 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
+              className="h-9 rounded-lg text-xs font-bold gap-1.5 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
             >
               {isLoading ? (
                 <>

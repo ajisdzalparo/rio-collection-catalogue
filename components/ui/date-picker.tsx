@@ -134,6 +134,39 @@ export function DatePicker({
 
   const [hoverDate, setHoverDate] = React.useState<Date | undefined>(undefined);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const [mobileStyle, setMobileStyle] = React.useState<React.CSSProperties>({});
+
+  React.useEffect(() => {
+    if (!isOpen || !containerRef.current) return;
+
+    const updatePosition = () => {
+      if (!containerRef.current) return;
+      const vw = window.innerWidth;
+      // For narrow viewports, use fixed positioning centered on screen
+      if (vw < 640) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const popupWidth = Math.min(360, vw - 24);
+        setMobileStyle({
+          position: 'fixed',
+          top: `${rect.bottom + 8}px`,
+          left: `${(vw - popupWidth) / 2}px`,
+          right: 'auto',
+          width: `${popupWidth}px`,
+          zIndex: 9999
+        });
+      } else {
+        setMobileStyle({});
+      }
+    };
+
+    // Small delay to ensure DOM has rendered
+    const raf = requestAnimationFrame(updatePosition);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen]);
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -233,9 +266,9 @@ export function DatePicker({
   const hasValue = mode === 'single' ? Boolean(value) : Boolean(rangeValue?.from || rangeValue?.to);
 
   const sizeClasses = {
-    sm: 'h-8 px-2.5 text-[11px] rounded-xl',
-    md: 'h-10 px-3.5 text-xs rounded-2xl',
-    lg: 'h-11 px-4 text-sm rounded-2xl'
+    sm: 'h-8 px-2.5 text-[11px] rounded-md',
+    md: 'h-10 px-3.5 text-xs rounded-lg',
+    lg: 'h-11 px-4 text-sm rounded-lg'
   };
 
   return (
@@ -272,37 +305,47 @@ export function DatePicker({
 
       {isOpen && (
         <div
+          style={mobileStyle}
           className={cn(
-            'absolute z-50 mt-2 flex flex-col sm:flex-row rounded-3xl border border-border/70 bg-card/95 p-4 shadow-xl backdrop-blur-md animate-in fade-in-50 zoom-in-95',
-            align === 'right' ? 'right-0 left-auto' : 'left-0',
-            shouldShowPresets ? 'min-w-85 sm:min-w-120' : 'w-[320px]'
+            'z-50 flex flex-col sm:flex-row rounded-xl border border-border/70 bg-card p-3.5 sm:p-4 shadow-xl backdrop-blur-md animate-in fade-in-50 zoom-in-95',
+            mobileStyle.position === 'fixed'
+              ? '' // fixed positioning handled by inline style
+              : cn('absolute mt-2', align === 'right' ? 'right-0 left-auto' : 'left-0 right-auto'),
+            shouldShowPresets ? 'sm:w-auto sm:min-w-120' : 'sm:w-[320px]'
           )}
         >
           {shouldShowPresets && (
-            <div className="flex sm:flex-col gap-1 pb-3 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-border/60 overflow-x-auto shrink-0">
+            <div className="flex flex-wrap sm:flex-col gap-1 pb-3 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-border/60 shrink-0">
               <span className="hidden sm:block text-[11px] font-bold text-muted-foreground px-2.5 py-1 uppercase tracking-wider">
                 Shortcuts
               </span>
               {presets.map((preset, idx) => {
                 const val = preset.getValue();
                 const isSelected =
-                  mode === 'range' &&
-                  rangeValue?.from &&
-                  rangeValue?.to &&
-                  isSameDay(rangeValue.from, val.from!) &&
-                  isSameDay(rangeValue.to, val.to!);
+                  mode === 'single'
+                    ? Boolean(value && val.from && isSameDay(value, val.from))
+                    : Boolean(
+                        rangeValue?.from &&
+                          rangeValue?.to &&
+                          isSameDay(rangeValue.from, val.from!) &&
+                          isSameDay(rangeValue.to, val.to!)
+                      );
 
                 return (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => {
-                      onRangeChange?.(val);
-                      setCurrentMonth(val.from!);
+                      if (mode === 'single') {
+                        onChange?.(val.from);
+                      } else {
+                        onRangeChange?.(val);
+                      }
+                      if (val.from) setCurrentMonth(val.from);
                       setIsOpen(false);
                     }}
                     className={cn(
-                      'px-3 py-1.5 rounded-xl text-xs font-semibold text-left transition-all whitespace-nowrap cursor-pointer',
+                      'px-2.5 py-1.5 rounded-md text-xs font-semibold text-left transition-all cursor-pointer',
                       isSelected
                         ? 'bg-primary text-primary-foreground shadow-xs'
                         : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
@@ -406,7 +449,7 @@ export function DatePicker({
                     onMouseEnter={() => setHoverDate(day)}
                     onMouseLeave={() => setHoverDate(undefined)}
                     className={cn(
-                      'h-8 w-full rounded-xl text-xs font-semibold transition-all relative cursor-pointer select-none flex items-center justify-center',
+                      'h-8 w-full rounded-md text-xs font-semibold transition-all relative cursor-pointer select-none flex items-center justify-center',
                       !isCurrentMonth && 'text-muted-foreground/30',
                       isCurrentMonth && !isDisabled && 'text-foreground hover:bg-muted/70',
                       isDisabled && 'opacity-20 cursor-not-allowed hover:bg-transparent',

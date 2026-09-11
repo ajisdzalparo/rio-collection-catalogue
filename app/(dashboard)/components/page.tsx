@@ -396,7 +396,7 @@ export default function ComponentsDocsPage() {
   return (
     <div className="space-y-10 pb-16">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-card p-6 sm:p-10 text-foreground shadow-xs">
+      <div className="relative overflow-hidden rounded-xl border border-border/60 bg-card p-6 sm:p-10 text-foreground shadow-xs">
         <div className="space-y-2 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted text-muted-foreground text-xs font-bold">
             <Sparkles className="h-3.5 w-3.5" />
@@ -2414,7 +2414,7 @@ function DocSection({
   const [tab, setTab] = useState<'preview' | 'code'>('preview');
 
   return (
-    <FadeIn className="rounded-3xl border border-border/60 bg-card p-6 sm:p-8 space-y-6 shadow-xs">
+    <FadeIn className="rounded-xl border border-border/60 bg-card p-6 sm:p-8 space-y-6 shadow-xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
         <div>
           <h2 className="text-xl font-extrabold text-foreground tracking-tight">{title}</h2>
@@ -2422,7 +2422,7 @@ function DocSection({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1 rounded-xl bg-muted/60 p-1 border border-border/40 shrink-0">
+        <div className="flex items-center gap-1 rounded-lg bg-muted/60 p-1 border border-border/40 shrink-0">
           <button
             onClick={() => setTab('preview')}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${

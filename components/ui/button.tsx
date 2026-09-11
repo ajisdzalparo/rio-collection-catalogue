@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-2xl border border-transparent text-xs font-bold whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/50 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 shadow-2xs cursor-pointer",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent text-xs font-bold whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/50 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 shadow-2xs cursor-pointer",
   {
     variants: {
       variant: {
@@ -21,13 +21,13 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-9 px-4 gap-1.5",
-        xs: "h-6 rounded-xl px-2 text-[10px] gap-1",
-        sm: "h-8 rounded-xl px-3 text-xs gap-1.5",
-        lg: "h-11 rounded-2xl px-6 text-sm gap-2 font-extrabold",
-        icon: "size-9 rounded-2xl",
-        "icon-xs": "size-6 rounded-xl",
-        "icon-sm": "size-8 rounded-xl",
-        "icon-lg": "size-11 rounded-2xl",
+        xs: "h-6 rounded-md px-2 text-[10px] gap-1",
+        sm: "h-8 rounded-md px-3 text-xs gap-1.5",
+        lg: "h-11 rounded-lg px-6 text-sm gap-2 font-extrabold",
+        icon: "size-9 rounded-lg",
+        "icon-xs": "size-6 rounded-md",
+        "icon-sm": "size-8 rounded-md",
+        "icon-lg": "size-11 rounded-lg",
       },
     },
     defaultVariants: {

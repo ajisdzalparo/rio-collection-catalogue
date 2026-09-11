@@ -19,9 +19,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { VStack, Flex } from '@/components/ui/layout';
+import { VStack } from '@/components/ui/layout';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem
+} from '@/components/ui/select';
 import { useStoreSettingsStore, useStoreSettingsQuery } from '@/hooks/use-store-settings';
 import { ImageUpload } from '@/components/shared/image-upload';
+import { cn } from '@/lib/utils';
 import { StoreBanksManager } from '@/components/dashboard/store-banks-manager';
 import {
   WhatsAppTemplateEditor,
@@ -79,7 +87,9 @@ export default function StoreSettingsPage() {
 
   const [heroTitle, setHeroTitle] = useState('EDITION 001');
   const [heroSubtitle, setHeroSubtitle] = useState('ARCHIVAL COTTON SILHOUETTE');
+  const [heroLayout, setHeroLayout] = useState<'single' | '2-grid' | '3-grid'>('2-grid');
   const [heroLeftImage, setHeroLeftImage] = useState('');
+  const [heroCenterImage, setHeroCenterImage] = useState('');
   const [heroRightImage, setHeroRightImage] = useState('');
   const [heroCtaText, setHeroCtaText] = useState('Eksplor Koleksi Terkini');
   const [heroCtaLink, setHeroCtaLink] = useState('/catalogue');
@@ -140,7 +150,9 @@ export default function StoreSettingsPage() {
 
     setHeroTitle(mockSettings.heroTitle || 'EDITION 001');
     setHeroSubtitle(mockSettings.heroSubtitle || 'ARCHIVAL COTTON SILHOUETTE');
+    setHeroLayout((mockSettings.heroLayout as 'single' | '2-grid' | '3-grid') || '2-grid');
     setHeroLeftImage(mockSettings.heroLeftImage || '');
+    setHeroCenterImage(mockSettings.heroCenterImage || '');
     setHeroRightImage(mockSettings.heroRightImage || '');
     setHeroCtaText(mockSettings.heroCtaText || 'Eksplor Koleksi Terkini');
     setHeroCtaLink(mockSettings.heroCtaLink || '/catalogue');
@@ -187,7 +199,9 @@ export default function StoreSettingsPage() {
         xTwitterUrl,
         heroTitle,
         heroSubtitle,
+        heroLayout,
         heroLeftImage,
+        heroCenterImage,
         heroRightImage,
         heroCtaText,
         heroCtaLink,
@@ -265,8 +279,37 @@ export default function StoreSettingsPage() {
         </p>
       </VStack>
 
-      {/* Neat Navigation Tabs Bar */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-card border border-border/40 rounded-2xl overflow-x-auto shadow-2xs">
+      {/* Mobile Tab Selector (Dropdown for easy 1-touch navigation) */}
+      <div className="sm:hidden w-full">
+        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+          Menu Pengaturan:
+        </label>
+        <Select value={activeTab} onValueChange={(val) => val && setActiveTab(val as SettingsTab)}>
+          <SelectTrigger className="w-full h-11 px-3.5 rounded-lg bg-card border-border/60 text-foreground text-xs font-bold shadow-2xs">
+            <SelectValue placeholder="Pilih Menu Pengaturan" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border border-border/60 bg-popover shadow-xl">
+            {tabsNav.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <SelectItem
+                  key={tab.id}
+                  value={tab.id}
+                  className="text-xs font-medium py-2.5 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="h-4 w-4 text-primary shrink-0" />
+                    <span className="font-semibold text-foreground">{tab.label}</span>
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Desktop Navigation Tabs Bar */}
+      <div className="hidden sm:flex items-center gap-1.5 p-1.5 bg-card border border-border/40 rounded-2xl overflow-x-auto shadow-2xs">
         {tabsNav.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -413,7 +456,9 @@ export default function StoreSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-primary" />
-                      <span className="text-xs font-bold text-foreground">Lokasi Asal Pengiriman Toko (Origin)</span>
+                      <span className="text-xs font-bold text-foreground">
+                        Lokasi Asal Pengiriman Toko (Origin)
+                      </span>
                     </div>
                     <span className="text-[11px] font-mono font-medium px-2.5 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20">
                       ID Kota Asal: {originCityId} ({originCityName}, {originProvinceName})
@@ -422,7 +467,9 @@ export default function StoreSettingsPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                     <div className="space-y-1">
-                      <Label className="text-[11px] font-medium text-muted-foreground">Provinsi Asal Toko</Label>
+                      <Label className="text-[11px] font-medium text-muted-foreground">
+                        Provinsi Asal Toko
+                      </Label>
                       <SearchableSelect
                         variant="dashboard"
                         value={originProvinceName}
@@ -434,29 +481,38 @@ export default function StoreSettingsPage() {
                             setOriginCityId(cities[0].defaultId);
                           }
                         }}
-                        options={Object.keys(INDONESIA_MASTER_LOCATIONS).map((p) => ({ label: p, value: p }))}
+                        options={Object.keys(INDONESIA_MASTER_LOCATIONS).map((p) => ({
+                          label: p,
+                          value: p
+                        }))}
                         placeholder="Pilih Provinsi Asal Toko"
                         searchPlaceholder="Cari provinsi asal toko..."
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-[11px] font-medium text-muted-foreground">Kota / Kabupaten Asal Toko</Label>
+                      <Label className="text-[11px] font-medium text-muted-foreground">
+                        Kota / Kabupaten Asal Toko
+                      </Label>
                       <SearchableSelect
                         variant="dashboard"
                         value={originCityName}
                         onValueChange={(val) => {
                           const cities = INDONESIA_MASTER_LOCATIONS[originProvinceName] || [];
-                          const matched = cities.find((c) => c.name.toLowerCase() === val.toLowerCase());
+                          const matched = cities.find(
+                            (c) => c.name.toLowerCase() === val.toLowerCase()
+                          );
                           setOriginCityName(val);
                           if (matched) {
                             setOriginCityId(matched.defaultId);
                           }
                         }}
-                        options={(INDONESIA_MASTER_LOCATIONS[originProvinceName] || []).map((c) => ({
-                          label: `${c.type} ${c.name}`,
-                          value: c.name
-                        }))}
+                        options={(INDONESIA_MASTER_LOCATIONS[originProvinceName] || []).map(
+                          (c) => ({
+                            label: `${c.type} ${c.name}`,
+                            value: c.name
+                          })
+                        )}
                         placeholder="Pilih Kota Asal Toko"
                         searchPlaceholder="Cari kota asal toko..."
                       />
@@ -664,21 +720,210 @@ export default function StoreSettingsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-foreground block">
-                        Foto Banner Kiri (Campaign Model)
-                      </Label>
-                      <ImageUpload value={heroLeftImage} onChange={setHeroLeftImage} />
-                    </div>
+                  {/* Hero Layout Mode Selector */}
+                  <div className="space-y-2 pt-1 pb-2">
+                    <Label className="text-xs font-bold text-foreground block">
+                      Pilihan Tata Letak Banner (Layout Mode)
+                    </Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setHeroLayout('single')}
+                        className={cn(
+                          'p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2',
+                          heroLayout === 'single'
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                            : 'border-border/60 hover:border-border bg-card'
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-foreground">
+                            1 Kolom (Full Banner)
+                          </span>
+                          <span
+                            className={cn(
+                              'h-2 w-2 rounded-full',
+                              heroLayout === 'single' ? 'bg-primary' : 'bg-muted'
+                            )}
+                          />
+                        </div>
+                        <div className="h-12 w-full rounded-md border border-dashed border-border/80 bg-muted/30 flex items-center justify-center">
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            16:9 Full
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                          1 gambar membentang selebar layar. Cocok untuk poster komplit.
+                        </p>
+                      </button>
 
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-foreground block">
-                        Foto Banner Kanan (Tekstur Kain)
-                      </Label>
-                      <ImageUpload value={heroRightImage} onChange={setHeroRightImage} />
+                      <button
+                        type="button"
+                        onClick={() => setHeroLayout('2-grid')}
+                        className={cn(
+                          'p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2',
+                          heroLayout === '2-grid'
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                            : 'border-border/60 hover:border-border bg-card'
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-foreground">
+                            2 Kolom (Split Grid)
+                          </span>
+                          <span
+                            className={cn(
+                              'h-2 w-2 rounded-full',
+                              heroLayout === '2-grid' ? 'bg-primary' : 'bg-muted'
+                            )}
+                          />
+                        </div>
+                        <div className="h-12 w-full grid grid-cols-2 gap-1">
+                          <div className="rounded border border-dashed border-border/80 bg-muted/30 flex items-center justify-center text-[10px] text-muted-foreground font-mono">
+                            Kiri
+                          </div>
+                          <div className="rounded border border-dashed border-border/80 bg-muted/30 flex items-center justify-center text-[10px] text-muted-foreground font-mono">
+                            Kanan
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                          2 foto berdampingan (3:4). Model &amp; Tekstur/Detail.
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setHeroLayout('3-grid')}
+                        className={cn(
+                          'p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2',
+                          heroLayout === '3-grid'
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                            : 'border-border/60 hover:border-border bg-card'
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-foreground">
+                            3 Kolom (Trio Grid)
+                          </span>
+                          <span
+                            className={cn(
+                              'h-2 w-2 rounded-full',
+                              heroLayout === '3-grid' ? 'bg-primary' : 'bg-muted'
+                            )}
+                          />
+                        </div>
+                        <div className="h-12 w-full grid grid-cols-3 gap-1">
+                          <div className="rounded border border-dashed border-border/80 bg-muted/30 flex items-center justify-center text-[9px] text-muted-foreground font-mono">
+                            1
+                          </div>
+                          <div className="rounded border border-dashed border-border/80 bg-muted/30 flex items-center justify-center text-[9px] text-muted-foreground font-mono">
+                            2
+                          </div>
+                          <div className="rounded border border-dashed border-border/80 bg-muted/30 flex items-center justify-center text-[9px] text-muted-foreground font-mono">
+                            3
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                          3 foto sejajar (3:4). Menampilkan variasi lengkap.
+                        </p>
+                      </button>
                     </div>
                   </div>
+
+                  {/* Image Upload Inputs based on chosen layout */}
+                  {heroLayout === 'single' && (
+                    <div className="space-y-2 pt-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold text-foreground block">
+                          Foto Banner Utama (16:9 / Landscape Full)
+                        </Label>
+                        <span className="text-[10px] text-muted-foreground">
+                          Rekomendasi rasio 16:9 atau banner lebar
+                        </span>
+                      </div>
+                      <ImageUpload
+                        value={heroLeftImage}
+                        onChange={setHeroLeftImage}
+                        aspectRatio="16:9"
+                        placeholder="Upload foto banner utama full-width (16:9)"
+                        helperText="Banner ini akan tampil memenuhi seluruh bagian hero depan katalog."
+                      />
+                    </div>
+                  )}
+
+                  {heroLayout === '2-grid' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-foreground block">
+                          Foto Banner Kiri (3:4)
+                        </Label>
+                        <ImageUpload
+                          value={heroLeftImage}
+                          onChange={setHeroLeftImage}
+                          aspectRatio="3:4"
+                          placeholder="Upload foto sisi kiri 3:4"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-foreground block">
+                          Foto Banner Kanan (3:4)
+                        </Label>
+                        <ImageUpload
+                          value={heroRightImage}
+                          onChange={setHeroRightImage}
+                          aspectRatio="3:4"
+                          placeholder="Upload foto sisi kanan 3:4"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {heroLayout === '3-grid' && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-foreground block">
+                          Foto 1 - Kiri (3:4)
+                        </Label>
+                        <ImageUpload
+                          value={heroLeftImage}
+                          onChange={setHeroLeftImage}
+                          aspectRatio="3:4"
+                          placeholder="Upload foto kiri 3:4"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-foreground block">
+                          Foto 2 - Tengah (3:4)
+                        </Label>
+                        <ImageUpload
+                          value={heroCenterImage}
+                          onChange={setHeroCenterImage}
+                          aspectRatio="3:4"
+                          placeholder="Upload foto tengah 3:4"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-foreground block">
+                          Foto 3 - Kanan (3:4)
+                        </Label>
+                        <ImageUpload
+                          value={heroRightImage}
+                          onChange={setHeroRightImage}
+                          aspectRatio="3:4"
+                          placeholder="Upload foto kanan 3:4"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-[11px] text-muted-foreground bg-muted/20 border border-border/40 p-3 rounded-xl">
+                    💡 <strong>Tips:</strong> Jika foto banner Anda sudah memiliki teks/tipografi
+                    sendiri (misalnya mockup baju dengan teks cetak), Anda dapat mengosongkan{' '}
+                    <em>Judul Hero</em> dan <em>Sub-judul</em> di atas agar tidak menimpa gambar.
+                  </p>
                 </div>
               </div>
             )}
@@ -696,13 +941,21 @@ export default function StoreSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="home-featured-title">Judul Koleksi Terkini</Label>
-                    <Input id="home-featured-title" value={homeFeaturedTitle}
-                      onChange={(e) => setHomeFeaturedTitle(e.target.value)} placeholder="Koleksi Terkini" />
+                    <Input
+                      id="home-featured-title"
+                      value={homeFeaturedTitle}
+                      onChange={(e) => setHomeFeaturedTitle(e.target.value)}
+                      placeholder="Koleksi Terkini"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="home-view-all-label">Teks Lihat Semua</Label>
-                    <Input id="home-view-all-label" value={homeViewAllLabel}
-                      onChange={(e) => setHomeViewAllLabel(e.target.value)} placeholder="Lihat Semua" />
+                    <Input
+                      id="home-view-all-label"
+                      value={homeViewAllLabel}
+                      onChange={(e) => setHomeViewAllLabel(e.target.value)}
+                      placeholder="Lihat Semua"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-foreground">Judul Manifesto</Label>
@@ -716,7 +969,12 @@ export default function StoreSettingsPage() {
 
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-foreground">Gambar Manifesto</Label>
-                    <ImageUpload value={homeManifestoImage} onChange={setHomeManifestoImage} />
+                    <ImageUpload
+                      value={homeManifestoImage}
+                      onChange={setHomeManifestoImage}
+                      aspectRatio="4:5"
+                      placeholder="Upload gambar manifesto 4:5"
+                    />
                   </div>
 
                   <div className="space-y-1.5 md:col-span-2">
@@ -804,7 +1062,12 @@ export default function StoreSettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold text-foreground">Gambar Hero About</Label>
-                      <ImageUpload value={aboutHeroImage} onChange={setAboutHeroImage} />
+                      <ImageUpload
+                        value={aboutHeroImage}
+                        onChange={setAboutHeroImage}
+                        aspectRatio="16:9"
+                        placeholder="Upload cover banner about 16:9"
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold text-foreground">
@@ -939,24 +1202,31 @@ export default function StoreSettingsPage() {
 
                   <div className="space-y-1.5 pt-2">
                     <Label className="text-xs font-bold text-foreground">Gambar Studio</Label>
-                    <ImageUpload value={aboutStudioImage} onChange={setAboutStudioImage} />
+                    <ImageUpload
+                      value={aboutStudioImage}
+                      onChange={setAboutStudioImage}
+                      aspectRatio="4:5"
+                      placeholder="Upload foto studio 4:5"
+                    />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Floating / Sticky Save Action Button (except on payments tab which has its own dialog) */}
+            {/* Floating / Sticky Save Action Button on Mobile & Desktop */}
             {activeTab !== 'payments' && (
-              <Flex justify="end" className="pt-3">
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="gap-2 h-11 px-8 rounded-xl cursor-pointer font-extrabold uppercase tracking-wider text-xs shadow-md"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>{isSaving ? 'Menyimpan...' : 'Simpan Pengaturan CMS'}</span>
-                </Button>
-              </Flex>
+              <div className="sticky bottom-3 sm:static z-30 pt-3 flex justify-end">
+                <div className="w-full sm:w-auto p-2 sm:p-0 bg-background/90 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none border sm:border-0 border-border/60 rounded-2xl shadow-lg sm:shadow-none">
+                  <Button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="w-full sm:w-auto gap-2 h-11 px-8 rounded-xl cursor-pointer font-extrabold uppercase tracking-wider text-xs shadow-md"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span>{isSaving ? 'Menyimpan...' : 'Simpan Pengaturan CMS'}</span>
+                  </Button>
+                </div>
+              </div>
             )}
           </>
         )}

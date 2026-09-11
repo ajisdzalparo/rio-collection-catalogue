@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 interface MobileNavProps {
   isOpen: boolean;
   onClose: () => void;
+  storeName?: string;
 }
 
 const NAV_LINKS = [
@@ -16,9 +17,9 @@ const NAV_LINKS = [
   { href: '/archive', label: 'Archive' },
   { href: '/journal', label: 'Journal' },
   { href: '/about', label: 'About' }
-];
+] as const;
 
-export function MobileNav({ isOpen, onClose }: MobileNavProps) {
+export function MobileNav({ isOpen, onClose, storeName }: MobileNavProps) {
   // Prevent body scroll when overlay is open
   useEffect(() => {
     if (isOpen) {
@@ -44,7 +45,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
           {/* Header with close button */}
           <div className="flex items-center justify-between px-4 h-14">
             <span className="font-eb-garamond text-[20px] font-normal tracking-[-0.01em] text-(--cat-on-surface)">
-              RIO COLLECTION
+              {storeName}
             </span>
             <button
               onClick={onClose}
@@ -85,7 +86,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
           {/* Footer */}
           <div className="px-8 pb-8">
             <p className="font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-              © 2024 RIO COLLECTION
+              © {new Date().getFullYear()} {storeName}
             </p>
           </div>
         </motion.div>

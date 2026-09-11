@@ -1,9 +1,4 @@
-export type ProductStatus =
-  | 'AVAILABLE'
-  | 'SOLD_OUT'
-  | 'COMING_SOON'
-  | 'PRE_ORDER'
-  | 'DISCONTINUED';
+export type ProductStatus = 'AVAILABLE' | 'SOLD_OUT' | 'COMING_SOON' | 'PRE_ORDER' | 'DISCONTINUED';
 export type StockMode = 'QUANTITY' | 'ALWAYS_AVAILABLE';
 
 export interface ProductVariant {
@@ -60,11 +55,7 @@ export interface ArchiveCollection {
 }
 
 export type JournalCategory =
-  | 'PROSES KREATIF'
-  | 'CULTURE'
-  | 'PROCESS'
-  | 'DESIGN'
-  | 'MATERIAL STUDY';
+  'PROSES KREATIF' | 'CULTURE' | 'PROCESS' | 'DESIGN' | 'MATERIAL STUDY';
 
 export interface JournalArticle {
   id: string;

@@ -9,10 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CataloguePage() {
-  const [products, archives] = await Promise.all([
-    getProducts(),
-    getArchives()
-  ]);
+  const [products, archives] = await Promise.all([getProducts(), getArchives()]);
 
   return (
     <>

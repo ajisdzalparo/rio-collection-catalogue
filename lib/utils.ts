@@ -24,3 +24,53 @@ export function formatWaNumber(raw: string): string {
   }
   return digits.replace(/^62{2,}/, '62');
 }
+
+export function formatSafeDate(
+  rawDate: string | Date | null | undefined,
+  options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }
+): string {
+  if (!rawDate) return '-';
+  if (rawDate instanceof Date) {
+    return isNaN(rawDate.getTime()) ? '-' : rawDate.toLocaleDateString('id-ID', options);
+  }
+
+  // Try direct parsing (e.g. ISO format or standard date strings)
+  const parsed = new Date(rawDate);
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString('id-ID', options);
+  }
+
+  // Indonesian month name mapping for strings like "12 Oktober 2024"
+  const indonesianMonths: Record<string, string> = {
+    januari: 'January',
+    februari: 'February',
+    maret: 'March',
+    april: 'April',
+    mei: 'May',
+    juni: 'June',
+    juli: 'July',
+    agustus: 'August',
+    september: 'September',
+    oktober: 'October',
+    nopember: 'November',
+    november: 'November',
+    desember: 'December'
+  };
+
+  const lower = rawDate.toLowerCase();
+  let normalized = rawDate;
+  for (const [idMonth, enMonth] of Object.entries(indonesianMonths)) {
+    if (lower.includes(idMonth)) {
+      normalized = lower.replace(idMonth, enMonth);
+      break;
+    }
+  }
+
+  const reParsed = new Date(normalized);
+  if (!isNaN(reParsed.getTime())) {
+    return reParsed.toLocaleDateString('id-ID', options);
+  }
+
+  // Fallback: If parsing fails, return original string safely instead of "Invalid Date"
+  return rawDate;
+}

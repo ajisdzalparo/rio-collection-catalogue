@@ -6,25 +6,22 @@ import { Search, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNav } from '@/components/catalogue/mobile-nav';
 import { SearchModal } from '@/components/catalogue/search-modal';
-import { useStoreSettingsStore } from '@/hooks/use-store-settings';
 
 const NAV_LINKS = [
   { href: '/catalogue', label: 'Catalogue' },
   { href: '/archive', label: 'Archive' },
   { href: '/journal', label: 'Journal' },
-  { href: '/about', label: 'About' },
-];
+  { href: '/about', label: 'About' }
+] as const;
 
 interface CatalogueNavbarProps {
   storeName?: string;
   className?: string;
 }
 
-export function CatalogueNavbar({ storeName: serverStoreName, className }: CatalogueNavbarProps) {
+export function CatalogueNavbar({ storeName, className }: CatalogueNavbarProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const clientStoreName = useStoreSettingsStore((s) => s.storeName);
-  const storeName = serverStoreName || clientStoreName || 'RIO COLLECTION';
 
   return (
     <>
@@ -38,7 +35,7 @@ export function CatalogueNavbar({ storeName: serverStoreName, className }: Catal
           {/* Left: Brand Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <span className="font-eb-garamond text-[24px] md:text-[28px] font-normal tracking-[-0.01em] text-(--cat-on-surface) whitespace-nowrap">
-              {storeName || 'RIO COLLECTION'}
+              {storeName}
             </span>
           </Link>
 
@@ -81,16 +78,10 @@ export function CatalogueNavbar({ storeName: serverStoreName, className }: Catal
       </header>
 
       {/* Interactive Search Modal */}
-      <SearchModal
-        isOpen={searchModalOpen}
-        onClose={() => setSearchModalOpen(false)}
-      />
+      <SearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
 
       {/* Mobile Nav Overlay */}
-      <MobileNav
-        isOpen={mobileNavOpen}
-        onClose={() => setMobileNavOpen(false)}
-      />
+      <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} storeName={storeName} />
     </>
   );
 }

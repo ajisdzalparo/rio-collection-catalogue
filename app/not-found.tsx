@@ -36,7 +36,7 @@ export default function NotFound() {
                 transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
                 className="absolute inset-0 rounded-full border-2 border-dashed border-(--cat-stone)/40"
               />
-              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-(--cat-surface-container-low) border border-(--cat-stone)/60 text-(--cat-on-surface) shadow-xl backdrop-blur-xl">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-(--cat-surface-container-low) border border-(--cat-stone)/60 text-(--cat-on-surface) shadow-xl backdrop-blur-xl">
                 <Compass className="h-10 w-10 stroke-[2.2]" />
               </div>
             </div>
@@ -94,7 +94,7 @@ export default function NotFound() {
               transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
               className="absolute inset-0 rounded-full border-2 border-dashed border-primary/30"
             />
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10 border border-primary/20 text-primary shadow-xl backdrop-blur-xl">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary shadow-xl backdrop-blur-xl">
               <Compass className="h-10 w-10 stroke-[2.2]" />
             </div>
           </div>

@@ -248,13 +248,13 @@ function OrdersPageContent() {
                     size="icon-sm"
                     disabled={isUpdating}
                     aria-label={`Opsi untuk pesanan ${order.orderNumber}`}
-                    className="h-8 w-8 rounded-xl hover:bg-muted cursor-pointer"
+                    className="h-8 w-8 rounded-md hover:bg-muted cursor-pointer"
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end" className="w-48 rounded-2xl p-1.5">
+              <DropdownMenuContent align="end" className="w-48 rounded-xl p-1.5">
                 <DropdownMenuItem
                   onClick={() => router.push(`/dashboard/orders/${order.id}`)}
                   className="gap-2 cursor-pointer font-medium"
@@ -313,7 +313,7 @@ function OrdersPageContent() {
       </VStack>
 
       {/* Auto Cleanup Info Banner */}
-      <div className="p-4 bg-muted/15 border border-border/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="p-4 bg-muted/15 border border-border/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Clock className="h-5 w-5 text-foreground shrink-0" />
           <div className="text-xs space-y-0.5">
@@ -385,7 +385,7 @@ function OrdersPageContent() {
         }}
       >
         {cancelTargetOrder && (
-          <DialogContent className="sm:max-w-md bg-card border-border/50 p-6 rounded-3xl">
+          <DialogContent className="sm:max-w-md bg-card border-border/50 p-6 rounded-xl">
             <DialogHeader className="flex flex-col items-center text-center">
               <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 border border-border bg-muted text-foreground">
                 <AlertTriangle className="w-5 h-5" />

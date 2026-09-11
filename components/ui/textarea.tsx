@@ -30,7 +30,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           maxLength={maxLength}
           onChange={handleChange}
           className={cn(
-            'flex min-h-24 w-full rounded-2xl border border-border/60 bg-card/60 px-3.5 py-2.5 text-xs shadow-2xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50',
+            'flex min-h-24 w-full rounded-lg border border-border/60 bg-card/60 px-3.5 py-2.5 text-xs shadow-2xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50',
             !resizable && 'resize-none',
             className
           )}

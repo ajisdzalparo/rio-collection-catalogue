@@ -19,7 +19,9 @@ export interface StoreSettings {
   xTwitterUrl?: string | null;
   heroTitle?: string | null;
   heroSubtitle?: string | null;
+  heroLayout?: 'single' | '2-grid' | '3-grid' | string | null;
   heroLeftImage?: string | null;
+  heroCenterImage?: string | null;
   heroRightImage?: string | null;
   heroCtaText?: string | null;
   heroCtaLink?: string | null;
@@ -71,7 +73,9 @@ export const useStoreSettingsStore = create<StoreSettingsState>()(
       xTwitterUrl: '',
       heroTitle: '',
       heroSubtitle: '',
+      heroLayout: '2-grid',
       heroLeftImage: '',
+      heroCenterImage: '',
       heroRightImage: '',
       heroCtaText: '',
       heroCtaLink: '/catalogue',

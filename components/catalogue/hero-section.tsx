@@ -11,7 +11,9 @@ interface HeroSectionProps {
 export function HeroSection({ settings, className }: HeroSectionProps) {
   const heroTitle = settings?.heroTitle;
   const heroSubtitle = settings?.heroSubtitle;
+  const heroLayout = settings?.heroLayout || '2-grid';
   const heroLeftImage = settings?.heroLeftImage;
+  const heroCenterImage = settings?.heroCenterImage;
   const heroRightImage = settings?.heroRightImage;
   const heroCtaText = settings?.heroCtaText;
   const heroCtaLink = settings?.heroCtaLink;
@@ -21,50 +23,91 @@ export function HeroSection({ settings, className }: HeroSectionProps) {
       className={cn('relative w-full overflow-hidden', className)}
       aria-label="Hero Section"
     >
-      {/* Desktop: two-column image layout */}
       <div className="relative w-full h-[70vh] md:h-[85vh] bg-(--cat-surface-container-low)">
-        {/* Image grid — two side-by-side images */}
-        <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-2">
-          {/* Left: Model shot */}
-          <div className="relative hidden md:block">
+        {/* Dynamic Image Grid Layout */}
+        {heroLayout === 'single' ? (
+          /* ═══ Single Full Banner (1 Kolom) ═══ */
+          <div className="absolute inset-0">
             {heroLeftImage && (
               <Image
                 src={heroLeftImage}
-                alt="RIO COLLECTION editorial campaign"
-                fill
-                sizes="50vw"
-                className="object-cover object-top"
-                priority
-              />
-            )}
-          </div>
-          {/* Right: Texture close-up */}
-          <div className="relative">
-            {heroRightImage && (
-              <Image
-                src={heroRightImage}
-                alt="Premium cotton fabric texture detail"
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-                priority
-              />
-            )}
-          </div>
-          {/* Mobile: show editorial as full background */}
-          <div className="absolute inset-0 md:hidden">
-            {heroLeftImage && (
-              <Image
-                src={heroLeftImage}
-                alt="RIO COLLECTION editorial campaign"
+                alt={heroTitle || "Editorial campaign"}
                 fill
                 sizes="100vw"
-                className="object-cover object-top"
+                className="object-cover object-center"
                 priority
               />
             )}
           </div>
-        </div>
+        ) : heroLayout === '3-grid' ? (
+          /* ═══ 3-Column Trio Grid ═══ */
+          <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-3">
+            <div className="relative h-full w-full">
+              {heroLeftImage && (
+                <Image
+                  src={heroLeftImage}
+                  alt={heroTitle || "Editorial campaign left"}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 33vw"
+                  className="object-cover object-top"
+                  priority
+                />
+              )}
+            </div>
+            <div className="relative hidden sm:block h-full w-full">
+              {heroCenterImage && (
+                <Image
+                  src={heroCenterImage}
+                  alt={heroTitle || "Editorial campaign center"}
+                  fill
+                  sizes="33vw"
+                  className="object-cover object-center"
+                  priority
+                />
+              )}
+            </div>
+            <div className="relative hidden sm:block h-full w-full">
+              {heroRightImage && (
+                <Image
+                  src={heroRightImage}
+                  alt="Editorial campaign right"
+                  fill
+                  sizes="33vw"
+                  className="object-cover object-center"
+                  priority
+                />
+              )}
+            </div>
+          </div>
+        ) : (
+          /* ═══ 2-Column Split Grid (Default) ═══ */
+          <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-2">
+            <div className="relative h-full w-full">
+              {heroLeftImage && (
+                <Image
+                  src={heroLeftImage}
+                  alt={heroTitle || "Editorial campaign"}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover object-top"
+                  priority
+                />
+              )}
+            </div>
+            <div className="relative hidden md:block h-full w-full">
+              {heroRightImage && (
+                <Image
+                  src={heroRightImage}
+                  alt="Premium cotton fabric texture detail"
+                  fill
+                  sizes="50vw"
+                  className="object-cover"
+                  priority
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Overlay content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10">

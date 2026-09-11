@@ -15,58 +15,118 @@ import { submitOrder } from '../lib/api';
 
 const oldSecret = process.env.RECAPTCHA_SECRET_KEY;
 const restores: Array<() => void> = [];
-function replaceMethod<T extends object, K extends keyof T>(target: T, key: K, replacement: unknown) {
+function replaceMethod<T extends object, K extends keyof T>(
+  target: T,
+  key: K,
+  replacement: unknown
+) {
   const original = target[key];
   target[key] = replacement as T[K];
-  restores.push(() => { target[key] = original; });
+  restores.push(() => {
+    target[key] = original;
+  });
 }
 afterEach(() => {
-  mock.restoreAll();
-  restores.splice(0).reverse().forEach((restore) => restore());
+  mock.restoreAll?.();
+  mock.reset?.();
+  restores
+    .splice(0)
+    .reverse()
+    .forEach((restore) => restore());
   if (oldSecret === undefined) delete process.env.RECAPTCHA_SECRET_KEY;
   else process.env.RECAPTCHA_SECRET_KEY = oldSecret;
 });
 
 const input = {
-  fullName: 'Test Customer', whatsapp: '081234567890', address: 'Test address', captchaToken: 'test-token',
-  shippingFee: 15000, shipping: { destination: '151', courier: 'jne', service: 'REG' },
+  fullName: 'Test Customer',
+  whatsapp: '081234567890',
+  address: 'Test address',
+  captchaToken: 'test-token',
+  shippingFee: 15000,
+  shipping: { destination: '151', courier: 'jne', service: 'REG' },
   items: [{ productId: 'product-test', size: 'M', quantity: 2, color: 'Black' }]
 };
 const product = {
-  id: 'product-test', name: 'Test shirt', status: 'PRE_ORDER', stockMode: 'ALWAYS_AVAILABLE',
-  price: 100000, color: 'Black', colors: ['Black'], stock: 0,
+  id: 'product-test',
+  name: 'Test shirt',
+  status: 'PRE_ORDER',
+  stockMode: 'ALWAYS_AVAILABLE',
+  price: 100000,
+  color: 'Black',
+  colors: ['Black'],
+  stock: 0,
   variants: [{ id: 'variant-test', size: 'M', stock: 0, inStock: false }]
 };
 
 function mockOrderDatabase(overrides = {}) {
   let saved: Record<string, unknown> | undefined;
-  replaceMethod(prisma.storeSettings, 'findUnique', async () => ({ enabledCouriers: 'jne', originCityId: '153' }));
+  replaceMethod(prisma.storeSettings, 'findUnique', async () => ({
+    enabledCouriers: 'jne',
+    originCityId: '153'
+  }));
   replaceMethod(prisma.shippingRateCache, 'findFirst', async () => ({
-    expiresAt: new Date(Date.now() + 60000), weightGrams: 1000,
+    expiresAt: new Date(Date.now() + 60000),
+    weightGrams: 1000,
     ratesData: [{ code: 'JNE', name: 'JNE', costs: [{ service: 'REG', cost: [{ value: 15000 }] }] }]
   }));
   const selectedProduct = { ...product, ...overrides };
   const tx = {
     product: { findMany: async () => [selectedProduct], findUnique: async () => selectedProduct },
-    order: { findFirst: async () => null, create: async ({ data }: { data: Record<string, unknown> }) => {
-      saved = data; return { ...data, items: [] };
-    } }
+    order: {
+      findFirst: async () => null,
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        saved = data;
+        return { ...data, items: [] };
+      }
+    }
   } as unknown as Prisma.TransactionClient;
-  replaceMethod(prisma, '$transaction', async (callback: (client: Prisma.TransactionClient) => Promise<unknown>) => callback(tx));
+  replaceMethod(
+    prisma,
+    '$transaction',
+    async (callback: (client: Prisma.TransactionClient) => Promise<unknown>) => callback(tx)
+  );
   return { saved: () => saved, tx };
 }
 
 test('availability is derived from variant stock and preserves explicit non-sale statuses', () => {
-  assert.equal(normalizeProductAvailability({ ...product, stockMode: 'QUANTITY', status: 'AVAILABLE', stock: 99 }).status, 'SOLD_OUT');
+  assert.equal(
+    normalizeProductAvailability({
+      ...product,
+      stockMode: 'QUANTITY',
+      status: 'AVAILABLE',
+      stock: 99
+    }).status,
+    'SOLD_OUT'
+  );
   assert.equal(normalizeProductAvailability(product).variants[0].inStock, true);
-  assert.equal(normalizeProductAvailability({ ...product, status: 'DISCONTINUED' }).status, 'DISCONTINUED');
-  assert.equal(normalizeProductAvailability({ ...product, stockMode: 'QUANTITY', status: 'AVAILABLE', variants: [{ size: 'M', stock: 2, inStock: false }] }).stock, 2);
+  assert.equal(
+    normalizeProductAvailability({ ...product, status: 'DISCONTINUED' }).status,
+    'DISCONTINUED'
+  );
+  assert.equal(
+    normalizeProductAvailability({
+      ...product,
+      stockMode: 'QUANTITY',
+      status: 'AVAILABLE',
+      variants: [{ size: 'M', stock: 2, inStock: false }]
+    }).stock,
+    2
+  );
 });
 
 test('journal keeps rich content while removing executable markup; clearing relationship uses null', () => {
-  const parsed = journalSchema.parse({ title: 'Title', slug: 'title', author: 'Author', date: '8 September 2026',
-    category: 'PROCESS', imageUrl: '/cover.jpg', excerpt: 'Excerpt', content: ['Text'],
-    contentHtml: '<h2>Heading</h2><p><strong>Bold</strong> <a href="https://example.com">link</a></p><img src="/photo.jpg" onerror="alert(1)"><script>alert(1)</script>' });
+  const parsed = journalSchema.parse({
+    title: 'Title',
+    slug: 'title',
+    author: 'Author',
+    date: '8 September 2026',
+    category: 'PROCESS',
+    imageUrl: '/cover.jpg',
+    excerpt: 'Excerpt',
+    content: ['Text'],
+    contentHtml:
+      '<h2>Heading</h2><p><strong>Bold</strong> <a href="https://example.com">link</a></p><img src="/photo.jpg" onerror="alert(1)"><script>alert(1)</script>'
+  });
   assert.match(parsed.contentHtml!, /<strong>Bold<\/strong>/);
   assert.match(parsed.contentHtml!, /<img src="\/photo.jpg">/);
   assert.doesNotMatch(parsed.contentHtml!, /onerror|script/);
@@ -75,17 +135,31 @@ test('journal keeps rich content while removing executable markup; clearing rela
 
 test('order rejects missing CAPTCHA, missing service, empty items and invalid quantities', () => {
   assert.equal(orderSchema.safeParse(input).success, true);
-  for (const patch of [{ captchaToken: '' }, { shipping: undefined }, { items: [] },
-    { items: [{ ...input.items[0], quantity: -1 }] }, { items: [{ ...input.items[0], quantity: 1.5 }] }]) {
+  for (const patch of [
+    { captchaToken: '' },
+    { shipping: undefined },
+    { items: [] },
+    { items: [{ ...input.items[0], quantity: -1 }] },
+    { items: [{ ...input.items[0], quantity: 1.5 }] }
+  ]) {
     assert.equal(orderSchema.safeParse({ ...input, ...patch }).success, false);
   }
 });
 
 test('archives accept an explicit journal id or no relationship, never an executable URL', () => {
-  const archive = { name: 'Archive', slug: 'archive', description: '', imageUrl: '/image.jpg', journalId: 'journal-id' };
+  const archive = {
+    name: 'Archive',
+    slug: 'archive',
+    description: '',
+    imageUrl: '/image.jpg',
+    journalId: 'journal-id'
+  };
   assert.equal(archiveSchema.parse(archive).journalId, 'journal-id');
   assert.equal(archiveSchema.parse({ ...archive, journalId: null }).journalId, null);
-  assert.equal(archiveSchema.safeParse({ ...archive, imageUrl: 'javascript:alert(1)' }).success, false);
+  assert.equal(
+    archiveSchema.safeParse({ ...archive, imageUrl: 'javascript:alert(1)' }).success,
+    false
+  );
 });
 
 test('checkout persists chosen courier, authoritative price, color and pre-order snapshot', async () => {
@@ -110,8 +184,14 @@ test('checkout rejects a stale shipping quote and unavailable product before sav
 
 test('checkout rejects nonexistent sizes and colors for unlimited stock too', async () => {
   const database = mockOrderDatabase();
-  await assert.rejects(createOrder({ ...input, items: [{ ...input.items[0], size: 'INVALID' }] }), /Ukuran/);
-  await assert.rejects(createOrder({ ...input, items: [{ ...input.items[0], color: 'INVALID' }] }), /Warna/);
+  await assert.rejects(
+    createOrder({ ...input, items: [{ ...input.items[0], size: 'INVALID' }] }),
+    /Ukuran/
+  );
+  await assert.rejects(
+    createOrder({ ...input, items: [{ ...input.items[0], color: 'INVALID' }] }),
+    /Warna/
+  );
   assert.equal(database.saved(), undefined);
 });
 
@@ -119,50 +199,89 @@ test('stock decrement is conditional and sold-out state recovers after cancellat
   let stock = 2;
   let inStock = true;
   const tx = {
-    product: { findUnique: async () => ({ id: 'p', name: 'Shirt', stockMode: 'QUANTITY' }), update: async () => ({}) },
+    product: {
+      findUnique: async () => ({ id: 'p', name: 'Shirt', stockMode: 'QUANTITY' }),
+      update: async () => ({})
+    },
     productVariant: {
       findFirst: async () => ({ id: 'v', stock }),
-      updateMany: async ({ data }: { data: { stock?: { decrement: number }; inStock?: boolean } }) => {
-        if (data.stock) { if (stock < data.stock.decrement) return { count: 0 }; stock -= data.stock.decrement; }
-        else if (stock === 0) inStock = false;
+      updateMany: async ({
+        data
+      }: {
+        data: { stock?: { decrement: number }; inStock?: boolean };
+      }) => {
+        if (data.stock) {
+          if (stock < data.stock.decrement) return { count: 0 };
+          stock -= data.stock.decrement;
+        } else if (stock === 0) inStock = false;
         return { count: 1 };
       },
-      update: async ({ data }: { data: { stock: { increment: number }; inStock: boolean } }) => { stock += data.stock.increment; inStock = data.inStock; },
+      update: async ({ data }: { data: { stock: { increment: number }; inStock: boolean } }) => {
+        stock += data.stock.increment;
+        inStock = data.inStock;
+      },
       aggregate: async () => ({ _sum: { stock } })
     }
   } as unknown as Prisma.TransactionClient;
   const items = [{ productId: 'p', size: 'M', quantity: 2 }];
   await deductStock(items, tx);
-  assert.equal(stock, 0); assert.equal(inStock, false);
+  assert.equal(stock, 0);
+  assert.equal(inStock, false);
   await assert.rejects(deductStock(items, tx), /tidak mencukupi/);
   await restoreStock(items, tx);
-  assert.equal(stock, 2); assert.equal(inStock, true);
+  assert.equal(stock, 2);
+  assert.equal(inStock, true);
 });
 
 test('CAPTCHA fails closed when unconfigured or expired, and accepts a verified token', async () => {
-  delete process.env.RECAPTCHA_SECRET_KEY;
-  await assert.rejects(verifyRecaptcha('token'), /belum siap/);
-  process.env.RECAPTCHA_SECRET_KEY = 'test-only-secret';
-  mock.method(globalThis, 'fetch', async () => Response.json({ success: false }));
-  await assert.rejects(verifyRecaptcha('expired'), /kedaluwarsa/);
-  mock.method(globalThis, 'fetch', async () => Response.json({ success: true }));
-  await verifyRecaptcha('verified');
+  const origNodeEnv = process.env.NODE_ENV;
+  (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
+  try {
+    delete process.env.RECAPTCHA_SECRET_KEY;
+    await assert.rejects(verifyRecaptcha('token'), /belum siap/);
+    process.env.RECAPTCHA_SECRET_KEY = 'test-only-secret';
+    replaceMethod(globalThis, 'fetch', async () => Response.json({ success: false }));
+    await assert.rejects(verifyRecaptcha('expired'), /kedaluwarsa/);
+    replaceMethod(globalThis, 'fetch', async () => Response.json({ success: true }));
+    await verifyRecaptcha('verified');
+  } finally {
+    (process.env as Record<string, string | undefined>).NODE_ENV = origNodeEnv;
+  }
 });
 
 test('order API returns failure instead of an invented confirmation number', async () => {
-  delete process.env.RECAPTCHA_SECRET_KEY;
-  const response = await POST(new Request('http://localhost/api/v1/orders', { method: 'POST', body: JSON.stringify(input) }));
-  assert.equal(response.status, 503);
-  const result = await response.json();
-  assert.equal(result.data, undefined);
-  mock.method(globalThis, 'fetch', async () => Response.json({ message: 'Stok habis' }, { status: 400 }));
-  await assert.rejects(submitOrder(input), /Stok habis/);
-  mock.method(globalThis, 'fetch', async () => Response.json({ data: {} }));
-  await assert.rejects(submitOrder(input), /Respons pesanan tidak valid/);
+  const origNodeEnv = process.env.NODE_ENV;
+  (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
+  try {
+    delete process.env.RECAPTCHA_SECRET_KEY;
+    const response = await POST(
+      new Request('http://localhost/api/v1/orders', { method: 'POST', body: JSON.stringify(input) })
+    );
+    assert.equal(response.status, 503);
+    const result = await response.json();
+    assert.equal(result.data, undefined);
+    replaceMethod(globalThis, 'fetch', async () =>
+      Response.json({ message: 'Stok habis' }, { status: 400 })
+    );
+    await assert.rejects(submitOrder(input), /Stok habis/);
+    replaceMethod(globalThis, 'fetch', async () => Response.json({ data: {} }));
+    await assert.rejects(submitOrder(input), /Respons pesanan tidak valid/);
+  } finally {
+    (process.env as Record<string, string | undefined>).NODE_ENV = origNodeEnv;
+  }
 });
 
 test('all CMS order statuses have distinct public labels', () => {
-  const statuses = ['PENDING', 'CONFIRMED', 'WAITING_PAYMENT', 'PAID', 'FULFILLED', 'CANCELLED', 'REJECTED', 'EXPIRED'];
+  const statuses = [
+    'PENDING',
+    'CONFIRMED',
+    'WAITING_PAYMENT',
+    'PAID',
+    'FULFILLED',
+    'CANCELLED',
+    'REJECTED',
+    'EXPIRED'
+  ];
   assert.equal(new Set(statuses.map(getOrderStatusLabel)).size, statuses.length);
   assert.equal(getOrderStatusLabel('PAID'), 'Pembayaran Diterima');
 });

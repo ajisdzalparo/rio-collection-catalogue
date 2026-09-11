@@ -131,7 +131,10 @@ export default function CustomerDetailPage({ params }: PageProps) {
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
               {customer.fullName}
             </h1>
-            <Badge variant="outline" className="font-mono text-xs font-semibold px-2.5 py-1 rounded-xl">
+            <Badge
+              variant="outline"
+              className="font-mono text-xs font-semibold px-2.5 py-1 rounded-xl"
+            >
               +{customer.whatsapp}
             </Badge>
           </div>
@@ -145,7 +148,7 @@ export default function CustomerDetailPage({ params }: PageProps) {
             href={getWhatsAppLink(customer.whatsapp, customer.fullName)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
           >
             <WhatsAppIcon size={16} className="h-4 w-4" />
             <span>Chat WhatsApp (+{customer.whatsapp})</span>
@@ -153,7 +156,7 @@ export default function CustomerDetailPage({ params }: PageProps) {
           <Button
             variant="outline"
             onClick={() => router.push('/dashboard/customers')}
-            className="h-10 rounded-xl text-xs font-bold border-border/60"
+            className="h-10 rounded-lg text-xs font-bold border-border/60"
           >
             Kembali ke Daftar
           </Button>
@@ -162,7 +165,7 @@ export default function CustomerDetailPage({ params }: PageProps) {
 
       {/* KPI Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-1 shadow-2xs">
+        <div className="bg-card border border-border/40 rounded-xl p-5 space-y-1 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
               Total Pembelanjaan Lunas
@@ -172,10 +175,12 @@ export default function CustomerDetailPage({ params }: PageProps) {
           <h3 className="text-2xl font-black text-emerald-500 tabular-nums">
             {formatIDR(customer.totalSpent)}
           </h3>
-          <p className="text-xs text-muted-foreground">{customer.totalOrders} kali pesanan selesai</p>
+          <p className="text-xs text-muted-foreground">
+            {customer.totalOrders} kali pesanan selesai
+          </p>
         </div>
 
-        <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-1 shadow-2xs">
+        <div className="bg-card border border-border/40 rounded-xl p-5 space-y-1 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
               Kontak WhatsApp
@@ -188,7 +193,7 @@ export default function CustomerDetailPage({ params }: PageProps) {
           <p className="text-xs text-muted-foreground">Nomor utama pembeli</p>
         </div>
 
-        <div className="bg-card border border-border/40 rounded-2xl p-5 space-y-1 shadow-2xs">
+        <div className="bg-card border border-border/40 rounded-xl p-5 space-y-1 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
               Alamat Terdaftar
@@ -203,12 +208,12 @@ export default function CustomerDetailPage({ params }: PageProps) {
       </div>
 
       {/* Tabs Section */}
-      <div className="bg-card border border-border/40 rounded-3xl p-6 shadow-xs space-y-5">
-        <div className="flex items-center gap-2 border-b border-border/20 pb-3 flex-wrap">
+      <div className="bg-card border border-border/40 rounded-xl p-3.5 sm:p-6 shadow-xs space-y-4 sm:space-y-5">
+        <div className="flex items-center gap-1.5 border-b border-border/20 pb-3 overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setActiveTab('orders')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               activeTab === 'orders'
                 ? 'bg-foreground text-background shadow-xs'
                 : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -220,7 +225,7 @@ export default function CustomerDetailPage({ params }: PageProps) {
           <button
             type="button"
             onClick={() => setActiveTab('items')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               activeTab === 'items'
                 ? 'bg-foreground text-background shadow-xs'
                 : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -232,7 +237,7 @@ export default function CustomerDetailPage({ params }: PageProps) {
           <button
             type="button"
             onClick={() => setActiveTab('addresses')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               activeTab === 'addresses'
                 ? 'bg-foreground text-background shadow-xs'
                 : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -246,7 +251,95 @@ export default function CustomerDetailPage({ params }: PageProps) {
         {/* TAB 1: Riwayat Transaksi */}
         {activeTab === 'orders' && (
           <div className="space-y-3">
-            <div className="overflow-x-auto border border-border/30 rounded-2xl">
+            {/* Mobile Adaptive Cards View (Screen < md) */}
+            <div className="md:hidden space-y-3">
+              {customer.orders.map((o) => (
+                <div
+                  key={o.id}
+                  className="p-4 rounded-lg border border-border/60 bg-muted/15 space-y-3 shadow-xs"
+                >
+                  {/* Top: Order #, Date & Status */}
+                  <div className="flex items-start justify-between gap-2 border-b border-border/20 pb-2.5">
+                    <div>
+                      <Link
+                        href={`/dashboard/orders/${o.id}`}
+                        className="font-mono font-bold text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        <span>#{o.orderNumber}</span>
+                        <ExternalLink className="h-3 w-3 opacity-60" />
+                      </Link>
+                      <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>
+                          {new Date(o.createdAt).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <OrderStatusBadge status={o.status} />
+                  </div>
+
+                  {/* Items List */}
+                  <div className="space-y-1.5 py-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                      Item Kaos Dipesan:
+                    </span>
+                    {o.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs gap-2">
+                        <span className="font-semibold text-foreground flex items-center gap-1.5 min-w-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />
+                          <span className="truncate">{item.name}</span>
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] py-0 px-1 font-mono shrink-0"
+                          >
+                            {item.size}
+                          </Badge>
+                        </span>
+                        <span className="text-muted-foreground text-[11px] shrink-0 font-medium">
+                          x{item.quantity} ({formatIDR(item.price * item.quantity)})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Shipping Address */}
+                  {o.address && (
+                    <div className="flex items-start gap-1.5 text-xs text-muted-foreground pt-1.5 border-t border-border/20">
+                      <MapPin className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                      <span className="text-[11px] leading-relaxed text-foreground font-medium line-clamp-2">
+                        {o.address}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Bottom: Total & Action */}
+                  <div className="flex items-center justify-between pt-2.5 border-t border-border/20">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                        Total Tagihan:
+                      </span>
+                      <span className="text-sm font-black text-foreground">
+                        {formatIDR(o.totalPrice)}
+                      </span>
+                    </div>
+                    <Link
+                      href={`/dashboard/orders/${o.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/15 rounded-md transition-colors"
+                    >
+                      <span>Detail</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View (Screen >= md) */}
+            <div className="hidden md:block overflow-x-auto border border-border/30 rounded-lg">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-muted/30 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/30">
@@ -283,11 +376,17 @@ export default function CustomerDetailPage({ params }: PageProps) {
                       <td className="py-3.5 px-4 min-w-50">
                         <div className="space-y-1">
                           {o.items.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-xs gap-3">
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between text-xs gap-3"
+                            >
                               <span className="font-semibold text-foreground flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
                                 <span>{item.name}</span>
-                                <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] py-0 px-1 font-mono"
+                                >
                                   {item.size}
                                 </Badge>
                               </span>
@@ -332,7 +431,60 @@ export default function CustomerDetailPage({ params }: PageProps) {
         {/* TAB 2: Ringkasan Kaos Dibeli */}
         {activeTab === 'items' && (
           <div className="space-y-3">
-            <div className="overflow-x-auto border border-border/30 rounded-2xl">
+            {/* Mobile Adaptive Cards View (Screen < md) */}
+            <div className="md:hidden space-y-3">
+              {purchasedItemsSummary.length > 0 ? (
+                purchasedItemsSummary.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 sm:p-4 rounded-lg border border-border/60 bg-muted/15 space-y-2.5 shadow-xs"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="p-1.5 rounded-md bg-muted/60 text-muted-foreground shrink-0">
+                          <Shirt className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-xs sm:text-sm font-bold text-foreground truncate">
+                            {item.name}
+                          </h4>
+                          <span className="text-[10px] text-muted-foreground">
+                            Dibeli {item.orderCount} kali
+                          </span>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-mono shrink-0">
+                        Ukuran {item.size}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 rounded-md bg-card border border-border/20 text-xs">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                          Total Kuantitas:
+                        </span>
+                        <span className="font-bold text-foreground">{item.totalQty} pcs</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                          Akumulasi Belanja:
+                        </span>
+                        <span className="font-black text-emerald-500">
+                          {formatIDR(item.totalSpent)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-6 text-center text-muted-foreground text-xs rounded-lg border border-border/30 bg-muted/10">
+                  Belum ada data barang yang dibeli.
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Table View (Screen >= md) */}
+            <div className="hidden md:block overflow-x-auto border border-border/30 rounded-lg">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-muted/30 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/30">
@@ -386,9 +538,9 @@ export default function CustomerDetailPage({ params }: PageProps) {
             {customer.addresses.map((addr, idx) => (
               <div
                 key={idx}
-                className="p-4 bg-muted/15 border border-border/30 rounded-2xl space-y-1.5 flex items-start gap-3"
+                className="p-4 bg-muted/15 border border-border/30 rounded-lg space-y-1.5 flex items-start gap-3"
               >
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 shrink-0 mt-0.5">
+                <div className="p-2 rounded-md bg-amber-500/10 text-amber-500 shrink-0 mt-0.5">
                   <MapPin className="h-4 w-4" />
                 </div>
                 <div className="space-y-0.5 min-w-0">

@@ -179,23 +179,25 @@ model OrderItem {
 
 model StoreSettings {
   id                String   @id @default("default")
-  storeName         String   @default("RIO COLLECTION")
-  whatsappNumber    String   @default("628123456789")
-  bankName          String?  @default("BCA")
-  bankAccountNumber String?  @default("1234567890")
-  bankAccountOwner  String?  @default("RIO COLLECTION")
-  flatShippingRate  Int      @default(15000)
+  storeName         String
+  whatsappNumber    String
+  bankName          String?
+  bankAccountNumber String?
+  bankAccountOwner  String?
+  flatShippingRate  Int
   instagramUrl      String?
   tiktokUrl         String?
   facebookUrl       String?
   pinterestUrl      String?
   xTwitterUrl       String?
-  heroTitle         String?  @default("EDITION 001")
-  heroSubtitle      String?  @default("ARCHIVAL COTTON SILHOUETTE")
-  heroLeftImage     String?  @default("https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80")
-  heroRightImage    String?  @default("https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80")
-  heroCtaText       String?  @default("Eksplor Koleksi Terkini")
-  heroCtaLink       String?  @default("/catalogue")
+  heroTitle         String?
+  heroSubtitle      String?
+  heroLayout        String?  @default("2-grid")
+  heroLeftImage     String?
+  heroCenterImage   String?
+  heroRightImage    String?
+  heroCtaText       String?
+  heroCtaLink       String?
   homeFeaturedTitle String?
   homeViewAllLabel  String?
   homeManifestoTitle String?
@@ -216,14 +218,14 @@ model StoreSettings {
   aboutQuoteText    String?
   aboutStudioImage  String?
   contactEmail      String?
-  waTemplatePending  String?  @default("Halo {nama_pelanggan},\n\nTerima kasih telah memesan dari RIO COLLECTION!\nKami telah menerima pesanan Anda (#{nomor_order}).\n\nTotal Tagihan: {total_pembayaran}\nSilakan melakukan pembayaran via transfer bank:\n{rekening_bank}\n\nHarap kirimkan bukti transfer ke WhatsApp ini setelah melakukan pembayaran. Terima kasih!")
-  waTemplatePayment  String?  @default("Halo {nama_pelanggan},\n\nKami dari RIO COLLECTION mengonfirmasi bahwa pembayaran untuk pesanan #{nomor_order} sebesar {total_pembayaran} telah DITERIMA & LUNAS.\n\nPesanan Anda sedang kami siapkan untuk pengiriman. Terima kasih!")
-  waTemplateShipping String?  @default("Halo {nama_pelanggan},\n\nPesanan Anda (#{nomor_order}) dari RIO COLLECTION telah dikirim via {kurir}!\nNomor Resi: {nomor_resi}\n\nTerima kasih telah berbelanja di RIO COLLECTION!")
-  waTemplateRemind   String?  @default("Halo {nama_pelanggan},\n\nKami dari RIO COLLECTION menginformasikan bahwa pesanan (#{nomor_order}) dengan total {total_pembayaran} sedang menunggu pembayaran.\n\nApakah ada kendala saat melakukan proses pembayaran?\nMohon konfirmasi/kirimkan bukti bayar agar pesanan dapat segera dikirim. Terima kasih!")
-  enabledCouriers    String?  @default("jne,pos,tiki,sicepat,jnt")
-  originCityId       String?  @default("153")
-  originCityName     String?  @default("Kota Bandung")
-  originProvinceName String?  @default("Jawa Barat")
+  waTemplatePending  String?
+  waTemplatePayment  String?
+  waTemplateShipping String?
+  waTemplateRemind   String?
+  enabledCouriers    String?
+  originCityId       String?
+  originCityName     String?
+  originProvinceName String?
   updatedAt         DateTime @updatedAt
 }
 

@@ -72,7 +72,7 @@ function QuickTooltip({
   return (
     <TooltipProvider delay={delay}>
       <Tooltip>
-        <TooltipTrigger render={<span className="inline-flex" />}>{children}</TooltipTrigger>
+        <TooltipTrigger render={<span className="inline-flex max-w-full min-w-0" />}>{children}</TooltipTrigger>
         <TooltipContent side={side} className={className}>
           {content}
         </TooltipContent>

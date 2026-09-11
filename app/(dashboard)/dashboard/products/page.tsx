@@ -350,7 +350,7 @@ function ProductsContent() {
     }
   };
 
-  const getStatusBadge = (product: Product) => {
+  const getStatusBadge = useCallback((product: Product) => {
     const isAlwaysAvailable = product.stockMode === 'ALWAYS_AVAILABLE';
     const totalStock =
       product.stock ??
@@ -384,7 +384,7 @@ function ProductsContent() {
           </Badge>
         );
     }
-  };
+  }, []);
 
   const toggleSizeStock = (size: string) => {
     setSizesStock((prev) => {
@@ -619,7 +619,169 @@ function ProductsContent() {
         )
       }
     ],
-    [handleOpenEdit, isDeleting]
+    [getStatusBadge, handleOpenEdit, isDeleting]
+  );
+
+  // Mobile Adaptive Card Renderer for Products
+  const renderProductCard = useCallback(
+    (product: Product) => {
+      const totalStock =
+        product.stock ??
+        product.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
+
+      return (
+        <div className="p-3.5 sm:p-4 rounded-lg border border-border/70 bg-card/90 shadow-2xs backdrop-blur-md flex flex-col gap-3 transition-all hover:border-border">
+          {/* Top: Image + Info */}
+          <div className="flex items-start gap-3">
+            <div className="relative h-20 w-16 rounded-md overflow-hidden bg-muted/50 border border-border/30 shrink-0 shadow-xs">
+              <SafeImage
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                sizes="70px"
+                className="object-cover"
+              />
+            </div>
+
+            <div className="flex-1 min-w-0 space-y-1">
+              <h3 className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 leading-snug">
+                {product.name}
+              </h3>
+
+              <p className="text-[11px] text-muted-foreground font-medium truncate">
+                {product.color}
+              </p>
+
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded border border-border/20">
+                  <Layers className="h-2.5 w-2.5" />
+                  <span className="capitalize">{product.category.replace('-', ' ')}</span>
+                </span>
+                {product.edition && (
+                  <span className="text-[9px] font-medium text-muted-foreground">
+                    {product.edition}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Middle: Price, HPP & Status */}
+          <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/25 border border-border/20">
+            <div>
+              <span className="text-[9px] text-muted-foreground block font-bold uppercase tracking-wider">
+                Harga Jual
+              </span>
+              <span className="text-xs font-black text-foreground">{formatIDR(product.price)}</span>
+              {product.hpp ? (
+                <span className="text-[9px] text-amber-600 dark:text-amber-400 font-bold block">
+                  HPP: {formatIDR(product.hpp)}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="text-right">
+              <span className="text-[9px] text-muted-foreground block font-bold uppercase tracking-wider mb-0.5">
+                Status
+              </span>
+              <div>{getStatusBadge(product)}</div>
+            </div>
+          </div>
+
+          {/* Stock Info */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Total Stok:
+              </span>
+              {product.stockMode === 'ALWAYS_AVAILABLE' ? (
+                <Badge
+                  variant="outline"
+                  className="bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full gap-1"
+                >
+                  <InfinityIcon className="h-3 w-3 stroke-[2.5]" />
+                  <span>Tanpa Batas</span>
+                </Badge>
+              ) : (
+                <div className="flex items-center gap-1 font-bold text-[11px]">
+                  <Package
+                    className={`h-3.5 w-3.5 ${totalStock > 0 ? 'text-emerald-500' : 'text-red-500'}`}
+                  />
+                  <span
+                    className={
+                      totalStock > 0 ? 'text-foreground font-black' : 'text-red-500 font-black'
+                    }
+                  >
+                    {totalStock} pcs
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Size Pills */}
+            {product.stockMode !== 'ALWAYS_AVAILABLE' && product.variants?.length > 0 && (
+              <div className="flex gap-1 flex-wrap pt-0.5">
+                {product.variants.map((v) => {
+                  const qty = v.stock ?? (v.inStock ? 10 : 0);
+                  return (
+                    <span
+                      key={v.size}
+                      className={cn(
+                        'inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-bold border rounded',
+                        qty > 0
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                          : 'bg-muted/40 text-muted-foreground border-border/30 line-through opacity-40'
+                      )}
+                    >
+                      <span>{v.size}:</span>
+                      <span>{qty}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Actions Bar */}
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30">
+            <div className="flex items-center gap-1.5 flex-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDetailProduct(product)}
+                className="flex-1 h-8 text-xs font-semibold rounded-xl gap-1 cursor-pointer"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                <span>Detail</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleOpenEdit(product)}
+                className="flex-1 h-8 text-xs font-bold rounded-xl gap-1 cursor-pointer bg-primary/5 hover:bg-primary/10 text-primary border-primary/20"
+              >
+                <Edit className="h-3.5 w-3.5" />
+                <span>Edit</span>
+              </Button>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteTargetProduct(product)}
+              disabled={isDeleting}
+              className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer shrink-0"
+              title="Hapus Produk"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      );
+    },
+    [handleOpenEdit, isDeleting, getStatusBadge]
   );
 
   return (
@@ -636,7 +798,7 @@ function ProductsContent() {
         </VStack>
         <Button
           onClick={handleOpenCreate}
-          className="gap-2 h-10 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs"
+          className="w-full sm:w-auto gap-2 h-10 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs"
         >
           <Plus className="h-4 w-4" />
           <span>Tambah Kaos Baru</span>
@@ -644,7 +806,7 @@ function ProductsContent() {
       </Flex>
 
       {isOutOfStockFilter && (
-        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
+        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-4 rounded-lg flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-2.5">
             <AlertCircle className="h-5 w-5 shrink-0 text-amber-500" />
             <div>
@@ -662,7 +824,7 @@ function ProductsContent() {
             variant="outline"
             size="sm"
             onClick={() => router.push('/dashboard/products')}
-            className="h-8 text-xs font-bold rounded-xl gap-1.5 cursor-pointer border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+            className="h-8 text-xs font-bold rounded-md gap-1.5 cursor-pointer border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
           >
             <X className="h-3.5 w-3.5" />
             <span>Lihat Semua Produk</span>
@@ -670,15 +832,16 @@ function ProductsContent() {
         </div>
       )}
 
-      {/* Products DataTable */}
+      {/* Products DataTable with Adaptive Mobile Card View */}
       <DataTable
         columns={columns}
         data={filteredProducts}
         isLoading={loading}
         searchKey="name"
         searchPlaceholder="Cari nama kaos, edisi, deskripsi..."
+        renderCard={renderProductCard}
         filterComponents={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider shrink-0">
               Kategori:
             </span>
@@ -686,7 +849,7 @@ function ProductsContent() {
               value={selectedCategory}
               onValueChange={(val) => val && setSelectedCategory(val)}
             >
-              <SelectTrigger className="w-45 h-9 rounded-xl">
+              <SelectTrigger className="w-full sm:w-45 h-10 sm:h-9 rounded-lg">
                 <SelectValue placeholder="Semua Kategori" />
               </SelectTrigger>
               <SelectContent>
@@ -707,7 +870,7 @@ function ProductsContent() {
 
       {/* Add / Edit Product Dialog Form */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl sm:max-w-7xl bg-card border-border/40 rounded-3xl">
+        <DialogContent className="max-w-3xl sm:max-w-7xl bg-card border-border/40 rounded-xl">
           <DialogHeader className="border-b border-border/20 pb-4">
             <DialogTitle className="text-lg font-extrabold flex items-center gap-2">
               <Tag className="h-5 w-5 text-muted-foreground" />
@@ -736,13 +899,13 @@ function ProductsContent() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Misal: Heavy-Weight Boxy Tee"
-                  className="h-10 rounded-xl"
+                  className="h-10 rounded-lg"
                   required
                 />
               </div>
 
               {/* Mode Manajemen Stok Toggle */}
-              <div className="space-y-2 bg-muted/15 p-4 rounded-2xl border border-border/20">
+              <div className="space-y-2 bg-muted/15 p-4 rounded-lg border border-border/20">
                 <Label className="text-xs font-bold text-foreground flex items-center justify-between">
                   <span>Mode Ketersediaan Stok</span>
                   <span className="text-[10px] text-muted-foreground font-normal">
@@ -988,12 +1151,12 @@ function ProductsContent() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Detail bahan, sizing, fitting, dan visual sablon kaos..."
-                  className="min-h-20 rounded-xl text-xs"
+                  className="min-h-20 rounded-lg text-xs"
                 />
               </div>
 
               {/* Materials & Care Form Section */}
-              <div className="space-y-3 p-4 bg-muted/10 border border-border/20 rounded-2xl">
+              <div className="space-y-3 p-4 bg-muted/10 border border-border/20 rounded-lg">
                 <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <Shirt className="h-4 w-4 text-sky-500 shrink-0" />
                   Spesifikasi Bahan & Perawatan (Materials & Care)
@@ -1011,7 +1174,7 @@ function ProductsContent() {
                       value={fabric}
                       onChange={(e) => setFabric(e.target.value)}
                       placeholder="100% Premium Heavyweight Cotton, 280gsm"
-                      className="h-9 text-xs rounded-xl"
+                      className="h-9 text-xs rounded-lg"
                     />
                   </div>
                   <div className="space-y-1">
@@ -1026,7 +1189,7 @@ function ProductsContent() {
                       value={treatment}
                       onChange={(e) => setTreatment(e.target.value)}
                       placeholder="Pre-shrunk to minimize shrinkage"
-                      className="h-9 text-xs rounded-xl"
+                      className="h-9 text-xs rounded-lg"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -1042,7 +1205,7 @@ function ProductsContent() {
                         value={origin}
                         onChange={(e) => setOrigin(e.target.value)}
                         placeholder="Constructed in Indonesia"
-                        className="h-9 text-xs rounded-xl"
+                        className="h-9 text-xs rounded-lg"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1057,7 +1220,7 @@ function ProductsContent() {
                         value={careInstruction}
                         onChange={(e) => setCareInstruction(e.target.value)}
                         placeholder="Machine wash cold inside out..."
-                        className="h-9 text-xs rounded-xl"
+                        className="h-9 text-xs rounded-lg"
                       />
                     </div>
                   </div>
@@ -1073,6 +1236,7 @@ function ProductsContent() {
                   value={imageUrl}
                   onChange={setImageUrl}
                   placeholder="Pilih atau upload foto kaos utama"
+                  aspectRatio="3:4"
                 />
               </div>
 
@@ -1085,11 +1249,12 @@ function ProductsContent() {
                   }}
                   maxImages={99}
                   slotLabels={imagesList.map((_, i) => `Foto Detail ${i + 1}`)}
+                  aspectRatio="1:1"
                 />
               </div>
 
               {/* Enhanced Stock Management Per Size */}
-              <div className="space-y-3 p-4 bg-muted/10 border border-border/20 rounded-2xl">
+              <div className="space-y-3 p-4 bg-muted/10 border border-border/20 rounded-lg">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <Boxes className="h-4 w-4 text-emerald-500" />
@@ -1216,12 +1381,12 @@ function ProductsContent() {
               detailProduct.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
 
             return (
-              <DialogContent className="sm:max-w-4xl bg-card border-border/40 rounded-3xl p-6 md:p-8">
+              <DialogContent className="sm:max-w-4xl bg-card border-border/40 rounded-xl p-6 md:p-8">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 max-h-[75vh] overflow-y-auto pr-1">
                   {/* Left: Gallery (7 cols on desktop) */}
                   <div className="md:col-span-7 flex flex-col gap-4">
                     {/* Main Active Image View */}
-                    <div className="relative aspect-4/5 w-full overflow-hidden rounded-2xl bg-muted/20 border border-border/10 group">
+                    <div className="relative aspect-4/5 w-full overflow-hidden rounded-xl bg-muted/20 border border-border/10 group">
                       <Image
                         src={activeImage}
                         alt={`${detailProduct.name} View`}

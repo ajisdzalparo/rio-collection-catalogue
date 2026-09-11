@@ -76,8 +76,8 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
           </Link>
         </div>
 
-        <div className="p-8 text-center bg-card border border-border/40 rounded-3xl space-y-3">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+        <div className="p-8 text-center bg-card border border-border/40 rounded-xl space-y-3">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
             <KeyRound className="h-6 w-6" />
           </div>
           <h2 className="text-lg font-bold text-foreground">Master Role Tidak Ditemukan</h2>
@@ -87,7 +87,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
           <div className="pt-2">
             <Button
               onClick={() => router.push('/users?tab=rbac')}
-              className="rounded-xl text-xs font-bold cursor-pointer"
+              className="rounded-lg text-xs font-bold cursor-pointer"
             >
               Lihat Semua Master Role
             </Button>
@@ -103,7 +103,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <Link
           href="/users?tab=rbac"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors bg-card border border-border/40 px-3 py-1.5 rounded-xl shadow-2xs"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors bg-card border border-border/40 px-3 py-1.5 rounded-lg shadow-2xs"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Kembali ke Master Roles</span>
@@ -112,7 +112,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
         <div className="flex items-center gap-2">
           <Button
             onClick={() => setShowEditDialog(true)}
-            className="gap-1.5 h-9 rounded-xl text-xs font-bold cursor-pointer bg-foreground text-background hover:bg-foreground/90 shadow-xs"
+            className="gap-1.5 h-9 rounded-lg text-xs font-bold cursor-pointer bg-foreground text-background hover:bg-foreground/90 shadow-xs"
           >
             <Edit className="h-3.5 w-3.5" />
             <span>Edit Master Role</span>
@@ -121,11 +121,11 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
       </div>
 
       {/* Hero Header Card */}
-      <div className="bg-card border border-border/40 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+      <div className="bg-card border border-border/40 rounded-xl p-6 sm:p-8 shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <KeyRound className="h-5 w-5" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-foreground">
@@ -149,7 +149,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
           </div>
 
           {/* Status Toggle on Header */}
-          <div className="flex items-center gap-3 bg-muted/20 border border-border/30 rounded-2xl p-3 shrink-0 self-start">
+          <div className="flex items-center gap-3 bg-muted/20 border border-border/30 rounded-lg p-3 shrink-0 self-start">
             <div className="text-right">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
                 Status Role
@@ -170,7 +170,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
 
         {/* Permission Overview Stats Banner */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-border/20">
-          <div className="bg-muted/20 border border-border/30 rounded-2xl p-4 space-y-1">
+          <div className="bg-muted/20 border border-border/30 rounded-lg p-4 space-y-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
               <ShieldCheck className="h-3.5 w-3.5 text-primary" />
               Tingkat Otorisasi
@@ -180,7 +180,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
             </p>
           </div>
 
-          <div className="bg-muted/20 border border-border/30 rounded-2xl p-4 space-y-1">
+          <div className="bg-muted/20 border border-border/30 rounded-lg p-4 space-y-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
               Total Izin Diaktifkan
             </span>
@@ -189,7 +189,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
             </p>
           </div>
 
-          <div className="bg-muted/20 border border-border/30 rounded-2xl p-4 space-y-1">
+          <div className="bg-muted/20 border border-border/30 rounded-lg p-4 space-y-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
               Hak Akses Dibatasi
             </span>
@@ -226,7 +226,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
             return (
               <div
                 key={menu.id}
-                className="bg-card border border-border/40 rounded-2xl p-5 space-y-4 shadow-2xs flex flex-col justify-between"
+                className="bg-card border border-border/40 rounded-xl p-5 space-y-4 shadow-2xs flex flex-col justify-between"
               >
                 <div className="space-y-3">
                   {/* Category Header */}
@@ -257,7 +257,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
                         <div
                           key={action.key}
                           className={cn(
-                            'p-3 rounded-xl border text-xs flex items-start justify-between gap-3 transition-colors',
+                            'p-3 rounded-lg border text-xs flex items-start justify-between gap-3 transition-colors',
                             isAllowed
                               ? 'bg-emerald-500/5 border-emerald-500/20 text-foreground'
                               : 'bg-muted/10 border-border/20 text-muted-foreground'

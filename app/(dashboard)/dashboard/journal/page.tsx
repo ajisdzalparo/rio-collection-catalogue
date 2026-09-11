@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { formatSafeDate } from '@/lib/utils';
 import type { JournalArticle } from '@/types/catalogue.types';
 
 function JournalCmsPageContent() {
@@ -95,7 +96,7 @@ function JournalCmsPageContent() {
         cell: (article) => (
           <TruncatedText
             text={article.title}
-            maxWidth="max-w-[260px]"
+            maxWidth="max-w-[320px]"
             className="font-bold text-xs text-foreground"
           />
         )
@@ -127,15 +128,9 @@ function JournalCmsPageContent() {
         accessorKey: 'date',
         sortable: true,
         cell: (article) => (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
             <Calendar className="h-3 w-3 shrink-0" />
-            <span>
-              {new Date(article.date).toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-              })}
-            </span>
+            <span>{formatSafeDate(article.date)}</span>
           </div>
         )
       },
@@ -144,7 +139,7 @@ function JournalCmsPageContent() {
         cell: (article) => (
           <TruncatedText
             text={article.excerpt}
-            maxWidth="max-w-[280px]"
+            maxWidth="max-w-[320px]"
             className="text-xs text-muted-foreground font-normal"
           />
         )
@@ -261,7 +256,7 @@ function JournalCmsPageContent() {
                   {detailArticle.category}
                 </span>
                 &middot;
-                {new Date(detailArticle.date).toLocaleDateString('id-ID', { dateStyle: 'long' })}
+                {formatSafeDate(detailArticle.date, { dateStyle: 'long' })}
               </DialogDescription>
             </DialogHeader>
 
@@ -289,9 +284,7 @@ function JournalCmsPageContent() {
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
                         <p className="text-sm font-bold text-foreground">
-                          {new Date(detailArticle.date).toLocaleDateString('id-ID', {
-                            dateStyle: 'long'
-                          })}
+                          {formatSafeDate(detailArticle.date, { dateStyle: 'long' })}
                         </p>
                       </div>
                     </div>

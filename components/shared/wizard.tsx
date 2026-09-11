@@ -72,7 +72,7 @@ export function Wizard({
 
   return (
     <div className={cn('space-y-6 w-full', className)}>
-      <div className="p-5 rounded-3xl border border-border/70 bg-card/80 shadow-xs backdrop-blur-md">
+      <div className="p-5 rounded-xl border border-border/70 bg-card/80 shadow-xs backdrop-blur-md">
         <Stepper
           steps={steps}
           currentStep={activeStep}
@@ -83,7 +83,7 @@ export function Wizard({
         />
       </div>
 
-      <div className="p-6 rounded-3xl border border-border/70 bg-card shadow-xs overflow-hidden relative min-h-40">
+      <div className="p-6 rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden relative min-h-40">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeStep}
@@ -104,7 +104,7 @@ export function Wizard({
             variant="outline"
             disabled={isFirstStep || isLoading}
             onClick={handlePrev}
-            className="gap-2 text-xs font-bold rounded-2xl"
+            className="gap-2 text-xs font-bold rounded-lg"
           >
             <ChevronLeft className="h-4 w-4" />
             <span>{prevText}</span>
@@ -114,7 +114,7 @@ export function Wizard({
             type="button"
             disabled={isLoading}
             onClick={handleNext}
-            className="gap-2 text-xs font-bold rounded-2xl min-w-30"
+            className="gap-2 text-xs font-bold rounded-lg min-w-30"
           >
             {isLoading ? (
               <>

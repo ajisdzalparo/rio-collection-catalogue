@@ -17,7 +17,8 @@ import {
   TrendingUp,
   ShieldAlert,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Eye
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { toast } from 'sonner';
@@ -76,6 +77,11 @@ export default function OrderDetailPage({ params }: PageProps) {
   const [isExpeditionConfirmOpen, setIsExpeditionConfirmOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [cancelMode, setCancelMode] = useState<'REJECT' | 'CANCEL'>('CANCEL');
+  const [selectedProof, setSelectedProof] = useState<{
+    label: string;
+    url: string;
+    desc: string;
+  } | null>(null);
 
   // Track if WA has been followed up in current session
   const [waFollowedUp, setWaFollowedUp] = useState(false);
@@ -274,7 +280,7 @@ export default function OrderDetailPage({ params }: PageProps) {
         <div className="lg:col-span-8 space-y-6">
           {/* Pre-Order Warning Banner if applicable */}
           {order.items.some((item) => item.isPreOrder) && (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-foreground leading-relaxed flex items-start gap-3">
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-foreground leading-relaxed flex items-start gap-3">
               <ShieldAlert className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <strong className="text-amber-600 dark:text-amber-400 font-bold block">
@@ -289,7 +295,7 @@ export default function OrderDetailPage({ params }: PageProps) {
           )}
 
           {/* Ordered Items & COGS Breakdown Card */}
-          <div className="bg-card border border-border/40 rounded-3xl p-6 shadow-xs space-y-5">
+          <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-5">
             <div className="flex items-center justify-between border-b border-border/20 pb-3.5">
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-primary" />
@@ -314,7 +320,7 @@ export default function OrderDetailPage({ params }: PageProps) {
               {order.items.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-muted/15 border border-border/25 rounded-2xl gap-3"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-muted/15 border border-border/25 rounded-lg gap-3"
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -374,7 +380,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                 <span>Total Tagihan Pembayaran</span>
                 <span className="text-primary">{formatIDR(order.totalPrice)}</span>
               </div>
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400">
                 <span className="flex items-center gap-1.5 text-xs">
                   <TrendingUp className="h-4 w-4" />
                   <span>Estimasi Net Profit (Laba Bersih)</span>
@@ -391,7 +397,7 @@ export default function OrderDetailPage({ params }: PageProps) {
             order.additionalPaymentProofUrl ||
             order.refundProofUrl ||
             order.shippingProofUrl) && (
-            <div className="bg-card border border-border/40 rounded-3xl p-6 shadow-xs space-y-4">
+            <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-4">
               <div className="flex items-center gap-2 border-b border-border/20 pb-3">
                 <FileText className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
@@ -424,15 +430,20 @@ export default function OrderDetailPage({ params }: PageProps) {
                 ]
                   .filter((p) => Boolean(p.url))
                   .map((proof) => (
-                    <a
+                    <button
                       key={proof.label}
-                      href={proof.url!}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-between p-3.5 bg-muted/15 border border-border/30 rounded-2xl hover:bg-muted/30 transition-all group"
+                      type="button"
+                      onClick={() =>
+                        setSelectedProof({
+                          label: proof.label,
+                          url: proof.url!,
+                          desc: proof.desc
+                        })
+                      }
+                      className="flex items-center justify-between p-3.5 bg-muted/15 border border-border/30 rounded-lg hover:bg-muted/30 transition-all group text-left cursor-pointer w-full"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+                        <div className="p-2 rounded-md bg-primary/10 text-primary shrink-0 group-hover:bg-primary/20 transition-colors">
                           <FileText className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 space-y-0.5">
@@ -440,8 +451,11 @@ export default function OrderDetailPage({ params }: PageProps) {
                           <p className="text-[10px] text-muted-foreground">{proof.desc}</p>
                         </div>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
-                    </a>
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary shrink-0 ml-2 group-hover:underline">
+                        <span>Lihat</span>
+                        <Eye className="h-3.5 w-3.5" />
+                      </div>
+                    </button>
                   ))}
               </div>
             </div>
@@ -449,7 +463,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
           {/* Shipping Adjustment Section */}
           {order.shippingAdjustmentStatus && order.shippingAdjustmentStatus !== 'NONE' && (
-            <div className="bg-card border border-border/40 rounded-3xl p-6 shadow-xs space-y-3">
+            <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-3">
               <div className="flex items-center justify-between border-b border-border/20 pb-3">
                 <div className="flex items-center gap-2">
                   <Pencil className="h-4 w-4 text-primary" />
@@ -459,7 +473,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                 </div>
               </div>
 
-              <div className="p-4 bg-muted/15 border border-border/30 rounded-2xl text-xs space-y-2">
+              <div className="p-4 bg-muted/15 border border-border/30 rounded-lg text-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Ongkir awal (tagihan pesanan)</span>
                   <span className="font-bold text-foreground">
@@ -498,7 +512,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
           {/* Progressive Order Actions & Workflow Steps */}
           {['PENDING', 'CONFIRMED', 'WAITING_PAYMENT', 'PAID'].includes(order.status) && (
-            <div className="bg-card border border-border/40 rounded-3xl p-6 shadow-xs space-y-5">
+            <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-5">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
                   Aksi Alur Pesanan (Progressive Step Workflow)
@@ -510,7 +524,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
               {/* Step for PENDING status */}
               {order.status === 'PENDING' && (
-                <div className="space-y-3 p-4 bg-muted/15 border border-border/30 rounded-2xl">
+                <div className="space-y-3 p-4 bg-muted/15 border border-border/30 rounded-lg">
                   <span className="text-xs font-bold text-foreground block">
                     Tahap 1: Verifikasi &amp; Konfirmasi Pesanan Masuk
                   </span>
@@ -527,7 +541,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                           console.error('Failed to update waFollowedUp');
                         }
                       }}
-                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
+                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
                     >
                       <WhatsAppIcon size={16} className="h-4 w-4" />
                       <span>1. Kirim WA (Notifikasi Setuju)</span>
@@ -543,7 +557,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                         }
                       }}
                       disabled={isUpdating || (!waFollowedUp && !order.waFollowedUp)}
-                      className="h-10 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 cursor-pointer disabled:opacity-50"
+                      className="h-10 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 cursor-pointer disabled:opacity-50"
                     >
                       2. Setujui Pesanan (CONFIRMED)
                     </Button>
@@ -553,7 +567,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
               {/* Step for CONFIRMED status */}
               {order.status === 'CONFIRMED' && (
-                <div className="space-y-3 p-4 bg-muted/15 border border-border/30 rounded-2xl">
+                <div className="space-y-3 p-4 bg-muted/15 border border-border/30 rounded-lg">
                   <span className="text-xs font-bold text-foreground block">
                     Tahap 2: Kirim Tagihan &amp; Tunggu Pembayaran
                   </span>
@@ -570,7 +584,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                           console.error('Failed to update waFollowedUp');
                         }
                       }}
-                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
+                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
                     >
                       <WhatsAppIcon size={16} className="h-4 w-4" />
                       <span>1. Kirim WA (Tagihan Rekening)</span>
@@ -586,7 +600,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                         }
                       }}
                       disabled={isUpdating || (!waFollowedUp && !order.waFollowedUp)}
-                      className="h-10 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 cursor-pointer disabled:opacity-50"
+                      className="h-10 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 cursor-pointer disabled:opacity-50"
                     >
                       2. Ubah ke Waiting Payment
                     </Button>
@@ -596,7 +610,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
               {/* Step for WAITING_PAYMENT status */}
               {order.status === 'WAITING_PAYMENT' && (
-                <div className="space-y-4 p-4 bg-muted/15 border border-border/30 rounded-2xl">
+                <div className="space-y-4 p-4 bg-muted/15 border border-border/30 rounded-lg">
                   <span className="text-xs font-bold text-foreground block">
                     Tahap 3: Verifikasi Bukti Pembayaran Masuk
                   </span>
@@ -625,7 +639,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                           console.error('Failed to update waFollowedUp');
                         }
                       }}
-                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
+                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
                     >
                       <WhatsAppIcon size={16} className="h-4 w-4" />
                       <span>1. Kirim WA (Pembayaran Diterima)</span>
@@ -641,7 +655,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                         }
                       }}
                       disabled={isUpdating || (!waFollowedUp && !order.waFollowedUp)}
-                      className="h-10 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer disabled:opacity-50"
+                      className="h-10 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer disabled:opacity-50"
                     >
                       <CheckCircle2 className="h-4 w-4 mr-1.5" />
                       <span>2. Verifikasi Lunas (PAID)</span>
@@ -652,7 +666,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
               {/* Step for PAID status */}
               {order.status === 'PAID' && (
-                <div className="space-y-4 p-4 bg-muted/15 border border-border/30 rounded-2xl">
+                <div className="space-y-4 p-4 bg-muted/15 border border-border/30 rounded-lg">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-xs font-bold text-foreground block">
                       Tahap 4: Pengiriman Paket &amp; Input Nomor Resi
@@ -662,7 +676,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => setIsExpeditionDialogOpen(true)}
-                      className="h-8 rounded-xl text-xs font-bold border-border/60 gap-1.5"
+                      className="h-8 rounded-lg text-xs font-bold border-border/60 gap-1.5"
                     >
                       <Truck className="h-3.5 w-3.5 text-primary" />
                       <span>Ubah Kurir / Ongkir Aktual</span>
@@ -678,7 +692,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                         value={courierName || order.courierName || 'JNE Express (REG)'}
                         onChange={(e) => setCourierName(e.target.value)}
                         placeholder="Nama Kurir..."
-                        className="h-10 text-xs rounded-xl"
+                        className="h-10 text-xs rounded-lg"
                       />
                     </div>
                     <div className="space-y-1">
@@ -689,7 +703,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                         value={trackingNumber}
                         onChange={(e) => setTrackingNumber(e.target.value)}
                         placeholder="Contoh: JNE1234567890"
-                        className="h-10 text-xs rounded-xl font-mono font-bold"
+                        className="h-10 text-xs rounded-lg font-mono font-bold"
                       />
                     </div>
                   </div>
@@ -707,7 +721,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                           console.error('Failed to update waFollowedUp');
                         }
                       }}
-                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
+                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
                     >
                       <WhatsAppIcon size={16} className="h-4 w-4" />
                       <span>1. Kirim WA (Resi &amp; Dikirim)</span>
@@ -732,7 +746,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                         }
                       }}
                       disabled={isUpdating || (!waFollowedUp && !order.waFollowedUp)}
-                      className="h-10 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50"
+                      className="h-10 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50"
                     >
                       <Truck className="h-4 w-4 mr-1.5" />
                       <span>2. Konfirmasi Kirim (FULFILLED)</span>
@@ -751,7 +765,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                     setIsCancelDialogOpen(true);
                   }}
                   disabled={isUpdating}
-                  className="h-9 px-4 rounded-xl text-xs font-bold text-destructive hover:bg-destructive/10 border-border/40"
+                  className="h-9 px-4 rounded-lg text-xs font-bold text-destructive hover:bg-destructive/10 border-border/40"
                 >
                   Batalkan Pesanan
                 </Button>
@@ -764,7 +778,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       setIsCancelDialogOpen(true);
                     }}
                     disabled={isUpdating}
-                    className="h-9 px-4 rounded-xl text-xs font-bold text-destructive hover:bg-destructive/10 border-border/40"
+                    className="h-9 px-4 rounded-lg text-xs font-bold text-destructive hover:bg-destructive/10 border-border/40"
                   >
                     <XCircle className="h-3.5 w-3.5 mr-1" />
                     <span>Tolak Pesanan (Spam)</span>
@@ -778,7 +792,7 @@ export default function OrderDetailPage({ params }: PageProps) {
         {/* RIGHT COLUMN (4 Cols): Customer Info, Delivery Address & Tracking, Admin Notes */}
         <div className="lg:col-span-4 space-y-6">
           {/* Customer Profile Card */}
-          <div className="bg-card border border-border/40 rounded-3xl p-6 shadow-xs space-y-4">
+          <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/20 pb-2.5">
               Data Pelanggan
             </h3>
@@ -819,7 +833,7 @@ export default function OrderDetailPage({ params }: PageProps) {
               </div>
 
               {order.notes && (
-                <div className="p-3 bg-muted/20 border border-border/25 rounded-xl space-y-1">
+                <div className="p-3 bg-muted/20 border border-border/25 rounded-lg space-y-1">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase">
                     Catatan Khusus Pembeli:
                   </span>
@@ -830,7 +844,7 @@ export default function OrderDetailPage({ params }: PageProps) {
           </div>
 
           {/* Delivery & Tracking Number Card */}
-          <div className="bg-card border border-border/40 rounded-3xl p-6 shadow-xs space-y-4">
+          <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-border/20 pb-2.5">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Detail Pengiriman &amp; Resi
@@ -857,7 +871,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                   Nomor Resi Pengiriman
                 </span>
                 {order.trackingNumber ? (
-                  <div className="flex items-center justify-between p-2.5 bg-muted/20 border border-border/30 rounded-xl">
+                  <div className="flex items-center justify-between p-2.5 bg-muted/20 border border-border/30 rounded-lg">
                     <span className="font-mono font-bold text-xs text-foreground">
                       {order.trackingNumber}
                     </span>
@@ -881,11 +895,11 @@ export default function OrderDetailPage({ params }: PageProps) {
 
           {/* Admin Notes & Reason History */}
           {order.adminNotes && (
-            <div className="bg-card border border-border/40 rounded-3xl p-6 shadow-xs space-y-2">
+            <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Catatan Internal Admin
               </h3>
-              <p className="text-xs text-foreground italic p-3 bg-muted/20 border border-border/25 rounded-xl">
+              <p className="text-xs text-foreground italic p-3 bg-muted/20 border border-border/25 rounded-lg">
                 &ldquo;{order.adminNotes}&rdquo;
               </p>
             </div>
@@ -895,7 +909,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
       {/* Expedition Change Dialog */}
       <Dialog open={isExpeditionDialogOpen} onOpenChange={setIsExpeditionDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border/50 p-6 rounded-3xl">
+        <DialogContent className="sm:max-w-md bg-card border-border/50 p-6 rounded-xl">
           <DialogHeader className="space-y-1">
             <DialogTitle className="text-base font-bold text-foreground">
               Ubah Ekspedisi &amp; Ongkir Aktual
@@ -909,10 +923,10 @@ export default function OrderDetailPage({ params }: PageProps) {
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-foreground">Pilih Kurir</label>
               <Select value={courierName} onValueChange={(v) => v && setCourierName(v)}>
-                <SelectTrigger className="h-10 rounded-xl text-xs bg-muted/20">
+                <SelectTrigger className="h-10 rounded-lg text-xs bg-muted/20">
                   <SelectValue placeholder="Pilih Kurir" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl">
+                <SelectContent className="rounded-lg">
                   <SelectItem value="JNE Express (REG)">JNE Express (REG)</SelectItem>
                   <SelectItem value="J&T Express">J&T Express</SelectItem>
                   <SelectItem value="SiCepat Reguler">SiCepat Reguler</SelectItem>
@@ -931,7 +945,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                 placeholder="Masukkan resi..."
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                className="h-10 rounded-xl text-xs font-mono font-bold bg-muted/20"
+                className="h-10 rounded-lg text-xs font-mono font-bold bg-muted/20"
               />
             </div>
 
@@ -942,12 +956,12 @@ export default function OrderDetailPage({ params }: PageProps) {
               <RupiahInput
                 value={actualShippingFee}
                 onValueChange={setActualShippingFee}
-                className="h-10 rounded-xl text-xs bg-muted/20"
+                className="h-10 rounded-lg text-xs bg-muted/20"
               />
             </div>
 
             {hasShippingDifference && (
-              <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/30 text-xs font-semibold space-y-1">
+              <div className="p-3.5 rounded-lg bg-muted/20 border border-border/30 text-xs font-semibold space-y-1">
                 {shippingDifference > 0 ? (
                   <span className="text-foreground">
                     Kekurangan Ongkir: <strong>{formatIDR(shippingDifference)}</strong> (Tagihkan ke
@@ -968,7 +982,7 @@ export default function OrderDetailPage({ params }: PageProps) {
               type="button"
               variant="outline"
               onClick={() => setIsExpeditionDialogOpen(false)}
-              className="h-9 rounded-xl text-xs font-semibold"
+              className="h-9 rounded-lg text-xs font-semibold"
             >
               Batal
             </Button>
@@ -982,7 +996,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                 setIsExpeditionDialogOpen(false);
                 setIsExpeditionConfirmOpen(true);
               }}
-              className="h-9 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90"
+              className="h-9 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90"
             >
               Lanjutkan Konfirmasi
             </Button>
@@ -992,7 +1006,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
       {/* Expedition Surcharge / Refund Confirmation Dialog */}
       <Dialog open={isExpeditionConfirmOpen} onOpenChange={setIsExpeditionConfirmOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border/50 p-6 rounded-3xl">
+        <DialogContent className="sm:max-w-md bg-card border-border/50 p-6 rounded-xl">
           <DialogHeader className="space-y-1">
             <DialogTitle className="text-base font-bold text-foreground">
               Konfirmasi Ekspedisi &amp; Selisih
@@ -1014,7 +1028,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => setWaFollowedUp(true)}
-                  className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-bold bg-foreground text-background w-full"
+                  className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-xs font-bold bg-foreground text-background w-full"
                 >
                   <WhatsAppIcon size={14} className="h-3.5 w-3.5" />
                   <span>1. Kirim WA Kekurangan Ongkir</span>
@@ -1038,7 +1052,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => setWaFollowedUp(true)}
-                  className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-bold bg-foreground text-background w-full"
+                  className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-xs font-bold bg-foreground text-background w-full"
                 >
                   <WhatsAppIcon size={14} className="h-3.5 w-3.5" />
                   <span>1. Kirim WA Tawaran Refund</span>
@@ -1048,7 +1062,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                     type="button"
                     variant={shippingAdjustmentChoice === 'REFUND' ? 'default' : 'outline'}
                     onClick={() => setShippingAdjustmentChoice('REFUND')}
-                    className="h-9 rounded-xl text-xs font-bold"
+                    className="h-9 rounded-lg text-xs font-bold"
                   >
                     Customer minta refund
                   </Button>
@@ -1056,7 +1070,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                     type="button"
                     variant={shippingAdjustmentChoice === 'WAIVE' ? 'default' : 'outline'}
                     onClick={() => setShippingAdjustmentChoice('WAIVE')}
-                    className="h-9 rounded-xl text-xs font-bold"
+                    className="h-9 rounded-lg text-xs font-bold"
                   >
                     Customer ikhlas
                   </Button>
@@ -1067,7 +1081,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       placeholder="Alasan / no rekening refund..."
                       value={refundReason}
                       onChange={(e) => setRefundReason(e.target.value)}
-                      className="text-xs rounded-xl"
+                      className="text-xs rounded-lg"
                     />
                     <PaymentProofUpload
                       label="Unggah Bukti Transfer Refund"
@@ -1085,7 +1099,7 @@ export default function OrderDetailPage({ params }: PageProps) {
               type="button"
               variant="outline"
               onClick={() => setIsExpeditionConfirmOpen(false)}
-              className="h-9 rounded-xl text-xs font-semibold"
+              className="h-9 rounded-lg text-xs font-semibold"
             >
               Batal
             </Button>
@@ -1127,7 +1141,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                   toast.error('Gagal menyimpan konfirmasi');
                 }
               }}
-              className="h-9 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90"
+              className="h-9 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90"
             >
               {isUpdating ? 'Menyimpan...' : 'Simpan Perubahan'}
             </Button>
@@ -1137,7 +1151,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
       {/* Cancel / Reject Order Dialog */}
       <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border/50 p-6 rounded-3xl">
+        <DialogContent className="sm:max-w-md bg-card border-border/50 p-6 rounded-xl">
           <DialogHeader className="space-y-1">
             <DialogTitle className="text-base font-bold text-foreground">
               {cancelMode === 'REJECT' ? 'Konfirmasi Tolak Pesanan' : 'Konfirmasi Batalkan Pesanan'}
@@ -1156,7 +1170,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                 placeholder="Tuliskan alasan pembatalan..."
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                className="text-xs rounded-xl min-h-20"
+                className="text-xs rounded-lg min-h-20"
               />
             </div>
           </div>
@@ -1166,7 +1180,7 @@ export default function OrderDetailPage({ params }: PageProps) {
               type="button"
               variant="outline"
               onClick={() => setIsCancelDialogOpen(false)}
-              className="h-9 rounded-xl text-xs font-semibold"
+              className="h-9 rounded-lg text-xs font-semibold"
             >
               Batal
             </Button>
@@ -1187,9 +1201,73 @@ export default function OrderDetailPage({ params }: PageProps) {
                   toast.error('Gagal membatalkan pesanan');
                 }
               }}
-              className="h-9 rounded-xl text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-9 rounded-lg text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isUpdating ? 'Memproses...' : 'Konfirmasi Batalkan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bukti Pembayaran & Berkas Popup Modal */}
+      <Dialog
+        open={Boolean(selectedProof)}
+        onOpenChange={(open) => !open && setSelectedProof(null)}
+      >
+        <DialogContent className="sm:max-w-xl max-w-lg bg-card border-border/40 rounded-xl p-5 sm:p-6 shadow-xl space-y-4">
+          <DialogHeader className="space-y-1.5 border-b border-border/20 pb-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <DialogTitle className="text-sm font-bold text-foreground">
+                  {selectedProof?.label}
+                </DialogTitle>
+              </div>
+              {order && (
+                <Badge variant="outline" className="font-mono text-[10px]">
+                  #{order.orderNumber}
+                </Badge>
+              )}
+            </div>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {selectedProof?.desc} {order ? `• ${order.fullName}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Image / Document Preview Container */}
+          <div className="relative w-full max-h-[65vh] min-h-56 rounded-lg overflow-y-auto border border-border/30 bg-muted/20 flex items-center justify-center p-2">
+            {selectedProof?.url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={selectedProof.url}
+                alt={selectedProof.label}
+                className="max-h-[60vh] w-auto max-w-full object-contain rounded-md shadow-xs select-none"
+              />
+            ) : (
+              <div className="text-center py-12 text-xs text-muted-foreground">
+                Berkas tidak ditemukan.
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex items-center justify-between gap-2 pt-2 border-t border-border/20">
+            <a
+              href={selectedProof?.url || '#'}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span>Buka di Tab Baru</span>
+            </a>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setSelectedProof(null)}
+              className="h-8 rounded-lg text-xs font-semibold cursor-pointer"
+            >
+              Tutup
             </Button>
           </DialogFooter>
         </DialogContent>

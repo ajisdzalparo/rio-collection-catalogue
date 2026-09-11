@@ -62,7 +62,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-card border border-border/40 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 backdrop-blur-xl">
+        <div className="bg-card border border-border/40 rounded-xl p-6 sm:p-8 shadow-xl space-y-6 backdrop-blur-xl">
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-foreground">Selamat Datang Kembali</h2>
             <p className="text-xs text-muted-foreground">
@@ -71,7 +71,7 @@ export default function LoginPage() {
           </div>
 
           {(errorMessage || loginError) && (
-            <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold flex items-start gap-2.5">
+            <div className="p-3.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold flex items-start gap-2.5">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{errorMessage || (loginError as Error)?.message}</span>
             </div>
@@ -89,7 +89,7 @@ export default function LoginPage() {
                   placeholder="Masukkan alamat email Anda"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-11 text-xs rounded-xl bg-muted/20 border-border/40 focus:bg-background"
+                  className="pl-10 h-11 text-xs rounded-lg bg-muted/20 border-border/40 focus:bg-background"
                   required
                 />
               </div>
@@ -115,7 +115,7 @@ export default function LoginPage() {
                   placeholder="Masukkan kata sandi Anda"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 h-11 text-xs rounded-xl bg-muted/20 border-border/40 focus:bg-background"
+                  className="pl-10 h-11 text-xs rounded-lg bg-muted/20 border-border/40 focus:bg-background"
                   required
                 />
               </div>
@@ -124,7 +124,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isLoggingIn}
-              className="w-full h-11 rounded-xl font-bold text-xs gap-2 cursor-pointer bg-foreground text-background hover:bg-foreground/90 transition-all shadow-md"
+              className="w-full h-11 rounded-lg font-bold text-xs gap-2 cursor-pointer bg-foreground text-background hover:bg-foreground/90 transition-all shadow-md"
             >
               {isLoggingIn ? (
                 <>
@@ -149,7 +149,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleQuickLogin('ajis@riocollection.com')}
-                className="p-2 rounded-xl border border-border/30 bg-muted/10 hover:bg-muted/30 text-left transition-all text-[11px] cursor-pointer"
+                className="p-2 rounded-lg border border-border/30 bg-muted/10 hover:bg-muted/30 text-left transition-all text-[11px] cursor-pointer"
               >
                 <div className="font-bold text-foreground">Ajis</div>
                 <div className="text-[9px] text-muted-foreground truncate">Super Admin</div>
@@ -158,7 +158,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleQuickLogin('admin@riocollection.com')}
-                className="p-2 rounded-xl border border-border/30 bg-muted/10 hover:bg-muted/30 text-left transition-all text-[11px] cursor-pointer"
+                className="p-2 rounded-lg border border-border/30 bg-muted/10 hover:bg-muted/30 text-left transition-all text-[11px] cursor-pointer"
               >
                 <div className="font-bold text-foreground">Staff Admin</div>
                 <div className="text-[9px] text-muted-foreground truncate">Staff Operational</div>

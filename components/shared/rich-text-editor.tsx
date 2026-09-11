@@ -767,7 +767,7 @@ export function RichTextEditor({
 
       {/* Link Insertion Modal */}
       <Dialog open={isLinkModalOpen} onOpenChange={setIsLinkModalOpen}>
-        <DialogContent className="max-w-md rounded-3xl p-6">
+        <DialogContent className="max-w-md rounded-xl p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
               <LinkIcon className="h-5 w-5 text-foreground" />
@@ -847,7 +847,7 @@ export function RichTextEditor({
 
       {/* Image Upload / Embed Modal */}
       <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
-        <DialogContent className="max-w-md rounded-3xl p-6">
+        <DialogContent className="max-w-md rounded-xl p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
               <ImageIcon className="h-5 w-5 text-foreground" />

@@ -1,4 +1,4 @@
-import { StaggerTestimonials } from '@/components/ui/stagger-testimonials';
+import { TestimonyCarousel } from '@/components/catalogue/testimony-carousel';
 import type { Testimony } from '@/types/catalogue.types';
 
 interface TestimonySectionProps {
@@ -6,7 +6,9 @@ interface TestimonySectionProps {
 }
 
 export function TestimonySection({ testimonies }: TestimonySectionProps) {
-  const activeTestimonies = testimonies ? testimonies.filter((t) => t.status !== 'HIDDEN') : [];
+  const activeTestimonies = testimonies && testimonies.length > 0
+    ? testimonies.filter((t) => t.status !== 'HIDDEN')
+    : [];
 
   if (activeTestimonies.length === 0) {
     return null;
@@ -15,7 +17,7 @@ export function TestimonySection({ testimonies }: TestimonySectionProps) {
   return (
     <section className="mx-auto max-w-350 py-16 md:py-24 border-t border-(--cat-stone)/50 bg-(--cat-surface-bright)">
       {/* Header */}
-      <div className="text-center mb-6 px-4">
+      <div className="text-center mb-8 px-4">
         <h2 className="font-eb-garamond text-[28px] md:text-[40px] font-normal leading-tight text-(--cat-on-surface)">
           Bukti Percakapan Pelanggan
         </h2>
@@ -24,8 +26,8 @@ export function TestimonySection({ testimonies }: TestimonySectionProps) {
         </p>
       </div>
 
-      {/* Stagger Stacked Screenshots Deck */}
-      <StaggerTestimonials items={activeTestimonies} />
+      {/* Modern WhatsApp Chat Screenshots Carousel */}
+      <TestimonyCarousel items={activeTestimonies} />
     </section>
   );
 }

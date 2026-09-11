@@ -612,7 +612,9 @@ function MasterDataPageContent() {
 
         <Button
           onClick={handleOpenCreate}
-          className="gap-2 h-10 px-4 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs"
+          aria-label={activeTab === 'sizes' ? 'Tambah Ukuran' : 'Tambah Data'}
+          data-testid="add-master-button"
+          className="w-full sm:w-auto gap-2 h-10 px-4 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs shrink-0 shadow-sm"
         >
           <Plus className="h-4 w-4" />
           <span>{activeTab === 'sizes' ? 'Tambah Ukuran' : 'Tambah Data'}</span>
@@ -736,6 +738,8 @@ function MasterDataPageContent() {
             <button
               type="button"
               onClick={handleOpenCreate}
+              aria-label="Tambah Ukuran"
+              data-testid="add-size-card-button"
               className="h-14 flex items-center justify-center gap-2 px-4 font-bold border border-dashed border-border/60 hover:border-primary text-primary hover:bg-primary/5 rounded-2xl transition-all cursor-pointer select-none text-xs"
             >
               <Plus className="h-4 w-4" />

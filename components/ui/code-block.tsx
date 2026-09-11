@@ -34,7 +34,7 @@ export function CodeBlock({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-border/80 bg-[#18181B] text-zinc-100 font-mono shadow-sm',
+        'relative overflow-hidden rounded-xl border border-border/80 bg-[#18181B] text-zinc-100 font-mono shadow-sm',
         className
       )}
       {...props}
@@ -47,7 +47,7 @@ export function CodeBlock({
 
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 rounded-lg bg-zinc-800 px-2.5 py-1 text-[11px] font-bold text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white cursor-pointer"
+          className="flex items-center gap-1.5 rounded-md bg-zinc-800 px-2.5 py-1 text-[11px] font-bold text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white cursor-pointer"
         >
           {copied ? (
             <>

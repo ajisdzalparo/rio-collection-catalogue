@@ -9,7 +9,6 @@ import {
   Edit,
   Eye,
   EyeOff,
-  Upload,
   Calendar,
   ImageIcon,
   Info
@@ -19,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { SafeImage, CMSBadge } from '@/components/shared';
+import { ImageUpload } from '@/components/shared/image-upload';
 import { useTestimonies } from '@/hooks/use-testimonies';
 import type { Testimony } from '@/types/catalogue.types';
 import {
@@ -76,20 +76,6 @@ export default function TestimoniesCmsPage() {
       status: item.status || 'ACTIVE'
     });
     setDialogOpen(true);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          imageUrl: reader.result as string
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -219,9 +205,9 @@ export default function TestimoniesCmsPage() {
   ];
 
   return (
-    <div className="w-full space-y-8 p-6 md:p-8">
+    <div className="w-full space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-primary/10 text-primary">
@@ -237,7 +223,7 @@ export default function TestimoniesCmsPage() {
           </p>
         </div>
 
-        <Button onClick={handleOpenAdd} className="gap-2 shrink-0">
+        <Button onClick={handleOpenAdd} className="gap-2 shrink-0 cursor-pointer">
           <Plus size={16} />
           <span>Tambah Testimoni</span>
         </Button>
@@ -296,52 +282,14 @@ export default function TestimoniesCmsPage() {
                 File Screenshot / Gambar *
               </label>
 
-              <div className="space-y-3">
-                {formData.imageUrl ? (
-                  <div className="relative h-44 w-full rounded-xl overflow-hidden border border-border/60 bg-muted/20 flex items-center justify-center group">
-                    <Image src={formData.imageUrl} alt="Preview" fill className="object-contain" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <label className="px-3 py-1.5 bg-white text-black text-xs font-semibold rounded-lg cursor-pointer hover:bg-gray-100 transition-colors flex items-center gap-1.5">
-                        <Upload size={14} />
-                        Ganti Gambar
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center h-36 border-2 border-dashed border-border/80 rounded-xl hover:border-primary/50 bg-muted/10 cursor-pointer transition-colors p-4">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
-                    <span className="text-xs font-semibold text-foreground">
-                      Klik untuk Upload Screenshot Chat
-                    </span>
-                    <span className="text-[11px] text-muted-foreground mt-0.5">
-                      PNG, JPG, WEBP (Maksimal 5MB)
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-muted-foreground shrink-0">
-                    atau URL Gambar:
-                  </span>
-                  <Input
-                    value={formData.imageUrl.startsWith('data:') ? '' : formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    placeholder="https://..."
-                    className="text-xs h-8"
-                  />
-                </div>
+              <div className="space-y-2">
+                <ImageUpload
+                  value={formData.imageUrl}
+                  onChange={(url) => setFormData((prev) => ({ ...prev, imageUrl: url }))}
+                  aspectRatio="9:16"
+                  placeholder="Pilih atau drop screenshot chat WhatsApp (9:16)"
+                  helperText="Foto otomatis dipotong dengan rasio portrait 9:16 agar pas dengan kartu testimoni"
+                />
               </div>
             </div>
 

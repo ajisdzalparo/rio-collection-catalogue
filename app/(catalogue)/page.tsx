@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { TestimonySection } from '@/components/catalogue/testimony-section';
 
 export const metadata: Metadata = {
-  title: 'RIO COLLECTION — Limited Archival T-Shirt Catalogue',
+  title: 'Limited Archival T-Shirt Catalogue',
   description:
     'Discover limited T-shirt drops, archival past designs, and brand stories from RIO COLLECTION. Independent limited T-shirt brand & archival catalogue.',
   openGraph: {

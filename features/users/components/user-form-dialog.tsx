@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { FormInput, FormSelect } from '@/components/shared';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { userSchema, type UserFormValues } from '../schemas/schema';
 import { useCreateUserMutation } from '../api/create-user';
@@ -25,11 +27,6 @@ interface UserFormDialogProps {
   onOpenChange: (open: boolean) => void;
   user?: User | null;
 }
-
-const statusOptions = [
-  { label: 'Active', value: 'active' },
-  { label: 'Inactive', value: 'inactive' }
-];
 
 export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps) {
   const isEditing = !!user;
@@ -155,15 +152,41 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
           <Controller
             name="status"
             control={control}
-            render={({ field }) => (
-              <FormSelect
-                label="Status"
-                value={field.value}
-                onValueChange={field.onChange}
-                options={statusOptions}
-                error={errors.status?.message}
-              />
-            )}
+            render={({ field }) => {
+              const isActive = field.value === 'active';
+              return (
+                <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/15 p-3.5 shadow-2xs">
+                  <div className="space-y-0.5">
+                    <label
+                      htmlFor="user-status-switch"
+                      className="text-xs font-bold text-foreground cursor-pointer"
+                    >
+                      Status
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      {isActive
+                        ? 'Pengguna aktif dan dapat login ke dashboard'
+                        : 'Pengguna nonaktif (akses diblokir)'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={cn(
+                        'text-xs font-semibold select-none',
+                        isActive ? 'text-emerald-500 font-bold' : 'text-muted-foreground'
+                      )}
+                    >
+                      {isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    <Switch
+                      id="user-status-switch"
+                      checked={isActive}
+                      onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'inactive')}
+                    />
+                  </div>
+                </div>
+              );
+            }}
           />
 
           <DialogFooter className="pt-4 gap-2 sm:gap-0">

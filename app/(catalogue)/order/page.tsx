@@ -12,10 +12,17 @@ import type { Product } from '@/types/catalogue.types';
 import { CaptchaChallenge } from '@/components/catalogue/captcha-challenge';
 import { SearchableSelect } from '@/components/catalogue/searchable-select';
 import { isOrderableStatus } from '@/lib/product-availability';
+import { withActionLoading } from '@/hooks/use-action-loading';
 
 interface ShippingOption {
-  key: string; label: string; cost: number; courier: string; etd: string;
-  courierCode: string; service: string; destination: string;
+  key: string;
+  label: string;
+  cost: number;
+  courier: string;
+  etd: string;
+  courierCode: string;
+  service: string;
+  destination: string;
 }
 
 export default function OrderPage() {
@@ -46,23 +53,21 @@ export default function OrderPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(process.env.NODE_ENV !== 'production');
-  const [captchaToken, setCaptchaToken] = useState(process.env.NODE_ENV !== 'production' ? 'dev-testing-token' : '');
+  const [captchaToken, setCaptchaToken] = useState(
+    process.env.NODE_ENV !== 'production' ? 'dev-testing-token' : ''
+  );
   const [captchaReset, setCaptchaReset] = useState(0);
   const [submitError, setSubmitError] = useState('');
 
   // Dynamic Shipping Locations & Rates
-  const [provinces, setProvinces] = useState<
-    Array<{ province_id: string; province: string }>
-  >([]);
+  const [provinces, setProvinces] = useState<Array<{ province_id: string; province: string }>>([]);
   const [cities, setCities] = useState<
     Array<{ city_id: string; province_id: string; city_name: string; type: string }>
   >([]);
   const [subdistricts, setSubdistricts] = useState<
     Array<{ subdistrict_id: string; subdistrict_name: string; postal_code?: string }>
   >([]);
-  const [rajaRates, setRajaRates] = useState<
-    ShippingOption[]
-  >([]);
+  const [rajaRates, setRajaRates] = useState<ShippingOption[]>([]);
   const [isShippingLoading, setIsShippingLoading] = useState(false);
 
   useEffect(() => {
@@ -90,7 +95,9 @@ export default function OrderPage() {
     getProducts().then((prods) => {
       if (prods.length > 0) {
         const found = productSlug ? prods.find((p) => p.slug === productSlug) : null;
-        setProduct(productSlug ? found || null : prods.find((p) => isOrderableStatus(p.status)) || null);
+        setProduct(
+          productSlug ? found || null : prods.find((p) => isOrderableStatus(p.status)) || null
+        );
       }
     });
 
@@ -376,32 +383,38 @@ export default function OrderPage() {
     const fullAddress = `${formData.streetAddress}${formData.district ? `, Kec. ${formData.district}` : ''}, ${formData.city}, ${formData.province}${formData.postalCode ? ` ${formData.postalCode}` : ''}`;
 
     try {
-      const res = await submitOrder({
-        fullName: formData.fullName,
-        whatsapp: formData.whatsapp,
-        address: fullAddress,
-        notes: '',
-        totalPrice,
-        shippingFee,
-        captchaToken,
-        shipping: {
-          destination: selectedRate!.destination,
-          courier: selectedRate!.courierCode,
-          service: selectedRate!.service
-        },
-        items: [
-          {
-            productId: product.id,
-            color: selectedColor || product.color,
-            size: selectedSize || 'M',
-            quantity
-          }
-        ]
-      });
+      const res = await withActionLoading(
+        () =>
+          submitOrder({
+            fullName: formData.fullName,
+            whatsapp: formData.whatsapp,
+            address: fullAddress,
+            notes: '',
+            totalPrice,
+            shippingFee,
+            captchaToken,
+            shipping: {
+              destination: selectedRate!.destination,
+              courier: selectedRate!.courierCode,
+              service: selectedRate!.service
+            },
+            items: [
+              {
+                productId: product.id,
+                color: selectedColor || product.color,
+                size: selectedSize || 'M',
+                quantity
+              }
+            ]
+          }),
+        'Mengirim pesanan Anda...'
+      );
       const orderNum = res.data.orderNumber;
       router.push(`/order/confirmation/${orderNum}`);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Pesanan gagal dikirim. Silakan coba lagi.');
+      setSubmitError(
+        error instanceof Error ? error.message : 'Pesanan gagal dikirim. Silakan coba lagi.'
+      );
       if (process.env.NODE_ENV === 'production') {
         setIsCaptchaVerified(false);
         setCaptchaToken('');
@@ -419,7 +432,8 @@ export default function OrderPage() {
     isOrderableStatus(product.status) &&
     !!selectedVariant?.inStock &&
     (product.stockMode === 'ALWAYS_AVAILABLE' || (selectedVariant.stock ?? 0) >= quantity) &&
-    !!selectedRate && !isShippingLoading &&
+    !!selectedRate &&
+    !isShippingLoading &&
     !!formData.fullName.trim() &&
     !!formData.whatsapp.trim() &&
     !!formData.province &&
@@ -695,7 +709,8 @@ export default function OrderPage() {
                 <SearchableSelect
                   value={formData.courierService}
                   onValueChange={(val) => setFormData({ ...formData, courierService: val })}
-                  options={rajaRates.filter((rate) => activeCourierCodes.includes(rate.courierCode))
+                  options={rajaRates
+                    .filter((rate) => activeCourierCodes.includes(rate.courierCode))
                     .map((rate) => ({ label: rate.label, value: rate.key }))}
                   placeholder={
                     isShippingLoading ? 'Memuat tarif ongkir...' : 'Pilih Layanan Pengiriman'
@@ -728,15 +743,34 @@ export default function OrderPage() {
               <div className="pt-4 border-t border-(--cat-stone)">
                 <CaptchaChallenge
                   key={captchaReset}
-                  onVerify={(verified, token) => { setIsCaptchaVerified(verified); setCaptchaToken(token || ''); }}
+                  onVerify={(verified, token) => {
+                    setIsCaptchaVerified(verified);
+                    setCaptchaToken(token || '');
+                  }}
                   isVerified={isCaptchaVerified}
                 />
               </div>
 
               {/* Submit Button */}
-              {submitError && <p role="alert" className="text-sm text-red-700">{submitError}</p>}
-              {!isShippingLoading && !selectedRate && <p role="status" className="text-sm">Tarif pengiriman belum tersedia. Pilih ulang kota atau muat ulang halaman.</p>}
-              {product && (!isOrderableStatus(product.status) || !selectedVariant?.inStock) && <p role="alert" className="text-sm">Produk atau ukuran tidak tersedia. <Link href={`/products/${product.slug}`} className="underline">Pilih ulang produk</Link>.</p>}
+              {submitError && (
+                <p role="alert" className="text-sm text-red-700">
+                  {submitError}
+                </p>
+              )}
+              {!isShippingLoading && !selectedRate && (
+                <p role="status" className="text-sm">
+                  Tarif pengiriman belum tersedia. Pilih ulang kota atau muat ulang halaman.
+                </p>
+              )}
+              {product && (!isOrderableStatus(product.status) || !selectedVariant?.inStock) && (
+                <p role="alert" className="text-sm">
+                  Produk atau ukuran tidak tersedia.{' '}
+                  <Link href={`/products/${product.slug}`} className="underline">
+                    Pilih ulang produk
+                  </Link>
+                  .
+                </p>
+              )}
               <div className="pt-4">
                 <button
                   type="submit"
