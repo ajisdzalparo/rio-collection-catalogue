@@ -4,7 +4,6 @@ import * as React from 'react';
 import { WifiOff, RefreshCw, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
 
 function useOnlineStatus() {
   return React.useSyncExternalStore(
@@ -16,7 +15,7 @@ function useOnlineStatus() {
         window.removeEventListener('offline', callback);
       };
     },
-    () => navigator.onLine,
+    () => (typeof navigator !== 'undefined' ? navigator.onLine : true),
     () => true
   );
 }
@@ -51,15 +50,14 @@ export function OfflineDetector() {
     }
   };
 
+  if (!isOffline && !showReconnected) return null;
+
   return (
-    <AnimatePresence>
+    <>
       {isOffline && (
-        <motion.div
-          initial={{ y: -60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -60, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-          className="fixed top-4 left-1/2 z-100 -translate-x-1/2 w-[92%] max-w-md rounded-2xl border border-destructive/30 bg-card/95 p-3.5 shadow-2xl backdrop-blur-xl"
+        <div
+          role="alert"
+          className="fixed top-4 left-1/2 z-100 -translate-x-1/2 w-[92%] max-w-md rounded-2xl border border-destructive/30 bg-card/95 p-3.5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-4 fade-in duration-200"
         >
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -87,16 +85,13 @@ export function OfflineDetector() {
               <span>{isChecking ? 'Cek...' : 'Coba Lagi'}</span>
             </Button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {showReconnected && !isOffline && (
-        <motion.div
-          initial={{ y: -60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -60, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-          className="fixed top-4 left-1/2 z-100 -translate-x-1/2 w-[92%] max-w-md rounded-2xl border border-emerald-500/30 bg-card/95 p-3.5 shadow-2xl backdrop-blur-xl"
+        <div
+          role="status"
+          className="fixed top-4 left-1/2 z-100 -translate-x-1/2 w-[92%] max-w-md rounded-2xl border border-emerald-500/30 bg-card/95 p-3.5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-4 fade-in duration-200"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
@@ -109,8 +104,8 @@ export function OfflineDetector() {
               </span>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

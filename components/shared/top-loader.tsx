@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export function TopLoader() {
   const pathname = usePathname();
@@ -16,10 +15,10 @@ export function TopLoader() {
 
   const startLoading = React.useCallback(() => {
     setIsLoading(true);
-    setProgress(15);
+    setProgress(20);
 
-    const timer1 = setTimeout(() => setProgress(45), 100);
-    const timer2 = setTimeout(() => setProgress(75), 250);
+    const timer1 = setTimeout(() => setProgress(55), 100);
+    const timer2 = setTimeout(() => setProgress(80), 250);
 
     return () => {
       clearTimeout(timer1);
@@ -76,24 +75,18 @@ export function TopLoader() {
     };
   }, [startLoading]);
 
+  if (!isLoading && progress === 0) return null;
+
   return (
-    <AnimatePresence>
-      {isLoading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="fixed top-0 left-0 right-0 z-99999 pointer-events-none h-1 bg-transparent"
-        >
-          <motion.div
-            initial={{ width: '0%' }}
-            animate={{ width: `${progress}%` }}
-            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            className="h-full bg-(--cat-charcoal,var(--primary,#18181b)) shadow-[0_0_8px_rgba(26,26,26,0.3)]"
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div
+      aria-hidden="true"
+      className="fixed top-0 left-0 right-0 z-99999 pointer-events-none h-1 bg-transparent transition-opacity duration-200"
+      style={{ opacity: isLoading ? 1 : 0 }}
+    >
+      <div
+        className="h-full bg-(--cat-charcoal,var(--primary,#18181b)) shadow-[0_0_8px_rgba(26,26,26,0.3)] transition-all duration-300 ease-out"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
   );
 }
