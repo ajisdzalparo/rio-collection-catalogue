@@ -1,6 +1,7 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   devIndicators: false,
   images: {
     dangerouslyAllowLocalIP: true,
@@ -9,11 +10,6 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: 'localhost',
         port: '9000',
-        pathname: '/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
         pathname: '/**'
       },
       {
