@@ -177,6 +177,14 @@ export function ImageUpload({
 
   return (
     <div className={cn('w-full space-y-1.5', className)}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {hasImage ? (
         // Preview State
         <div
@@ -283,13 +291,6 @@ export function ImageUpload({
               : 'hover:border-foreground/40 hover:bg-muted/20'
           )}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
 
           {isUploading ? (
             <div className="flex flex-col items-center gap-2">
