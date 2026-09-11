@@ -4,15 +4,15 @@ import * as React from 'react';
 import { Search, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export interface SearchableSelectOption {
+export interface DashboardSearchableSelectOption {
   label: string;
   value: string;
 }
 
-export interface SearchableSelectProps {
+export interface DashboardSearchableSelectProps {
   value: string;
   onValueChange: (val: string) => void;
-  options: Array<SearchableSelectOption | string>;
+  options: Array<DashboardSearchableSelectOption | string>;
   placeholder?: string;
   searchPlaceholder?: string;
   disabled?: boolean;
@@ -20,7 +20,7 @@ export interface SearchableSelectProps {
   className?: string;
 }
 
-export function SearchableSelect({
+export function DashboardSearchableSelect({
   value,
   onValueChange,
   options,
@@ -29,13 +29,13 @@ export function SearchableSelect({
   disabled = false,
   isLoading = false,
   className
-}: SearchableSelectProps) {
+}: DashboardSearchableSelectProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const containerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
-  const normalizedOptions: SearchableSelectOption[] = React.useMemo(() => {
+  const normalizedOptions: DashboardSearchableSelectOption[] = React.useMemo(() => {
     return options.map((opt) => (typeof opt === 'string' ? { label: opt, value: opt } : opt));
   }, [options]);
 
@@ -49,7 +49,6 @@ export function SearchableSelect({
     return normalizedOptions.find((opt) => opt.value === value);
   }, [normalizedOptions, value]);
 
-  // Handle click outside to close popover
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -60,7 +59,6 @@ export function SearchableSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Focus search input when popover opens
   React.useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -80,19 +78,18 @@ export function SearchableSelect({
 
   return (
     <div ref={containerRef} className={cn('relative w-full', className)}>
-      {/* Trigger Button */}
       <button
         type="button"
         disabled={disabled || isLoading}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          'w-full flex items-center justify-between gap-2 bg-transparent border-0 border-b border-(--cat-stone) py-2 px-0 font-hanken text-[14px] text-(--cat-on-surface) outline-none transition-colors text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
-          isOpen && 'border-(--cat-charcoal)'
+          'w-full flex items-center justify-between gap-2 h-10 rounded-xl bg-background border border-input px-3.5 py-2 font-sans text-xs font-semibold text-foreground outline-none transition-all shadow-2xs hover:bg-muted/20 focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer',
+          isOpen && 'border-primary ring-2 ring-primary/20'
         )}
       >
-        <span className={cn('truncate', !selectedOption && 'text-(--cat-outline-variant)')}>
+        <span className={cn('truncate', !selectedOption && 'text-muted-foreground')}>
           {isLoading ? (
-            <span className="flex items-center gap-1.5 text-amber-600">
+            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
               <Loader2 size={14} className="animate-spin" />
               <span>Memuat data...</span>
             </span>
@@ -102,27 +99,24 @@ export function SearchableSelect({
         </span>
         <ChevronDown
           size={16}
-          className={cn('opacity-60 shrink-0 transition-transform duration-200 text-(--cat-on-surface)', isOpen && 'rotate-180')}
+          className={cn('opacity-60 shrink-0 transition-transform duration-200', isOpen && 'rotate-180')}
         />
       </button>
 
-      {/* Popover Dropdown with Live Search (100% Catalogue Light Theme) */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 w-full max-h-72 bg-(--cat-surface-container-lowest) border border-(--cat-stone) rounded-xl shadow-xl z-50 overflow-hidden flex flex-col text-(--cat-on-surface) animate-in fade-in-0 zoom-in-95 duration-100">
-          {/* Search Input Field */}
-          <div className="p-2.5 border-b border-(--cat-stone) bg-(--cat-surface-container-low) flex items-center gap-2">
-            <Search size={14} className="opacity-50 shrink-0 text-(--cat-on-surface-variant)" />
+        <div className="absolute left-0 top-full mt-1.5 w-full max-h-72 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col bg-popover border border-border text-popover-foreground animate-in fade-in-0 zoom-in-95 duration-100">
+          <div className="p-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
+            <Search size={14} className="opacity-50 shrink-0 text-muted-foreground" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full bg-transparent font-hanken text-xs text-(--cat-on-surface) outline-none placeholder:text-(--cat-outline-variant)"
+              className="w-full bg-transparent font-sans text-xs text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>
 
-          {/* Options List */}
           <div className="overflow-y-auto max-h-56 p-1 space-y-0.5">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt) => {
@@ -133,10 +127,10 @@ export function SearchableSelect({
                     type="button"
                     onClick={() => handleSelect(opt.value)}
                     className={cn(
-                      'w-full flex items-center justify-between px-3 py-2 rounded-lg font-hanken text-xs text-left transition-colors cursor-pointer',
+                      'w-full flex items-center justify-between px-3 py-2 rounded-lg font-sans text-xs text-left transition-colors cursor-pointer',
                       isSelected
-                        ? 'bg-(--cat-charcoal) text-white font-medium'
-                        : 'hover:bg-(--cat-surface-container-low) text-(--cat-on-surface)'
+                        ? 'bg-primary text-primary-foreground font-medium'
+                        : 'hover:bg-muted text-foreground'
                     )}
                   >
                     <span className="truncate">{opt.label}</span>
@@ -145,7 +139,7 @@ export function SearchableSelect({
                 );
               })
             ) : (
-              <div className="px-3 py-4 text-center font-hanken text-xs text-(--cat-on-surface-variant)">
+              <div className="px-3 py-4 text-center font-sans text-xs text-muted-foreground">
                 Tidak ada data yang cocok dengan &quot;{searchQuery}&quot;
               </div>
             )}

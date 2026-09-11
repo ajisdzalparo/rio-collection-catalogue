@@ -37,7 +37,7 @@ import {
   type WhatsAppTemplates
 } from '@/components/dashboard/whatsapp-template-editor';
 import { INDONESIA_MASTER_LOCATIONS } from '@/lib/indonesia-locations';
-import { SearchableSelect } from '@/components/catalogue/searchable-select';
+import { DashboardSearchableSelect } from '@/components/dashboard/dashboard-searchable-select';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
@@ -470,10 +470,9 @@ export default function StoreSettingsPage() {
                       <Label className="text-[11px] font-medium text-muted-foreground">
                         Provinsi Asal Toko
                       </Label>
-                      <SearchableSelect
-                        variant="dashboard"
+                      <DashboardSearchableSelect
                         value={originProvinceName}
-                        onValueChange={(val) => {
+                        onValueChange={(val: string) => {
                           setOriginProvinceName(val);
                           const cities = INDONESIA_MASTER_LOCATIONS[val] || [];
                           if (cities.length > 0) {
@@ -494,13 +493,12 @@ export default function StoreSettingsPage() {
                       <Label className="text-[11px] font-medium text-muted-foreground">
                         Kota / Kabupaten Asal Toko
                       </Label>
-                      <SearchableSelect
-                        variant="dashboard"
+                      <DashboardSearchableSelect
                         value={originCityName}
-                        onValueChange={(val) => {
+                        onValueChange={(val: string) => {
                           const cities = INDONESIA_MASTER_LOCATIONS[originProvinceName] || [];
                           const matched = cities.find(
-                            (c) => c.name.toLowerCase() === val.toLowerCase()
+                            (c: { name: string; defaultId: string }) => c.name.toLowerCase() === val.toLowerCase()
                           );
                           setOriginCityName(val);
                           if (matched) {
@@ -508,7 +506,7 @@ export default function StoreSettingsPage() {
                           }
                         }}
                         options={(INDONESIA_MASTER_LOCATIONS[originProvinceName] || []).map(
-                          (c) => ({
+                          (c: { type: string; name: string }) => ({
                             label: `${c.type} ${c.name}`,
                             value: c.name
                           })
