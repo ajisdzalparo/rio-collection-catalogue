@@ -380,7 +380,21 @@ export default function OrderPage() {
     setIsSubmitting(true);
     setSubmitError('');
 
-    const fullAddress = `${formData.streetAddress}${formData.district ? `, Kec. ${formData.district}` : ''}, ${formData.city}, ${formData.province}${formData.postalCode ? ` ${formData.postalCode}` : ''}`;
+    const cleanDistrict = formData.district
+      ? formData.district.trim().toLowerCase().startsWith('kec.')
+        ? formData.district.trim()
+        : `Kec. ${formData.district.trim()}`
+      : '';
+
+    const fullAddress = [
+      formData.streetAddress.trim(),
+      cleanDistrict,
+      formData.city.trim(),
+      formData.province.trim(),
+      formData.postalCode.trim()
+    ]
+      .filter(Boolean)
+      .join(', ');
 
     try {
       const res = await withActionLoading(

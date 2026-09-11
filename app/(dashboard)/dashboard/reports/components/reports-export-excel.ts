@@ -62,7 +62,7 @@ export async function exportReportToExcel({
       { key: 'cogs', width: 20 },          // L: Total HPP (Rp)
       { key: 'profit', width: 22 },        // M: Estimasi Laba Kotor (Rp)
       { key: 'margin', width: 14 },        // N: Margin (%)
-      { key: 'address', width: 42 }        // O: Alamat Pengiriman
+      { key: 'address', width: 55 }        // O: Alamat Pengiriman (Wider to fit Indonesian full address)
     ];
 
     // ==========================================
@@ -281,7 +281,7 @@ export async function exportReportToExcel({
             cell.numFmt = PERCENT_FORMAT;
             cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF475569' } };
           } else if (colNumber === 15) {
-            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+            cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
           }
         });
 
