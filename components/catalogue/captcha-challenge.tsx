@@ -15,28 +15,26 @@ export function CaptchaChallenge({ onVerify, isVerified }: CaptchaChallengeProps
   const isProduction = process.env.NODE_ENV === 'production';
 
   useEffect(() => {
-    // If siteKey was not baked at build time, fetch it dynamically from server at runtime
-    if (!siteKey) {
-      let isMounted = true;
-      fetch('/api/v1/public-config')
-        .then((res) => res.json())
-        .then((data) => {
-          if (isMounted && data?.recaptchaSiteKey) {
-            setSiteKey(data.recaptchaSiteKey);
-          }
-        })
-        .catch((err) => console.error('Failed to load recaptcha config:', err))
-        .finally(() => {
-          if (isMounted) {
-            setIsLoading(false);
-          }
-        });
+    // Always fetch latest runtime config from server so Dokploy env changes take effect
+    let isMounted = true;
+    fetch('/api/v1/public-config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data?.recaptchaSiteKey) {
+          setSiteKey(data.recaptchaSiteKey);
+        }
+      })
+      .catch((err) => console.error('Failed to load recaptcha config:', err))
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
 
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [siteKey]);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isProduction && !isVerified) {
