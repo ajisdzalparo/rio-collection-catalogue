@@ -270,7 +270,8 @@ export default function TestimoniesCmsPage() {
               {editingItem ? 'Edit Screenshot Testimoni' : 'Tambah Screenshot Testimoni'}
             </DialogTitle>
             <DialogDescription>
-              Upload file gambar tangkapan layar percakapan WhatsApp untuk ditampilkan di slider testimoni katalog.
+              Upload file gambar tangkapan layar percakapan WhatsApp untuk ditampilkan di slider
+              testimoni katalog.
             </DialogDescription>
           </DialogHeader>
 
@@ -349,7 +350,8 @@ export default function TestimoniesCmsPage() {
                     <span>Panduan Format Gambar</span>
                   </p>
                   <p>
-                    Gunakan format vertikal (9:16). Gambar akan otomatis di-crop dan dioptimalkan ke format WebP ringan saat diunggah.
+                    Gunakan format vertikal (9:16). Gambar akan otomatis di-crop dan dioptimalkan ke
+                    format WebP ringan saat diunggah.
                   </p>
                 </div>
               </div>

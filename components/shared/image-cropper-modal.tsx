@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Check,
@@ -54,13 +55,20 @@ function resolveRatioNumber(option?: AspectRatioOption): number | null {
 }
 
 export function ImageCropperModal(props: ImageCropperModalProps) {
-  if (!props.isOpen) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || !props.isOpen) return null;
+
+  return createPortal(
     <ImageCropperModalContent
       key={`${props.imageSrc}-${props.defaultAspectRatio ?? '3:4'}`}
       {...props}
-    />
+    />,
+    document.body
   );
 }
 
@@ -362,10 +370,10 @@ function ImageCropperModalContent({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-0 sm:p-4 md:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full h-full sm:h-[86vh] md:h-[82vh] sm:max-h-205 max-w-4xl lg:max-w-5xl bg-card border-0 sm:border border-border rounded-none sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-2 sm:p-5 md:p-6 animate-in fade-in duration-200">
+      <div className="relative w-full h-[92vh] sm:h-[88vh] max-h-200 max-w-4xl lg:max-w-5xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-3.5 py-2.5 sm:px-5 sm:py-3.5 border-b border-border bg-muted/20 shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-border bg-muted/20 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="p-1.5 sm:p-2 rounded-xl bg-primary/10 text-primary shrink-0">
               <CropIcon className="h-4 w-4" />
@@ -436,7 +444,7 @@ function ImageCropperModalContent({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onWheel={handleWheel}
-          className="relative flex-1 w-full min-h-75 sm:min-h-110 md:min-h-125 bg-neutral-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
+          className="relative flex-1 min-h-0 w-full bg-neutral-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
         >
           {/* Hidden natural image reference to calculate sizes */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
