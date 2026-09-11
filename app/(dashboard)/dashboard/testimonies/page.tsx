@@ -264,71 +264,104 @@ export default function TestimoniesCmsPage() {
 
       {/* Form Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingItem ? 'Edit Screenshot Testimoni' : 'Tambah Screenshot Testimoni'}
             </DialogTitle>
             <DialogDescription>
-              Upload file gambar tangkapan layar percakapan WhatsApp untuk ditampilkan di halaman
-              depan katalog.
+              Upload file gambar tangkapan layar percakapan WhatsApp untuk ditampilkan di slider testimoni katalog.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4 py-2">
-            {/* Image Upload Area */}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                File Screenshot / Gambar *
-              </label>
-
-              <div className="space-y-2">
-                <ImageUpload
-                  value={formData.imageUrl}
-                  onChange={(url) => setFormData((prev) => ({ ...prev, imageUrl: url }))}
-                  aspectRatio="9:16"
-                  placeholder="Pilih atau drop screenshot chat WhatsApp (9:16)"
-                  helperText="Foto otomatis dipotong dengan rasio portrait 9:16 agar pas dengan kartu testimoni"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Keterangan / Nama Klien (Opsional)
-              </label>
-              <Input
-                value={formData.clientName}
-                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                placeholder="Misal: Harish Prabha - Chennai"
-              />
-            </div>
-
-            <div className="flex items-center justify-between rounded-xl border border-border/60 p-3 bg-muted/10">
-              <div className="space-y-0.5">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-start">
+              {/* Left Column: Image Upload (9:16 Portrait) */}
+              <div className="md:col-span-5 space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Status Tampil
+                  File Screenshot / Gambar *
                 </label>
-                <span className="text-xs text-muted-foreground">
-                  {formData.status === 'ACTIVE' ? 'Aktif (Tampil di Katalog)' : 'Disembunyikan'}
-                </span>
+                <div className="rounded-xl border border-border/40 bg-muted/10 p-3">
+                  <ImageUpload
+                    value={formData.imageUrl}
+                    onChange={(url) => setFormData((prev) => ({ ...prev, imageUrl: url }))}
+                    aspectRatio="9:16"
+                    placeholder="Pilih screenshot WhatsApp (9:16)"
+                    helperText="Foto otomatis dipotong rasio 9:16 agar presisi"
+                  />
+                </div>
               </div>
-              <Switch
-                checked={formData.status === 'ACTIVE'}
-                onCheckedChange={(checked) =>
-                  setFormData({
-                    ...formData,
-                    status: checked ? 'ACTIVE' : 'HIDDEN'
-                  })
-                }
-              />
+
+              {/* Right Column: Details & Status */}
+              <div className="md:col-span-7 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Keterangan / Nama Klien (Opsional)
+                  </label>
+                  <Input
+                    value={formData.clientName}
+                    onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                    placeholder="Misal: Harish Prabha - Jakarta"
+                    className="h-10 text-sm"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Nama pelanggan atau keterangan singkat pesanan.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Teks Deskripsi / Alt Gambar
+                  </label>
+                  <Input
+                    value={formData.alt}
+                    onChange={(e) => setFormData({ ...formData, alt: e.target.value })}
+                    placeholder="Misal: Bukti kepuasan pelanggan order Heavy-Weight Tee"
+                    className="h-10 text-sm"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl border border-border/60 p-3.5 bg-muted/10">
+                  <div className="space-y-0.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground">
+                      Status Tampil di Katalog
+                    </label>
+                    <span className="text-xs text-muted-foreground">
+                      {formData.status === 'ACTIVE'
+                        ? '🟢 Aktif (Tampil di beranda katalog)'
+                        : '⚪ Disembunyikan (Tidak tampil ke publik)'}
+                    </span>
+                  </div>
+                  <Switch
+                    checked={formData.status === 'ACTIVE'}
+                    onCheckedChange={(checked) =>
+                      setFormData({
+                        ...formData,
+                        status: checked ? 'ACTIVE' : 'HIDDEN'
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="p-3 rounded-xl bg-primary/5 border border-primary/15 text-[11px] text-muted-foreground space-y-1">
+                  <p className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Info className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span>Panduan Format Gambar</span>
+                  </p>
+                  <p>
+                    Gunakan format vertikal (9:16). Gambar akan otomatis di-crop dan dioptimalkan ke format WebP ringan saat diunggah.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <DialogFooter className="pt-4">
+            <DialogFooter className="pt-4 border-t border-border/40 gap-2">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit">{editingItem ? 'Simpan Perubahan' : 'Upload Testimoni'}</Button>
+              <Button type="submit" className="font-bold">
+                {editingItem ? 'Simpan Perubahan' : 'Upload Testimoni'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
