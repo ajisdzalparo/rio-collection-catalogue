@@ -38,8 +38,8 @@ export default async function JournalPage() {
     );
   }
 
-  const featuredArticle = journals[1] || journals[0]; // "Melihat di Balik Layar"
-  const recentArticles = featuredArticle ? journals.filter((a) => a.id !== featuredArticle.id).slice(0, 3) : [];
+  const featuredArticle = journals[0];
+  const recentArticles = journals.filter((a) => a.id !== featuredArticle?.id);
 
   return (
     <>
@@ -54,59 +54,64 @@ export default async function JournalPage() {
       </section>
 
       {/* Featured Article */}
-      <section className="mx-auto max-w-350 px-4 md:px-16 pb-12 md:pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-          {/* Left: Text */}
-          <div className="order-2 md:order-1">
-            <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-              {featuredArticle.category}
-            </span>
-            <h2 className="mt-3 font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
-              {featuredArticle.title}
-            </h2>
-            <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
-              {featuredArticle.excerpt}
-            </p>
-            <div className="mt-6">
-              <Link
-                href={`/journal/${featuredArticle.slug}`}
-                className="inline-flex items-center gap-1.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) border-b border-(--cat-on-surface) pb-0.5 hover:opacity-70 transition-opacity duration-150"
-              >
-                Baca Selengkapnya
-                <ArrowRight size={12} strokeWidth={2} />
-              </Link>
+      {featuredArticle && (
+        <section className="mx-auto max-w-350 px-4 md:px-16 pb-12 md:pb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+            {/* Left: Text */}
+            <div className="order-2 md:order-1">
+              <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+                {featuredArticle.category}
+              </span>
+              <h2 className="mt-3 font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
+                {featuredArticle.title}
+              </h2>
+              <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
+                {featuredArticle.excerpt}
+              </p>
+              <div className="mt-6">
+                <Link
+                  href={`/journal/${featuredArticle.slug}`}
+                  className="inline-flex items-center gap-1.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) border-b border-(--cat-on-surface) pb-0.5 hover:opacity-70 transition-opacity duration-150"
+                >
+                  Baca Selengkapnya
+                  <ArrowRight size={12} strokeWidth={2} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Image */}
+            <div className="order-1 md:order-2 relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
+              <Image
+                src={featuredArticle.imageUrl}
+                alt={featuredArticle.title}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+                priority
+              />
             </div>
           </div>
-
-          {/* Right: Image */}
-          <div className="order-1 md:order-2 relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
-            <Image
-              src={featuredArticle.imageUrl}
-              alt={featuredArticle.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-              priority
-            />
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Divider */}
-      <div className="mx-auto max-w-350 px-4 md:px-16">
-        <hr className="border-(--cat-stone)" />
-      </div>
+      {recentArticles.length > 0 && (
+        <div className="mx-auto max-w-350 px-4 md:px-16">
+          <hr className="border-(--cat-stone)" />
+        </div>
+      )}
 
       {/* Recent Articles */}
-      <section className="mx-auto max-w-350 px-4 md:px-16 py-12 md:py-20">
-        <div className="flex items-end justify-between mb-10 md:mb-14">
-          <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
-            Artikel Terbaru
-          </h2>
-          <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-            Lihat Semua
-          </span>
-        </div>
+      {recentArticles.length > 0 && (
+        <section className="mx-auto max-w-350 px-4 md:px-16 py-12 md:py-20">
+          <div className="flex items-end justify-between mb-10 md:mb-14">
+            <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
+              Artikel Terbaru
+            </h2>
+            <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+              {recentArticles.length} Artikel
+            </span>
+          </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
           {recentArticles.map((article) => (
@@ -144,6 +149,7 @@ export default async function JournalPage() {
           ))}
         </div>
       </section>
-    </>
-  );
+    )}
+  </>
+);
 }
