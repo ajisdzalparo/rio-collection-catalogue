@@ -210,34 +210,37 @@ export function ImageUpload({
           />
 
           {/* Desktop Action Overlay (Hover) */}
-          <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 items-center justify-center gap-2 p-3">
-            <button
-              type="button"
-              onClick={openRecrop}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-black text-xs font-bold shadow-md hover:bg-gray-100 hover:scale-105 transition-all cursor-pointer"
-              title="Crop & Atur Posisi Foto"
-            >
-              <Crop className="h-3.5 w-3.5" />
-              <span>Crop Ulang</span>
-            </button>
+          <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 items-center justify-center p-3">
+            <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-black/75 backdrop-blur-md border border-white/20 shadow-xl">
+              <button
+                type="button"
+                onClick={openRecrop}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-black text-xs font-bold shadow-xs hover:bg-gray-100 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                title="Crop & Atur Posisi Foto"
+              >
+                <Crop className="h-3.5 w-3.5" />
+                <span>Crop</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 text-white text-xs font-bold shadow-md hover:bg-neutral-800 hover:scale-105 transition-all cursor-pointer border border-white/20"
-            >
-              <Upload className="h-3.5 w-3.5" />
-              <span>Ganti</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 text-white text-xs font-bold shadow-xs hover:bg-neutral-800 transition-all cursor-pointer border border-white/20 whitespace-nowrap shrink-0"
+                title="Ganti Foto"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                <span>Ganti</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={clearImage}
-              className="p-2 rounded-xl bg-destructive text-destructive-foreground hover:scale-105 transition-transform cursor-pointer shadow-md"
-              title="Hapus Gambar"
-            >
-              <X className="h-4 w-4" />
-            </button>
+              <button
+                type="button"
+                onClick={clearImage}
+                className="p-1.5 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-transform cursor-pointer shadow-xs shrink-0"
+                title="Hapus Gambar"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Mobile Action Bar (Always visible on touch screens) */}

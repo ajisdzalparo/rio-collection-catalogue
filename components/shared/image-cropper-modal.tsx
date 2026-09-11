@@ -54,12 +54,14 @@ function resolveRatioNumber(option?: AspectRatioOption): number | null {
   }
 }
 
-export function ImageCropperModal(props: ImageCropperModalProps) {
-  const [mounted, setMounted] = useState(false);
+const emptySubscribe = () => () => {};
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+export function ImageCropperModal(props: ImageCropperModalProps) {
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   if (!mounted || !props.isOpen) return null;
 
@@ -370,7 +372,7 @@ function ImageCropperModalContent({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-2 sm:p-5 md:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/85 backdrop-blur-sm p-2 sm:p-5 md:p-6 animate-in fade-in duration-200">
       <div className="relative w-full h-[92vh] sm:h-[88vh] max-h-200 max-w-4xl lg:max-w-5xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-border bg-muted/20 shrink-0">
@@ -386,21 +388,13 @@ function ImageCropperModalContent({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-2">
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleApplyCrop}
-              className="h-8 px-3 text-xs font-bold gap-1.5 rounded-lg bg-foreground text-background hover:bg-foreground/90 cursor-pointer shadow-xs"
-            >
-              <Check className="h-3.5 w-3.5" />
-              <span>Simpan Crop</span>
-            </Button>
             <button
+              type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
               aria-label="Tutup"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>

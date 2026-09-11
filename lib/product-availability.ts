@@ -14,7 +14,7 @@ interface StockProduct {
 /** One availability calculation for CMS, catalogue, and checkout. */
 export function normalizeProductAvailability<T extends StockProduct>(product: T): T {
   const unlimited = product.stockMode === 'ALWAYS_AVAILABLE';
-  const variants = product.variants.map((variant) => {
+  const variants = (product.variants || []).map((variant) => {
     const stock = Math.max(0, variant.stock ?? (variant.inStock ? 10 : 0));
     return { ...variant, stock, inStock: unlimited || stock > 0 };
   });

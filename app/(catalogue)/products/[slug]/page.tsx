@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getProducts, getProductBySlug } from '@/lib/api';
+import { getProductBySlug } from '@/lib/api';
 import { ProductDetailContent } from '@/components/catalogue/product-detail-content';
+
+export const dynamic = 'force-dynamic';
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -18,16 +20,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     openGraph: {
       title: `${product.name} — RIO COLLECTION`,
       description: product.description,
-      images: [product.imageUrl],
+      images: product.imageUrl ? [product.imageUrl] : [],
     },
   };
-}
-
-export async function generateStaticParams() {
-  const products = await getProducts();
-  return products.map((product) => ({
-    slug: product.slug,
-  }));
 }
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {

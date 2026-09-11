@@ -6,6 +6,8 @@ import { notFound } from 'next/navigation';
 import { getJournals, getJournalBySlug, getProducts } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 interface JournalDetailProps {
   params: Promise<{ slug: string }>;
 }
@@ -21,16 +23,9 @@ export async function generateMetadata({ params }: JournalDetailProps): Promise<
     openGraph: {
       title: `${article.title} — RIO COLLECTION Journal`,
       description: article.excerpt,
-      images: [article.imageUrl]
+      images: article.imageUrl ? [article.imageUrl] : []
     }
   };
-}
-
-export async function generateStaticParams() {
-  const journals = await getJournals();
-  return journals.map((article) => ({
-    slug: article.slug
-  }));
 }
 
 export default async function JournalDetailPage({ params }: JournalDetailProps) {
