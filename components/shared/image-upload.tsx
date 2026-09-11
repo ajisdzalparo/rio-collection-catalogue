@@ -291,7 +291,6 @@ export function ImageUpload({
               : 'hover:border-foreground/40 hover:bg-muted/20'
           )}
         >
-
           {isUploading ? (
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
