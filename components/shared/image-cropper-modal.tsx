@@ -363,7 +363,7 @@ function ImageCropperModalContent({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-0 sm:p-4 md:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full h-full sm:h-[86vh] md:h-[82vh] sm:max-h-[820px] max-w-4xl lg:max-w-5xl bg-card border-0 sm:border border-border rounded-none sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="relative w-full h-full sm:h-[86vh] md:h-[82vh] sm:max-h-205 max-w-4xl lg:max-w-5xl bg-card border-0 sm:border border-border rounded-none sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-3.5 py-2.5 sm:px-5 sm:py-3.5 border-b border-border bg-muted/20 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -436,7 +436,7 @@ function ImageCropperModalContent({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onWheel={handleWheel}
-          className="relative flex-1 w-full min-h-[300px] sm:min-h-[440px] md:min-h-[500px] bg-neutral-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
+          className="relative flex-1 w-full min-h-75 sm:min-h-110 md:min-h-125 bg-neutral-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
         >
           {/* Hidden natural image reference to calculate sizes */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
