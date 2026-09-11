@@ -227,6 +227,8 @@ model StoreSettings {
   originCityId       String?
   originCityName     String?
   originProvinceName String?
+  recaptchaSiteKey   String?
+  recaptchaSecretKey String?
   updatedAt         DateTime @updatedAt
 }
 

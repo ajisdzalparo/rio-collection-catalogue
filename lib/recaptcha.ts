@@ -6,7 +6,17 @@ export class CaptchaError extends Error {
 
 export async function verifyRecaptcha(token: string): Promise<void> {
   const isProduction = process.env.NODE_ENV === 'production';
-  const secret = process.env.RECAPTCHA_SECRET_KEY;
+  let secret = process.env.RECAPTCHA_SECRET_KEY;
+
+  if (!secret) {
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } });
+      if (settings?.recaptchaSecretKey) {
+        secret = settings.recaptchaSecretKey;
+      }
+    } catch {}
+  }
 
   // In non-production (development / testing), bypass verification
   if (!isProduction) {
