@@ -30,8 +30,10 @@ const hankenGrotesk = Hanken_Grotesk({
   display: 'swap'
 });
 
+const defaultUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://rio-collection.ajisdzalparo.com';
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || ''),
+  metadataBase: new URL(defaultUrl.startsWith('http') ? defaultUrl : `https://${defaultUrl}`),
   title: {
     default: 'RIO COLLECTION — Limited Archival T-Shirt Catalogue',
     template: '%s — RIO COLLECTION'
