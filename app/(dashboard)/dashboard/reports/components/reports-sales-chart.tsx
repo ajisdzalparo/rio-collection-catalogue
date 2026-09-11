@@ -8,31 +8,13 @@ import type { DailyChartPoint, ChartInsights, PresetRangeType } from './types';
 // Chart.js imports and initialization
 import {
   Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Filler,
-  Title,
-  Tooltip,
-  Legend,
+  registerables,
   type ChartOptions,
   type ChartData
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Filler,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(...registerables);
 
 interface ReportsSalesChartProps {
   chartDataPoints: DailyChartPoint[];
