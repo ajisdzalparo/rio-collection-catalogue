@@ -24,19 +24,19 @@ RUN apk add --no-cache libc6-compat openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Accept build arguments for frontend NEXT_PUBLIC_* variables
 ARG NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_API_URL
+ARG DATABASE_URL
 
 ENV NEXT_PUBLIC_RECAPTCHA_SITE_KEY=$NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-# Dummy environment variables required during build time
+# Environment variables required during build time
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rio_collection?schema=public"
+ENV DATABASE_URL=${DATABASE_URL:-"postgresql://postgres:postgres@localhost:5432/rio_collection?schema=public"}
 
 # Generate Prisma Client for linux targets
 RUN bun x prisma generate
