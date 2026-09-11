@@ -362,28 +362,39 @@ function ImageCropperModalContent({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-0 sm:p-4 md:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full h-full sm:h-auto max-w-4xl bg-card border-0 sm:border border-border rounded-none sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col sm:max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-2 sm:p-4 md:p-6 animate-in fade-in duration-200">
+      <div className="relative w-full max-w-3xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 border-b border-border bg-muted/20 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+        <div className="flex items-center justify-between px-3.5 py-2.5 sm:px-5 sm:py-3.5 border-b border-border bg-muted/20 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-primary/10 text-primary shrink-0">
               <CropIcon className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-bold text-foreground truncate">{title}</h2>
-              <p className="text-[10px] sm:text-[11px] text-muted-foreground line-clamp-1 sm:line-clamp-none">
-                Geser posisi foto &amp; atur zoom agar sesuai dengan bingkai
+              <h2 className="text-xs sm:text-sm font-bold text-foreground truncate">{title}</h2>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">
+                Geser posisi foto &amp; atur zoom agar pas di bingkai
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer shrink-0 ml-2"
-            aria-label="Tutup"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0 ml-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleApplyCrop}
+              className="h-8 px-3 text-xs font-bold gap-1.5 rounded-lg bg-foreground text-background hover:bg-foreground/90 cursor-pointer shadow-xs"
+            >
+              <Check className="h-3.5 w-3.5" />
+              <span>Simpan Crop</span>
+            </Button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+              aria-label="Tutup"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Ratio Selector Tabs */}
@@ -425,7 +436,7 @@ function ImageCropperModalContent({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onWheel={handleWheel}
-          className="relative flex-1 min-h-55 sm:min-h-110 bg-neutral-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
+          className="relative flex-1 min-h-[220px] max-h-[58vh] bg-neutral-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
         >
           {/* Hidden natural image reference to calculate sizes */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -513,15 +524,15 @@ function ImageCropperModalContent({
           <div className="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 bg-black/75 backdrop-blur-xs text-white px-2 sm:px-2.5 py-1 text-[10px] font-medium rounded-lg pointer-events-none flex items-center gap-1.5 border border-white/10 shadow-sm">
             <Maximize2 className="h-3 w-3 text-neutral-400 shrink-0" />
             <span className="hidden sm:inline">Klik &amp; tarik untuk memposisikan gambar</span>
-            <span className="sm:hidden">Geser / cubit (pinch) 2 jari</span>
+            <span className="sm:hidden">Geser / cubit 2 jari</span>
           </div>
         </div>
 
         {/* Footer Toolbar Controls */}
-        <div className="p-3 sm:p-4 bg-card border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 shrink-0">
+        <div className="p-2.5 sm:p-3.5 bg-card border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4 shrink-0">
           {/* Zoom Slider & Rotate */}
-          <div className="flex items-center gap-2.5 sm:gap-4 w-full sm:w-auto">
-            <div className="flex items-center gap-2 flex-1 sm:w-56">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
+            <div className="flex items-center gap-1.5 flex-1 sm:w-48">
               <ZoomOut className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <input
                 type="range"
@@ -533,18 +544,18 @@ function ImageCropperModalContent({
                 className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
               />
               <ZoomIn className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="text-[11px] font-mono font-bold w-9 text-muted-foreground text-right shrink-0">
+              <span className="text-[10px] sm:text-[11px] font-mono font-bold w-8 text-muted-foreground text-right shrink-0">
                 {Math.round(zoom * 100)}%
               </span>
             </div>
 
-            <div className="flex items-center gap-1 border-l border-border pl-2 sm:pl-3 shrink-0">
+            <div className="flex items-center gap-1 border-l border-border pl-2 shrink-0">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={rotate90}
-                className="h-8 px-2.5 text-xs gap-1.5 rounded-lg cursor-pointer"
+                className="h-7.5 px-2 text-xs gap-1 rounded-lg cursor-pointer"
                 title="Putar 90 derajat"
               >
                 <RotateCw className="h-3.5 w-3.5" />
@@ -556,7 +567,7 @@ function ImageCropperModalContent({
                 variant="ghost"
                 size="sm"
                 onClick={resetTransform}
-                className="h-8 px-2 text-xs rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+                className="h-7.5 px-2 text-xs rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
                 title="Reset posisi & zoom"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -571,7 +582,7 @@ function ImageCropperModalContent({
               variant="outline"
               size="sm"
               onClick={onClose}
-              className="flex-1 sm:flex-none h-9 px-4 text-xs font-semibold rounded-xl cursor-pointer"
+              className="flex-1 sm:flex-none h-8.5 px-3.5 text-xs font-semibold rounded-xl cursor-pointer"
             >
               Batal
             </Button>
@@ -579,7 +590,7 @@ function ImageCropperModalContent({
               type="button"
               size="sm"
               onClick={handleApplyCrop}
-              className="flex-1 sm:flex-none h-9 px-4 text-xs font-bold gap-1.5 rounded-xl bg-foreground text-background hover:opacity-90 cursor-pointer shadow-xs"
+              className="flex-1 sm:flex-none h-8.5 px-4 text-xs font-bold gap-1.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 cursor-pointer shadow-xs"
             >
               <Check className="h-4 w-4" />
               <span>Terapkan Crop</span>
