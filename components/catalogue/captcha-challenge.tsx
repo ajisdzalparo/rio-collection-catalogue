@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { env } from '@/config/env';
 
@@ -10,8 +10,26 @@ interface CaptchaChallengeProps {
 }
 
 export function CaptchaChallenge({ onVerify, isVerified }: CaptchaChallengeProps) {
-  const siteKey = env.recaptchaSiteKey;
+  const [siteKey, setSiteKey] = useState<string>(env.recaptchaSiteKey || '');
+  const [isLoading, setIsLoading] = useState(!env.recaptchaSiteKey);
   const isProduction = process.env.NODE_ENV === 'production';
+
+  useEffect(() => {
+    // If siteKey was not baked at build time, fetch it dynamically from server at runtime
+    if (!siteKey) {
+      fetch('/api/v1/public-config')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.recaptchaSiteKey) {
+            setSiteKey(data.recaptchaSiteKey);
+          }
+        })
+        .catch((err) => console.error('Failed to load recaptcha config:', err))
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
+  }, [siteKey]);
 
   useEffect(() => {
     if (!isProduction && !isVerified) {
@@ -36,6 +54,22 @@ export function CaptchaChallenge({ onVerify, isVerified }: CaptchaChallengeProps
       <div className="py-2 text-[11px] text-muted-foreground flex items-center gap-2">
         <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
         <span>Mode Testing: Verifikasi Keamanan (CAPTCHA) otomatis aktif.</span>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="py-2 text-[12px] text-muted-foreground animate-pulse">
+        Memuat verifikasi keamanan...
+      </div>
+    );
+  }
+
+  if (!siteKey) {
+    return (
+      <div className="py-2 text-[12px] text-amber-500">
+        Konfigurasi reCAPTCHA belum tersedia di server.
       </div>
     );
   }
