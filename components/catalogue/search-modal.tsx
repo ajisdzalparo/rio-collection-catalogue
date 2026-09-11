@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
-import { Search, X, ArrowRight, Tag, Clock, Palette, Sparkles, Trash2 } from 'lucide-react';
+import { Search, X, ArrowRight, Clock, Trash2 } from 'lucide-react';
 import { getProducts } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 import type { Product } from '@/types/catalogue.types';
@@ -264,8 +264,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               {/* Dynamic Categories & Editions from live products */}
               {dynamicSuggestions.length > 0 && (
                 <div className="space-y-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-(--cat-on-surface-variant) flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3 text-amber-500" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-(--cat-on-surface-variant)">
                     Saran & Edisi Populer
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -274,9 +273,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         key={tag}
                         type="button"
                         onClick={() => handleSelectSuggestion(tag)}
-                        className="px-3 py-1.5 text-xs font-hanken rounded-lg bg-(--cat-surface-container-low) border border-(--cat-stone) hover:border-(--cat-charcoal) transition-all cursor-pointer flex items-center gap-1"
+                        className="px-3 py-1.5 text-xs font-hanken rounded-lg bg-(--cat-surface-container-low) border border-(--cat-stone) hover:border-(--cat-charcoal) transition-all cursor-pointer"
                       >
-                        <Tag className="h-2.5 w-2.5 opacity-60" />
                         <span>{tag}</span>
                       </button>
                     ))}
@@ -287,23 +285,18 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               {/* Dynamic Available Colors */}
               {dynamicColors.length > 0 && (
                 <div className="space-y-2 pt-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-(--cat-on-surface-variant) flex items-center gap-1.5">
-                    <Palette className="h-3 w-3 text-purple-500" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-(--cat-on-surface-variant)">
                     Pilihan Warna
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    {dynamicColors.map(({ name, hex }) => (
+                    {dynamicColors.map(({ name }) => (
                       <button
                         key={name}
                         type="button"
                         onClick={() => handleSelectSuggestion(name)}
-                        className="flex items-center gap-1.5 px-3 py-1 text-xs font-hanken rounded-lg bg-(--cat-surface-container-low) border border-(--cat-stone) hover:border-(--cat-charcoal) transition-all cursor-pointer"
+                        className="px-3 py-1.5 text-xs font-hanken rounded-lg bg-(--cat-surface-container-low) border border-(--cat-stone) hover:border-(--cat-charcoal) transition-all cursor-pointer capitalize"
                       >
-                        <span
-                          className="h-2.5 w-2.5 rounded-full border border-black/10 shrink-0"
-                          style={{ backgroundColor: hex }}
-                        />
-                        <span className="capitalize">{name}</span>
+                        <span>{name}</span>
                       </button>
                     ))}
                   </div>
