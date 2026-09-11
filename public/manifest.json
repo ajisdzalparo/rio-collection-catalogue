@@ -1,5 +1,11 @@
 {
- "name": "App",
+  "name": "RIO COLLECTION",
+  "short_name": "RIO",
+  "description": "Limited Archival T-Shirt Catalogue",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
  "icons": [
   {
    "src": "\/android-icon-36x36.png",
