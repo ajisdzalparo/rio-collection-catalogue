@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
+import { formatWaNumber } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'About',
@@ -162,12 +163,12 @@ export default async function AboutPage() {
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
               {whatsappNumber && (
                 <a
-                  href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`}
+                  href={`https://wa.me/${formatWaNumber(whatsappNumber)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-hanken text-[14px] text-(--cat-on-surface) underline hover:opacity-70 transition-opacity"
                 >
-                  WhatsApp: +{whatsappNumber.replace(/[^0-9]/g, '')}
+                  WhatsApp: +{formatWaNumber(whatsappNumber)}
                 </a>
               )}
               {whatsappNumber && contactEmail && (

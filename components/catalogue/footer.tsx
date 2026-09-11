@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { cn, formatWaNumber } from '@/lib/utils';
 import {
   InstagramIcon,
   TikTokIcon,
@@ -62,7 +62,7 @@ export function CatalogueFooter({ settings, className }: CatalogueFooterProps) {
     { name: 'X / Twitter', url: xTwitterUrl, icon: <XTwitterIcon className="shrink-0" /> },
     {
       name: 'WhatsApp',
-      url: whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}` : undefined,
+      url: whatsappNumber ? `https://wa.me/${formatWaNumber(whatsappNumber)}` : undefined,
       icon: <WhatsAppIcon size={14} className="shrink-0" />
     }
   ];

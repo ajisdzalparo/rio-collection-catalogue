@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle2, MessageCircle } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatWaNumber } from '@/lib/utils';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getOrderStatusLabel, getOrderStatusMessage } from '@/lib/order-status';
@@ -143,7 +143,7 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
         {/* WhatsApp CTA — number from CMS store settings */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <a
-            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Halo, saya ingin konfirmasi pesanan #${orderNumber}`)}`}
+            href={`https://wa.me/${formatWaNumber(whatsappNumber)}?text=${encodeURIComponent(`Halo, saya ingin konfirmasi pesanan #${orderNumber}`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150">
