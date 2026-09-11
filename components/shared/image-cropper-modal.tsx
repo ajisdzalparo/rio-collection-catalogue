@@ -436,7 +436,7 @@ function ImageCropperModalContent({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onWheel={handleWheel}
-          className="relative flex-1 min-h-[220px] max-h-[58vh] bg-neutral-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
+          className="relative flex-1 min-h-55 max-h-[58vh] bg-neutral-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
         >
           {/* Hidden natural image reference to calculate sizes */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
