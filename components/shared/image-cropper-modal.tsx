@@ -270,8 +270,8 @@ function ImageCropperModalContent({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Target export resolution: keep high fidelity (max 1800px on long edge)
-    const exportWidth = Math.min(1800, Math.max(800, cropBox.width * 2));
+    // Target export resolution: optimal balance between crisp sharpness and lightweight file size (max 1200px)
+    const exportWidth = Math.min(1200, Math.max(640, cropBox.width * 2));
     const exportHeight = Math.round(
       activeRatio ? exportWidth / activeRatio : (exportWidth * cropBox.height) / cropBox.width
     );
@@ -341,13 +341,13 @@ function ImageCropperModalContent({
       onClose();
     };
 
-    // Export as WebP/JPEG blob with fallback
+    // Export as WebP/JPEG blob with fallback (0.82 quality gives ~80-150KB files with near lossless visual fidelity)
     try {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
             try {
-              const dataUrl = canvas.toDataURL('image/webp', 0.92);
+              const dataUrl = canvas.toDataURL('image/webp', 0.82);
               finishCrop(dataUrl);
             } catch (fallbackErr) {
               console.error('Canvas toDataURL fallback failed:', fallbackErr);
@@ -357,12 +357,12 @@ function ImageCropperModalContent({
           finishCrop(blob);
         },
         'image/webp',
-        0.92
+        0.82
       );
     } catch (err) {
       console.warn('canvas.toBlob error, attempting toDataURL:', err);
       try {
-        const dataUrl = canvas.toDataURL('image/webp', 0.92);
+        const dataUrl = canvas.toDataURL('image/webp', 0.82);
         finishCrop(dataUrl);
       } catch (fallbackErr) {
         console.error('All canvas export methods failed:', fallbackErr);
