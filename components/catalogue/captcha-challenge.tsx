@@ -17,17 +17,24 @@ export function CaptchaChallenge({ onVerify, isVerified }: CaptchaChallengeProps
   useEffect(() => {
     // If siteKey was not baked at build time, fetch it dynamically from server at runtime
     if (!siteKey) {
+      let isMounted = true;
       fetch('/api/v1/public-config')
         .then((res) => res.json())
         .then((data) => {
-          if (data?.recaptchaSiteKey) {
+          if (isMounted && data?.recaptchaSiteKey) {
             setSiteKey(data.recaptchaSiteKey);
           }
         })
         .catch((err) => console.error('Failed to load recaptcha config:', err))
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
+        .finally(() => {
+          if (isMounted) {
+            setIsLoading(false);
+          }
+        });
+
+      return () => {
+        isMounted = false;
+      };
     }
   }, [siteKey]);
 
