@@ -1,0 +1,40 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: rio_collection_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-ChangeThisStrongSecretKey123!}
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_CONSOLE_URL:-http://localhost:9001}
+    ports:
+      - '9000:9000' # S3 API Port
+      - '9001:9001' # Web Console UI Port
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Auto-create bucket and set public read policy for images
+  minio-init:
+    image: minio/mc:latest
+    container_name: rio_collection_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set localminio http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-ChangeThisStrongSecretKey123!};
+      /usr/bin/mc mb localminio/rio-collection-bucket --ignore-existing;
+      /usr/bin/mc anonymous set download localminio/rio-collection-bucket;
+      echo 'MinIO bucket initialized successfully';
+      exit 0;
+      "
+
+volumes:
+  minio_data:
+    driver: local

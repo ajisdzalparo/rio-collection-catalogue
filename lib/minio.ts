@@ -6,14 +6,16 @@ const minioSecretKey = process.env.MINIO_SECRET_KEY || 'minioadmin';
 export const minioBucketName = process.env.MINIO_BUCKET_NAME || 'rio-collection-bucket';
 export const minioPublicUrl = process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || `${minioEndpoint}/${minioBucketName}`;
 
+const minioRegion = process.env.MINIO_REGION || 'us-east-1';
+
 export const s3Client = new S3Client({
   endpoint: minioEndpoint,
-  region: 'us-east-1',
+  region: minioRegion,
   credentials: {
     accessKeyId: minioAccessKey,
     secretAccessKey: minioSecretKey
   },
-  forcePathStyle: true
+  forcePathStyle: process.env.MINIO_FORCE_PATH_STYLE !== 'false'
 });
 
 /**
