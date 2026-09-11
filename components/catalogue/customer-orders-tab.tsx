@@ -2,37 +2,12 @@
 
 import Link from 'next/link';
 import { Package, Clock, ExternalLink, Loader2 } from 'lucide-react';
-import { formatPrice, cn } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 import { useCustomerOrders, type CustomerOrder } from '@/hooks/use-customer-account';
 
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; badgeClass: string }
-> = {
-  PENDING: {
-    label: 'Menunggu Pembayaran',
-    badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
-  },
-  PAID: {
-    label: 'Sudah Dibayar',
-    badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200'
-  },
-  FULFILLED: {
-    label: 'Selesai / Dikirim',
-    badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
-  },
-  CANCELLED: {
-    label: 'Dibatalkan',
-    badgeClass: 'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
-  }
-};
+import { OrderStatusBadge } from '@/components/catalogue/order-status-badge';
 
 function OrderCard({ order }: { order: CustomerOrder }) {
-  const statusInfo = STATUS_CONFIG[order.status] || {
-    label: order.status,
-    badgeClass: 'bg-stone-100 text-stone-700'
-  };
-
   return (
     <div className="bg-(--cat-surface-container-low) border border-(--cat-stone) p-5 md:p-6 transition-all hover:border-(--cat-charcoal)/30">
       {/* Top Details */}
@@ -56,14 +31,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              'px-2.5 py-1 text-[11px] font-semibold font-hanken uppercase tracking-wider',
-              statusInfo.badgeClass
-            )}
-          >
-            {statusInfo.label}
-          </span>
+          <OrderStatusBadge status={order.status} size="sm" />
 
           <Link
             href={`/order/confirmation/${order.orderNumber}`}

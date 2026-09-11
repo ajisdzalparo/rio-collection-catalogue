@@ -49,7 +49,6 @@ export function SearchableSelect({
     return normalizedOptions.find((opt) => opt.value === value);
   }, [normalizedOptions, value]);
 
-  // Handle click outside to close popover
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -60,7 +59,6 @@ export function SearchableSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Focus search input when popover opens
   React.useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -86,66 +84,75 @@ export function SearchableSelect({
         disabled={disabled || isLoading}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          'w-full flex items-center justify-between gap-2 bg-transparent border-0 border-b border-(--cat-stone) py-2 px-0 font-hanken text-[14px] text-(--cat-on-surface) outline-none transition-colors text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
-          isOpen && 'border-(--cat-charcoal)'
+          'w-full h-11 px-3.5 bg-(--cat-surface) border border-(--cat-stone) text-left font-hanken text-[13px] text-(--cat-on-surface) flex items-center justify-between gap-2 transition-colors cursor-pointer select-none',
+          'hover:border-(--cat-charcoal)',
+          'focus:outline-none focus:border-(--cat-charcoal)',
+          isOpen && 'border-(--cat-charcoal)',
+          (disabled || isLoading) &&
+            'bg-(--cat-surface-container-low) opacity-60 cursor-not-allowed border-(--cat-stone)/60'
         )}
       >
-        <span className={cn('truncate', !selectedOption && 'text-(--cat-outline-variant)')}>
+        <span className={cn('truncate', !selectedOption && !value && 'text-(--cat-on-surface-variant)/60')}>
           {isLoading ? (
-            <span className="flex items-center gap-1.5 text-amber-600">
-              <Loader2 size={14} className="animate-spin" />
+            <span className="flex items-center gap-2 text-(--cat-charcoal) font-medium">
+              <Loader2 size={13} className="animate-spin" />
               <span>Memuat data...</span>
             </span>
           ) : (
-            selectedOption?.label || placeholder
+            selectedOption?.label || value || placeholder
           )}
         </span>
         <ChevronDown
           size={16}
-          className={cn('opacity-60 shrink-0 transition-transform duration-200 text-(--cat-on-surface)', isOpen && 'rotate-180')}
+          className={cn(
+            'text-(--cat-on-surface) shrink-0 transition-transform duration-200',
+            isOpen && 'rotate-180'
+          )}
         />
       </button>
 
-      {/* Popover Dropdown with Live Search (100% Catalogue Light Theme) */}
+      {/* Popover Dropdown matching requested sharp minimalist design */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 w-full max-h-72 bg-(--cat-surface-container-lowest) border border-(--cat-stone) rounded-xl shadow-xl z-50 overflow-hidden flex flex-col text-(--cat-on-surface) animate-in fade-in-0 zoom-in-95 duration-100">
-          {/* Search Input Field */}
-          <div className="p-2.5 border-b border-(--cat-stone) bg-(--cat-surface-container-low) flex items-center gap-2">
-            <Search size={14} className="opacity-50 shrink-0 text-(--cat-on-surface-variant)" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="w-full bg-transparent font-hanken text-xs text-(--cat-on-surface) outline-none placeholder:text-(--cat-outline-variant)"
-            />
+        <div className="absolute left-0 top-full mt-1 w-full max-h-72 bg-(--cat-surface) border border-(--cat-charcoal)/30 shadow-xl z-50 overflow-hidden flex flex-col text-(--cat-on-surface) animate-in fade-in-0 duration-100">
+          {/* Search Box with black border frame */}
+          <div className="p-2.5 bg-(--cat-surface) border-b border-(--cat-stone)/40">
+            <div className="flex items-center gap-2 px-2.5 h-9 border border-(--cat-charcoal)/80 bg-(--cat-surface)">
+              <Search size={14} className="text-(--cat-on-surface-variant) opacity-70 shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full bg-transparent font-hanken text-[13px] text-(--cat-on-surface) placeholder:text-(--cat-on-surface-variant)/50 outline-none"
+              />
+            </div>
           </div>
 
           {/* Options List */}
-          <div className="overflow-y-auto max-h-56 p-1 space-y-0.5">
+          <div className="overflow-y-auto max-h-56 py-1">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt) => {
-                const isSelected = opt.value === value;
+                const isSelected = opt.value === value || opt.label === value;
                 return (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => handleSelect(opt.value)}
                     className={cn(
-                      'w-full flex items-center justify-between px-3 py-2 rounded-lg font-hanken text-xs text-left transition-colors cursor-pointer',
+                      'w-full flex items-center justify-between px-3.5 py-2.5 font-hanken text-[13px] text-left transition-colors cursor-pointer',
                       isSelected
                         ? 'bg-(--cat-charcoal) text-white font-medium'
                         : 'hover:bg-(--cat-surface-container-low) text-(--cat-on-surface)'
                     )}
                   >
                     <span className="truncate">{opt.label}</span>
-                    {isSelected && <Check size={14} className="shrink-0 ml-2 opacity-80" />}
+                    {isSelected && <Check size={14} className="shrink-0 ml-2" />}
                   </button>
                 );
               })
             ) : (
-              <div className="px-3 py-4 text-center font-hanken text-xs text-(--cat-on-surface-variant)">
+              <div className="py-6 px-4 text-center font-hanken text-[13px] text-(--cat-on-surface-variant)">
                 Tidak ada data yang cocok dengan &quot;{searchQuery}&quot;
               </div>
             )}

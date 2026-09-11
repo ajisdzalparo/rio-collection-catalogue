@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Star, CheckCircle2, MessageSquare, Plus, Loader2, X, Send } from 'lucide-react';
 import { StarRating } from '@/components/catalogue/star-rating';
 import { useCustomerStore } from '@/lib/customer-store';
@@ -22,18 +23,8 @@ interface ProductReviewsProps {
 }
 
 export function ProductReviews({ productSlug, productName }: ProductReviewsProps) {
-  const { customer, isAuthenticated } = useCustomerStore();
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [averageRating, setAverageRating] = useState(0);
-  const [totalReviews, setTotalReviews] = useState(0);
-  const [ratingDistribution, setRatingDistribution] = useState<Record<number, number>>({
-    1: 0,
-    2: 0,
-    3: 0,
-    4: 0,
-    5: 0
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const customer = useCustomerStore((s) => s.customer);
   const [selectedFilter, setSelectedFilter] = useState<number | null>(null); // null = all
 
   // Form State
@@ -44,33 +35,41 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
   const [formComment, setFormComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (customer) {
-      if (customer.fullName) setFormName(customer.fullName);
-      if (customer.email) setFormEmail(customer.email);
-    }
-  }, [customer]);
-
-  const loadReviews = useCallback(async () => {
-    try {
+  const { data: reviewData, isLoading } = useQuery({
+    queryKey: ['reviews', productSlug],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/products/${productSlug}/reviews`);
       const json = await res.json();
       if (json.status === 'success' && json.data) {
-        setReviews(json.data.reviews || []);
-        setAverageRating(json.data.averageRating || 0);
-        setTotalReviews(json.data.totalReviews || 0);
-        setRatingDistribution(json.data.ratingDistribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+        return json.data;
       }
-    } catch {
-      console.error('Failed to load reviews');
-    } finally {
-      setIsLoading(false);
+      return {
+        reviews: [],
+        averageRating: 0,
+        totalReviews: 0,
+        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+      };
     }
-  }, [productSlug]);
+  });
 
-  useEffect(() => {
-    loadReviews();
-  }, [loadReviews]);
+  const reviews: Review[] = reviewData?.reviews || [];
+  const averageRating: number = reviewData?.averageRating || 0;
+  const totalReviews: number = reviewData?.totalReviews || 0;
+  const ratingDistribution: Record<number, number> = reviewData?.ratingDistribution || {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0
+  };
+
+  const handleOpenForm = () => {
+    if (customer) {
+      if (customer.fullName && !formName) setFormName(customer.fullName);
+      if (customer.email && !formEmail) setFormEmail(customer.email);
+    }
+    setIsFormOpen(true);
+  };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +103,7 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
       toast.success('Ulasan Anda berhasil dikirim! Terima kasih.');
       setFormComment('');
       setIsFormOpen(false);
-      loadReviews();
+      queryClient.invalidateQueries({ queryKey: ['reviews', productSlug] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Gagal mengirim ulasan.');
     } finally {
@@ -130,7 +129,7 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
         </div>
 
         <button
-          onClick={() => setIsFormOpen(true)}
+          onClick={handleOpenForm}
           className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-90 transition-opacity cursor-pointer w-fit"
         >
           <Plus size={14} /> Tulis Ulasan

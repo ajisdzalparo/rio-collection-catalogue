@@ -80,12 +80,15 @@ export function TopLoader() {
   return (
     <div
       aria-hidden="true"
-      className="fixed top-0 left-0 right-0 z-99999 pointer-events-none h-1 bg-transparent transition-opacity duration-200"
+      className="fixed top-0 left-0 right-0 z-99999 pointer-events-none h-0.75 bg-transparent transition-opacity duration-200"
       style={{ opacity: isLoading ? 1 : 0 }}
     >
       <div
-        className="h-full bg-(--cat-charcoal,var(--primary,#18181b)) shadow-[0_0_8px_rgba(26,26,26,0.3)] transition-all duration-300 ease-out"
-        style={{ width: `${progress}%` }}
+        className="h-full bg-[#18181b] shadow-[0_0_8px_rgba(24,24,27,0.4)] transition-all duration-300 ease-out"
+        style={{
+          width: `${progress}%`,
+          backgroundColor: 'var(--cat-charcoal, #18181b)'
+        }}
       />
     </div>
   );

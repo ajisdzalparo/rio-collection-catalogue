@@ -55,9 +55,9 @@ function OrderContent() {
     fullName: customer?.fullName || '',
     email: customer?.email || '',
     whatsapp: customer?.whatsapp || '',
-    province: '',
-    city: '',
-    district: '',
+    province: customer?.provinceName || '',
+    city: customer?.cityName || '',
+    district: customer?.district || '',
     postalCode: customer?.postalCode || '',
     streetAddress: customer?.address || '',
     courierService: '',
@@ -96,7 +96,10 @@ function OrderContent() {
       .filter(Boolean);
   }, [enabledCouriersSetting]);
 
-  // Initial products & dynamic provinces setup
+  const prefilledCustIdRef = useRef<string | null>(null);
+  const isDefaultInitializedRef = useRef(false);
+
+  // Initial products setup
   useEffect(() => {
     if (!isCartMode) {
       getProducts().then((prods) => {
@@ -108,64 +111,128 @@ function OrderContent() {
         }
       });
     }
-
-    // Fetch dynamic provinces
-    fetch('/api/v1/shipping/provinces')
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
-          setProvinces(res.data);
-          const defaultProv = res.data[0];
-          setFormData((prev) => ({ ...prev, province: defaultProv.province }));
-
-          fetch(
-            `/api/v1/shipping/cities?provinceId=${defaultProv.province_id}&provinceName=${encodeURIComponent(defaultProv.province)}`
-          )
-            .then((cRes) => cRes.json())
-            .then((cRes) => {
-              if (cRes.code === 200 && Array.isArray(cRes.data) && cRes.data.length > 0) {
-                setCities(cRes.data);
-                const defaultCity = `${cRes.data[0].type} ${cRes.data[0].city_name}`;
-                setFormData((prev) => ({ ...prev, city: defaultCity }));
-
-                fetch(
-                  `/api/v1/shipping/subdistricts?cityId=${cRes.data[0].city_id}&cityName=${encodeURIComponent(cRes.data[0].city_name)}`
-                )
-                  .then((sRes) => sRes.json())
-                  .then((sRes) => {
-                    if (sRes.code === 200 && Array.isArray(sRes.data) && sRes.data.length > 0) {
-                      setSubdistricts(sRes.data);
-                      setFormData((prev) => ({
-                        ...prev,
-                        district: sRes.data[0].subdistrict_name,
-                        postalCode: sRes.data[0].postal_code || prev.postalCode
-                      }));
-                    }
-                  })
-                  .catch(() => {});
-              }
-            })
-            .catch(() => {});
-        }
-      })
-      .catch((err) => console.error('Failed to load provinces:', err));
   }, [isCartMode, productSlug]);
 
-  // Pre-fill logged in customer
-  const isCustomerPrefilled = useRef(false);
+  // Dynamic provinces & customer profile address prefill
   useEffect(() => {
-    if (customer && isAuthenticated && !isCustomerPrefilled.current) {
-      isCustomerPrefilled.current = true;
-      setFormData((prev) => ({
-        ...prev,
-        fullName: prev.fullName || customer.fullName || '',
-        email: prev.email || customer.email,
-        whatsapp: prev.whatsapp || customer.whatsapp || '',
-        streetAddress: prev.streetAddress || customer.address || '',
-        postalCode: prev.postalCode || customer.postalCode || ''
-      }));
+    const normalizeCity = (name: string) =>
+      name.toLowerCase().replace(/^(kota|kabupaten|kab\.)\s+/i, '').trim();
+    const normalizeDistrict = (name: string) =>
+      name.toLowerCase().replace(/^(kec\.|kecamatan)\s+/i, '').trim();
+
+    const loadLocationsAndPrefill = async () => {
+      try {
+        const provRes = await fetch('/api/v1/shipping/provinces').then((r) => r.json());
+        if (provRes.code !== 200 || !Array.isArray(provRes.data) || provRes.data.length === 0) return;
+
+        const provs = provRes.data;
+        setProvinces(provs);
+
+        const targetProvName = customer?.provinceName?.trim();
+        const targetCityName = customer?.cityName?.trim();
+        const targetCityId = customer?.cityId?.trim();
+        const targetDistrict = customer?.district?.trim();
+        const targetPostalCode = customer?.postalCode?.trim();
+
+        // Match province
+        const matchedProv = targetProvName
+          ? provs.find(
+              (p: { province: string }) =>
+                p.province.toLowerCase() === targetProvName.toLowerCase() ||
+                p.province.toLowerCase().includes(targetProvName.toLowerCase()) ||
+                targetProvName.toLowerCase().includes(p.province.toLowerCase())
+            ) || provs[0]
+          : provs[0];
+
+        // Fetch cities
+        const cityRes = await fetch(
+          `/api/v1/shipping/cities?provinceId=${matchedProv.province_id}&provinceName=${encodeURIComponent(matchedProv.province)}`
+        ).then((r) => r.json());
+
+        let matchedCityFormatted = '';
+        let matchedCityId = '';
+        let matchedCityName = '';
+        let citiesList: Array<{ city_id: string; province_id: string; city_name: string; type: string }> = [];
+
+        if (cityRes.code === 200 && Array.isArray(cityRes.data) && cityRes.data.length > 0) {
+          citiesList = cityRes.data;
+          setCities(citiesList);
+
+          const matchedCity = targetCityName || targetCityId
+            ? citiesList.find((c) => {
+                if (targetCityId && c.city_id === targetCityId) return true;
+                const fullCity = `${c.type} ${c.city_name}`.toLowerCase();
+                const tName = (targetCityName || '').toLowerCase();
+                if (fullCity === tName || c.city_name.toLowerCase() === tName) return true;
+                if (tName && normalizeCity(c.city_name) === normalizeCity(tName)) return true;
+                return false;
+              }) || citiesList[0]
+            : citiesList[0];
+
+          matchedCityId = matchedCity.city_id;
+          matchedCityName = matchedCity.city_name;
+          matchedCityFormatted = matchedCity.city_name.toLowerCase().startsWith(matchedCity.type.toLowerCase())
+            ? matchedCity.city_name
+            : `${matchedCity.type} ${matchedCity.city_name}`;
+        }
+
+        // Fetch subdistricts
+        let matchedDistrictName = '';
+        let matchedPostal = targetPostalCode || '';
+
+        if (matchedCityId) {
+          const subRes = await fetch(
+            `/api/v1/shipping/subdistricts?cityId=${matchedCityId}&cityName=${encodeURIComponent(matchedCityName)}`
+          ).then((r) => r.json());
+
+          if (subRes.code === 200 && Array.isArray(subRes.data) && subRes.data.length > 0) {
+            const subsList = subRes.data;
+            setSubdistricts(subsList);
+
+            const matchedSub = targetDistrict
+              ? subsList.find((s: { subdistrict_name: string }) => {
+                  const sName = s.subdistrict_name.toLowerCase();
+                  const tDist = targetDistrict.toLowerCase();
+                  if (sName === tDist) return true;
+                  if (normalizeDistrict(s.subdistrict_name) === normalizeDistrict(tDist)) return true;
+                  return false;
+                }) || subsList[0]
+              : subsList[0];
+
+            matchedDistrictName = matchedSub.subdistrict_name;
+            if (!matchedPostal && matchedSub.postal_code) {
+              matchedPostal = matchedSub.postal_code;
+            }
+          }
+        }
+
+        // Update form state with matched customer address
+        setFormData((prev) => ({
+          ...prev,
+          fullName: customer?.fullName || prev.fullName,
+          email: customer?.email || prev.email,
+          whatsapp: customer?.whatsapp || prev.whatsapp,
+          streetAddress: customer?.address || prev.streetAddress,
+          province: matchedProv.province,
+          city: matchedCityFormatted || prev.city,
+          district: matchedDistrictName || prev.district,
+          postalCode: matchedPostal || prev.postalCode
+        }));
+      } catch (err) {
+        console.error('Failed to prefill customer shipping location:', err);
+      }
+    };
+
+    if (customer?.id) {
+      if (prefilledCustIdRef.current !== customer.id) {
+        prefilledCustIdRef.current = customer.id;
+        loadLocationsAndPrefill();
+      }
+    } else if (!isDefaultInitializedRef.current) {
+      isDefaultInitializedRef.current = true;
+      loadLocationsAndPrefill();
     }
-  }, [customer, isAuthenticated]);
+  }, [customer]);
 
   // Timer countdown
   useEffect(() => {
@@ -495,10 +562,19 @@ function OrderContent() {
   const shippingFee = selectedRate?.cost || 0;
   const totalPrice = subtotal + shippingFee;
 
+  const isEmailVerified =
+    isOtpVerified || Boolean(isAuthenticated && customer && customer.email === formData.email);
+
   // Handle final checkout submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError('');
+
+    if (!isEmailVerified) {
+      setSubmitError('Silakan verifikasi email dengan kode OTP terlebih dahulu.');
+      toast.error('Verifikasi email dengan kode OTP terlebih dahulu.');
+      return;
+    }
 
     if (orderItems.length === 0) {
       setSubmitError('Tidak ada produk yang dipesan.');
@@ -507,11 +583,6 @@ function OrderContent() {
 
     if (!selectedRate) {
       setSubmitError('Pilih opsi pengiriman terlebih dahulu.');
-      return;
-    }
-
-    if (!isOtpVerified && (!customer || customer.email !== formData.email)) {
-      setSubmitError('Verifikasi email dengan kode OTP terlebih dahulu.');
       return;
     }
 
@@ -751,7 +822,7 @@ function OrderContent() {
                       <input
                         type="email"
                         required
-                        disabled={isOtpVerified}
+                        disabled={isEmailVerified && isAuthenticated}
                         value={formData.email}
                         onChange={(e) => {
                           setFormData((prev) => ({ ...prev, email: e.target.value }));
@@ -759,9 +830,9 @@ function OrderContent() {
                         }}
                         placeholder="nama@email.com"
                         className={cn(
-                          'w-full h-11 pl-10 pr-3 font-hanken text-[14px] border focus:outline-none transition-colors',
-                          isOtpVerified
-                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-950 dark:text-emerald-200'
+                          'w-full h-11 pl-10 pr-10 font-hanken text-[14px] text-(--cat-on-surface) border focus:outline-none transition-colors disabled:opacity-100 disabled:bg-(--cat-surface-container-low) disabled:text-(--cat-on-surface)',
+                          isEmailVerified
+                            ? 'border-(--cat-charcoal) bg-(--cat-surface-container-low)'
                             : 'bg-(--cat-surface) border-(--cat-stone) focus:border-(--cat-charcoal)'
                         )}
                       />
@@ -769,9 +840,15 @@ function OrderContent() {
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-(--cat-on-surface-variant)"
                         size={16}
                       />
+                      {isEmailVerified && (
+                        <CheckCircle2
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-(--cat-charcoal)"
+                          size={16}
+                        />
+                      )}
                     </div>
 
-                    {!isOtpVerified && (
+                    {!isEmailVerified && (
                       <button
                         type="button"
                         disabled={isSendingOtp || countdown > 0 || !formData.email.includes('@')}
@@ -796,14 +873,15 @@ function OrderContent() {
                     )}
                   </div>
 
-                  {devOtpHint && !isOtpVerified && (
+                  {devOtpHint && !isEmailVerified && (
                     <div className="mt-2.5 p-3 bg-amber-50 border border-amber-300 text-amber-950 text-xs font-mono rounded shadow-xs leading-relaxed">
-                      <span className="font-bold text-amber-900">⚡ DEV MODE:</span> {devOtpHint.replace('[DEV MODE] ', '')}
+                      <span className="font-bold text-amber-900">⚡ DEV MODE:</span>{' '}
+                      {devOtpHint.replace('[DEV MODE] ', '')}
                     </div>
                   )}
 
                   {/* OTP Verification Input Box */}
-                  {!isOtpVerified && otpSent && (
+                  {!isEmailVerified && otpSent && (
                     <div className="mt-3 p-4 bg-(--cat-surface) border border-(--cat-stone) space-y-3 animate-in fade-in duration-200">
                       <p className="font-hanken text-[12px] text-(--cat-on-surface)">
                         Masukkan 6-digit kode verifikasi yang dikirim ke{' '}
@@ -839,10 +917,13 @@ function OrderContent() {
                     </div>
                   )}
 
-                  {isOtpVerified && (
+                  {isEmailVerified && (
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 text-[12px] font-hanken text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 size={14} /> Email terverifikasi
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-hanken font-medium text-(--cat-charcoal)">
+                        <CheckCircle2 size={13} className="text-(--cat-charcoal)" />
+                        {isAuthenticated && customer?.email === formData.email
+                          ? 'Email Akun Terverifikasi'
+                          : 'Email Berhasil Diverifikasi via OTP'}
                       </span>
                       {!isAuthenticated && (
                         <button
@@ -990,10 +1071,10 @@ function OrderContent() {
               type="submit"
               disabled={!isValid || isSubmitting}
               className={cn(
-                'w-full py-4 flex items-center justify-center gap-2 bg-(--cat-charcoal) text-white font-hanken text-[12px] font-semibold uppercase tracking-[0.08em] transition-opacity duration-150',
+                'w-full py-4 flex items-center justify-center gap-2 font-hanken text-[12px] font-semibold uppercase tracking-[0.08em] transition-all duration-150',
                 isValid && !isSubmitting
-                  ? 'hover:opacity-90 cursor-pointer'
-                  : 'opacity-60 cursor-not-allowed'
+                  ? 'bg-(--cat-charcoal) text-white hover:opacity-90 cursor-pointer shadow-sm'
+                  : 'bg-(--cat-surface-container-high) text-(--cat-on-surface-variant)/50 border border-(--cat-stone) cursor-not-allowed opacity-75'
               )}
             >
               {isSubmitting ? (
@@ -1006,6 +1087,12 @@ function OrderContent() {
                 </>
               )}
             </button>
+
+            {!isEmailVerified && (
+              <p className="mt-2 text-center font-hanken text-[11px] text-(--cat-on-surface-variant)/80">
+                Silakan kirim dan verifikasi kode OTP email di atas untuk mengaktifkan pemesanan.
+              </p>
+            )}
           </div>
         </div>
       </form>

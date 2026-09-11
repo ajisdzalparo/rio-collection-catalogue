@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Loader2, Save } from 'lucide-react';
-import { useCustomerStore, type Customer } from '@/lib/customer-store';
+import { type Customer } from '@/lib/customer-store';
 import { useUpdateCustomerProfile } from '@/hooks/use-customer-account';
 import {
   useShippingProvinces,
@@ -33,9 +33,7 @@ export function CustomerProfileForm({ customer }: CustomerProfileFormProps) {
   const { data: provinces = [], isLoading: isLoadingProvinces } = useShippingProvinces();
 
   const matchedProv = useMemo(() => {
-    return provinces.find(
-      (p) => p.province.toLowerCase() === provinceName.toLowerCase()
-    );
+    return provinces.find((p) => p.province.toLowerCase() === provinceName.toLowerCase());
   }, [provinces, provinceName]);
 
   const { data: cities = [], isLoading: isLoadingCities } = useShippingCities(
@@ -57,23 +55,19 @@ export function CustomerProfileForm({ customer }: CustomerProfileFormProps) {
     matchedCity?.city_name
   );
 
-  useEffect(() => {
-    setFullName(customer.fullName || '');
-    setWhatsapp(customer.whatsapp || '');
-    setAddress(customer.address || '');
-    setProvinceName(customer.provinceName || '');
-    setCityName(customer.cityName || '');
-    setCityId(customer.cityId || '');
-    setDistrict(customer.district || '');
-    setPostalCode(customer.postalCode || '');
-  }, [customer]);
-
   const availableCities = useMemo(() => {
     return cities.map((c) => `${c.type} ${c.city_name}`);
   }, [cities]);
 
   const availableSubdistricts = useMemo(() => {
     return subdistricts.map((s) => s.subdistrict_name);
+  }, [subdistricts]);
+
+  const availablePostalCodes = useMemo(() => {
+    const codes = subdistricts
+      .map((s) => s.postal_code)
+      .filter((c): c is string => Boolean(c && c.trim()));
+    return Array.from(new Set(codes));
   }, [subdistricts]);
 
   const handleProvinceChange = (newProvince: string) => {
@@ -234,12 +228,18 @@ export function CustomerProfileForm({ customer }: CustomerProfileFormProps) {
             <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
               Kode Pos
             </label>
-            <input
-              type="text"
+            <SearchableSelect
+              options={
+                availablePostalCodes.length > 0
+                  ? availablePostalCodes
+                  : postalCode
+                    ? [postalCode]
+                    : []
+              }
               value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              placeholder="12345"
-              className="w-full h-11 px-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
+              onValueChange={(val) => setPostalCode(val)}
+              placeholder={district ? 'Pilih Kode Pos' : 'Pilih Kecamatan terlebih dahulu'}
+              disabled={!district && availablePostalCodes.length === 0}
             />
           </div>
         </div>

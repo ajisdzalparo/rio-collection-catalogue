@@ -8,7 +8,6 @@ import { orderSchema } from '../lib/order-schema';
 import { archiveSchema } from '../lib/archive-schema';
 import { getOrderStatusLabel } from '../lib/order-status';
 import { createOrder } from '../lib/create-order';
-import { verifyRecaptcha } from '../lib/recaptcha';
 import { deductStock, restoreStock } from '../lib/stock';
 import { POST } from '../app/api/v1/orders/route';
 import { submitOrder } from '../lib/api';
@@ -234,7 +233,7 @@ test('stock decrement is conditional and sold-out state recovers after cancellat
 });
 
 test('OTP verification validates code format, expiration and attempts', async () => {
-  const { verifyOtp, OtpError } = await import('../lib/otp');
+  const { verifyOtp } = await import('../lib/otp');
   await assert.rejects(
     verifyOtp({ email: 'nonexistent@test.com', code: '123456' }),
     /tidak ditemukan/

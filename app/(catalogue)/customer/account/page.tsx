@@ -94,7 +94,7 @@ export default function CustomerAccountPage() {
         {activeTab === 'ORDERS' ? (
           <CustomerOrdersTab />
         ) : (
-          <CustomerProfileForm customer={customer} />
+          <CustomerProfileForm key={customer.updatedAt || customer.id} customer={customer} />
         )}
       </div>
     </div>

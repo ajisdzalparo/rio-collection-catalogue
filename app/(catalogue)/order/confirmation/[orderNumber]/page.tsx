@@ -6,6 +6,7 @@ import { formatPrice, formatWaNumber } from '@/lib/utils';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getOrderStatusLabel, getOrderStatusMessage } from '@/lib/order-status';
+import { OrderStatusBadge } from '@/components/catalogue/order-status-badge';
 
 export const metadata: Metadata = {
   title: 'Permintaan Pesanan Diterima',
@@ -58,10 +59,8 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
         <CheckCircle2 size={48} strokeWidth={1} className="mx-auto text-(--cat-on-surface) mb-6" />
 
         {/* Status Badge */}
-        <div className="inline-block border border-(--cat-stone) px-6 py-2 mb-6">
-          <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-            {statusLabel}
-          </p>
+        <div className="mb-6">
+          <OrderStatusBadge status={order.status} size="lg" />
         </div>
 
         {/* Title */}
