@@ -132,26 +132,25 @@ export function HeroSection({ settings, comingSoonProduct, className }: HeroSect
                 <CountdownTimer
                   targetDate={comingSoonProduct.releaseDate}
                   variant="hero"
-                  className="shadow-2xl"
                 />
               </div>
             )}
 
             {/* CTA buttons */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
               {comingSoonProduct ? (
                 <Link
                   href={`/products/${comingSoonProduct.slug}`}
-                  className="inline-flex items-center px-6 py-2.5 bg-white text-black font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-white/90 transition-colors duration-150 shadow-md"
+                  className="inline-flex h-9 items-center border border-white bg-white px-4 font-hanken text-[10px] font-semibold uppercase tracking-[0.08em] text-black transition-colors duration-150 hover:bg-white/85"
                 >
-                  Preview Drop: {comingSoonProduct.name}
+                  Lihat Drop
                 </Link>
               ) : (
                 heroCtaText &&
                 heroCtaLink && (
                   <Link
                     href={heroCtaLink}
-                    className="inline-flex items-center px-6 py-2.5 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
+                    className="inline-flex h-9 items-center border border-white bg-white px-4 font-hanken text-[10px] font-semibold uppercase tracking-[0.08em] text-black transition-colors duration-150 hover:bg-white/85"
                   >
                     {heroCtaText}
                   </Link>
@@ -159,9 +158,9 @@ export function HeroSection({ settings, comingSoonProduct, className }: HeroSect
               )}
               <Link
                 href="/archive"
-                className="inline-flex items-center px-6 py-2.5 border border-white/80 text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-white/10 transition-colors duration-150"
+                className="inline-flex h-9 items-center border border-white/50 px-4 font-hanken text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition-colors duration-150 hover:border-white hover:bg-white/10"
               >
-                Lihat Arsip
+                Arsip
               </Link>
             </div>
           </div>

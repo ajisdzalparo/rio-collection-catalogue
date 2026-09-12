@@ -131,42 +131,33 @@ export function CountdownTimer({
     return (
       <div
         className={cn(
-          'inline-flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3.5 bg-black/60 backdrop-blur-md border border-white/20 text-white',
+          'inline-flex items-center gap-1.5 border-y border-white/20 bg-black/45 px-3 py-2 text-center text-white backdrop-blur-sm',
           className
         )}
       >
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-          </span>
-          <span className="font-hanken text-[11px] uppercase tracking-[0.12em] text-white/80 font-medium">
-            Next Drop Launch
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-center">
-          <div className="flex flex-col items-center bg-white/10 px-2.5 py-1 min-w-10">
+        <div className="flex items-center gap-1.5">
+          <div className="flex min-w-10 flex-col items-center px-1.5 py-0.5">
             <span className="font-mono text-[16px] font-bold leading-tight">
               {pad(timeLeft.days)}
             </span>
             <span className="text-[9px] uppercase tracking-wider text-white/70">Hari</span>
           </div>
-          <span className="font-bold text-white/50">:</span>
-          <div className="flex flex-col items-center bg-white/10 px-2.5 py-1 min-w-10">
+          <span className="pb-3 font-bold text-white/40">:</span>
+          <div className="flex min-w-10 flex-col items-center px-1.5 py-0.5">
             <span className="font-mono text-[16px] font-bold leading-tight">
               {pad(timeLeft.hours)}
             </span>
             <span className="text-[9px] uppercase tracking-wider text-white/70">Jam</span>
           </div>
-          <span className="font-bold text-white/50">:</span>
-          <div className="flex flex-col items-center bg-white/10 px-2.5 py-1 min-w-10">
+          <span className="pb-3 font-bold text-white/40">:</span>
+          <div className="flex min-w-10 flex-col items-center px-1.5 py-0.5">
             <span className="font-mono text-[16px] font-bold leading-tight">
               {pad(timeLeft.minutes)}
             </span>
             <span className="text-[9px] uppercase tracking-wider text-white/70">Mnt</span>
           </div>
-          <span className="font-bold text-white/50">:</span>
-          <div className="flex flex-col items-center bg-white/10 px-2.5 py-1 min-w-10">
+          <span className="pb-3 font-bold text-white/40">:</span>
+          <div className="flex min-w-10 flex-col items-center px-1.5 py-0.5">
             <span className="font-mono text-[16px] font-bold leading-tight text-amber-300">
               {pad(timeLeft.seconds)}
             </span>
