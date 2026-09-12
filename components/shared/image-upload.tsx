@@ -206,6 +206,7 @@ export function ImageUpload({
             src={value}
             alt="Uploaded preview"
             unoptimized
+            onError={() => onChange('')}
             className="h-full w-full object-cover transition-transform duration-350 group-hover:scale-102"
           />
 
@@ -500,6 +501,7 @@ export function MultiImageUpload({
               alt={`Gallery preview ${idx}`}
               className="object-cover transition-transform duration-200 group-hover:scale-103"
               unoptimized
+              onError={() => removeImage(idx)}
             />
 
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
