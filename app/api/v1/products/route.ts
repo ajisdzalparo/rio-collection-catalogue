@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { normalizeProductAvailability } from '@/lib/product-availability';
+import { mapProductRelations } from '@/lib/catalogue-relations';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+
+const journalIdsSchema = z.array(z.string().min(1)).max(100).default([]);
+const journalSummarySelect = {
+  id: true, slug: true, title: true, excerpt: true, category: true, date: true, imageUrl: true
+} as const;
 
 export async function GET() {
   try {
@@ -15,6 +23,10 @@ export async function GET() {
             inStock: true,
             stock: true
           }
+        },
+        journalLinks: {
+          include: { journal: { select: journalSummarySelect } },
+          orderBy: { createdAt: 'desc' }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -23,7 +35,11 @@ export async function GET() {
     return NextResponse.json({
       code: 200,
       status: 'success',
-      data: products.map(normalizeProductAvailability)
+      data: products.map((product) =>
+        normalizeProductAvailability(
+          mapProductRelations(product as unknown as Parameters<typeof mapProductRelations>[0])
+        )
+      )
     });
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -58,10 +74,13 @@ export async function POST(request: Request) {
       variants,
       edition,
       imageDetails,
-      storyTitle,
-      storyText,
-      materialsAndCare
+      materialsAndCare,
+      journalIds
     } = body;
+    const parsedJournalIds = journalIdsSchema.safeParse(journalIds);
+    if (!parsedJournalIds.success) {
+      return NextResponse.json({ message: 'Relasi jurnal tidak valid' }, { status: 400 });
+    }
 
     const newProduct = await prisma.product.create({
       data: {
@@ -93,8 +112,6 @@ export async function POST(request: Request) {
               ],
         imageDetails: imageDetails || null,
         description: description || '',
-        storyTitle: storyTitle || null,
-        storyText: storyText || null,
         materialsAndCare: materialsAndCare || null,
         variants: {
           createMany: {
@@ -105,17 +122,27 @@ export async function POST(request: Request) {
               { size: 'XL', inStock: true, stock: 10 }
             ]
           }
+        },
+        journalLinks: {
+          createMany: {
+            data: parsedJournalIds.data.map((journalId) => ({ journalId })),
+            skipDuplicates: true
+          }
         }
       },
       include: {
-        variants: true
+        variants: true,
+        journalLinks: { include: { journal: { select: journalSummarySelect } } }
       }
     });
+    revalidatePath('/catalogue');
+    revalidatePath('/archive');
+    revalidatePath(`/products/${newProduct.slug}`);
 
     return NextResponse.json({
       code: 201,
       status: 'success',
-      data: newProduct
+      data: mapProductRelations(newProduct as unknown as Parameters<typeof mapProductRelations>[0])
     });
   } catch (error: unknown) {
     console.error('Error creating product:', JSON.stringify(error, Object.getOwnPropertyNames(error as object), 2));

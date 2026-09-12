@@ -13,7 +13,7 @@ interface StockProduct {
 
 /** One availability calculation for CMS, catalogue, and checkout. */
 export function normalizeProductAvailability<T extends StockProduct>(product: T): T {
-  const unlimited = product.stockMode === 'ALWAYS_AVAILABLE';
+  const unlimited = product.stockMode === 'ALWAYS_AVAILABLE' || product.status === 'PRE_ORDER';
   const variants = (product.variants || []).map((variant) => {
     const stock = Math.max(0, variant.stock ?? (variant.inStock ? 10 : 0));
     return { ...variant, stock, inStock: unlimited || stock > 0 };
@@ -27,4 +27,8 @@ export function normalizeProductAvailability<T extends StockProduct>(product: T)
 
 export function isOrderableStatus(status: string): boolean {
   return status === 'AVAILABLE' || status === 'PRE_ORDER';
+}
+
+export function isArchivedProductStatus(status: string): boolean {
+  return status === 'SOLD_OUT' || status === 'DISCONTINUED';
 }

@@ -46,7 +46,12 @@ export interface Product {
   variants: ProductVariant[];
   materialsAndCare?: MaterialsAndCare;
   deletedAt?: string | null;
+  journals?: JournalArticle[];
+  journalIds?: string[];
 }
+
+export type ProductSummary = Product;
+export type JournalSummary = JournalArticle;
 
 export interface ArchiveCollection {
   id: string;
@@ -74,6 +79,7 @@ export interface JournalArticle {
   contentHtml?: string;
   pullQuote?: string;
   relatedProductSlug?: string;
+  relatedProducts?: Product[];
 }
 
 export interface Testimony {

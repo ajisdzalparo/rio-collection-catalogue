@@ -81,12 +81,36 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const loggedCustomer = await getCustomerFromRequest(request);
+    if (!loggedCustomer) {
+      return NextResponse.json(
+        { code: 401, status: 'error', message: 'Anda harus masuk (login) terlebih dahulu untuk memberikan ulasan.' },
+        { status: 401 }
+      );
+    }
+
+    // Check if customer already submitted a review for this product
+    const existingReview = await prisma.productReview.findFirst({
+      where: {
+        productId: product.id,
+        OR: [
+          { customerId: loggedCustomer.id },
+          ...(loggedCustomer.email ? [{ customerEmail: loggedCustomer.email.toLowerCase() }] : [])
+        ]
+      }
+    });
+
+    if (existingReview) {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: 'Anda sudah memberikan ulasan untuk produk ini.' },
+        { status: 400 }
+      );
+    }
 
     const body = await request.json().catch(() => ({}));
-    const { customerName, customerEmail, rating, comment } = body;
+    const { customerName, rating, comment } = body;
 
-    const finalName = (loggedCustomer?.fullName || customerName || '').trim();
-    const finalEmail = (loggedCustomer?.email || customerEmail || '').trim().toLowerCase();
+    const finalName = (loggedCustomer.fullName || customerName || loggedCustomer.email.split('@')[0]).trim();
+    const finalEmail = loggedCustomer.email.trim().toLowerCase();
     const finalRating = Number(rating);
     const finalComment = (comment || '').trim();
 
@@ -112,29 +136,26 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     // Check verified buyer
-    let isVerifiedBuyer = false;
-    if (finalEmail || loggedCustomer) {
-      const orderCount = await prisma.order.count({
-        where: {
-          OR: [
-            ...(loggedCustomer ? [{ customerId: loggedCustomer.id }] : []),
-            ...(finalEmail ? [{ email: finalEmail }] : [])
-          ],
-          items: {
-            some: { productId: product.id }
-          },
-          status: { in: ['PAID', 'FULFILLED'] }
-        }
-      });
-      isVerifiedBuyer = orderCount > 0;
-    }
+    const orderCount = await prisma.order.count({
+      where: {
+        OR: [
+          { customerId: loggedCustomer.id },
+          ...(finalEmail ? [{ email: finalEmail }] : [])
+        ],
+        items: {
+          some: { productId: product.id }
+        },
+        status: { in: ['PAID', 'FULFILLED'] }
+      }
+    });
+    const isVerifiedBuyer = orderCount > 0;
 
     const newReview = await prisma.productReview.create({
       data: {
         productId: product.id,
-        customerId: loggedCustomer?.id || null,
+        customerId: loggedCustomer.id,
         customerName: finalName,
-        customerEmail: finalEmail || null,
+        customerEmail: finalEmail,
         rating: Math.round(finalRating),
         comment: finalComment,
         isVerifiedBuyer

@@ -2,64 +2,53 @@
 
 import React, { useState, useMemo, useCallback, Suspense } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Plus,
-  Tag,
   Edit,
   Layers,
-  Check,
   Trash2,
   Eye,
   Pencil,
   Package,
-  Boxes,
-  Infinity as InfinityIcon,
   Shirt,
   AlertCircle,
-  X
+  X,
+  SlidersHorizontal,
+  RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { RupiahInput } from '@/components/ui/rupiah-input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { useProducts } from '@/hooks/use-products';
 import { useMasterStore } from '@/hooks/use-master-data';
-import { Flex, VStack } from '@/components/ui/layout';
+import { VStack, Flex } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { SafeImage, CMSBadge } from '@/components/shared';
-import { ImageUpload, MultiImageUpload } from '@/components/shared/image-upload';
 import { cn, formatIDR } from '@/lib/utils';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { MultiSelect } from '@/components/ui/multi-select';
-import type { Product, ProductVariant, ProductStatus, StockMode, OrderLimitMode } from '@/types/catalogue.types';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger
+} from '@/components/ui/sheet';
+import { Label } from '@/components/ui/label';
+import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
+import type { Product } from '@/types/catalogue.types';
 
-const STATUS_LABEL_MAP: Record<ProductStatus, string> = {
-  AVAILABLE: 'Available (Ready)',
-  SOLD_OUT: 'Sold Out (Restock)',
-  DISCONTINUED: 'Discontinued',
-  COMING_SOON: 'Coming Soon',
-  PRE_ORDER: 'Pre-Order'
-};
+const PRODUCT_STATUS_OPTIONS = [
+  { id: 'AVAILABLE', label: 'Ready Stock' },
+  { id: 'SOLD_OUT', label: 'Sold Out' },
+  { id: 'COMING_SOON', label: 'Coming Soon' },
+  { id: 'PRE_ORDER', label: 'Pre-Order' }
+];
 
 function ProductsContent() {
   const searchParams = useSearchParams();
@@ -67,277 +56,57 @@ function ProductsContent() {
   const filterParam = searchParams.get('filter');
   const isOutOfStockFilter = filterParam === 'out_of_stock';
 
-  const {
-    data: products = [],
-    isLoading: loading,
-    createProduct,
-    updateProduct,
-    deleteProduct,
-    isCreating,
-    isUpdating,
-    isDeleting
-  } = useProducts();
+  const { data: products = [], isLoading: loading, deleteProduct, isDeleting } = useProducts();
 
   // Master data
-  const { categories, colors, sizes, editions } = useMasterStore();
-  const activeSizes = sizes.filter((s) => s.isActive);
+  const { categories } = useMasterStore();
 
-  // Search & Filters
-  const [searchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  // Applied Filters (used to filter the data table)
+  const [appliedCategories, setAppliedCategories] = useState<string[]>([]);
+  const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
 
-  // Dialog state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  // Draft Filters (used inside the filter drawer before clicking Terapkan)
+  const [draftCategories, setDraftCategories] = useState<string[]>([]);
+  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
 
-  // Reset active image index during render when detail product changes
-  const [prevDetailProduct, setPrevDetailProduct] = useState<Product | null>(null);
-  if (detailProduct !== prevDetailProduct) {
-    setPrevDetailProduct(detailProduct);
-    setActiveImageIndex(0);
-  }
-
-  // Form states
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState(0);
-  const [hpp, setHpp] = useState(0);
-  const [colorsSelected, setColorsSelected] = useState<string[]>([]);
-  const [colorHex, setColorHex] = useState('#1A1A1A');
-  const [category, setCategory] = useState<string>('');
-  const [status, setStatus] = useState<ProductStatus>('AVAILABLE');
-  const [stockMode, setStockMode] = useState<StockMode>('QUANTITY');
-  const [orderLimitMode, setOrderLimitMode] = useState<OrderLimitMode>('UNLIMITED');
-  const [edition, setEdition] = useState('');
-  const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [imagesList, setImagesList] = useState<string[]>([]);
-  const [isConfirmStockOpen, setIsConfirmStockOpen] = useState(false);
-  const [pendingProductPayload, setPendingProductPayload] = useState<Product | null>(null);
-
-  // Materials & Care Form States
-  const [fabric, setFabric] = useState('');
-  const [treatment, setTreatment] = useState('');
-  const [origin, setOrigin] = useState('');
-  const [careInstruction, setCareInstruction] = useState('');
-
-  // Stock state per size variant: { size: { inStock: boolean, stock: number } }
-  const [sizesStock, setSizesStock] = useState<Record<string, { inStock: boolean; stock: number }>>(
-    {}
-  );
-
-  const handleOpenCreate = () => {
-    setEditingProduct(null);
-    setName('');
-    setPrice(0);
-    setHpp(0);
-    setColorsSelected([]);
-    setColorHex('#1A1A1A');
-    setCategory('');
-    setStatus('AVAILABLE');
-    setStockMode('QUANTITY');
-    setOrderLimitMode('UNLIMITED');
-    setEdition('');
-    setDescription('');
-    setImageUrl('');
-    setImagesList([]);
-
-    setFabric('');
-    setTreatment('');
-    setOrigin('');
-    setCareInstruction('');
-
-    // Build default sizes stock map from active sizes with 0 stock
-    const defaultSizes: Record<string, { inStock: boolean; stock: number }> = {};
-    activeSizes.forEach((s) => {
-      defaultSizes[s.size] = { inStock: false, stock: 0 };
-    });
-    setSizesStock(defaultSizes);
-    setIsDialogOpen(true);
-  };
-
-  const handleOpenEdit = useCallback(
-    (product: Product) => {
-      setEditingProduct(product);
-      setName(product.name);
-      setPrice(product.price);
-      setHpp(product.hpp || 180000);
-      setColorsSelected(
-        product.colors?.length ? product.colors : product.color ? [product.color] : []
-      );
-      setColorHex(product.colorHex);
-      setCategory(product.category);
-      setStatus(product.status);
-      setStockMode(product.stockMode || 'QUANTITY');
-      setOrderLimitMode(product.orderLimitMode || 'UNLIMITED');
-      setEdition(product.edition);
-      setDescription(product.description);
-      setImageUrl(product.imageUrl);
-      // The cover has its own uploader; the gallery contains only optional details.
-      const detailImages = (product.images || []).filter(
-        (image) => image && image !== product.imageUrl
-      );
-      setImagesList(detailImages);
-      // detailImageFlags mapping removed
-
-      setFabric(product.materialsAndCare?.fabric || '100% Premium Heavyweight Cotton, 280gsm');
-      setTreatment(product.materialsAndCare?.treatment || 'Pre-shrunk to minimize shrinkage');
-      setOrigin(product.materialsAndCare?.origin || 'Constructed in Indonesia');
-      setCareInstruction(
-        product.materialsAndCare?.careInstruction ||
-          'Machine wash cold inside out. Do not tumble dry. Cool iron on reverse.'
-      );
-
-      // Map variants back to sizing stock state
-      const stockMap: Record<string, { inStock: boolean; stock: number }> = {};
-      activeSizes.forEach((s) => {
-        stockMap[s.size] = { inStock: false, stock: 0 };
-      });
-      product.variants.forEach((v) => {
-        const qty = v.stock ?? (v.inStock ? 10 : 0);
-        stockMap[v.size] = {
-          inStock: v.inStock || qty > 0,
-          stock: qty
-        };
-      });
-      setSizesStock(stockMap);
-      setIsDialogOpen(true);
-    },
-    [activeSizes]
-  );
-
-  // Auto-generate slug from name
-  const getSlug = (text: string) => {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-  };
-
-  // Total calculated stock from form sizes
-  const totalFormStock = useMemo(() => {
-    if (stockMode === 'ALWAYS_AVAILABLE') return 9999;
-    return Object.values(sizesStock).reduce(
-      (sum, item) => sum + (item.inStock ? item.stock : 0),
-      0
-    );
-  }, [sizesStock, stockMode]);
-
-  const executeSaveProduct = async (payload: Product) => {
-    try {
-      if (editingProduct) {
-        await updateProduct(payload);
-        toast.success(`Produk ${payload.name} berhasil diperbarui`);
-      } else {
-        await createProduct(payload);
-        toast.success(`Produk ${payload.name} berhasil ditambahkan`);
-      }
-      setIsDialogOpen(false);
-    } catch (err) {
-      console.error('Failed to save product:', err);
-      toast.error('Gagal menyimpan produk');
-    }
-  };
-
-  const handleSaveProduct = async () => {
-    if (!name || !imageUrl) {
-      toast.error('Nama dan Foto Utama wajib diisi');
-      return;
-    }
-
-    const slug = getSlug(name);
-
-    const variants: ProductVariant[] = Object.entries(sizesStock).map(([size, item]) => ({
-      size,
-      inStock: stockMode === 'ALWAYS_AVAILABLE' ? true : item.inStock && item.stock > 0,
-      stock: stockMode === 'ALWAYS_AVAILABLE' ? 999 : item.inStock ? item.stock : 0
+  const categoryOptions: MultiSelectOption[] = useMemo(() => {
+    return categories.map((cat) => ({
+      value: cat.slug,
+      label: cat.name
     }));
+  }, [categories]);
 
-    const computedTotalStock =
-      stockMode === 'ALWAYS_AVAILABLE'
-        ? 9999
-        : variants.reduce((acc, v) => acc + (v.stock || 0), 0);
+  const statusOptions: MultiSelectOption[] = useMemo(() => {
+    return PRODUCT_STATUS_OPTIONS.map((opt) => ({
+      value: opt.id,
+      label: opt.label
+    }));
+  }, []);
 
-    let finalStatus: ProductStatus = status;
-    if (stockMode === 'ALWAYS_AVAILABLE') {
-      if (status !== 'SOLD_OUT' && status !== 'COMING_SOON' && status !== 'PRE_ORDER') {
-        finalStatus = 'AVAILABLE';
-      }
-    } else {
-      if (computedTotalStock === 0 && status === 'AVAILABLE') {
-        finalStatus = 'SOLD_OUT';
-      }
+  const handleOpenFilterDrawer = (open: boolean) => {
+    if (open) {
+      setDraftCategories(appliedCategories);
+      setDraftStatuses(appliedStatuses);
     }
-
-    // Foto utama adalah cover; gallery menyimpan semua foto detail yang di-upload.
-    const normalizedImages = imagesList.filter(Boolean);
-
-    const payload: Product = {
-      id: editingProduct ? editingProduct.id : `prod-${Math.floor(Math.random() * 1000)}`,
-      name,
-      slug,
-      price,
-      hpp,
-      stock: computedTotalStock,
-      stockMode,
-      orderLimitMode,
-      color: colorsSelected[0] || '',
-      colorHex: colors.find((c) => c.name === (colorsSelected[0] || ''))?.hex || colorHex,
-      colors: colorsSelected,
-      colorHexes: colorsSelected.map(
-        (name) => colors.find((c) => c.name === name)?.hex || '#1A1A1A'
-      ),
-      category,
-      status: finalStatus,
-      edition,
-      description,
-      imageUrl,
-      images: [imageUrl, ...normalizedImages].filter(Boolean),
-      imageDetails: [
-        { url: imageUrl, isDetail: true },
-        ...normalizedImages.map((url) => ({
-          url,
-          isDetail: true
-        }))
-      ].filter((item) => item.url),
-      variants,
-      materialsAndCare: {
-        fabric,
-        treatment,
-        origin,
-        careInstruction
-      }
-    };
-
-    // Prompt confirmation if quantity/stock changed on edit
-    if (editingProduct && stockMode === 'QUANTITY') {
-      let stockChanged = false;
-      for (const variant of variants) {
-        const originalVariant = editingProduct.variants?.find((v) => v.size === variant.size);
-        const originalStock = originalVariant
-          ? originalVariant.inStock
-            ? originalVariant.stock
-            : 0
-          : 0;
-        const currentStock = variant.inStock ? variant.stock : 0;
-
-        if (originalStock !== currentStock) {
-          stockChanged = true;
-          break;
-        }
-      }
-
-      if (stockChanged) {
-        setPendingProductPayload(payload);
-        setIsConfirmStockOpen(true);
-        return;
-      }
-    }
-
-    // Default save if no stock changes
-    await executeSaveProduct(payload);
+    setIsFilterOpen(open);
   };
+
+  const handleApplyFilters = () => {
+    setAppliedCategories(draftCategories);
+    setAppliedStatuses(draftStatuses);
+    setIsFilterOpen(false);
+  };
+
+  const handleResetFilters = () => {
+    setDraftCategories([]);
+    setDraftStatuses([]);
+    setAppliedCategories([]);
+    setAppliedStatuses([]);
+    setIsFilterOpen(false);
+  };
+
+  const activeFilterCount = appliedCategories.length + appliedStatuses.length;
 
   const [deleteTargetProduct, setDeleteTargetProduct] = useState<Product | null>(null);
 
@@ -390,39 +159,12 @@ function ProductsContent() {
     }
   }, []);
 
-  const toggleSizeStock = (size: string) => {
-    setSizesStock((prev) => {
-      const curr = prev[size] || { inStock: false, stock: 0 };
-      const nextInStock = !curr.inStock;
-      return {
-        ...prev,
-        [size]: {
-          inStock: nextInStock,
-          stock: nextInStock ? (curr.stock > 0 ? curr.stock : 10) : 0
-        }
-      };
-    });
-  };
-
-  const updateSizeStockQty = (size: string, qty: number) => {
-    const validQty = Math.max(0, qty);
-    setSizesStock((prev) => ({
-      ...prev,
-      [size]: {
-        inStock: validQty > 0,
-        stock: validQty
-      }
-    }));
-  };
-
   // Filter products list
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      const matchesCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
-      const matchesSearch =
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.edition.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        appliedCategories.length === 0 || appliedCategories.includes(p.category);
+      const matchesStatus = appliedStatuses.length === 0 || appliedStatuses.includes(p.status);
 
       const totalStock =
         p.stock ?? p.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
@@ -431,9 +173,9 @@ function ProductsContent() {
         !isOutOfStockFilter ||
         (p.status === 'AVAILABLE' && p.stockMode === 'QUANTITY' && totalStock <= 0);
 
-      return matchesCategory && matchesSearch && matchesOutOfStockFilter;
+      return matchesCategory && matchesStatus && matchesOutOfStockFilter;
     });
-  }, [products, selectedCategory, searchQuery, isOutOfStockFilter]);
+  }, [products, appliedCategories, appliedStatuses, isOutOfStockFilter]);
 
   // Table Columns Definition for DataTable
   const columns: Column<Product>[] = useMemo(
@@ -441,15 +183,17 @@ function ProductsContent() {
       {
         header: 'Foto',
         cell: (product) => (
-          <div className="relative h-12 w-10 overflow-hidden bg-muted/50 border border-border/20 rounded-md shrink-0">
-            <SafeImage
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              sizes="40px"
-              className="object-cover"
-            />
-          </div>
+          <Link href={`/dashboard/products/${product.id}`}>
+            <div className="relative h-12 w-10 overflow-hidden bg-muted/50 border border-border/20 rounded-md shrink-0 cursor-pointer hover:opacity-85 transition-opacity">
+              <SafeImage
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            </div>
+          </Link>
         )
       },
       {
@@ -458,18 +202,18 @@ function ProductsContent() {
         sortable: true,
         className: 'w-full min-w-[180px]',
         cell: (product) => (
-          <div className="flex flex-col text-xs max-w-50">
+          <Link href={`/dashboard/products/${product.id}`} className="flex flex-col text-xs max-w-50 group">
             <TruncatedText
               text={product.name}
               maxWidth="max-w-[180px]"
-              className="font-bold text-foreground"
+              className="font-bold text-foreground group-hover:text-primary transition-colors"
             />
             <TruncatedText
               text={product.color}
               maxWidth="max-w-[150px]"
               className="text-[10px] text-muted-foreground font-normal"
             />
-          </div>
+          </Link>
         )
       },
       {
@@ -495,90 +239,20 @@ function ProductsContent() {
         )
       },
       {
-        header: 'Harga & HPP',
+        header: 'Harga',
         accessorKey: 'price',
         sortable: true,
         className: 'font-bold text-xs',
         cell: (product) => (
           <div className="flex flex-col text-xs">
             <span className="font-extrabold text-foreground">{formatIDR(product.price)}</span>
-            <div className="flex items-center gap-1 text-[10px] mt-0.5">
-              <span className="text-amber-600 dark:text-amber-400 font-semibold">
-                HPP: {formatIDR(product.hpp || 180000)}
+            {product.hpp ? (
+              <span className="text-[10px] text-muted-foreground font-normal">
+                HPP: {formatIDR(product.hpp)}
               </span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                (+{formatIDR(product.price - (product.hpp || 180000))})
-              </span>
-            </div>
+            ) : null}
           </div>
         )
-      },
-      {
-        header: 'Total Stok',
-        accessorKey: 'stock',
-        sortable: true,
-        cell: (product) => {
-          if (product.stockMode === 'ALWAYS_AVAILABLE') {
-            return (
-              <Badge
-                variant="outline"
-                className="bg-linear-to-r from-sky-500/15 via-blue-500/10 to-indigo-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30 text-[11px] font-bold tracking-wider uppercase px-3 py-1 rounded-full gap-1.5 backdrop-blur-xs shadow-xs transition-all hover:border-sky-400/50"
-              >
-                <InfinityIcon className="h-3.5 w-3.5 shrink-0 stroke-[2.5] text-sky-500 dark:text-sky-400" />
-                <span className="font-mono text-[11px]">Tanpa Batas</span>
-              </Badge>
-            );
-          }
-          const totalStock =
-            product.stock ??
-            product.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
-          return (
-            <div className="flex items-center gap-1.5 font-bold text-xs">
-              <Package
-                className={`h-4 w-4 ${totalStock > 0 ? 'text-emerald-500' : 'text-red-500'}`}
-              />
-              <span
-                className={
-                  totalStock > 0 ? 'text-foreground font-black' : 'text-red-500 font-black'
-                }
-              >
-                {totalStock} pcs
-              </span>
-            </div>
-          );
-        }
-      },
-      {
-        header: 'Stok Per Ukuran',
-        className: 'min-w-[220px]',
-        cell: (product) => {
-          if (product.stockMode === 'ALWAYS_AVAILABLE') {
-            return (
-              <span className="text-[11px] text-muted-foreground italic">Semua ukuran ready</span>
-            );
-          }
-          return (
-            <div className="flex gap-1.5 flex-wrap">
-              {product.variants.map((v) => {
-                const qty = v.stock ?? (v.inStock ? 10 : 0);
-                return (
-                  <div
-                    key={v.size}
-                    className={cn(
-                      'inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold border rounded-md select-none',
-                      qty > 0
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                        : 'bg-muted/40 text-muted-foreground border-border/30 line-through opacity-40'
-                    )}
-                  >
-                    <span className="font-mono">{v.size}:</span>
-                    <span>{qty}</span>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        }
       },
       {
         header: 'Status',
@@ -591,21 +265,22 @@ function ProductsContent() {
         className: 'text-right',
         cell: (product) => (
           <div className="flex items-center justify-end gap-1">
+            <Link href={`/dashboard/products/${product.id}`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title="Lihat Detail Produk & Stok"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setDetailProduct(product)}
+              onClick={() => router.push(`/dashboard/products/${product.id}/edit`)}
               className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              title="Lihat Detail"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleOpenEdit(product)}
-              className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              title="Edit Produk & Stok"
+              title="Edit Detail Produk"
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -623,21 +298,17 @@ function ProductsContent() {
         )
       }
     ],
-    [getStatusBadge, handleOpenEdit, isDeleting]
+    [getStatusBadge, isDeleting, router]
   );
 
   // Mobile Adaptive Card Renderer for Products
   const renderProductCard = useCallback(
     (product: Product) => {
-      const totalStock =
-        product.stock ??
-        product.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
-
       return (
         <div className="p-3.5 sm:p-4 rounded-lg border border-border/70 bg-card/90 shadow-2xs backdrop-blur-md flex flex-col gap-3 transition-all hover:border-border">
           {/* Top: Image + Info */}
           <div className="flex items-start gap-3">
-            <div className="relative h-20 w-16 rounded-md overflow-hidden bg-muted/50 border border-border/30 shrink-0 shadow-xs">
+            <Link href={`/dashboard/products/${product.id}`} className="relative h-20 w-16 rounded-md overflow-hidden bg-muted/50 border border-border/30 shrink-0 shadow-xs">
               <SafeImage
                 src={product.imageUrl}
                 alt={product.name}
@@ -645,12 +316,14 @@ function ProductsContent() {
                 sizes="70px"
                 className="object-cover"
               />
-            </div>
+            </Link>
 
             <div className="flex-1 min-w-0 space-y-1">
-              <h3 className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 leading-snug">
-                {product.name}
-              </h3>
+              <Link href={`/dashboard/products/${product.id}`}>
+                <h3 className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 leading-snug hover:text-primary transition-colors">
+                  {product.name}
+                </h3>
+              </Link>
 
               <p className="text-[11px] text-muted-foreground font-medium truncate">
                 {product.color}
@@ -676,9 +349,9 @@ function ProductsContent() {
               <span className="text-[9px] text-muted-foreground block font-bold uppercase tracking-wider">
                 Harga Jual
               </span>
-              <span className="text-xs font-black text-foreground">{formatIDR(product.price)}</span>
+              <span className="text-xs font-bold text-foreground">{formatIDR(product.price)}</span>
               {product.hpp ? (
-                <span className="text-[9px] text-amber-600 dark:text-amber-400 font-bold block">
+                <span className="text-[9px] text-muted-foreground block">
                   HPP: {formatIDR(product.hpp)}
                 </span>
               ) : null}
@@ -692,78 +365,25 @@ function ProductsContent() {
             </div>
           </div>
 
-          {/* Stock Info */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Total Stok:
-              </span>
-              {product.stockMode === 'ALWAYS_AVAILABLE' ? (
-                <Badge
-                  variant="outline"
-                  className="bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full gap-1"
-                >
-                  <InfinityIcon className="h-3 w-3 stroke-[2.5]" />
-                  <span>Tanpa Batas</span>
-                </Badge>
-              ) : (
-                <div className="flex items-center gap-1 font-bold text-[11px]">
-                  <Package
-                    className={`h-3.5 w-3.5 ${totalStock > 0 ? 'text-emerald-500' : 'text-red-500'}`}
-                  />
-                  <span
-                    className={
-                      totalStock > 0 ? 'text-foreground font-black' : 'text-red-500 font-black'
-                    }
-                  >
-                    {totalStock} pcs
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Size Pills */}
-            {product.stockMode !== 'ALWAYS_AVAILABLE' && product.variants?.length > 0 && (
-              <div className="flex gap-1 flex-wrap pt-0.5">
-                {product.variants.map((v) => {
-                  const qty = v.stock ?? (v.inStock ? 10 : 0);
-                  return (
-                    <span
-                      key={v.size}
-                      className={cn(
-                        'inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-bold border rounded',
-                        qty > 0
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                          : 'bg-muted/40 text-muted-foreground border-border/30 line-through opacity-40'
-                      )}
-                    >
-                      <span>{v.size}:</span>
-                      <span>{qty}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
           {/* Bottom Actions Bar */}
           <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30">
             <div className="flex items-center gap-1.5 flex-1">
+              <Link href={`/dashboard/products/${product.id}`} className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-8 text-xs font-semibold rounded-xl gap-1 cursor-pointer"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  <span>Detail</span>
+                </Button>
+              </Link>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setDetailProduct(product)}
-                className="flex-1 h-8 text-xs font-semibold rounded-xl gap-1 cursor-pointer"
-              >
-                <Eye className="h-3.5 w-3.5" />
-                <span>Detail</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleOpenEdit(product)}
+                onClick={() => router.push(`/dashboard/products/${product.id}/edit`)}
                 className="flex-1 h-8 text-xs font-bold rounded-xl gap-1 cursor-pointer bg-primary/5 hover:bg-primary/10 text-primary border-primary/20"
               >
                 <Edit className="h-3.5 w-3.5" />
@@ -785,7 +405,7 @@ function ProductsContent() {
         </div>
       );
     },
-    [handleOpenEdit, isDeleting, getStatusBadge]
+    [router, isDeleting, getStatusBadge]
   );
 
   return (
@@ -793,20 +413,30 @@ function ProductsContent() {
       <Flex direction="responsive" justify="between" align="center" gap="md">
         <VStack gap="xs">
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-            Master Produk & Stok
+            Katalog Produk Kaos
           </h1>
           <p className="text-sm text-muted-foreground pt-1">
-            Kelola katalog kaos RIO COLLECTION, atur mode ketersediaan, spesifikasi bahan & care
-            instruction, harga, & HPP
+            Kelola detail katalog kaos (harga, HPP, edisi, kategori, spesifikasi bahan, dan galeri
+            foto).
           </p>
         </VStack>
-        <Button
-          onClick={handleOpenCreate}
-          className="w-full sm:w-auto gap-2 h-10 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Tambah Kaos Baru</span>
-        </Button>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <Link href="/dashboard/stock" className="w-full sm:w-auto">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto gap-2 h-10 rounded-xl cursor-pointer font-bold text-xs"
+            >
+              <Package className="h-4 w-4 text-primary" />
+              <span>Manajemen Stok</span>
+            </Button>
+          </Link>
+          <Link href="/dashboard/products/create" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto gap-2 h-10 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs shadow-sm">
+              <Plus className="h-4 w-4" />
+              <span>Tambah Kaos Baru</span>
+            </Button>
+          </Link>
+        </div>
       </Flex>
 
       {isOutOfStockFilter && (
@@ -845,827 +475,98 @@ function ProductsContent() {
         searchPlaceholder="Cari nama kaos, edisi, deskripsi..."
         renderCard={renderProductCard}
         filterComponents={
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider shrink-0">
-              Kategori:
-            </span>
-            <Select
-              value={selectedCategory}
-              onValueChange={(val) => val && setSelectedCategory(val)}
-            >
-              <SelectTrigger className="w-full sm:w-45 h-10 sm:h-9 rounded-lg">
-                <SelectValue placeholder="Semua Kategori" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Semua Kategori</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.slug}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Sheet open={isFilterOpen} onOpenChange={handleOpenFilterDrawer}>
+            <SheetTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 rounded-lg text-xs font-medium cursor-pointer"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span>Filter</span>
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              }
+            />
+            <SheetContent side="right">
+              <SheetHeader className="border-b border-border/30 pb-4 pr-8">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-sm font-bold flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span>Filter Katalog Kaos</span>
+                  </SheetTitle>
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      <span>Reset All</span>
+                    </button>
+                  )}
+                </div>
+                <SheetDescription className="text-xs text-muted-foreground mt-1">
+                  Saring katalog kaos berdasarkan kategori dan status ketersediaan.
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="space-y-5 py-5">
+                {/* Category Multi-Filter Section */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">Kategori Kaos</Label>
+                  <MultiSelect
+                    options={categoryOptions}
+                    value={draftCategories}
+                    onChange={setDraftCategories}
+                    placeholder="Semua Kategori"
+                    searchPlaceholder="Cari kategori..."
+                    emptyText="Kategori tidak ditemukan"
+                  />
+                </div>
+
+                {/* Status Multi-Filter Section */}
+                <div className="space-y-1.5 pt-3 border-t border-border/20">
+                  <Label className="text-xs font-bold text-foreground">Status Produk</Label>
+                  <MultiSelect
+                    options={statusOptions}
+                    value={draftStatuses}
+                    onChange={setDraftStatuses}
+                    placeholder="Semua Status"
+                    searchPlaceholder="Cari status..."
+                    emptyText="Status tidak ditemukan"
+                  />
+                </div>
+              </div>
+
+              <SheetFooter className="border-t border-border/30 pt-4 flex flex-row items-center justify-end gap-2.5">
+                <Button
+                  variant="outline"
+                  onClick={handleResetFilters}
+                  className="h-8 text-xs font-medium rounded-xl cursor-pointer gap-1.5"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Reset</span>
+                </Button>
+                <Button
+                  onClick={handleApplyFilters}
+                  className="h-8 text-xs font-medium rounded-xl cursor-pointer"
+                >
+                  Terapkan Filter
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         }
         emptyTitle="Produk Tidak Ditemukan"
         emptyDescription="Tidak ada data katalog kaos yang cocok dengan filter atau pencarian Anda."
         pageSize={10}
       />
-
-      {/* Add / Edit Product Dialog Form */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl sm:max-w-7xl bg-card border-border/40 rounded-xl">
-          <DialogHeader className="border-b border-border/20 pb-4">
-            <DialogTitle className="text-lg font-extrabold flex items-center gap-2">
-              <Tag className="h-5 w-5 text-muted-foreground" />
-              <span>
-                {editingProduct
-                  ? `Edit Kaos & Spesifikasi: ${editingProduct.name}`
-                  : 'Tambah Model Kaos & Spesifikasi Baru'}
-              </span>
-            </DialogTitle>
-            <DialogDescription className="text-xs pt-1">
-              Atur informasi dasar kaos, harga HPP, mode ketersediaan stok, galeri foto, serta
-              Materials & Care instruction.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 max-h-[70vh] overflow-y-auto pr-1">
-            {/* Left Col: Basic Fields & Materials */}
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-name" className="text-xs font-bold text-foreground">
-                  Nama Kaos
-                </Label>
-                <Input
-                  id="prod-name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Misal: Heavy-Weight Boxy Tee"
-                  className="h-10 rounded-lg"
-                  required
-                />
-              </div>
-
-              {/* Mode Manajemen Stok Toggle */}
-              <div className="space-y-2 bg-muted/15 p-4 rounded-lg border border-border/20">
-                <Label className="text-xs font-bold text-foreground flex items-center justify-between">
-                  <span>Mode Ketersediaan Stok</span>
-                  <span className="text-[10px] text-muted-foreground font-normal">
-                    Pilih metode kontrol stok
-                  </span>
-                </Label>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  {/* Card 1: By Quantity */}
-                  <div
-                    onClick={() => setStockMode('QUANTITY')}
-                    className={cn(
-                      'p-3 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between gap-2.5',
-                      stockMode === 'QUANTITY'
-                        ? 'bg-card border-foreground ring-1 ring-foreground shadow-xs'
-                        : 'bg-muted/20 border-border/30 hover:border-border/80'
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                        <Boxes className="h-4 w-4 text-emerald-500 shrink-0" />
-                        Berdasarkan Qty Stok
-                      </span>
-                      <div
-                        className={cn(
-                          'w-4 h-4 rounded-full border flex items-center justify-center shrink-0',
-                          stockMode === 'QUANTITY'
-                            ? 'border-foreground bg-foreground'
-                            : 'border-border/60'
-                        )}
-                      >
-                        {stockMode === 'QUANTITY' && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-background" />
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-normal">
-                      Menghitung stok fisik per size. Otomatis{' '}
-                      <strong className="text-foreground font-semibold">Sold Out</strong> jika stok
-                      0.
-                    </p>
-                  </div>
-
-                  {/* Card 2: Always Available */}
-                  <div
-                    onClick={() => setStockMode('ALWAYS_AVAILABLE')}
-                    className={cn(
-                      'p-3 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between gap-2.5',
-                      stockMode === 'ALWAYS_AVAILABLE'
-                        ? 'bg-card border-foreground ring-1 ring-foreground shadow-xs'
-                        : 'bg-muted/20 border-border/30 hover:border-border/80'
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                        <InfinityIcon className="h-4 w-4 text-blue-500 shrink-0" />
-                        Selalu Tersedia
-                      </span>
-                      <div
-                        className={cn(
-                          'w-4 h-4 rounded-full border flex items-center justify-center shrink-0',
-                          stockMode === 'ALWAYS_AVAILABLE'
-                            ? 'border-foreground bg-foreground'
-                            : 'border-border/60'
-                        )}
-                      >
-                        {stockMode === 'ALWAYS_AVAILABLE' && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-background" />
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-normal">
-                      Tanpa batas stok (selalu ready stock / pre-order).
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Batasan Pemesanan per Akun */}
-              <div className="space-y-2 pt-1 border-t border-border/50">
-                <Label className="text-xs font-bold text-foreground">
-                  Batas Pembelian per Akun / Customer
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div
-                    onClick={() => setOrderLimitMode('UNLIMITED')}
-                    className={cn(
-                      'p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-1',
-                      orderLimitMode === 'UNLIMITED'
-                        ? 'border-foreground bg-foreground/5 shadow-xs'
-                        : 'border-border/60 hover:border-border'
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-foreground">
-                        Bebas / Unlimited
-                      </span>
-                      <div
-                        className={cn(
-                          'w-3.5 h-3.5 rounded-full border flex items-center justify-center',
-                          orderLimitMode === 'UNLIMITED'
-                            ? 'border-foreground bg-foreground'
-                            : 'border-border/60'
-                        )}
-                      >
-                        {orderLimitMode === 'UNLIMITED' && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-background" />
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-normal">
-                      Bisa dipesan berkali-kali oleh akun/customer yang sama.
-                    </p>
-                  </div>
-
-                  <div
-                    onClick={() => setOrderLimitMode('ONCE_PER_USER')}
-                    className={cn(
-                      'p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-1',
-                      orderLimitMode === 'ONCE_PER_USER'
-                        ? 'border-amber-600 dark:border-amber-400 bg-amber-500/10 shadow-xs'
-                        : 'border-border/60 hover:border-border'
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
-                        Hanya 1x per Akun
-                      </span>
-                      <div
-                        className={cn(
-                          'w-3.5 h-3.5 rounded-full border flex items-center justify-center',
-                          orderLimitMode === 'ONCE_PER_USER'
-                            ? 'border-amber-600 bg-amber-600'
-                            : 'border-border/60'
-                        )}
-                      >
-                        {orderLimitMode === 'ONCE_PER_USER' && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-background" />
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-normal">
-                      Khusus Exclusive Drop / limit 1 pcs per akun email.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="prod-price" className="text-xs font-bold text-foreground">
-                    Harga Jual
-                  </Label>
-                  <RupiahInput
-                    id="prod-price"
-                    value={price}
-                    onValueChange={setPrice}
-                    className="h-10 rounded-xl font-bold"
-                    placeholder="250.000"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="prod-hpp"
-                    className="text-xs font-bold text-foreground flex justify-between items-center"
-                  >
-                    <span>HPP / Modal</span>
-                    <span className="text-[9px] text-amber-600 dark:text-amber-400 font-extrabold uppercase">
-                      Privat
-                    </span>
-                  </Label>
-                  <RupiahInput
-                    id="prod-hpp"
-                    value={hpp}
-                    onValueChange={setHpp}
-                    className="h-10 rounded-xl font-bold text-amber-600 dark:text-amber-400"
-                    placeholder="180.000"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Edisi / Drop</Label>
-                <Select value={edition} onValueChange={(val) => val && setEdition(val)}>
-                  <SelectTrigger className="h-10 rounded-xl">
-                    <SelectValue placeholder="Pilih Edisi / Drop" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {editions.map((ed) => (
-                      <SelectItem key={ed.id} value={ed.name}>
-                        {ed.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">
-                  Warna (bisa pilih lebih dari satu)
-                </Label>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center -space-x-1.5 shrink-0">
-                    {(colorsSelected.length > 0 ? colorsSelected : []).map((name) => {
-                      const hex = colors.find((c) => c.name === name)?.hex || '#1A1A1A';
-                      const isLight =
-                        hex.toLowerCase() === '#ffffff' ||
-                        hex.toLowerCase() === '#fff' ||
-                        hex.toLowerCase() === '#fafafa' ||
-                        hex.toLowerCase() === '#f5f5f5';
-
-                      return (
-                        <span
-                          key={name}
-                          className={cn(
-                            'h-8 w-8 rounded-full border-2 shadow-xs',
-                            isLight ? 'border-stone-400 dark:border-stone-500' : 'border-card'
-                          )}
-                          style={{ backgroundColor: hex }}
-                          title={name}
-                        />
-                      );
-                    })}
-                    {colorsSelected.length === 0 && (
-                      <span className="h-8 w-8 rounded-full border border-border/40 bg-muted/30" />
-                    )}
-                  </div>
-                  <MultiSelect
-                    className="grow"
-                    placeholder="Pilih satu atau beberapa warna"
-                    maxCount={3}
-                    value={colorsSelected}
-                    onChange={(selected) => {
-                      setColorsSelected(selected);
-                      const first = colors.find((c) => c.name === selected[0]);
-                      if (first) setColorHex(first.hex);
-                    }}
-                    options={colors
-                      .filter((c) => c.isActive || colorsSelected.includes(c.name))
-                      .map((c) => ({
-                        value: c.name,
-                        label: c.name,
-                        description: c.hex
-                      }))}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Kategori</Label>
-                  <Select value={category} onValueChange={(val) => val && setCategory(val)}>
-                    <SelectTrigger className="h-10 rounded-xl">
-                      <SelectValue placeholder="Pilih Kategori">
-                        {categories.find((c) => c.slug === category)?.name || category}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories
-                        .filter((cat) => cat.isActive || cat.slug === category)
-                        .map((cat) => (
-                          <SelectItem key={cat.id} value={cat.slug}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">
-                    Status Availability Produk
-                  </Label>
-                  <Select
-                    value={status}
-                    onValueChange={(val) => val && setStatus(val as ProductStatus)}
-                  >
-                    <SelectTrigger className="h-10 rounded-xl">
-                      <SelectValue placeholder="Pilih Status">
-                        {STATUS_LABEL_MAP[status] || status}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="AVAILABLE">Available (Ready)</SelectItem>
-                      <SelectItem value="SOLD_OUT">Sold Out (Restock)</SelectItem>
-                      <SelectItem value="DISCONTINUED">Discontinued</SelectItem>
-                      <SelectItem value="COMING_SOON">Coming Soon</SelectItem>
-                      <SelectItem value="PRE_ORDER">Pre-Order</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {stockMode === 'QUANTITY' && (
-                    <div className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1 mt-1">
-                      {totalFormStock > 0 ? (
-                        <span className="text-emerald-600 dark:text-emerald-400">
-                          ● Ready Stock ({totalFormStock} pcs)
-                        </span>
-                      ) : (
-                        <span className="text-red-500">● Stok Kosong (0 pcs)</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-desc" className="text-xs font-bold text-foreground">
-                  Deskripsi Produk
-                </Label>
-                <Textarea
-                  id="prod-desc"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detail bahan, sizing, fitting, dan visual sablon kaos..."
-                  className="min-h-20 rounded-lg text-xs"
-                />
-              </div>
-
-              {/* Materials & Care Form Section */}
-              <div className="space-y-3 p-4 bg-muted/10 border border-border/20 rounded-lg">
-                <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Shirt className="h-4 w-4 text-sky-500 shrink-0" />
-                  Spesifikasi Bahan & Perawatan (Materials & Care)
-                </Label>
-                <div className="space-y-2.5">
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="mat-fabric"
-                      className="text-[11px] font-semibold text-muted-foreground"
-                    >
-                      Fabric / Material Bahan
-                    </Label>
-                    <Input
-                      id="mat-fabric"
-                      value={fabric}
-                      onChange={(e) => setFabric(e.target.value)}
-                      placeholder="100% Premium Heavyweight Cotton, 280gsm"
-                      className="h-9 text-xs rounded-lg"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="mat-treatment"
-                      className="text-[11px] font-semibold text-muted-foreground"
-                    >
-                      Treatment Bahan
-                    </Label>
-                    <Input
-                      id="mat-treatment"
-                      value={treatment}
-                      onChange={(e) => setTreatment(e.target.value)}
-                      placeholder="Pre-shrunk to minimize shrinkage"
-                      className="h-9 text-xs rounded-lg"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label
-                        htmlFor="mat-origin"
-                        className="text-[11px] font-semibold text-muted-foreground"
-                      >
-                        Origin / Negara Asal
-                      </Label>
-                      <Input
-                        id="mat-origin"
-                        value={origin}
-                        onChange={(e) => setOrigin(e.target.value)}
-                        placeholder="Constructed in Indonesia"
-                        className="h-9 text-xs rounded-lg"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label
-                        htmlFor="mat-care"
-                        className="text-[11px] font-semibold text-muted-foreground"
-                      >
-                        Care Instruction
-                      </Label>
-                      <Input
-                        id="mat-care"
-                        value={careInstruction}
-                        onChange={(e) => setCareInstruction(e.target.value)}
-                        placeholder="Machine wash cold inside out..."
-                        className="h-9 text-xs rounded-lg"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Col: Media and Sizing with Numeric Stock Control */}
-            <div className="space-y-5">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Foto Utama</Label>
-                <ImageUpload
-                  value={imageUrl}
-                  onChange={setImageUrl}
-                  placeholder="Pilih atau upload foto kaos utama"
-                  aspectRatio="3:4"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Foto Detail (Opsional)</Label>
-                <MultiImageUpload
-                  value={imagesList}
-                  onChange={(images) => {
-                    setImagesList(images);
-                  }}
-                  maxImages={99}
-                  slotLabels={imagesList.map((_, i) => `Foto Detail ${i + 1}`)}
-                  aspectRatio="1:1"
-                />
-              </div>
-
-              {/* Enhanced Stock Management Per Size */}
-              <div className="space-y-3 p-4 bg-muted/10 border border-border/20 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <Boxes className="h-4 w-4 text-emerald-500" />
-                    Manajemen Stok Per Ukuran (Size)
-                  </Label>
-                  {stockMode === 'ALWAYS_AVAILABLE' ? (
-                    <Badge
-                      variant="secondary"
-                      className="font-mono text-xs font-bold bg-blue-500/10 text-blue-600 border-blue-500/20 gap-1"
-                    >
-                      <InfinityIcon className="h-3.5 w-3.5" />
-                      <span>Selalu Available</span>
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="font-mono text-xs font-bold bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                    >
-                      Total: {totalFormStock} pcs
-                    </Badge>
-                  )}
-                </div>
-
-                {stockMode === 'ALWAYS_AVAILABLE' ? (
-                  <p className="text-xs text-muted-foreground bg-blue-500/5 border border-blue-500/15 p-3 rounded-xl">
-                    Mode <strong>Selalu Tersedia</strong> aktif. Produk tidak membatasi jumlah stok
-                    dan tidak akan otomatis menjadi Sold Out.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                    {Object.keys(sizesStock).map((size) => {
-                      const item = sizesStock[size] || { inStock: false, stock: 0 };
-                      return (
-                        <div
-                          key={size}
-                          className={cn(
-                            'flex items-center justify-between p-2.5 border rounded-xl transition-all',
-                            item.inStock && item.stock > 0
-                              ? 'bg-card border-border/40 shadow-2xs'
-                              : 'bg-muted/20 border-border/20 opacity-60'
-                          )}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => toggleSizeStock(size)}
-                            className="flex items-center gap-2 cursor-pointer text-xs font-bold text-foreground"
-                          >
-                            <div
-                              className={cn(
-                                'h-5 w-5 rounded-md border flex items-center justify-center transition-colors',
-                                item.inStock
-                                  ? 'bg-foreground text-background border-foreground'
-                                  : 'border-border/60 bg-transparent'
-                              )}
-                            >
-                              {item.inStock && <Check className="h-3.5 w-3.5" />}
-                            </div>
-                            <span>Ukuran {size}</span>
-                          </button>
-
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-muted-foreground font-semibold uppercase">
-                              Qty:
-                            </span>
-                            <Input
-                              type="number"
-                              min={0}
-                              disabled={!item.inStock}
-                              value={item.stock}
-                              onChange={(e) => updateSizeStockQty(size, Number(e.target.value))}
-                              className="w-16 h-8 text-center font-mono font-bold text-xs rounded-lg"
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="border-t border-border/20 pt-4 gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsDialogOpen(false)}
-              className="h-10 rounded-xl text-xs cursor-pointer"
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={handleSaveProduct}
-              disabled={!name || !imageUrl || isCreating || isUpdating}
-              className="h-10 rounded-xl text-xs cursor-pointer font-bold uppercase tracking-wider"
-            >
-              {isCreating || isUpdating ? 'Menyimpan...' : 'Simpan Produk & Spesifikasi'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Read-Only Product Detail Dialog */}
-      <Dialog
-        open={detailProduct !== null}
-        onOpenChange={(open) => {
-          if (!open) setDetailProduct(null);
-        }}
-      >
-        {detailProduct &&
-          (() => {
-            const detailUrls = (detailProduct.imageDetails ?? [])
-              .map((img) => img.url)
-              .filter(Boolean);
-            const fallbackDetails = (detailProduct.images || []).filter(
-              (image) => image && image !== detailProduct.imageUrl
-            );
-            const allDetails = detailUrls.length > 0 ? detailUrls : fallbackDetails;
-            const imagesList = Array.from(
-              new Set([detailProduct.imageUrl, ...allDetails].filter(Boolean))
-            );
-            const activeImage = imagesList[activeImageIndex] || detailProduct.imageUrl;
-            const totalStock =
-              detailProduct.stock ??
-              detailProduct.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
-
-            return (
-              <DialogContent className="sm:max-w-4xl bg-card border-border/40 rounded-xl p-6 md:p-8">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 max-h-[75vh] overflow-y-auto pr-1">
-                  {/* Left: Gallery (7 cols on desktop) */}
-                  <div className="md:col-span-7 flex flex-col gap-4">
-                    {/* Main Active Image View */}
-                    <div className="relative aspect-4/5 w-full overflow-hidden rounded-xl bg-muted/20 border border-border/10 group">
-                      <Image
-                        src={activeImage}
-                        alt={`${detailProduct.name} View`}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        className="object-cover transition-all duration-300"
-                        priority
-                      />
-
-                      {/* Image index indicator */}
-                      {imagesList.length > 1 && (
-                        <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs px-2.5 py-1 text-[10px] font-bold text-white rounded-lg">
-                          {activeImageIndex + 1} / {imagesList.length}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Thumbnail Row */}
-                    {imagesList.length > 1 && (
-                      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                        {imagesList.map((img, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => setActiveImageIndex(idx)}
-                            className={cn(
-                              'relative w-16 aspect-4/5 shrink-0 overflow-hidden rounded-lg bg-muted/20 border transition-all cursor-pointer',
-                              activeImageIndex === idx
-                                ? 'border-foreground ring-1 ring-foreground opacity-100'
-                                : 'border-transparent opacity-60 hover:opacity-100'
-                            )}
-                          >
-                            <Image
-                              src={img}
-                              alt={`${detailProduct.name} thumb ${idx + 1}`}
-                              fill
-                              sizes="80px"
-                              className="object-cover"
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right: Info & Specs (5 cols on desktop) */}
-                  <div className="md:col-span-5 flex flex-col justify-between space-y-6">
-                    <div className="space-y-4">
-                      {/* Category & Edition tags */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/40 px-2 py-0.5 rounded-md border border-border/10">
-                          {detailProduct.edition}
-                        </span>
-                        <div className="pr-6">{getStatusBadge(detailProduct)}</div>
-                      </div>
-
-                      {/* Title & Price */}
-                      <div>
-                        <h2 className="text-xl md:text-2xl font-black tracking-tight text-foreground">
-                          {detailProduct.name}
-                        </h2>
-                        <p className="text-lg font-black text-foreground/90 mt-1 tabular-nums">
-                          {formatIDR(detailProduct.price)}
-                        </p>
-                      </div>
-
-                      {/* Stock Summary Banner */}
-                      <div className="p-3 bg-muted/20 rounded-xl border border-border/20 flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
-                          <Package className="h-4 w-4 text-emerald-500" />
-                          Ketersediaan Stok:
-                        </span>
-                        <span className="text-xs font-extrabold text-foreground font-mono">
-                          {detailProduct.stockMode === 'ALWAYS_AVAILABLE'
-                            ? 'Selalu Ready (Tanpa Batas)'
-                            : `${totalStock} pcs`}
-                        </span>
-                      </div>
-
-                      {/* Materials & Care Breakdown */}
-                      <div className="p-3 bg-sky-500/5 rounded-xl border border-sky-500/15 space-y-1.5">
-                        <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                          <Shirt className="h-3.5 w-3.5" />
-                          Materials & Care
-                        </span>
-                        <div className="text-[11px] space-y-1 text-foreground/90">
-                          <div>
-                            <strong className="font-semibold text-muted-foreground">Fabric:</strong>{' '}
-                            {detailProduct.materialsAndCare?.fabric ||
-                              '100% Premium Cotton, 280gsm'}
-                          </div>
-                          <div>
-                            <strong className="font-semibold text-muted-foreground">
-                              Treatment:
-                            </strong>{' '}
-                            {detailProduct.materialsAndCare?.treatment || 'Pre-shrunk'}
-                          </div>
-                          <div>
-                            <strong className="font-semibold text-muted-foreground">Origin:</strong>{' '}
-                            {detailProduct.materialsAndCare?.origin || 'Constructed in Indonesia'}
-                          </div>
-                          <div>
-                            <strong className="font-semibold text-muted-foreground">Care:</strong>{' '}
-                            {detailProduct.materialsAndCare?.careInstruction ||
-                              'Machine wash cold inside out'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Category Text */}
-                      <div className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5 uppercase tracking-wider">
-                        <Layers className="h-3.5 w-3.5" />
-                        Kategori:{' '}
-                        <span className="text-foreground capitalize">
-                          {detailProduct.category.replace('-', ' ')}
-                        </span>
-                      </div>
-
-                      {/* Description */}
-                      {detailProduct.description && (
-                        <div className="space-y-1 pt-1 border-t border-border/15">
-                          <span className="text-[10px] text-muted-foreground/70 uppercase tracking-wider font-bold">
-                            Deskripsi
-                          </span>
-                          <p className="text-xs text-foreground/80 leading-relaxed font-medium">
-                            {detailProduct.description}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Color Info */}
-                      <div className="space-y-1.5 pt-1 border-t border-border/15">
-                        <span className="text-[10px] text-muted-foreground/70 uppercase tracking-wider font-bold">
-                          Warna / Color
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="h-6 w-6 rounded-md border border-border/30 shadow-xs shrink-0"
-                            style={{ backgroundColor: detailProduct.colorHex }}
-                          />
-                          <p className="text-xs font-bold text-foreground">{detailProduct.color}</p>
-                        </div>
-                      </div>
-
-                      {/* Sizing Stock status */}
-                      <div className="space-y-1.5 pt-1 border-t border-border/15">
-                        <span className="text-[10px] text-muted-foreground/70 uppercase tracking-wider font-bold">
-                          Rincian Stok Per Ukuran
-                        </span>
-                        {detailProduct.stockMode === 'ALWAYS_AVAILABLE' ? (
-                          <p className="text-xs text-muted-foreground italic">
-                            Semua ukuran selalu ready stock.
-                          </p>
-                        ) : (
-                          <div className="grid grid-cols-2 gap-2">
-                            {detailProduct.variants.map((v) => {
-                              const qty = v.stock ?? (v.inStock ? 10 : 0);
-                              return (
-                                <div
-                                  key={v.size}
-                                  className={cn(
-                                    'h-9 px-3 flex items-center justify-between text-xs font-bold border rounded-xl select-none transition-all',
-                                    qty > 0
-                                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                                      : 'bg-muted/40 text-muted-foreground border-border/30 line-through opacity-40'
-                                  )}
-                                >
-                                  <span>Ukuran {v.size}</span>
-                                  <span className="font-mono">
-                                    {qty > 0 ? `${qty} pcs` : 'Habis'}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-4 border-t border-border/20">
-                      <Button
-                        variant="outline"
-                        onClick={() => setDetailProduct(null)}
-                        className="flex-1 h-10 rounded-xl text-xs cursor-pointer font-bold"
-                      >
-                        Tutup
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          const prod = detailProduct;
-                          setDetailProduct(null);
-                          handleOpenEdit(prod);
-                        }}
-                        className="flex-1 h-10 rounded-xl text-xs cursor-pointer gap-1.5 font-bold"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        Edit Produk & Stok
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </DialogContent>
-            );
-          })()}
-      </Dialog>
 
       <ConfirmModal
         open={Boolean(deleteTargetProduct)}
@@ -1683,20 +584,6 @@ function ProductsContent() {
         variant="destructive"
         loading={isDeleting}
         onConfirm={confirmDeleteProduct}
-      />
-      <ConfirmModal
-        open={isConfirmStockOpen}
-        onOpenChange={setIsConfirmStockOpen}
-        title="Konfirmasi Perubahan Stok"
-        description="Anda telah mengubah jumlah stok (quantity) produk ini. Apakah Anda yakin ingin menyimpan perubahan?"
-        confirmText="Simpan"
-        cancelText="Batal"
-        variant="default"
-        onConfirm={() => {
-          if (pendingProductPayload) {
-            executeSaveProduct(pendingProductPayload);
-          }
-        }}
       />
     </VStack>
   );
