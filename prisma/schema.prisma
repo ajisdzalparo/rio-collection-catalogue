@@ -93,6 +93,11 @@ model Product {
   deletedAt        DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+
+  @@index([deletedAt])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
 }
 
 model ProductVariant {
@@ -118,6 +123,9 @@ model Journal {
   pullQuote    String?
   productLinks ProductJournal[]
   createdAt    DateTime         @default(now())
+
+  @@index([createdAt])
+  @@index([category])
 }
 
 model ProductJournal {
@@ -163,6 +171,8 @@ model Customer {
   updatedAt    DateTime        @updatedAt
   orders       Order[]
   reviews      ProductReview[]
+
+  @@index([whatsapp])
 }
 
 model OtpVerification {
@@ -224,6 +234,10 @@ model Order {
   items                     OrderItem[]
   createdAt                 DateTime    @default(now())
   updatedAt                 DateTime    @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([customerId])
 }
 
 model OrderItem {

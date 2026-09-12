@@ -1,10 +1,28 @@
 import { NextResponse } from 'next/server';
 import { requestOtp, OtpError } from '@/lib/otp';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit('otp-send-ip', ip, {
+      windowMs: 60_000,
+      maxRequests: 5
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          code: 429,
+          status: 'error',
+          message: `Terlalu banyak permintaan OTP dari perangkat Anda. Silakan coba lagi dalam ${rateLimit.retryAfterSeconds} detik.`
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const { email, type = 'ORDER' } = body;
 

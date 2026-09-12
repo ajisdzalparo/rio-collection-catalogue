@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: 'Explore the latest limited-edition T-shirt designs and drops from RIO COLLECTION.'
 };
 
+export const revalidate = 60;
+
 export default async function CataloguePage() {
   const products = await getProducts();
 

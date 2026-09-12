@@ -6,7 +6,19 @@ import { notFound } from 'next/navigation';
 import { getJournals, getJournalBySlug, getProducts } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  try {
+    const journals = await getJournals();
+    return journals.map((article) => ({
+      slug: article.slug
+    }));
+  } catch {
+    return [];
+  }
+}
 
 interface JournalDetailProps {
   params: Promise<{ slug: string }>;

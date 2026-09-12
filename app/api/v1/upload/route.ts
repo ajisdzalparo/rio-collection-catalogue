@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { uploadToMinio } from '@/lib/minio';
 
 export async function POST(request: Request) {
@@ -15,6 +16,19 @@ export async function POST(request: Request) {
     }
 
     const isPaymentProof = purpose === 'payment-proof';
+
+    // If not payment-proof, require authenticated admin session
+    if (!isPaymentProof) {
+      const cookieStore = await cookies();
+      const token = cookieStore.get('auth_token')?.value;
+      const authHeader = request.headers.get('authorization');
+      if (!token && !authHeader) {
+        return NextResponse.json(
+          { code: 401, status: 'error', message: 'Autentikasi admin diperlukan untuk mengunggah file media.' },
+          { status: 401 }
+        );
+      }
+    }
     const allowedTypes = isPaymentProof
       ? ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
       : ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];

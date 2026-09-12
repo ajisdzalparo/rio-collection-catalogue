@@ -8,7 +8,7 @@ import { formatIDR } from '@/lib/utils';
 
 const LAST_SEEN_KEY = 'rio-dashboard-orders-last-seen-at';
 const SOUND_ENABLED_KEY = 'rio-dashboard-order-sound-enabled';
-const POLL_INTERVAL_MS = 5_000;
+const POLL_INTERVAL_MS = 15_000;
 
 export interface OrderNotification {
   id: string;
@@ -115,7 +115,7 @@ export function useOrderNotifications() {
     queryKey: ['orders', 'notifications', lastSeenAt],
     queryFn: () => fetchOrderNotifications(lastSeenAt as string),
     refetchInterval: POLL_INTERVAL_MS,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
     retry: 1
   });
 

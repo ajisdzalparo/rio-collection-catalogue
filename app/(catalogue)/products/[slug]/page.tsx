@@ -1,9 +1,21 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getProductBySlug } from '@/lib/api';
+import { getProducts, getProductBySlug } from '@/lib/api';
 import { ProductDetailContent } from '@/components/catalogue/product-detail-content';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  try {
+    const products = await getProducts();
+    return products.map((product) => ({
+      slug: product.slug
+    }));
+  } catch {
+    return [];
+  }
+}
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;

@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import { formatWaNumber } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: 'About',
