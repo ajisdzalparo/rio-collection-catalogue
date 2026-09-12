@@ -100,7 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </React.Suspense>
           <OfflineDetector />
           {children}
-          <Toaster position="top-right" richColors />
+          <Toaster position="top-center" richColors />
         </AppProvider>
       </body>
     </html>
