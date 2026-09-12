@@ -166,13 +166,14 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Gallery (5 Cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="relative aspect-4/5 w-full max-h-105 max-w-md mx-auto overflow-hidden rounded-2xl bg-card border border-border/40 shadow-xs group transition-all duration-300">
+          <div className="relative aspect-4/5 w-full overflow-hidden rounded-2xl bg-card border border-border/40 shadow-xs group transition-all duration-300">
             <Image
               src={activeImage}
               alt={product.name}
               fill
               sizes="(max-width: 1024px) 100vw, 40vw"
-              className="object-contain p-4 transition-transform duration-300 group-hover:scale-102"
+              className="object-cover transition-transform duration-300 group-hover:scale-102"
+              style={{ objectFit: 'cover' }}
               priority
             />
 
@@ -206,16 +207,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
           {/* Thumbnail list */}
           {imagesList.length > 1 && (
-            <div className="flex gap-2.5 overflow-x-auto p-1 justify-center scrollbar-none">
+            <div className="flex gap-2.5 overflow-x-auto p-1 justify-start scrollbar-none">
               {imagesList.map((img, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => setActiveImageIndex(idx)}
                   className={cn(
-                    'relative w-16 aspect-4/5 shrink-0 overflow-hidden rounded-xl bg-card border p-1 transition-all duration-200 cursor-pointer',
+                    'relative h-16 w-16 sm:h-18 sm:w-18 shrink-0 overflow-hidden rounded-xl border transition-all duration-200 cursor-pointer',
                     activeImageIndex === idx
-                      ? 'border-primary ring-2 ring-primary/20 shadow-sm opacity-100 scale-105'
+                      ? 'border-primary ring-2 ring-primary/40 shadow-sm opacity-100 scale-105'
                       : 'border-border/40 opacity-60 hover:opacity-100 hover:border-border'
                   )}
                 >
@@ -223,8 +224,9 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     src={img}
                     alt={`${product.name} thumbnail ${idx + 1}`}
                     fill
-                    sizes="64px"
-                    className="object-contain p-0.5 rounded-lg"
+                    sizes="72px"
+                    className="object-cover"
+                    style={{ objectFit: 'cover' }}
                   />
                 </button>
               ))}

@@ -48,7 +48,7 @@ function SidebarBrandMark({ logoUrl, storeName }: SidebarBrandMarkProps) {
   return (
     <div
       className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-2xs ${
-        showLogo ? 'border border-border/60 bg-card' : 'bg-foreground text-background'
+        showLogo ? 'border border-border/60' : 'bg-foreground text-background'
       }`}
     >
       {showLogo && logoUrl ? (
@@ -59,7 +59,8 @@ function SidebarBrandMark({ logoUrl, storeName }: SidebarBrandMarkProps) {
           height={36}
           unoptimized
           onError={() => setFailedLogoUrl(logoUrl)}
-          className="h-full w-full object-contain p-1"
+          className="h-full w-full object-cover"
+          style={{ objectFit: 'cover' }}
         />
       ) : (
         <div className="grid h-4 w-4 grid-cols-2 gap-1" aria-hidden="true">
