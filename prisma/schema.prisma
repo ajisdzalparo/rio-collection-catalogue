@@ -55,6 +55,15 @@ model Size {
   createdAt DateTime  @default(now())
 }
 
+model MaterialMaster {
+  id          String   @id @default(cuid())
+  type        String   // FABRIC, TREATMENT, ORIGIN, CARE
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
 model Product {
   id               String           @id @default(cuid())
   name             String
@@ -76,11 +85,10 @@ model Product {
   images           String[]
   imageDetails     Json?
   description      String
-  storyTitle       String?
-  storyText        String?
   materialsAndCare Json?
   variants         ProductVariant[]
   reviews          ProductReview[]
+  journalLinks     ProductJournal[]
   deletedAt        DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -95,33 +103,31 @@ model ProductVariant {
   stock     Int     @default(0)
 }
 
-model Archive {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  status      String   @default("SOLD_OUT")
-  imageUrl    String
-  description String
-  journalId   String?
-  journal     Journal? @relation(fields: [journalId], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
+model Journal {
+  id           String           @id @default(cuid())
+  title        String
+  slug         String           @unique
+  author       String
+  date         String
+  category     String
+  imageUrl     String
+  excerpt      String
+  content      String[]
+  contentHtml  String?
+  pullQuote    String?
+  productLinks ProductJournal[]
+  createdAt    DateTime         @default(now())
 }
 
-model Journal {
-  id                 String   @id @default(cuid())
-  title              String
-  slug               String   @unique
-  author             String
-  date               String
-  category           String
-  imageUrl           String
-  excerpt            String
-  content            String[]
-  contentHtml        String?
-  archives           Archive[]
-  pullQuote          String?
-  relatedProductSlug String?
-  createdAt          DateTime @default(now())
+model ProductJournal {
+  productId String
+  journalId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  journal   Journal  @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([productId, journalId])
+  @@index([journalId])
 }
 
 model Topic {
@@ -189,90 +195,89 @@ model ProductReview {
 }
 
 model Order {
-  id             String      @id @default(cuid())
-  orderNumber    String      @unique
-  fullName       String
-  email          String?
-  whatsapp       String
-  address        String
-  notes          String?
-  adminNotes     String?
-  customerId     String?
-  customer       Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  courierName                    String?
-  trackingNumber                 String?
-  quotedShippingFee              Int         @default(15000)
-  shippingFee                    Int         @default(15000)
-  shippingAdjustmentAmount       Int         @default(0)
-  shippingAdjustmentStatus       String      @default("NONE") // NONE, CUSTOMER_CONFIRMATION_PENDING, CUSTOMER_CONFIRMED, REFUNDED, REFUND_WAIVED
-  shippingAdjustmentNote         String?
-  shippingAdjustmentWaSent      Boolean     @default(false)
-  paymentProofUrl                String?
-  additionalPaymentProofUrl      String?
-  refundProofUrl                 String?
-  shippingProofUrl               String?
-  totalPrice                     Int
-  status                         String      @default("PENDING") // PENDING, PAID, FULFILLED, CANCELLED
-  waFollowedUp                   Boolean     @default(false)
-  items                          OrderItem[]
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id                        String      @id @default(cuid())
+  orderNumber               String      @unique
+  fullName                  String
+  email                     String?
+  whatsapp                  String
+  address                   String
+  notes                     String?
+  adminNotes                String?
+  customerId                String?
+  customer                  Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  courierName               String?
+  trackingNumber            String?
+  quotedShippingFee         Int         @default(15000)
+  shippingFee               Int         @default(15000)
+  shippingAdjustmentAmount  Int         @default(0)
+  shippingAdjustmentStatus  String      @default("NONE") // NONE, CUSTOMER_CONFIRMATION_PENDING, CUSTOMER_CONFIRMED, REFUNDED, REFUND_WAIVED
+  shippingAdjustmentNote    String?
+  shippingAdjustmentWaSent  Boolean     @default(false)
+  paymentProofUrl           String?
+  additionalPaymentProofUrl String?
+  refundProofUrl            String?
+  shippingProofUrl          String?
+  totalPrice                Int
+  status                    String      @default("PENDING") // PENDING, PAID, FULFILLED, CANCELLED
+  waFollowedUp              Boolean     @default(false)
+  items                     OrderItem[]
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String?
-  name      String
-  size      String
-  price     Int
-  quantity  Int
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String?
+  name       String
+  size       String
+  price      Int
+  quantity   Int
   isPreOrder Boolean?
-  createdAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 }
 
 model StoreSettings {
-  id                String   @id @default("default")
-  storeName         String
-  whatsappNumber    String
-  bankName          String?
-  bankAccountNumber String?
-  bankAccountOwner  String?
-  flatShippingRate  Int
-  instagramUrl      String?
-  tiktokUrl         String?
-  facebookUrl       String?
-  pinterestUrl      String?
-  xTwitterUrl       String?
-  heroTitle         String?
-  heroSubtitle      String?
-  heroLayout        String?  @default("2-grid")
-  heroLeftImage     String?
-  heroCenterImage   String?
-  heroRightImage    String?
-  heroCtaText       String?
-  heroCtaLink       String?
-  homeFeaturedTitle String?
-  homeViewAllLabel  String?
+  id                 String   @id @default("default")
+  storeName          String
+  whatsappNumber     String
+  bankName           String?
+  bankAccountNumber  String?
+  bankAccountOwner   String?
+  instagramUrl       String?
+  tiktokUrl          String?
+  facebookUrl        String?
+  pinterestUrl       String?
+  xTwitterUrl        String?
+  heroTitle          String?
+  heroSubtitle       String?
+  heroLayout         String?  @default("2-grid")
+  heroLeftImage      String?
+  heroCenterImage    String?
+  heroRightImage     String?
+  heroCtaText        String?
+  heroCtaLink        String?
+  homeFeaturedTitle  String?
+  homeViewAllLabel   String?
   homeManifestoTitle String?
-  homeManifestoText String?
+  homeManifestoText  String?
   homeManifestoImage String?
-  homeBannerText    String?
-  homeBannerButton  String?
-  archiveHeaderSub  String?
-  archiveQuoteTitle String?
-  archiveQuoteText  String?
-  aboutHeroImage    String?
-  aboutHeading      String?
-  aboutParagraph1   String?
-  aboutParagraph2   String?
-  aboutValuesTitle  String?
-  aboutValues       Json?
-  aboutQuote        String?
-  aboutQuoteText    String?
-  aboutStudioImage  String?
-  contactEmail      String?
+  homeBannerText     String?
+  homeBannerButton   String?
+  archiveHeaderSub   String?
+  archiveQuoteTitle  String?
+  archiveQuoteText   String?
+  aboutHeroImage     String?
+  aboutHeading       String?
+  aboutParagraph1    String?
+  aboutParagraph2    String?
+  aboutValuesTitle   String?
+  aboutValues        Json?
+  aboutQuote         String?
+  aboutQuoteText     String?
+  aboutStudioImage   String?
+  contactEmail       String?
   waTemplatePending  String?
   waTemplatePayment  String?
   waTemplateShipping String?
@@ -283,14 +288,14 @@ model StoreSettings {
   originProvinceName String?
   recaptchaSiteKey   String?
   recaptchaSecretKey String?
-  updatedAt         DateTime @updatedAt
+  updatedAt          DateTime @updatedAt
 }
 
 /// Master bank — daftar bank yang tersedia untuk dipilih toko
 model Bank {
   id        String   @id @default(cuid())
   name      String   @unique
-  code      String?  // e.g. BCA, BNI, MANDIRI
+  code      String? // e.g. BCA, BNI, MANDIRI
   logoUrl   String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -298,27 +303,27 @@ model Bank {
 
 /// Rekening bank toko — bisa lebih dari satu, client hanya melihat yang isActive
 model StoreBank {
-  id                String   @id @default(cuid())
-  bankName          String
-  accountNumber     String
-  accountOwner      String
-  isActive          Boolean  @default(true)
-  sortOrder         Int      @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id            String   @id @default(cuid())
+  bankName      String
+  accountNumber String
+  accountOwner  String
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 /// Cache tarif ongkir lokal agar hemat API limit RajaOngkir dan respon super cepat (0ms)
 model ShippingRateCache {
-  id                 String   @id @default(cuid())
-  originCityId       String
-  destinationCityId  String
-  courier            String
-  weightGrams        Int      @default(1000)
-  ratesData          Json
-  expiresAt          DateTime
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default(cuid())
+  originCityId      String
+  destinationCityId String
+  courier           String
+  weightGrams       Int      @default(1000)
+  ratesData         Json
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([originCityId, destinationCityId, courier, weightGrams])
   @@index([destinationCityId, courier])

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import {
   MessageSquare,
@@ -11,11 +11,15 @@ import {
   EyeOff,
   Calendar,
   ImageIcon,
-  Info
+  Info,
+  SlidersHorizontal,
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { SafeImage, CMSBadge } from '@/components/shared';
 import { ImageUpload } from '@/components/shared/image-upload';
@@ -29,6 +33,20 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger
+} from '@/components/ui/sheet';
+
+const TESTIMONY_STATUS_OPTIONS: MultiSelectOption[] = [
+  { value: 'ACTIVE', label: 'Aktif (Tampil)' },
+  { value: 'HIDDEN', label: 'Disembunyikan (Draft)' }
+];
 
 export default function TestimoniesCmsPage() {
   const {
@@ -38,6 +56,35 @@ export default function TestimoniesCmsPage() {
     deleteTestimony,
     toggleTestimonyStatus
   } = useTestimonies();
+
+  const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
+  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+
+  const handleOpenFilterDrawer = (open: boolean) => {
+    if (open) {
+      setDraftStatuses(appliedStatuses);
+    }
+    setIsFilterOpen(open);
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedStatuses(draftStatuses);
+    setIsFilterOpen(false);
+  };
+
+  const handleResetFilters = () => {
+    setDraftStatuses([]);
+    setAppliedStatuses([]);
+    setIsFilterOpen(false);
+  };
+
+  const activeFilterCount = appliedStatuses.length;
+
+  const filteredTestimonies = useMemo(() => {
+    if (appliedStatuses.length === 0) return testimonies;
+    return testimonies.filter((t) => appliedStatuses.includes(t.status || 'ACTIVE'));
+  }, [testimonies, appliedStatuses]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Testimony | null>(null);
@@ -157,22 +204,23 @@ export default function TestimoniesCmsPage() {
       header: 'Aksi',
       sortable: false,
       cell: (item: Testimony) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-1">
           <Button
-            size="sm"
+            size="icon"
             variant="ghost"
             onClick={() => handleOpenDetail(item)}
-            title="Lihat Detail Testimoni"
-            className="text-primary hover:bg-primary/10"
+            title="Lihat Detail"
+            className="h-8 w-8 rounded-lg text-primary hover:bg-primary/10 cursor-pointer"
           >
             <Info size={15} />
           </Button>
 
           <Button
-            size="sm"
+            size="icon"
             variant="ghost"
             onClick={() => toggleTestimonyStatus(item.id)}
             title={item.status === 'ACTIVE' ? 'Sembunyikan' : 'Tampilkan'}
+            className="h-8 w-8 rounded-lg hover:bg-muted cursor-pointer"
           >
             {item.status === 'ACTIVE' ? (
               <EyeOff size={15} className="text-muted-foreground" />
@@ -182,20 +230,21 @@ export default function TestimoniesCmsPage() {
           </Button>
 
           <Button
-            size="sm"
+            size="icon"
             variant="ghost"
             onClick={() => handleOpenEdit(item)}
-            title="Edit Testimoni"
+            title="Edit"
+            className="h-8 w-8 rounded-lg hover:bg-muted cursor-pointer text-muted-foreground hover:text-foreground"
           >
-            <Edit size={15} className="text-muted-foreground" />
+            <Edit size={15} />
           </Button>
 
           <Button
-            size="sm"
+            size="icon"
             variant="ghost"
             onClick={() => deleteTestimony(item.id)}
-            title="Hapus Testimoni"
-            className="h-8 w-8 p-0 cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            title="Hapus"
+            className="h-8 w-8 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
           >
             <Trash2 size={15} />
           </Button>
@@ -258,8 +307,84 @@ export default function TestimoniesCmsPage() {
       {/* Data Table */}
       <DataTable
         columns={columns}
-        data={testimonies}
+        data={filteredTestimonies}
         searchPlaceholder="Cari nama atau keterangan..."
+        filterComponents={
+          <Sheet open={isFilterOpen} onOpenChange={handleOpenFilterDrawer}>
+            <SheetTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 rounded-lg text-xs font-medium cursor-pointer"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span>Filter</span>
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              }
+            />
+            <SheetContent side="right">
+              <SheetHeader className="border-b border-border/30 pb-4 pr-8">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-sm font-bold flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span>Filter Testimoni</span>
+                  </SheetTitle>
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      <span>Reset All</span>
+                    </button>
+                  )}
+                </div>
+                <SheetDescription className="text-xs text-muted-foreground mt-1">
+                  Saring data testimoni pelanggan berdasarkan status tampilan.
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="space-y-5 py-5">
+                {/* Status Multi-Filter Section */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">Status Tampilan</Label>
+                  <MultiSelect
+                    options={TESTIMONY_STATUS_OPTIONS}
+                    value={draftStatuses}
+                    onChange={setDraftStatuses}
+                    placeholder="Semua Status Testimoni"
+                    searchPlaceholder="Cari status..."
+                    emptyText="Status tidak ditemukan"
+                  />
+                </div>
+              </div>
+
+              <SheetFooter className="border-t border-border/30 pt-4 flex flex-row items-center justify-end gap-2.5">
+                <Button
+                  variant="outline"
+                  onClick={handleResetFilters}
+                  className="h-8 text-xs font-medium rounded-xl cursor-pointer gap-1.5"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Reset</span>
+                </Button>
+                <Button
+                  onClick={handleApplyFilters}
+                  className="h-8 text-xs font-medium rounded-xl cursor-pointer"
+                >
+                  Terapkan Filter
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        }
       />
 
       {/* Form Dialog */}

@@ -115,32 +115,38 @@ export default function CustomerDetailPage({ params }: PageProps) {
     <div className="w-full space-y-6 pb-16">
       {/* Top Header & Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
-            <Link
-              href="/dashboard/customers"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Database Pelanggan</span>
-            </Link>
-            <span>/</span>
-            <span className="text-foreground font-bold">{customer.fullName}</span>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap pt-1">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-              {customer.fullName}
-            </h1>
-            <Badge
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/customers">
+            <Button
               variant="outline"
-              className="font-mono text-xs font-semibold px-2.5 py-1 rounded-xl"
+              size="icon"
+              className="h-9 w-9 rounded-xl cursor-pointer"
+              title="Kembali ke Database Pelanggan"
             >
-              +{customer.whatsapp}
-            </Badge>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+              <span>Database Pelanggan</span>
+              <span>/</span>
+              <span className="text-foreground font-bold">{customer.fullName}</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap pt-0.5">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                {customer.fullName}
+              </h1>
+              <Badge
+                variant="outline"
+                className="font-mono text-xs font-semibold px-2.5 py-1 rounded-xl"
+              >
+                +{customer.whatsapp}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Akumulasi profil pembeli dan riwayat transaksi berdasarkan nomor WhatsApp.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Akumulasi profil pembeli dan riwayat transaksi berdasarkan nomor WhatsApp.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

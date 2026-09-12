@@ -8,7 +8,6 @@ import axios from 'axios';
 export interface StoreSettings {
   storeName: string;
   whatsappNumber: string;
-  flatShippingRate: number;
   bankName?: string | null;
   bankAccountNumber?: string | null;
   bankAccountOwner?: string | null;
@@ -65,7 +64,6 @@ export const useStoreSettingsStore = create<StoreSettingsState>()(
     (set) => ({
       storeName: '',
       whatsappNumber: '',
-      flatShippingRate: 0,
       instagramUrl: '',
       tiktokUrl: '',
       facebookUrl: '',

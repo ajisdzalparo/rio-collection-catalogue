@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { formatPrice } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,18 +97,9 @@ export default async function ShippingPage() {
             4. Ongkos Kirim
           </h2>
           <p>
-            {settings?.flatShippingRate ? (
-              <>
-                Tarif ongkos kirim standar yang berlaku saat ini adalah{' '}
-                <strong>{formatPrice(settings.flatShippingRate)}</strong> per transaksi flat ke
-                wilayah jangkauan kami.
-              </>
-            ) : (
-              <>
-                Biaya pengiriman dihitung secara otomatis berdasarkan kota/kecamatan tujuan dan
-                bobot pesanan Anda saat melakukan proses checkout.
-              </>
-            )}
+            Biaya pengiriman dihitung saat checkout berdasarkan tujuan, berat pesanan, kurir, dan
+            layanan yang Anda pilih. Tarif yang tampil berasal dari layanan pengiriman dan akan
+            diverifikasi kembali oleh sistem sebelum pesanan dibuat.
           </p>
         </section>
       </div>

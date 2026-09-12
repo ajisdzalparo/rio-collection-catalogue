@@ -1,5 +1,27 @@
-import type { Product, ArchiveCollection, JournalArticle, Testimony } from '@/types/catalogue.types';
+import type { Product, JournalArticle, Testimony } from '@/types/catalogue.types';
 import { normalizeProductAvailability } from '@/lib/product-availability';
+import { mapJournalRelations, mapProductRelations } from '@/lib/catalogue-relations';
+
+const journalSummarySelect = {
+  id: true,
+  slug: true,
+  title: true,
+  excerpt: true,
+  category: true,
+  date: true,
+  imageUrl: true
+} as const;
+
+const productSummarySelect = {
+  id: true,
+  slug: true,
+  name: true,
+  imageUrl: true,
+  price: true,
+  status: true,
+  category: true,
+  color: true
+} as const;
 
 export function getBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -68,11 +90,17 @@ export async function getProducts(): Promise<Product[]> {
             inStock: true,
             stock: true
           }
+        },
+        journalLinks: {
+          include: { journal: { select: journalSummarySelect } },
+          orderBy: { createdAt: 'desc' }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
-    return (products as unknown as Product[]).map(normalizeProductAvailability);
+    return products.map((product) =>
+      normalizeProductAvailability(mapProductRelations(product as unknown as Parameters<typeof mapProductRelations>[0]))
+    );
   } catch (error) {
     console.error('Server products fetch failed:', error);
     return [];
@@ -102,41 +130,21 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
             inStock: true,
             stock: true
           }
+        },
+        journalLinks: {
+          include: { journal: { select: journalSummarySelect } },
+          orderBy: { createdAt: 'desc' }
         }
       }
     });
-    return product ? normalizeProductAvailability(product as unknown as Product) : undefined;
+    return product
+      ? normalizeProductAvailability(
+          mapProductRelations(product as unknown as Parameters<typeof mapProductRelations>[0])
+        )
+      : undefined;
   } catch (error) {
     console.error(`Server getProductBySlug failed for ${slug}:`, error);
     return undefined;
-  }
-}
-
-/**
- * Fetches all archives safely for both Client and Server environments.
- */
-export async function getArchives(): Promise<ArchiveCollection[]> {
-  if (typeof window !== 'undefined') {
-    try {
-      const res = await fetch('/api/v1/archives');
-      if (!res.ok) return [];
-      const json = await res.json();
-      return json.data || json || [];
-    } catch (error) {
-      console.error('Browser archives fetch failed:', error);
-      return [];
-    }
-  }
-
-  try {
-    const { prisma } = await import('@/lib/prisma');
-    const archives = await prisma.archive.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
-    return archives as unknown as ArchiveCollection[];
-  } catch (error) {
-    console.error('Server archives fetch failed:', error);
-    return [];
   }
 }
 
@@ -159,9 +167,18 @@ export async function getJournals(): Promise<JournalArticle[]> {
   try {
     const { prisma } = await import('@/lib/prisma');
     const journals = await prisma.journal.findMany({
+      include: {
+        productLinks: {
+          where: { product: { deletedAt: null } },
+          include: { product: { select: productSummarySelect } },
+          orderBy: { createdAt: 'desc' }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
-    return journals as unknown as JournalArticle[];
+    return journals.map((journal) =>
+      mapJournalRelations(journal as unknown as Parameters<typeof mapJournalRelations>[0])
+    );
   } catch (error) {
     console.error('Server journals fetch failed:', error);
     return [];
@@ -180,9 +197,18 @@ export async function getJournalBySlug(slug: string): Promise<JournalArticle | u
   try {
     const { prisma } = await import('@/lib/prisma');
     const journal = await prisma.journal.findFirst({
-      where: { slug }
+      where: { slug },
+      include: {
+        productLinks: {
+          where: { product: { deletedAt: null } },
+          include: { product: { select: productSummarySelect } },
+          orderBy: { createdAt: 'desc' }
+        }
+      }
     });
-    return (journal as unknown as JournalArticle) || undefined;
+    return journal
+      ? mapJournalRelations(journal as unknown as Parameters<typeof mapJournalRelations>[0])
+      : undefined;
   } catch (error) {
     console.error(`Server getJournalBySlug failed for ${slug}:`, error);
     return undefined;

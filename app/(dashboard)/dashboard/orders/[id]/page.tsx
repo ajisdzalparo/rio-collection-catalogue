@@ -221,37 +221,43 @@ export default function OrderDetailPage({ params }: PageProps) {
     <div className="w-full space-y-6 pb-16">
       {/* Top Header & Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
-            <Link
-              href="/dashboard/orders"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/orders">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-xl cursor-pointer"
+              title="Kembali ke Daftar Pesanan"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
               <span>Kelola Pesanan</span>
-            </Link>
-            <span>/</span>
-            <span className="text-foreground font-mono font-bold">{order.orderNumber}</span>
+              <span>/</span>
+              <span className="text-foreground font-mono font-bold">{order.orderNumber}</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap pt-0.5">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                Pesanan #{order.orderNumber}
+              </h1>
+              <OrderStatusBadge status={order.status} />
+            </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>
+                Dibuat pada{' '}
+                {new Date(order.createdAt).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </span>
+            </p>
           </div>
-          <div className="flex items-center gap-3 flex-wrap pt-1">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-              Pesanan #{order.orderNumber}
-            </h1>
-            <OrderStatusBadge status={order.status} />
-          </div>
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5" />
-            <span>
-              Dibuat pada{' '}
-              {new Date(order.createdAt).toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </span>
-          </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

@@ -277,7 +277,7 @@ export function RoleFormDialog({ open, onOpenChange, roleToEdit }: RoleFormDialo
               Batal
             </Button>
             <Button type="submit" className="rounded-xl font-bold">
-              {isEditing ? 'Simpan Perubahan Role' : 'Buat Master Role'}
+              Simpan
             </Button>
           </DialogFooter>
         </form>

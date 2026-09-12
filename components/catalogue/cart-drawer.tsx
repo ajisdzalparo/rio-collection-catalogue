@@ -141,6 +141,11 @@ export function CartDrawer() {
                         </>
                       )}
                     </div>
+                    {item.availableStock !== undefined && (
+                      <p className="mt-1 font-hanken text-[11px] text-(--cat-on-surface-variant) tabular-nums">
+                        Stok tersedia: {item.availableStock} pcs
+                      </p>
+                    )}
                   </div>
 
                   {/* Price & Quantity Controls */}
@@ -161,8 +166,14 @@ export function CartDrawer() {
                         {item.quantity}
                       </span>
                       <button
+                        disabled={item.maxQuantity !== undefined && item.quantity >= item.maxQuantity}
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-7 h-7 flex items-center justify-center text-(--cat-on-surface) hover:bg-(--cat-surface-container) transition-colors cursor-pointer"
+                        className={cn(
+                          'w-7 h-7 flex items-center justify-center text-(--cat-on-surface) transition-colors',
+                          item.maxQuantity !== undefined && item.quantity >= item.maxQuantity
+                            ? 'opacity-40 cursor-not-allowed'
+                            : 'hover:bg-(--cat-surface-container) cursor-pointer'
+                        )}
                         aria-label="Tambah kuantitas"
                       >
                         <Plus size={12} strokeWidth={1.5} />

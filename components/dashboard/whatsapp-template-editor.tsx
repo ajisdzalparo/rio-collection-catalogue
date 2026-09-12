@@ -161,7 +161,7 @@ export function WhatsAppTemplateEditor({
             className="h-9 px-4 rounded-xl text-xs font-bold gap-1.5 shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            <span>{isSaving ? 'Menyimpan...' : 'Simpan Template WA'}</span>
+            <span>{isSaving ? 'Menyimpan...' : 'Simpan'}</span>
           </Button>
         )}
       </div>

@@ -11,13 +11,17 @@ import {
   Clock,
   RefreshCw,
   AlertTriangle,
-  Eye
+  Eye,
+  SlidersHorizontal,
+  RotateCcw
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { TruncatedText } from '@/components/ui/truncated-text';
@@ -30,12 +34,14 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger
+} from '@/components/ui/sheet';
 import { VStack } from '@/components/ui/layout';
 import {
   DropdownMenu,
@@ -46,6 +52,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatIDR, formatWaNumber } from '@/lib/utils';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
+
+const ORDER_STATUS_OPTIONS: MultiSelectOption[] = [
+  { value: 'PENDING', label: 'Menunggu Konfirmasi' },
+  { value: 'CONFIRMED', label: 'Dikonfirmasi' },
+  { value: 'WAITING_PAYMENT', label: 'Menunggu Pembayaran' },
+  { value: 'PAID', label: 'Sudah Dibayar' },
+  { value: 'FULFILLED', label: 'Pesanan Dikirim' },
+  { value: 'REJECTED', label: 'Pesanan Ditolak' },
+  { value: 'CANCELLED', label: 'Pesanan Dibatalkan' },
+  { value: 'EXPIRED', label: 'Kedaluwarsa' }
+];
 
 function OrdersPageContent() {
   const router = useRouter();
@@ -58,9 +75,32 @@ function OrdersPageContent() {
     isCleaningUp
   } = useOrders();
 
-  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
+  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+
   const [cancelTargetOrder, setCancelTargetOrder] = useState<Order | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+
+  const handleOpenFilterDrawer = (open: boolean) => {
+    if (open) {
+      setDraftStatuses(appliedStatuses);
+    }
+    setIsFilterOpen(open);
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedStatuses(draftStatuses);
+    setIsFilterOpen(false);
+  };
+
+  const handleResetFilters = () => {
+    setDraftStatuses([]);
+    setAppliedStatuses([]);
+    setIsFilterOpen(false);
+  };
+
+  const activeFilterCount = appliedStatuses.length;
 
   const handleRunCronCleanup = async () => {
     try {
@@ -92,9 +132,9 @@ function OrdersPageContent() {
   };
 
   const filteredOrders = useMemo(() => {
-    if (selectedStatus === 'ALL') return orders;
-    return orders.filter((order) => order.status === selectedStatus);
-  }, [orders, selectedStatus]);
+    if (appliedStatuses.length === 0) return orders;
+    return orders.filter((order) => appliedStatuses.includes(order.status));
+  }, [orders, appliedStatuses]);
 
   const columns: Column<Order>[] = useMemo(
     () => [
@@ -347,27 +387,80 @@ function OrdersPageContent() {
         extraSearchKeys={['fullName', 'whatsapp']}
         searchPlaceholder="Cari no. order / nama / no. HP..."
         filterComponents={
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider shrink-0">
-              Filter Status:
-            </span>
-            <Select value={selectedStatus} onValueChange={(val) => val && setSelectedStatus(val)}>
-              <SelectTrigger className="w-48 h-9 rounded-xl text-xs font-bold">
-                <SelectValue placeholder="Semua Status" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="ALL">Semua Pesanan</SelectItem>
-                <SelectItem value="PENDING">Menunggu Konfirmasi</SelectItem>
-                <SelectItem value="CONFIRMED">Dikonfirmasi</SelectItem>
-                <SelectItem value="WAITING_PAYMENT">Menunggu Pembayaran</SelectItem>
-                <SelectItem value="PAID">Sudah Dibayar</SelectItem>
-                <SelectItem value="FULFILLED">Pesanan Dikirim</SelectItem>
-                <SelectItem value="REJECTED">Pesanan Ditolak</SelectItem>
-                <SelectItem value="CANCELLED">Pesanan Dibatalkan</SelectItem>
-                <SelectItem value="EXPIRED">Kedaluwarsa</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Sheet open={isFilterOpen} onOpenChange={handleOpenFilterDrawer}>
+            <SheetTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 rounded-lg text-xs font-medium cursor-pointer"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span>Filter</span>
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              }
+            />
+            <SheetContent side="right">
+              <SheetHeader className="border-b border-border/30 pb-4 pr-8">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-sm font-bold flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span>Filter Data Pesanan</span>
+                  </SheetTitle>
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      <span>Reset All</span>
+                    </button>
+                  )}
+                </div>
+                <SheetDescription className="text-xs text-muted-foreground mt-1">
+                  Saring data pesanan pelanggan berdasarkan status transaksi.
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="space-y-5 py-5">
+                {/* Status Multi-Filter Section */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">Status Pesanan</Label>
+                  <MultiSelect
+                    options={ORDER_STATUS_OPTIONS}
+                    value={draftStatuses}
+                    onChange={setDraftStatuses}
+                    placeholder="Semua Status Pesanan"
+                    searchPlaceholder="Cari status..."
+                    emptyText="Status tidak ditemukan"
+                  />
+                </div>
+              </div>
+
+              <SheetFooter className="border-t border-border/30 pt-4 flex flex-row items-center justify-end gap-2.5">
+                <Button
+                  variant="outline"
+                  onClick={handleResetFilters}
+                  className="h-8 text-xs font-medium rounded-xl cursor-pointer gap-1.5"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Reset</span>
+                </Button>
+                <Button
+                  onClick={handleApplyFilters}
+                  className="h-8 text-xs font-medium rounded-xl cursor-pointer"
+                >
+                  Terapkan Filter
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         }
         emptyTitle="Tidak Ada Pesanan"
         emptyDescription="Tidak ada data pesanan yang cocok dengan filter atau pencarian Anda."

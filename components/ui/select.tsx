@@ -129,6 +129,12 @@ function SelectContent({
     SelectPrimitive.Positioner.Props,
     'align' | 'alignOffset' | 'side' | 'sideOffset' | 'alignItemWithTrigger'
   >) {
+  const childArray = React.Children.toArray(children).filter((child) => {
+    if (child === null || child === undefined || typeof child === 'boolean') return false;
+    return true;
+  });
+  const hasChildren = childArray.length > 0;
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
@@ -149,7 +155,15 @@ function SelectContent({
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List>{children}</SelectPrimitive.List>
+          <SelectPrimitive.List>
+            {hasChildren ? (
+              children
+            ) : (
+              <div className="px-3 py-2.5 text-center text-xs font-medium text-muted-foreground/80 select-none">
+                Belum ada data tersedia
+              </div>
+            )}
+          </SelectPrimitive.List>
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Star, CheckCircle2, MessageSquare, Plus, Loader2, X, Send } from 'lucide-react';
+import { Star, CheckCircle2, MessageSquare, Plus, Loader2, X, Send, Lock, User } from 'lucide-react';
 import { StarRating } from '@/components/catalogue/star-rating';
 import { useCustomerStore } from '@/lib/customer-store';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,7 @@ import { toast } from 'sonner';
 interface Review {
   id: string;
   customerName: string;
+  customerEmail?: string | null;
   rating: number;
   comment: string;
   isVerifiedBuyer: boolean;
@@ -24,14 +26,13 @@ interface ProductReviewsProps {
 
 export function ProductReviews({ productSlug, productName }: ProductReviewsProps) {
   const queryClient = useQueryClient();
-  const customer = useCustomerStore((s) => s.customer);
+  const { customer, isAuthenticated, token } = useCustomerStore();
   const [selectedFilter, setSelectedFilter] = useState<number | null>(null); // null = all
 
-  // Form State
+  // Form & Login Prompt State
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [formRating, setFormRating] = useState(5);
-  const [formName, setFormName] = useState(customer?.fullName || '');
-  const [formEmail, setFormEmail] = useState(customer?.email || '');
   const [formComment, setFormComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,20 +64,32 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
     5: 0
   };
 
+  // Check if current user has already submitted a review for this product
+  const hasUserReviewed = Boolean(
+    customer &&
+      reviews.some(
+        (r) =>
+          (customer.email && r.customerEmail?.toLowerCase() === customer.email.toLowerCase()) ||
+          r.customerName.toLowerCase() === (customer.fullName || '').toLowerCase()
+      )
+  );
+
   const handleOpenForm = () => {
-    if (customer) {
-      if (customer.fullName && !formName) setFormName(customer.fullName);
-      if (customer.email && !formEmail) setFormEmail(customer.email);
+    if (!isAuthenticated || !customer) {
+      setIsLoginPromptOpen(true);
+      return;
     }
+
+    if (hasUserReviewed) {
+      toast.info('Anda sudah memberikan ulasan untuk produk ini.');
+      return;
+    }
+
     setIsFormOpen(true);
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim()) {
-      toast.error('Masukkan nama Anda.');
-      return;
-    }
     if (!formComment.trim()) {
       toast.error('Tuliskan ulasan Anda.');
       return;
@@ -86,10 +99,11 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
     try {
       const res = await fetch(`/api/v1/products/${productSlug}/reviews`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
-          customerName: formName.trim(),
-          customerEmail: formEmail.trim() || undefined,
           rating: formRating,
           comment: formComment.trim()
         })
@@ -128,16 +142,62 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
           </h2>
         </div>
 
-        <button
-          onClick={handleOpenForm}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-90 transition-opacity cursor-pointer w-fit"
-        >
-          <Plus size={14} /> Tulis Ulasan
-        </button>
+        {hasUserReviewed ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-hanken text-[12px] font-medium">
+            <CheckCircle2 size={15} /> Anda telah mengulas produk ini
+          </div>
+        ) : (
+          <button
+            onClick={handleOpenForm}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-90 transition-opacity cursor-pointer w-fit"
+          >
+            <Plus size={14} /> Tulis Ulasan
+          </button>
+        )}
       </div>
 
+      {/* Login Prompt Modal (if unauthenticated) */}
+      {isLoginPromptOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-(--cat-surface) border border-(--cat-stone) p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-(--cat-stone)">
+              <div className="flex items-center gap-2 text-(--cat-on-surface)">
+                <Lock size={18} />
+                <h3 className="font-eb-garamond text-[22px]">Masuk ke Akun Diperlukan</h3>
+              </div>
+              <button
+                onClick={() => setIsLoginPromptOpen(false)}
+                className="p-1 text-(--cat-on-surface-variant) hover:text-(--cat-on-surface) cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="mt-4 font-hanken text-[14px] leading-relaxed text-(--cat-on-surface-variant)">
+              Untuk memberikan ulasan dan rating produk, Anda harus masuk ke akun pelanggan terlebih dahulu agar ulasan terverifikasi dan bebas dari spam.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-(--cat-stone)">
+              <button
+                type="button"
+                onClick={() => setIsLoginPromptOpen(false)}
+                className="px-5 py-2.5 border border-(--cat-stone) font-hanken text-[11px] uppercase tracking-[0.08em] text-(--cat-on-surface) hover:bg-(--cat-surface-container) transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <Link
+                href="/customer/login"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                <User size={14} /> Masuk Akun
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Review Modal Form */}
-      {isFormOpen && (
+      {isFormOpen && customer && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-(--cat-surface) border border-(--cat-stone) p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-4 border-b border-(--cat-stone)">
@@ -150,6 +210,18 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
               >
                 <X size={20} />
               </button>
+            </div>
+
+            {/* Customer identity banner */}
+            <div className="mt-4 p-3 bg-(--cat-surface-container-low) border border-(--cat-stone) flex items-center gap-3">
+              <User size={16} className="text-(--cat-on-surface-variant) shrink-0" />
+              <div className="font-hanken text-[13px] text-(--cat-on-surface-variant)">
+                Mengulas sebagai:{' '}
+                <strong className="text-(--cat-on-surface)">
+                  {customer.fullName || customer.email.split('@')[0]}
+                </strong>{' '}
+                ({customer.email})
+              </div>
             </div>
 
             <form onSubmit={handleSubmitReview} className="mt-5 space-y-4">
@@ -168,33 +240,6 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
                     {formRating} dari 5 Bintang
                   </span>
                 </div>
-              </div>
-
-              <div>
-                <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
-                  Nama Anda <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="Contoh: Budi Santoso"
-                  className="w-full h-11 px-3 font-hanken text-[14px] bg-(--cat-surface-container-low) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
-                  Email (Opsional, untuk verifikasi pembeli)
-                </label>
-                <input
-                  type="email"
-                  value={formEmail}
-                  onChange={(e) => setFormEmail(e.target.value)}
-                  placeholder="nama@email.com"
-                  className="w-full h-11 px-3 font-hanken text-[14px] bg-(--cat-surface-container-low) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
-                />
               </div>
 
               <div>

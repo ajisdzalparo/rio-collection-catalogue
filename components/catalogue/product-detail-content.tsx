@@ -22,7 +22,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
-  const { addItem } = useCartStore();
+  const { addItem, items } = useCartStore();
 
   const [ratingData, setRatingData] = useState<{ averageRating: number; totalReviews: number }>({
     averageRating: 0,
@@ -76,13 +76,60 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
     setActiveImageIndex((prev) => (prev === imagesList.length - 1 ? 0 : prev + 1));
   };
 
-  const canOrder =
-    (product.status === 'AVAILABLE' || product.status === 'PRE_ORDER') && selectedSize !== null;
   const selectedColorName = colorsList[selectedColorIndex] || product.color;
+  const isUnlimitedStock =
+    product.stockMode === 'ALWAYS_AVAILABLE' || product.status === 'PRE_ORDER';
+  const isQuantityBased = !isUnlimitedStock;
+  const selectedVariant = product.variants.find((variant) => variant.size === selectedSize);
+  const selectedStock =
+    selectedVariant?.stock === undefined ? undefined : Math.max(0, selectedVariant.stock);
+  const availableStock = isUnlimitedStock
+    ? 9999
+    : selectedVariant?.inStock
+      ? (selectedStock ?? 0)
+      : 0;
+  const quantityLimit =
+    product.orderLimitMode === 'ONCE_PER_USER' ? 1 : isQuantityBased ? availableStock : undefined;
+  const isAtQuantityLimit = quantityLimit !== undefined && quantity >= quantityLimit;
+  const canOrder =
+    (product.status === 'AVAILABLE' || product.status === 'PRE_ORDER') &&
+    (selectedVariant ? isUnlimitedStock || selectedVariant.inStock === true : false) &&
+    (!isQuantityBased || availableStock >= quantity);
+  const totalStock = isQuantityBased
+    ? Math.max(
+        0,
+        product.variants.reduce((total, variant) => total + Math.max(0, variant.stock ?? 0), 0)
+      )
+    : undefined;
+
+  const handleSelectSize = (size: string, stock?: number) => {
+    setSelectedSize(size);
+    setQuantity((currentQuantity) =>
+      stock === undefined ? currentQuantity : Math.max(1, Math.min(currentQuantity, stock))
+    );
+  };
 
   const handleAddToCart = () => {
     if (!selectedSize) {
       toast.error('Silakan pilih ukuran terlebih dahulu.');
+      return;
+    }
+
+    if (!canOrder) {
+      toast.error('Jumlah yang dipilih melebihi stok yang tersedia.');
+      return;
+    }
+
+    const cartItemId = `${product.id}-${selectedSize}-${selectedColorName}`;
+    const quantityInCart = items.find((item) => item.id === cartItemId)?.quantity ?? 0;
+
+    if (quantityLimit !== undefined && quantityInCart + quantity > quantityLimit) {
+      const remainingQuantity = Math.max(0, quantityLimit - quantityInCart);
+      toast.error(
+        remainingQuantity > 0
+          ? `Hanya tersisa ${remainingQuantity} pcs lagi untuk ukuran ${selectedSize}.`
+          : `Batas pembelian ukuran ${selectedSize} sudah tercapai di keranjang.`
+      );
       return;
     }
 
@@ -95,7 +142,9 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
       size: selectedSize,
       color: selectedColorName,
       quantity,
-      isPreOrder: product.status === 'PRE_ORDER'
+      isPreOrder: product.status === 'PRE_ORDER',
+      availableStock: isQuantityBased ? availableStock : undefined,
+      maxQuantity: quantityLimit
     });
 
     toast.success(`${product.name} (${selectedSize}) ditambahkan ke keranjang.`);
@@ -223,7 +272,12 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               </div>
               {product.orderLimitMode === 'ONCE_PER_USER' && (
                 <span className="px-2.5 py-0.5 bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-[11px] font-hanken font-medium">
-                  Maks. 1 pcs per akun / email
+                  Maks. 1x per Pelanggan
+                </span>
+              )}
+              {isQuantityBased && (
+                <span className="font-hanken text-[11px] text-(--cat-on-surface-variant) tabular-nums">
+                  Stok total: {totalStock} pcs
                 </span>
               )}
             </div>
@@ -297,24 +351,50 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 </button>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                {product.variants.map((variant) => (
-                  <button
-                    key={variant.size}
-                    disabled={!variant.inStock}
-                    onClick={() => setSelectedSize(variant.size)}
-                    className={cn(
-                      'h-11 flex items-center justify-center font-hanken text-[13px] font-medium border transition-all duration-150 cursor-pointer',
-                      selectedSize === variant.size
-                        ? 'bg-(--cat-charcoal) text-white border-(--cat-charcoal)'
-                        : variant.inStock
-                          ? 'border-(--cat-stone) text-(--cat-on-surface) hover:border-(--cat-charcoal)'
-                          : 'border-(--cat-stone)/50 text-(--cat-on-surface-variant)/40 cursor-not-allowed line-through'
-                    )}
-                  >
-                    {variant.size}
-                  </button>
-                ))}
+                {product.variants.map((variant) => {
+                  const variantStock = Math.max(0, variant.stock ?? 0);
+                  const isVariantAvailable = isUnlimitedStock
+                    ? variant.inStock !== false
+                    : variant.inStock && variantStock > 0;
+
+                  return (
+                    <button
+                      key={variant.size}
+                      disabled={!isVariantAvailable}
+                      onClick={() =>
+                        handleSelectSize(variant.size, isQuantityBased ? variant.stock : undefined)
+                      }
+                      className={cn(
+                        'min-h-12 py-1.5 flex flex-col items-center justify-center font-hanken border transition-all duration-150 cursor-pointer',
+                        selectedSize === variant.size
+                          ? 'bg-(--cat-charcoal) text-white border-(--cat-charcoal)'
+                          : isVariantAvailable
+                            ? 'border-(--cat-stone) text-(--cat-on-surface) hover:border-(--cat-charcoal)'
+                            : 'border-(--cat-stone)/50 text-(--cat-on-surface-variant)/40 cursor-not-allowed'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'text-[13px] font-medium',
+                          !isVariantAvailable && 'line-through'
+                        )}
+                      >
+                        {variant.size}
+                      </span>
+                      {isQuantityBased && variant.stock !== undefined && (
+                        <span className="mt-0.5 text-[10px] font-normal tabular-nums opacity-75">
+                          {variantStock} pcs
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+              {isQuantityBased && selectedSize && selectedStock !== undefined && (
+                <p className="mt-2 font-hanken text-[11px] text-(--cat-on-surface-variant) tabular-nums">
+                  Stok ukuran {selectedSize}: <strong>{selectedStock} pcs</strong>
+                </p>
+              )}
             </div>
 
             {/* Quantity */}
@@ -323,19 +403,14 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface)">
                   Quantity
                 </p>
-                {product.orderLimitMode === 'ONCE_PER_USER' && (
-                  <span className="font-hanken text-[11px] text-amber-700 dark:text-amber-400">
-                    Batas: 1 pcs / akun
-                  </span>
-                )}
               </div>
               <div className="inline-flex items-center border border-(--cat-stone)">
                 <button
-                  disabled={product.orderLimitMode === 'ONCE_PER_USER'}
+                  disabled={product.orderLimitMode === 'ONCE_PER_USER' || quantity <= 1}
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className={cn(
                     'w-10 h-10 flex items-center justify-center text-(--cat-on-surface) transition-colors',
-                    product.orderLimitMode === 'ONCE_PER_USER'
+                    product.orderLimitMode === 'ONCE_PER_USER' || quantity <= 1
                       ? 'opacity-40 cursor-not-allowed'
                       : 'hover:bg-(--cat-surface-container) cursor-pointer'
                   )}
@@ -347,11 +422,23 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                   {product.orderLimitMode === 'ONCE_PER_USER' ? 1 : quantity}
                 </span>
                 <button
-                  disabled={product.orderLimitMode === 'ONCE_PER_USER'}
-                  onClick={() => setQuantity(quantity + 1)}
+                  disabled={
+                    product.orderLimitMode === 'ONCE_PER_USER' ||
+                    selectedSize === null ||
+                    isAtQuantityLimit
+                  }
+                  onClick={() =>
+                    setQuantity((currentQuantity) =>
+                      quantityLimit === undefined
+                        ? currentQuantity + 1
+                        : Math.min(currentQuantity + 1, quantityLimit)
+                    )
+                  }
                   className={cn(
                     'w-10 h-10 flex items-center justify-center text-(--cat-on-surface) transition-colors',
-                    product.orderLimitMode === 'ONCE_PER_USER'
+                    product.orderLimitMode === 'ONCE_PER_USER' ||
+                      selectedSize === null ||
+                      isAtQuantityLimit
                       ? 'opacity-40 cursor-not-allowed'
                       : 'hover:bg-(--cat-surface-container) cursor-pointer'
                   )}
@@ -422,34 +509,35 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
         </div>
       </section>
 
-      {/* Product Story Section — CMS-driven, hidden when empty */}
-      {product.storyTitle && (
+      {/* Related journals — hidden when the product has no journal relation */}
+      {product.journals && product.journals.length > 0 && (
         <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-            <div>
-              <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
-                {product.storyTitle}
-              </h2>
-              {product.storyText && (
-                <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant)">
-                  {product.storyText}
+          <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
+            Jurnal Terkait
+          </h2>
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            {product.journals.map((journal) => (
+              <Link key={journal.id} href={`/journal/${journal.slug}`} className="group block">
+                <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
+                  <SafeImage
+                    src={journal.imageUrl}
+                    alt={journal.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                  />
+                </div>
+                <p className="mt-3 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+                  {journal.category} · {journal.date}
                 </p>
-              )}
-            </div>
-            <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
-              <SafeImage
-                src={imagesList[1] || product.imageUrl}
-                alt={`${product.name} detail view`}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-              />
-              <div className="absolute top-3 left-3">
-                <span className="font-hanken text-[10px] uppercase tracking-widest text-(--cat-on-surface-variant) bg-(--cat-surface)/80 px-2 py-1">
-                  Detail
-                </span>
-              </div>
-            </div>
+                <h3 className="mt-1 font-eb-garamond text-[22px] md:text-[26px] leading-tight text-(--cat-on-surface) group-hover:underline underline-offset-4">
+                  {journal.title}
+                </h3>
+                <p className="mt-2 font-hanken text-[14px] leading-relaxed text-(--cat-on-surface-variant) line-clamp-2">
+                  {journal.excerpt}
+                </p>
+              </Link>
+            ))}
           </div>
         </section>
       )}

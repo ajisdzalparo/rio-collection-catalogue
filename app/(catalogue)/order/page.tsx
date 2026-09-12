@@ -447,11 +447,26 @@ function OrderContent() {
                 }>;
               }) => {
                 courierItem.costs.forEach((costItem) => {
+                  const serviceLabel = (function (courierCode: string, serviceName: string) {
+                    const code = courierCode.toUpperCase().trim();
+                    const srv = serviceName.trim();
+                    const lowerSrv = srv.toLowerCase();
+                    const lowerCode = code.toLowerCase();
+                    if (
+                      lowerSrv.startsWith(lowerCode) ||
+                      (lowerCode === 'jnt' && (lowerSrv.startsWith('j&t') || lowerSrv.startsWith('jnt'))) ||
+                      (lowerCode === 'sicepat' && lowerSrv.startsWith('sicepat'))
+                    ) {
+                      return srv;
+                    }
+                    return `${code} ${srv}`;
+                  })(courierItem.code, costItem.service);
+
                   const price = costItem.cost[0]?.value || 0;
                   const rawEtd = costItem.cost[0]?.etd || '';
                   const etdText = rawEtd ? ` (${rawEtd.replace(/hari/i, '').trim()} Hari)` : '';
                   const keyName = `${courierItem.code.toUpperCase()} ${costItem.service}`;
-                  const labelText = `${courierItem.code.toUpperCase()} ${costItem.service}${etdText} — ${formatPrice(price)}`;
+                  const labelText = `${serviceLabel}${etdText} — ${formatPrice(price)}`;
 
                   options.push({
                     key: keyName,
@@ -746,8 +761,10 @@ function OrderContent() {
                   <span className="font-hanken text-[14px] text-(--cat-on-surface) tabular-nums font-semibold">
                     {isShippingLoading ? (
                       <Loader2 size={14} className="animate-spin text-(--cat-charcoal) inline" />
-                    ) : (
+                    ) : selectedRate ? (
                       formatPrice(shippingFee)
+                    ) : (
+                      'Belum dihitung'
                     )}
                   </span>
                 </div>

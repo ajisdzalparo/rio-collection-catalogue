@@ -6,6 +6,7 @@ import { deductStock } from '@/lib/stock';
 import { orderSchema } from '@/lib/order-schema';
 import { calculateShippingCost } from '@/lib/rajaongkir';
 import { isOrderableStatus, normalizeProductAvailability } from '@/lib/product-availability';
+import { normalizeEmail, normalizeWhatsapp } from '@/lib/customer-identity';
 
 export class OrderError extends Error {
   constructor(
@@ -17,7 +18,8 @@ export class OrderError extends Error {
 }
 
 export async function createOrder(input: z.infer<typeof orderSchema>) {
-  const whatsapp = input.whatsapp.replace(/[^0-9]/g, '').replace(/^0/, '62');
+  const whatsapp = normalizeWhatsapp(input.whatsapp);
+  const email = normalizeEmail(input.email);
   if (!/^62\d{7,13}$/.test(whatsapp))
     throw new OrderError('Nomor WhatsApp tidak valid. Gunakan format 08xx atau 628xx.');
   const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } });
@@ -54,16 +56,26 @@ export async function createOrder(input: z.infer<typeof orderSchema>) {
       });
       const items = input.items.map((item) => {
         const raw = products.find((product) => product.id === item.productId);
-        if (!raw) throw new OrderError('Produk tidak ditemukan. Pilih ulang produk.');
+        if (!raw) throw new OrderError('Produk tidak ditemukan. Silakan periksa kembali keranjang Anda.');
         const product = normalizeProductAvailability(raw);
         if (!isOrderableStatus(product.status))
-          throw new OrderError(`${product.name} tidak tersedia untuk dipesan.`);
+          throw new OrderError(`Mohon maaf, produk "${product.name}" saat ini sedang tidak tersedia.`);
         const variant = product.variants.find((value) => value.size === item.size);
         if (!variant?.inStock)
-          throw new OrderError(`Ukuran ${item.size} untuk ${product.name} tidak tersedia.`);
+          throw new OrderError(`Mohon maaf, ukuran ${item.size} untuk produk "${product.name}" saat ini tidak tersedia.`);
+        if (raw.stockMode === 'QUANTITY') {
+          const rawVariant = raw.variants.find((v) => v.size === item.size);
+          const availableStock = rawVariant?.stock ?? 0;
+          if (!rawVariant || availableStock < item.quantity) {
+            if (availableStock <= 0) {
+              throw new OrderError(`Mohon maaf, stok untuk produk "${product.name}" (Ukuran ${item.size}) saat ini sedang habis.`);
+            }
+            throw new OrderError(`Mohon maaf, stok untuk produk "${product.name}" (Ukuran ${item.size}) tersisa ${availableStock} pcs.`);
+          }
+        }
         const colors = product.colors.length ? product.colors : [product.color];
         if (item.color && !colors.includes(item.color))
-          throw new OrderError('Warna produk tidak tersedia. Pilih ulang warna.');
+          throw new OrderError(`Pilihan warna untuk produk "${product.name}" tidak tersedia.`);
         return {
           productId: product.id,
           name: item.color ? `${product.name} — ${item.color}` : product.name,
@@ -87,7 +99,8 @@ export async function createOrder(input: z.infer<typeof orderSchema>) {
             where: {
               OR: [
                 ...(input.customerId ? [{ customerId: input.customerId }] : []),
-                { email: input.email.toLowerCase() }
+                { email },
+                { whatsapp }
               ],
               status: { not: 'CANCELLED' },
               items: { some: { productId: item.productId } }
@@ -95,7 +108,7 @@ export async function createOrder(input: z.infer<typeof orderSchema>) {
           });
           if (priorOrder) {
             throw new OrderError(
-              `Produk "${item.name}" hanya dapat dipesan 1 kali per akun/email. Anda sudah pernah memesan produk ini sebelumnya (No. Pesanan: #${priorOrder.orderNumber}).`
+              `Produk "${item.name}" adalah edisi terbatas dan hanya dapat dipesan 1 kali per pelanggan. Anda sudah pernah memesan produk ini sebelumnya (No. Pesanan: #${priorOrder.orderNumber}).`
             );
           }
         }
@@ -109,12 +122,11 @@ export async function createOrder(input: z.infer<typeof orderSchema>) {
         quantity: item.quantity,
         isPreOrder: item.isPreOrder
       }));
-      await deductStock(orderItemsToDeduct, tx);
       return tx.order.create({
         data: {
           orderNumber: `RC-${randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase()}`,
           fullName: input.fullName,
-          email: input.email.toLowerCase(),
+          email,
           customerId: input.customerId ?? null,
           whatsapp,
           address: input.address,

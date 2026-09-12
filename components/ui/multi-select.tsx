@@ -28,9 +28,9 @@ export function MultiSelect({
   options,
   value = [],
   onChange,
-  placeholder = 'Select options...',
-  searchPlaceholder = 'Search options...',
-  emptyText = 'No options found.',
+  placeholder = 'Pilih opsi...',
+  searchPlaceholder = 'Cari opsi...',
+  emptyText = 'Belum ada data tersedia',
   maxCount = 1,
   className,
   disabled = false

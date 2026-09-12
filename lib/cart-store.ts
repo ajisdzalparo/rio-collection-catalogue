@@ -14,6 +14,16 @@ export interface CartItem {
   color: string;
   quantity: number;
   isPreOrder?: boolean;
+  availableStock?: number;
+  maxQuantity?: number;
+}
+
+function clampQuantity(quantity: number, maxQuantity?: number) {
+  const normalizedQuantity = Math.max(0, Math.floor(quantity));
+
+  if (maxQuantity === undefined) return normalizedQuantity;
+
+  return Math.min(normalizedQuantity, Math.max(0, Math.floor(maxQuantity)));
 }
 
 interface CartState {
@@ -43,11 +53,28 @@ export const useCartStore = create<CartState>()(
 
         if (existingIndex > -1) {
           const updatedItems = [...currentItems];
-          updatedItems[existingIndex].quantity += newItem.quantity;
+          const existingItem = updatedItems[existingIndex];
+          const quantity = clampQuantity(
+            existingItem.quantity + newItem.quantity,
+            newItem.maxQuantity
+          );
+
+          if (quantity <= 0) return;
+
+          updatedItems[existingIndex] = {
+            ...existingItem,
+            ...newItem,
+            id,
+            quantity
+          };
           set({ items: updatedItems, isOpen: true });
         } else {
+          const quantity = clampQuantity(newItem.quantity, newItem.maxQuantity);
+
+          if (quantity <= 0) return;
+
           set({
-            items: [...currentItems, { ...newItem, id }],
+            items: [...currentItems, { ...newItem, id, quantity }],
             isOpen: true
           });
         }
@@ -66,7 +93,9 @@ export const useCartStore = create<CartState>()(
         }
         set({
           items: get().items.map((item) =>
-            item.id === id ? { ...item, quantity } : item
+            item.id === id
+              ? { ...item, quantity: clampQuantity(quantity, item.maxQuantity) }
+              : item
           )
         });
       },

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { restoreStock } from '@/lib/stock';
 
 export async function GET() {
   try {
@@ -28,31 +27,21 @@ export async function GET() {
       });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      // Restore stocks for all items in these orders
-      for (const order of staleOrders) {
-        await restoreStock(order.items, tx);
-      }
-
-      // Bulk update the status to EXPIRED
-      const updateResult = await tx.order.updateMany({
-        where: {
-          id: {
-            in: staleOrders.map((o) => o.id)
-          }
-        },
-        data: {
-          status: 'EXPIRED',
-          notes: 'Otomatis Kadaluarsa via Cron Job (Pending > 24 jam)'
+    const result = await prisma.order.updateMany({
+      where: {
+        id: {
+          in: staleOrders.map((o) => o.id)
         }
-      });
-
-      return updateResult;
+      },
+      data: {
+        status: 'EXPIRED',
+        notes: 'Otomatis Kadaluarsa via Cron Job (Pending > 24 jam)'
+      }
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Cron job cleanup executed: Stale PENDING orders automatically marked as EXPIRED and stocks restored',
+      message: 'Cron job cleanup executed: Stale PENDING orders automatically marked as EXPIRED',
       updatedCount: result.count,
       timestamp: new Date().toISOString()
     });

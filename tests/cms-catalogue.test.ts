@@ -2,10 +2,11 @@ import { test, afterEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { normalizeProductAvailability } from '../lib/product-availability';
+import { isArchivedProductStatus, normalizeProductAvailability } from '../lib/product-availability';
 import { journalSchema } from '../lib/journal-schema';
 import { orderSchema } from '../lib/order-schema';
-import { archiveSchema } from '../lib/archive-schema';
+import { normalizeEmail, normalizeWhatsapp } from '../lib/customer-identity';
+import { mapJournalRelations, mapProductRelations } from '../lib/catalogue-relations';
 import { getOrderStatusLabel } from '../lib/order-status';
 import { createOrder } from '../lib/create-order';
 import { deductStock, restoreStock } from '../lib/stock';
@@ -59,6 +60,7 @@ const product = {
 
 function mockOrderDatabase(overrides = {}) {
   let saved: Record<string, unknown> | undefined;
+  let priorOrderWhere: Record<string, unknown> | undefined;
   replaceMethod(prisma.storeSettings, 'findUnique', async () => ({
     enabledCouriers: 'jne',
     originCityId: '153'
@@ -72,7 +74,10 @@ function mockOrderDatabase(overrides = {}) {
   const tx = {
     product: { findMany: async () => [selectedProduct], findUnique: async () => selectedProduct },
     order: {
-      findFirst: async () => null,
+      findFirst: async ({ where }: { where: Record<string, unknown> }) => {
+        priorOrderWhere = where;
+        return null;
+      },
       create: async ({ data }: { data: Record<string, unknown> }) => {
         saved = data;
         return { ...data, items: [] };
@@ -84,7 +89,7 @@ function mockOrderDatabase(overrides = {}) {
     '$transaction',
     async (callback: (client: Prisma.TransactionClient) => Promise<unknown>) => callback(tx)
   );
-  return { saved: () => saved, tx };
+  return { saved: () => saved, priorOrderWhere: () => priorOrderWhere, tx };
 }
 
 test('availability is derived from variant stock and preserves explicit non-sale statuses', () => {
@@ -113,7 +118,7 @@ test('availability is derived from variant stock and preserves explicit non-sale
   );
 });
 
-test('journal keeps rich content while removing executable markup; clearing relationship uses null', () => {
+test('journal keeps rich content while removing executable markup', () => {
   const parsed = journalSchema.parse({
     title: 'Title',
     slug: 'title',
@@ -129,7 +134,42 @@ test('journal keeps rich content while removing executable markup; clearing rela
   assert.match(parsed.contentHtml!, /<strong>Bold<\/strong>/);
   assert.match(parsed.contentHtml!, /<img src="\/photo.jpg">/);
   assert.doesNotMatch(parsed.contentHtml!, /onerror|script/);
-  assert.equal(parsed.relatedProductSlug, null);
+});
+
+test('product-journal mapper supports empty, single, multiple, and cleared relationships', () => {
+  const journal = {
+    id: 'journal-1', slug: 'journal-1', title: 'Journal 1', excerpt: '', category: 'PROCESS', date: '2026-09-12', imageUrl: '/journal.jpg'
+  };
+  const baseProduct = { ...product, slug: 'test-shirt', category: 'test', imageUrl: '/shirt.jpg', images: [], description: '', edition: 'Edition 001' };
+  const empty = mapProductRelations({ ...baseProduct, journalLinks: [] } as unknown as Parameters<typeof mapProductRelations>[0]);
+  assert.deepEqual(empty.journalIds, []);
+  const multiple = mapProductRelations({
+    ...baseProduct,
+    journalLinks: [{ journal }, { journal: { ...journal, id: 'journal-2', slug: 'journal-2', title: 'Journal 2' } }]
+  } as unknown as Parameters<typeof mapProductRelations>[0]);
+  assert.deepEqual(multiple.journalIds, ['journal-1', 'journal-2']);
+  const reverse = mapJournalRelations({
+    ...journal,
+    author: 'Author', content: [],
+    productLinks: [{ product: { id: baseProduct.id, slug: baseProduct.slug, name: baseProduct.name, imageUrl: baseProduct.imageUrl, price: baseProduct.price, status: 'AVAILABLE', category: baseProduct.category, color: baseProduct.color } }]
+  } as unknown as Parameters<typeof mapJournalRelations>[0]);
+  assert.deepEqual(reverse.relatedProducts?.map((item) => item.id), ['product-test']);
+});
+
+test('archive contains only sold-out and discontinued products', () => {
+  assert.equal(isArchivedProductStatus('SOLD_OUT'), true);
+  assert.equal(isArchivedProductStatus('DISCONTINUED'), true);
+  for (const status of ['AVAILABLE', 'COMING_SOON', 'PRE_ORDER']) {
+    assert.equal(isArchivedProductStatus(status), false);
+  }
+});
+
+test('customer identities normalize email and common Indonesian WhatsApp formats', () => {
+  assert.equal(normalizeEmail('  TEST@Example.COM '), 'test@example.com');
+  const expected = '6281234567890';
+  assert.equal(normalizeWhatsapp('0812-3456-7890'), expected);
+  assert.equal(normalizeWhatsapp('62812 3456 7890'), expected);
+  assert.equal(normalizeWhatsapp('+62 812 3456 7890'), expected);
 });
 
 test('order rejects invalid email, missing service, empty items and invalid quantities', () => {
@@ -145,22 +185,6 @@ test('order rejects invalid email, missing service, empty items and invalid quan
   }
 });
 
-test('archives accept an explicit journal id or no relationship, never an executable URL', () => {
-  const archive = {
-    name: 'Archive',
-    slug: 'archive',
-    description: '',
-    imageUrl: '/image.jpg',
-    journalId: 'journal-id'
-  };
-  assert.equal(archiveSchema.parse(archive).journalId, 'journal-id');
-  assert.equal(archiveSchema.parse({ ...archive, journalId: null }).journalId, null);
-  assert.equal(
-    archiveSchema.safeParse({ ...archive, imageUrl: 'javascript:alert(1)' }).success,
-    false
-  );
-});
-
 test('checkout persists chosen courier, authoritative price, color and pre-order snapshot', async () => {
   const database = mockOrderDatabase();
   await createOrder(input);
@@ -174,10 +198,26 @@ test('checkout persists chosen courier, authoritative price, color and pre-order
   assert.match(String(saved.orderNumber), /^RC-[A-F0-9]{16}$/);
 });
 
+test('once-per-customer checks account, normalized email, and normalized WhatsApp', async () => {
+  const database = mockOrderDatabase({ orderLimitMode: 'ONCE_PER_USER' });
+  await createOrder({
+    ...input,
+    customerId: 'customer-test',
+    email: '  TEST@EXAMPLE.COM ',
+    whatsapp: '+62 812-3456-7890',
+    items: [{ ...input.items[0], quantity: 1 }]
+  });
+  assert.deepEqual((database.priorOrderWhere() as { OR: unknown[] }).OR, [
+    { customerId: 'customer-test' },
+    { email: 'test@example.com' },
+    { whatsapp: '6281234567890' }
+  ]);
+});
+
 test('checkout rejects a stale shipping quote and unavailable product before saving', async () => {
   const database = mockOrderDatabase({ status: 'COMING_SOON' });
   await assert.rejects(createOrder({ ...input, shippingFee: 1 }), /Tarif ongkir berubah/);
-  await assert.rejects(createOrder(input), /tidak tersedia untuk dipesan/);
+  await assert.rejects(createOrder(input), /sedang tidak tersedia/);
   assert.equal(database.saved(), undefined);
 });
 
@@ -185,11 +225,11 @@ test('checkout rejects nonexistent sizes and colors for unlimited stock too', as
   const database = mockOrderDatabase();
   await assert.rejects(
     createOrder({ ...input, items: [{ ...input.items[0], size: 'INVALID' }] }),
-    /Ukuran/
+    /ukuran/i
   );
   await assert.rejects(
     createOrder({ ...input, items: [{ ...input.items[0], color: 'INVALID' }] }),
-    /Warna/
+    /warna/i
   );
   assert.equal(database.saved(), undefined);
 });
@@ -226,13 +266,14 @@ test('stock decrement is conditional and sold-out state recovers after cancellat
   await deductStock(items, tx);
   assert.equal(stock, 0);
   assert.equal(inStock, false);
-  await assert.rejects(deductStock(items, tx), /tidak mencukupi/);
+  await assert.rejects(deductStock(items, tx), /sedang habis|tidak mencukupi/);
   await restoreStock(items, tx);
   assert.equal(stock, 2);
   assert.equal(inStock, true);
 });
 
 test('OTP verification validates code format, expiration and attempts', async () => {
+  replaceMethod(prisma.otpVerification, 'findFirst', async () => null);
   const { verifyOtp } = await import('../lib/otp');
   await assert.rejects(
     verifyOtp({ email: 'nonexistent@test.com', code: '123456' }),

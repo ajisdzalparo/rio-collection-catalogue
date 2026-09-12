@@ -101,12 +101,15 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
     <div className="space-y-6 pb-16">
       {/* Back Navigation & Breadcrumb */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Link
-          href="/users?tab=rbac"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors bg-card border border-border/40 px-3 py-1.5 rounded-lg shadow-2xs"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Kembali ke Master Roles</span>
+        <Link href="/users?tab=rbac">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 rounded-xl cursor-pointer"
+            title="Kembali ke Master Roles"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
         </Link>
 
         <div className="flex items-center gap-2">
@@ -115,7 +118,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
             className="gap-1.5 h-9 rounded-lg text-xs font-bold cursor-pointer bg-foreground text-background hover:bg-foreground/90 shadow-xs"
           >
             <Edit className="h-3.5 w-3.5" />
-            <span>Edit Master Role</span>
+            <span>Edit</span>
           </Button>
         </div>
       </div>

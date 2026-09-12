@@ -8,7 +8,8 @@ import {
   Settings,
   ShieldAlert,
   type LucideIcon,
-  MessageSquare
+  MessageSquare,
+  Boxes
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -30,15 +31,20 @@ export const navigation: NavigationItem[] = [
     icon: ShoppingCart
   },
   {
+    title: 'Stock Management',
+    href: '/dashboard/stock',
+    icon: Boxes
+  },
+  {
     title: 'Master Data',
     href: '#',
     icon: Database,
     subMenu: [
       { title: 'Products', href: '/dashboard/products' },
-      { title: 'Historical Archive', href: '/dashboard/archives' },
       { title: 'Kategori Kaos', href: '/dashboard/master?tab=categories' },
-      { title: 'Warna (Hex)', href: '/dashboard/master?tab=colors' },
-      { title: 'Ukuran (Sizes)', href: '/dashboard/master?tab=sizes' },
+      { title: 'Warna', href: '/dashboard/master?tab=colors' },
+      { title: 'Ukuran', href: '/dashboard/master?tab=sizes' },
+      { title: 'Bahan & Perawatan', href: '/dashboard/master?tab=materials' },
       { title: 'Edisi / Drop Kaos', href: '/dashboard/master?tab=editions' },
       { title: 'Topik Jurnal', href: '/dashboard/master?tab=topics' },
       { title: 'Master Bank', href: '/dashboard/master?tab=banks' }
@@ -65,7 +71,7 @@ export const navigation: NavigationItem[] = [
     icon: ShieldAlert,
     subMenu: [
       { title: 'User List', href: '/users?tab=users' },
-      { title: 'Roles & RBAC', href: '/users?tab=rbac' }
+      { title: 'Roles', href: '/users?tab=rbac' }
     ]
   },
   {

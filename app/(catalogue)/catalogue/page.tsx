@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getProducts, getArchives } from '@/lib/api';
+import { getProducts } from '@/lib/api';
 import { CatalogueClientView } from '@/components/catalogue/catalogue-client-view';
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CataloguePage() {
-  const [products, archives] = await Promise.all([getProducts(), getArchives()]);
+  const products = await getProducts();
 
   return (
     <>
@@ -37,7 +37,7 @@ export default async function CataloguePage() {
       </section>
 
       {/* Interactive Filter & Product Grid */}
-      <CatalogueClientView products={products} archives={archives} />
+      <CatalogueClientView products={products} />
     </>
   );
 }

@@ -16,8 +16,7 @@ export async function GET() {
           whatsappNumber: '628123456789',
           bankName: 'BCA',
           bankAccountNumber: '1234567890',
-          bankAccountOwner: 'RIO COLLECTION',
-          flatShippingRate: 15000
+          bankAccountOwner: 'RIO COLLECTION'
         }
       });
     }
@@ -45,7 +44,6 @@ export async function PUT(request: Request) {
       bankName,
       bankAccountNumber,
       bankAccountOwner,
-      flatShippingRate,
       instagramUrl,
       tiktokUrl,
       facebookUrl,
@@ -97,7 +95,6 @@ export async function PUT(request: Request) {
         ...(bankName && { bankName }),
         ...(bankAccountNumber && { bankAccountNumber }),
         ...(bankAccountOwner && { bankAccountOwner }),
-        ...(flatShippingRate !== undefined && { flatShippingRate: Number(flatShippingRate) }),
         ...(instagramUrl !== undefined && { instagramUrl }),
         ...(tiktokUrl !== undefined && { tiktokUrl }),
         ...(facebookUrl !== undefined && { facebookUrl }),
@@ -147,7 +144,6 @@ export async function PUT(request: Request) {
         bankName: bankName || 'BCA',
         bankAccountNumber: bankAccountNumber || '1234567890',
         bankAccountOwner: bankAccountOwner || 'RIO COLLECTION',
-        flatShippingRate: Number(flatShippingRate || 15000),
         instagramUrl,
         tiktokUrl,
         facebookUrl,

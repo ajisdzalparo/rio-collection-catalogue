@@ -63,11 +63,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const currentStatus = existingOrder.status;
       const newStatus = body.status;
       if (newStatus && newStatus !== currentStatus) {
-        const restoringStatuses = ['CANCELLED', 'REJECTED', 'EXPIRED'];
-        const isRestoring = restoringStatuses.includes(newStatus);
-        const wasRestored = restoringStatuses.includes(currentStatus);
-        if (isRestoring && !wasRestored) await restoreStock(existingOrder.items, tx);
-        else if (!isRestoring && wasRestored) await deductStock(existingOrder.items, tx);
+        const paidStatuses = ['PAID', 'FULFILLED'];
+        const wasPaid = paidStatuses.includes(currentStatus);
+        const isNowPaid = paidStatuses.includes(newStatus);
+        if (!wasPaid && isNowPaid) {
+          await deductStock(existingOrder.items, tx);
+        } else if (wasPaid && !isNowPaid) {
+          await restoreStock(existingOrder.items, tx);
+        }
       }
 
       const quotedShippingFee = existingOrder.quotedShippingFee ?? existingOrder.shippingFee ?? 15000;

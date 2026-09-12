@@ -69,7 +69,6 @@ export default function StoreSettingsPage() {
   // Form local state
   const [storeName, setStoreName] = useState('RIO COLLECTION');
   const [whatsappNumber, setWhatsappNumber] = useState('628123456789');
-  const [flatShippingRate, setFlatShippingRate] = useState<number>(15000);
   const [contactEmail, setContactEmail] = useState('');
   const [enabledCouriers, setEnabledCouriers] = useState<string>('jne,pos,tiki,sicepat,jnt');
   const [originProvinceName, setOriginProvinceName] = useState<string>('JAWA BARAT');
@@ -126,8 +125,6 @@ export default function StoreSettingsPage() {
     setSettings(mockSettings);
     if (mockSettings.storeName) setStoreName(mockSettings.storeName);
     if (mockSettings.whatsappNumber) setWhatsappNumber(mockSettings.whatsappNumber);
-    if (mockSettings.flatShippingRate !== undefined)
-      setFlatShippingRate(mockSettings.flatShippingRate);
     if (mockSettings.contactEmail) setContactEmail(mockSettings.contactEmail);
     if (mockSettings.enabledCouriers) setEnabledCouriers(mockSettings.enabledCouriers);
     if (mockSettings.originProvinceName) setOriginProvinceName(mockSettings.originProvinceName);
@@ -186,7 +183,6 @@ export default function StoreSettingsPage() {
       const payload = {
         storeName,
         whatsappNumber,
-        flatShippingRate: Number(flatShippingRate) || 0,
         contactEmail,
         waTemplatePending: waTemplates.waTemplatePending,
         waTemplatePayment: waTemplates.waTemplatePayment,
@@ -1221,7 +1217,7 @@ export default function StoreSettingsPage() {
                     className="w-full sm:w-auto gap-2 h-11 px-8 rounded-xl cursor-pointer font-extrabold uppercase tracking-wider text-xs shadow-md"
                   >
                     <Save className="h-4 w-4" />
-                    <span>{isSaving ? 'Menyimpan...' : 'Simpan Pengaturan CMS'}</span>
+                    <span>{isSaving ? 'Menyimpan...' : 'Simpan'}</span>
                   </Button>
                 </div>
               </div>
