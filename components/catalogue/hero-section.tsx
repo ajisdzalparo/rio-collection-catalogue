@@ -1,14 +1,17 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { CountdownTimer } from '@/components/catalogue/countdown-timer';
 import type { StoreSettings } from '@/hooks/use-store-settings';
+import type { Product } from '@/types/catalogue.types';
 
 interface HeroSectionProps {
   settings?: Partial<StoreSettings> | null;
+  comingSoonProduct?: Product | null;
   className?: string;
 }
 
-export function HeroSection({ settings, className }: HeroSectionProps) {
+export function HeroSection({ settings, comingSoonProduct, className }: HeroSectionProps) {
   const heroTitle = settings?.heroTitle;
   const heroSubtitle = settings?.heroSubtitle;
   const heroLayout = settings?.heroLayout || '2-grid';
@@ -123,15 +126,36 @@ export function HeroSection({ settings, className }: HeroSectionProps) {
               </p>
             )}
 
+            {/* Coming Soon Drop Highlight Countdown Card */}
+            {comingSoonProduct?.releaseDate && (
+              <div className="mt-5 flex justify-center">
+                <CountdownTimer
+                  targetDate={comingSoonProduct.releaseDate}
+                  variant="hero"
+                  className="shadow-2xl"
+                />
+              </div>
+            )}
+
             {/* CTA buttons */}
-            <div className="mt-6 flex items-center justify-center gap-3">
-              {heroCtaText && heroCtaLink && (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              {comingSoonProduct ? (
                 <Link
-                  href={heroCtaLink}
-                  className="inline-flex items-center px-6 py-2.5 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
+                  href={`/products/${comingSoonProduct.slug}`}
+                  className="inline-flex items-center px-6 py-2.5 bg-white text-black font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-white/90 transition-colors duration-150 shadow-md"
                 >
-                  {heroCtaText}
+                  Preview Drop: {comingSoonProduct.name}
                 </Link>
+              ) : (
+                heroCtaText &&
+                heroCtaLink && (
+                  <Link
+                    href={heroCtaLink}
+                    className="inline-flex items-center px-6 py-2.5 bg-(--cat-charcoal) text-white font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] hover:opacity-85 transition-opacity duration-150"
+                  >
+                    {heroCtaText}
+                  </Link>
+                )
               )}
               <Link
                 href="/archive"

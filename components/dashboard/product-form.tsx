@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { ImageUpload, MultiImageUpload } from '@/components/shared/image-upload';
+import { ReleaseScheduleField } from '@/components/dashboard/release-schedule-field';
 import { useProducts } from '@/hooks/use-products';
 import { useJournals } from '@/hooks/use-journals';
 import { useMasterStore, useSizesQuery, useMaterialsQuery } from '@/hooks/use-master-data';
@@ -56,6 +57,8 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
   const [colorHex] = useState(initialProduct?.colorHex || '#1A1A1A');
   const [category, setCategory] = useState(initialProduct?.category || '');
   const [status, setStatus] = useState<ProductStatus>(initialProduct?.status || 'AVAILABLE');
+
+  const [releaseDate, setReleaseDate] = useState<string | null>(initialProduct?.releaseDate ?? null);
   const stockMode = initialProduct?.stockMode || 'QUANTITY';
   const orderLimitMode = initialProduct?.orderLimitMode || 'UNLIMITED';
   const [edition, setEdition] = useState(initialProduct?.edition || 'Edition 001');
@@ -130,6 +133,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
       colorHexes: [colorHex],
       category: category || (categories[0]?.name ?? 'Boxy Tee'),
       status: finalStatus,
+      releaseDate,
       stockMode,
       orderLimitMode,
       maxPurchaseLimit: orderLimitMode === 'ONCE_PER_USER' ? 1 : null,
@@ -346,6 +350,10 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                 </Select>
               </div>
             </div>
+
+            {status === 'COMING_SOON' && (
+              <ReleaseScheduleField value={releaseDate} onChange={setReleaseDate} />
+            )}
 
             {/* Description */}
             <div className="space-y-1.5">

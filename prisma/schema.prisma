@@ -80,6 +80,7 @@ model Product {
   stock            Int              @default(0)
   stockMode        String           @default("QUANTITY") // QUANTITY, ALWAYS_AVAILABLE
   status           String           @default("AVAILABLE") // AVAILABLE, SOLD_OUT, COMING_SOON
+  releaseDate      DateTime?
   orderLimitMode   String           @default("UNLIMITED") // UNLIMITED, ONCE_PER_USER
   maxPurchaseLimit Int?             @default(1)
   imageUrl         String
@@ -302,8 +303,6 @@ model StoreSettings {
   originCityId       String?
   originCityName     String?
   originProvinceName String?
-  recaptchaSiteKey   String?
-  recaptchaSecretKey String?
   updatedAt          DateTime @updatedAt
 }
 

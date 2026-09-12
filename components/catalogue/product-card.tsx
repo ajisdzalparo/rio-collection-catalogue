@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cn, formatPrice } from '@/lib/utils';
 import { StatusBadge } from '@/components/catalogue/status-badge';
+import { CountdownTimer } from '@/components/catalogue/countdown-timer';
 import type { Product } from '@/types/catalogue.types';
 import { SafeImage } from '@/components/shared';
 
@@ -13,6 +14,7 @@ interface ProductCardProps {
 export function ProductCard({ product, className, priority = false }: ProductCardProps) {
   const isSoldOut = product.status === 'SOLD_OUT';
   const isDiscontinued = product.status === 'DISCONTINUED';
+  const isComingSoon = product.status === 'COMING_SOON';
   const isUnavailable = isSoldOut || isDiscontinued;
   const colorList = product.colors?.length
     ? product.colors
@@ -61,11 +63,16 @@ export function ProductCard({ product, className, priority = false }: ProductCar
           </div>
         )}
         {/* Coming Soon overlay */}
-        {product.status === 'COMING_SOON' && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="bg-(--cat-surface)/80 backdrop-blur-[2px] px-4 py-2 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-accent-cobalt)">
+        {isComingSoon && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-black/10">
+            <span className="bg-(--cat-surface)/90 backdrop-blur-[2px] px-3.5 py-1.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) shadow-xs">
               Segera Hadir
             </span>
+            {product.releaseDate && (
+              <div className="mt-2">
+                <CountdownTimer targetDate={product.releaseDate} variant="compact" />
+              </div>
+            )}
           </div>
         )}
       </div>

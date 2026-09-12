@@ -57,7 +57,6 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
           NODE_ENV: production
-          NEXT_PUBLIC_RECAPTCHA_SITE_KEY: ${{ secrets.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '' }}
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/rio_collection?schema=public"
 
   # ============================================================================
@@ -108,7 +107,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${{ secrets.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '' }}
             NEXT_PUBLIC_API_URL=/api
 
   # ============================================================================

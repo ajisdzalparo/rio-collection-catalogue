@@ -35,13 +35,16 @@ export default async function HomePage() {
     prisma.storeSettings.findUnique({ where: { id: 'default' } }).catch(() => null)
   ]);
   const featuredProducts = products.slice(0, 3);
-  const bannerText = settings?.homeBannerText ?? 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.';
+  const comingSoonProduct =
+    products.find((p) => p.status === 'COMING_SOON' && p.releaseDate) || null;
+  const bannerText =
+    settings?.homeBannerText ?? 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.';
   const bannerButton = settings?.homeBannerButton ?? 'Jelajahi Katalog Lengkap';
 
   return (
     <>
       {/* ═══ Hero Section ═══ */}
-      <HeroSection settings={settings} />
+      <HeroSection settings={settings} comingSoonProduct={comingSoonProduct} />
 
       {/* ═══ Featured Products — "Koleksi Terkini" ═══ */}
       <section className="mx-auto max-w-350 px-4 md:px-16 py-16 md:py-24">

@@ -94,6 +94,8 @@ const MONTH_NAMES = [
 ];
 
 export function DatePicker({
+  id,
+  ariaLabel,
   mode = 'single',
   value,
   rangeValue,
@@ -274,7 +276,11 @@ export function DatePicker({
   return (
     <div ref={containerRef} className={cn('relative w-full inline-block', className)}>
       <button
+        id={id}
         type="button"
+        aria-label={ariaLabel}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(

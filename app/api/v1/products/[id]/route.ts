@@ -42,6 +42,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       colorHexes,
       price,
       status,
+      releaseDate,
       imageUrl,
       images,
       description,
@@ -103,6 +104,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         if (maxPurchaseLimit !== undefined)
           dataToUpdate.maxPurchaseLimit = Number(maxPurchaseLimit);
         if (status !== undefined) dataToUpdate.status = status;
+        if (releaseDate !== undefined) {
+          dataToUpdate.releaseDate = releaseDate ? new Date(releaseDate) : null;
+        }
         if (imageUrl !== undefined) dataToUpdate.imageUrl = imageUrl;
         if (images !== undefined) dataToUpdate.images = images;
         if (imageDetails !== undefined) dataToUpdate.imageDetails = imageDetails;

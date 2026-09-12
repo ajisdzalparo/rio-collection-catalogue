@@ -11,6 +11,8 @@ export interface DatePickerPreset {
 }
 
 export interface DatePickerProps {
+  id?: string;
+  ariaLabel?: string;
   mode?: DatePickerMode;
   value?: Date;
   rangeValue?: DateRange;

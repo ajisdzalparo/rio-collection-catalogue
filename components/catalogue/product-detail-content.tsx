@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/catalogue/status-badge';
 import { SizeGuideModal } from '@/components/catalogue/size-guide-modal';
 import { StarRating } from '@/components/catalogue/star-rating';
 import { ProductReviews } from '@/components/catalogue/product-reviews';
+import { CountdownTimer } from '@/components/catalogue/countdown-timer';
 import { useCartStore } from '@/lib/cart-store';
 import type { Product } from '@/types/catalogue.types';
 import { toast } from 'sonner';
@@ -273,6 +274,13 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 </span>
               )}
             </div>
+
+            {/* Coming Soon Countdown Box */}
+            {product.status === 'COMING_SOON' && product.releaseDate && (
+              <div className="mt-6">
+                <CountdownTimer targetDate={product.releaseDate} variant="detail" />
+              </div>
+            )}
 
             {/* Color Selector */}
             <div className="mt-6">

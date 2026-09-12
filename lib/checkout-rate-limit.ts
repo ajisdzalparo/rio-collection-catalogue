@@ -1,4 +1,4 @@
-// Limit retries within each server process; CAPTCHA is also verified on every request.
+// Limit checkout retries within each server process.
 const attempts = new Map<string, { count: number; expiresAt: number }>();
 
 export function allowCheckoutAttempt(key: string, now = Date.now()): boolean {
