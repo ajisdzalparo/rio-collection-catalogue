@@ -2,16 +2,34 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus, Check, AlertCircle, Pencil, Trash2, Building2 } from 'lucide-react';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Building2,
+  Shirt,
+  Sparkles,
+  Globe,
+  HeartHandshake
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import { VStack, Flex } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +38,7 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   useMasterStore,
   useCategoriesQuery,
@@ -28,25 +47,28 @@ import {
   useTopicsQuery,
   useEditionsQuery,
   useBanksQuery,
+  useMaterialsQuery,
   useMasterMutations,
   type CategoryItem,
   type ColorItem,
   type TopicItem,
   type EditionItem,
-  type BankItem
+  type BankItem,
+  type SizeItem,
+  type MaterialItem
 } from '@/hooks/use-master-data';
-import { cn } from '@/lib/utils';
 
 function MasterDataPageContent() {
   const searchParams = useSearchParams();
 
-  // React Query hooks to fetch from native backend API
+  // React Query hooks
   const { data: mockCats, isLoading: loadingCats } = useCategoriesQuery();
   const { data: mockCols, isLoading: loadingCols } = useColorsQuery();
-  const { data: mockSizes } = useSizesQuery();
+  const { data: mockSizes, isLoading: loadingSizes } = useSizesQuery();
   const { data: mockTopics, isLoading: loadingTopics } = useTopicsQuery();
   const { data: mockEditions, isLoading: loadingEditions } = useEditionsQuery();
   const { data: mockBanks, isLoading: loadingBanks } = useBanksQuery();
+  const { data: mockMaterials = [], isLoading: loadingMaterials } = useMaterialsQuery();
 
   const {
     categories,
@@ -69,6 +91,7 @@ function MasterDataPageContent() {
     deleteColor,
     toggleSize,
     addSize,
+    deleteSize,
     addTopic,
     updateTopic,
     deleteTopic,
@@ -80,7 +103,6 @@ function MasterDataPageContent() {
     deleteBank
   } = useMasterStore();
 
-  // Sync VeloMock API data to Zustand master store if empty
   useEffect(() => {
     if (mockCats && categories.length === 0) setCategories(mockCats);
   }, [mockCats, categories, setCategories]);
@@ -90,8 +112,8 @@ function MasterDataPageContent() {
   }, [mockCols, colors, setColors]);
 
   useEffect(() => {
-    if (mockSizes && sizes.length === 0) setSizes(mockSizes);
-  }, [mockSizes, sizes, setSizes]);
+    if (mockSizes) setSizes(mockSizes);
+  }, [mockSizes, setSizes]);
 
   useEffect(() => {
     if (mockTopics && topics.length === 0) setTopics(mockTopics);
@@ -120,6 +142,10 @@ function MasterDataPageContent() {
       title: 'Ukuran Kaos (Sizes)',
       desc: 'Kelola standarisasi ukuran kaos yang aktif di catalog.'
     },
+    materials: {
+      title: 'Spesifikasi Bahan (Materials & Origin)',
+      desc: 'Kelola master opsi bahan kain (Fabric) dan negara asal (Origin).'
+    },
     editions: {
       title: 'Edisi / Drop Kaos',
       desc: 'Kelola edisi peluncuran rilis produk (drops).'
@@ -139,16 +165,19 @@ function MasterDataPageContent() {
   // Dialog & Form states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{
-    type: 'cat' | 'col' | 'top' | 'ed' | 'bank';
+    type: 'cat' | 'col' | 'top' | 'ed' | 'bank' | 'material';
     id: string;
   } | null>(null);
 
-  // Input fields
+  const [activeMaterialSubTab, setActiveMaterialSubTab] = useState<'FABRIC' | 'ORIGIN'>('FABRIC');
+  const [materialType, setMaterialType] = useState<'FABRIC' | 'ORIGIN'>('FABRIC');
   const [itemName, setItemName] = useState('');
   const [itemHex, setItemHex] = useState('#1A1A1A');
   const [itemDesc, setItemDesc] = useState('');
   const [itemCode, setItemCode] = useState('');
   const [itemLogoUrl, setItemLogoUrl] = useState('');
+
+  const masterMutations = useMasterMutations();
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -157,18 +186,31 @@ function MasterDataPageContent() {
     setItemDesc('');
     setItemCode('');
     setItemLogoUrl('');
+    setMaterialType(activeTab === 'materials' ? activeMaterialSubTab : 'FABRIC');
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenCreateWithType = (type: 'FABRIC' | 'ORIGIN') => {
+    setEditingItem(null);
+    setItemName('');
+    setItemHex('#1A1A1A');
+    setItemDesc('');
+    setItemCode('');
+    setItemLogoUrl('');
+    setMaterialType(type);
     setIsDialogOpen(true);
   };
 
   const handleOpenEdit = (
-    type: 'cat' | 'col' | 'top' | 'ed' | 'bank',
+    type: 'cat' | 'col' | 'top' | 'ed' | 'bank' | 'material',
     item: {
       id: string;
       name: string;
       hex?: string;
-      description?: string;
+      description?: string | null;
       code?: string | null;
       logoUrl?: string | null;
+      type?: string;
     }
   ) => {
     setEditingItem({ type, id: item.id });
@@ -177,10 +219,11 @@ function MasterDataPageContent() {
     setItemDesc(item.description || '');
     setItemCode(item.code || '');
     setItemLogoUrl(item.logoUrl || '');
+    if (item.type && (item.type === 'FABRIC' || item.type === 'ORIGIN')) {
+      setMaterialType(item.type);
+    }
     setIsDialogOpen(true);
   };
-
-  const masterMutations = useMasterMutations();
 
   const handleSave = async () => {
     if (!itemName.trim()) return;
@@ -215,6 +258,13 @@ function MasterDataPageContent() {
           });
           updateBank(editingItem.id, itemName, itemCode, itemLogoUrl);
           toast.success('Master bank berhasil diperbarui');
+        } else if (editingItem.type === 'material') {
+          await masterMutations.updateMaterial({
+            id: editingItem.id,
+            name: itemName,
+            description: itemDesc
+          });
+          toast.success('Master material berhasil diperbarui');
         }
       } else {
         if (activeTab === 'categories') {
@@ -231,9 +281,7 @@ function MasterDataPageContent() {
         } else if (activeTab === 'sizes') {
           const upperSize = itemName.trim().toUpperCase();
           if (upperSize) {
-            try {
-              await masterMutations.addSize({ size: upperSize });
-            } catch {}
+            await masterMutations.addSize({ size: upperSize });
             addSize(upperSize);
             toast.success(`Ukuran "${upperSize}" berhasil ditambahkan`);
           }
@@ -245,6 +293,13 @@ function MasterDataPageContent() {
           });
           addBank(itemName, itemCode, itemLogoUrl);
           toast.success('Master bank baru berhasil ditambahkan');
+        } else if (activeTab === 'materials') {
+          await masterMutations.addMaterial({
+            type: materialType,
+            name: itemName,
+            description: itemDesc
+          });
+          toast.success('Opsi material baru berhasil ditambahkan');
         }
       }
     } catch (error) {
@@ -255,12 +310,16 @@ function MasterDataPageContent() {
   };
 
   const [deleteTarget, setDeleteTarget] = useState<{
-    type: 'cat' | 'col' | 'top' | 'ed' | 'bank';
+    type: 'cat' | 'col' | 'top' | 'ed' | 'bank' | 'size' | 'material';
     id: string;
     name: string;
   } | null>(null);
 
-  const handleDelete = (type: 'cat' | 'col' | 'top' | 'ed' | 'bank', id: string, name: string) => {
+  const handleDelete = (
+    type: 'cat' | 'col' | 'top' | 'ed' | 'bank' | 'size' | 'material',
+    id: string,
+    name: string
+  ) => {
     setDeleteTarget({ type, id, name });
   };
 
@@ -282,6 +341,11 @@ function MasterDataPageContent() {
       } else if (type === 'bank') {
         await masterMutations.deleteBank(id);
         deleteBank(id);
+      } else if (type === 'size') {
+        await masterMutations.deleteSize(id);
+        deleteSize(id);
+      } else if (type === 'material') {
+        await masterMutations.deleteMaterial(id);
       }
       toast.success(`Berhasil menghapus "${name}"`);
     } catch (error) {
@@ -291,7 +355,48 @@ function MasterDataPageContent() {
       setDeleteTarget(null);
     }
   };
-  // Categories Columns
+
+  const sizeColumns: Column<SizeItem>[] = [
+    { header: 'Ukuran', accessorKey: 'size', sortable: true, className: 'font-bold text-xs' },
+    {
+      header: 'Status',
+      className: 'w-24',
+      cell: (item) => (
+        <Switch
+          checked={item.isActive}
+          onCheckedChange={async (checked) => {
+            try {
+              await masterMutations.toggleSize({ size: item.size, isActive: checked });
+              toggleSize(item.size);
+              toast.success(
+                `Ukuran "${item.size}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
+              );
+            } catch (error) {
+              console.error(error);
+              toast.error('Gagal memperbarui status ukuran');
+            }
+          }}
+        />
+      )
+    },
+    {
+      header: 'Aksi',
+      className: 'text-right w-24',
+      cell: (item) => (
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete('size', item.size, item.size)}
+            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
   const categoryColumns: Column<CategoryItem>[] = [
     {
       header: 'Nama Kategori',
@@ -356,7 +461,6 @@ function MasterDataPageContent() {
     }
   ];
 
-  // Colors Columns
   const colorColumns: Column<ColorItem>[] = [
     {
       header: 'Preview',
@@ -426,7 +530,109 @@ function MasterDataPageContent() {
     }
   ];
 
-  // Topics Columns
+  const materialColumns: Column<MaterialItem>[] = [
+    {
+      header: 'Kategori / Tipe Material',
+      accessorKey: 'type',
+      sortable: true,
+      className: 'w-1/4',
+      cell: (item) => {
+        const labels: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+          FABRIC: {
+            label: 'Fabric / Material Bahan',
+            icon: <Shirt className="h-3.5 w-3.5" />,
+            color: 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+          },
+          TREATMENT: {
+            label: 'Treatment Bahan',
+            icon: <Sparkles className="h-3.5 w-3.5" />,
+            color: 'bg-purple-500/10 text-purple-600 border-purple-500/20'
+          },
+          ORIGIN: {
+            label: 'Origin / Negara Asal',
+            icon: <Globe className="h-3.5 w-3.5" />,
+            color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+          },
+          CARE: {
+            label: 'Care Instruction',
+            icon: <HeartHandshake className="h-3.5 w-3.5" />,
+            color: 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+          }
+        };
+        const config = labels[item.type] || {
+          label: item.type,
+          icon: null,
+          color: 'bg-muted text-muted-foreground'
+        };
+        return (
+          <Badge
+            variant="outline"
+            className={`gap-1.5 font-bold text-[10px] uppercase px-2 py-0.5 ${config.color}`}
+          >
+            {config.icon}
+            <span>{config.label}</span>
+          </Badge>
+        );
+      }
+    },
+    {
+      header: 'Nama / Nilai Master Opsi',
+      accessorKey: 'name',
+      sortable: true,
+      className: 'font-bold text-xs w-1/3'
+    },
+    {
+      header: 'Keterangan / Deskripsi',
+      accessorKey: 'description',
+      className: 'text-xs text-muted-foreground w-1/3',
+      cell: (item) => item.description || '-'
+    },
+    {
+      header: 'Status',
+      className: 'w-20',
+      cell: (item) => (
+        <Switch
+          checked={item.isActive}
+          onCheckedChange={async (checked) => {
+            try {
+              await masterMutations.updateMaterial({ id: item.id, isActive: checked });
+              toast.success(
+                `Material "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
+              );
+            } catch (error) {
+              console.error(error);
+              toast.error('Gagal memperbarui status');
+            }
+          }}
+        />
+      )
+    },
+    {
+      header: 'Aksi',
+      className: 'text-right w-24',
+      cell: (item) => (
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleOpenEdit('material', item)}
+            className="h-8 w-8 rounded-lg cursor-pointer"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete('material', item.id, item.name)}
+            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
   const topicColumns: Column<TopicItem>[] = [
     {
       header: 'Nama Topik Jurnal',
@@ -486,7 +692,6 @@ function MasterDataPageContent() {
     }
   ];
 
-  // Editions Columns
   const editionColumns: Column<EditionItem>[] = [
     {
       header: 'Nama Edisi / Drop',
@@ -530,7 +735,6 @@ function MasterDataPageContent() {
     }
   ];
 
-  // Bank Columns
   const bankColumns: Column<BankItem>[] = [
     {
       header: 'Nama Bank',
@@ -544,7 +748,9 @@ function MasterDataPageContent() {
           </div>
           <div>
             <p className="font-bold text-xs text-foreground">{item.name}</p>
-            {item.code && <p className="font-mono text-[10px] text-muted-foreground">{item.code}</p>}
+            {item.code && (
+              <p className="font-mono text-[10px] text-muted-foreground">{item.code}</p>
+            )}
           </div>
         </div>
       )
@@ -565,7 +771,9 @@ function MasterDataPageContent() {
             try {
               await masterMutations.updateBank({ id: item.id, isActive: checked });
               updateBank(item.id, undefined, undefined, undefined, checked);
-              toast.success(`Bank "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+              toast.success(
+                `Bank "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
+              );
             } catch (error) {
               console.error(error);
               toast.error('Gagal memperbarui status bank');
@@ -600,6 +808,100 @@ function MasterDataPageContent() {
     }
   ];
 
+  const sectionMaterialColumns: Column<MaterialItem>[] = [
+    {
+      header: 'Nama / Nilai Master Opsi',
+      accessorKey: 'name',
+      sortable: true,
+      className: 'font-bold text-xs w-1/3'
+    },
+    {
+      header: 'Keterangan / Deskripsi',
+      accessorKey: 'description',
+      className: 'text-xs text-muted-foreground w-1/2',
+      cell: (item) => item.description || '-'
+    },
+    {
+      header: 'Status',
+      className: 'w-20',
+      cell: (item) => (
+        <Switch
+          checked={item.isActive}
+          onCheckedChange={async (checked) => {
+            try {
+              await masterMutations.updateMaterial({ id: item.id, isActive: checked });
+              toast.success(
+                `Material "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
+              );
+            } catch (error) {
+              console.error(error);
+              toast.error('Gagal memperbarui status');
+            }
+          }}
+        />
+      )
+    },
+    {
+      header: 'Aksi',
+      className: 'text-right w-24',
+      cell: (item) => (
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleOpenEdit('material', item)}
+            className="h-8 w-8 rounded-lg cursor-pointer"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete('material', item.id, item.name)}
+            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const MATERIAL_TYPE_CONFIG: Record<
+    'FABRIC' | 'ORIGIN',
+    { title: string; label: string; placeholder: string }
+  > = {
+    FABRIC: {
+      title: 'Fabric / Material Kain',
+      label: 'Nama Fabric / Material Kain',
+      placeholder: 'Misal: Cotton Combed 30s, Heavyweight Cotton 24s...'
+    },
+    ORIGIN: {
+      title: 'Origin / Negara Asal',
+      label: 'Nama Negara / Asal Material',
+      placeholder: 'Misal: Indonesia, Made in Japan, Imported Cotton...'
+    }
+  };
+
+  const MATERIAL_SECTIONS = [
+    {
+      type: 'FABRIC' as const,
+      title: 'Fabric / Material Bahan',
+      shortTitle: 'Fabric',
+      desc: 'Master jenis kain/bahan utama kaos (misal: Cotton Combed 30s, Heavyweight Cotton 24s).',
+      icon: <Shirt className="h-4 w-4" />,
+      badgeColor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+    },
+    {
+      type: 'ORIGIN' as const,
+      title: 'Origin / Negara Asal',
+      shortTitle: 'Origin',
+      desc: 'Master asal material kain atau tempat manufaktur (misal: Made in Indonesia, Imported Cotton).',
+      icon: <Globe className="h-4 w-4" />,
+      badgeColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+    }
+  ];
+
   return (
     <VStack gap="lg" className="pb-10">
       <Flex direction="responsive" justify="between" align="center" gap="md">
@@ -609,143 +911,261 @@ function MasterDataPageContent() {
           </h1>
           <p className="text-sm text-muted-foreground pt-1">{currentInfo.desc}</p>
         </VStack>
-
-        <Button
-          onClick={handleOpenCreate}
-          aria-label={activeTab === 'sizes' ? 'Tambah Ukuran' : 'Tambah Data'}
-          data-testid="add-master-button"
-          className="w-full sm:w-auto gap-2 h-10 px-4 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs shrink-0 shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          <span>{activeTab === 'sizes' ? 'Tambah Ukuran' : 'Tambah Data'}</span>
-        </Button>
       </Flex>
 
       {/* Tab Panels */}
       {activeTab === 'categories' && (
-        <DataTable
-          columns={categoryColumns}
-          data={categories}
-          isLoading={loadingCats}
-          searchKey="name"
-          searchPlaceholder="Cari kategori kaos..."
-          emptyTitle="Belum Ada Kategori"
-          emptyDescription="Mulai tambahkan kategori kaos baru di katalog Anda."
-          pageSize={10}
-        />
+        <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/20">
+            <div className="space-y-0.5">
+              <h2 className="text-base font-extrabold text-foreground">Kategori Kaos</h2>
+              <p className="text-xs text-muted-foreground">
+                Kelola daftar kategori produk kaos di katalog Anda.
+              </p>
+            </div>
+            <Button
+              onClick={handleOpenCreate}
+              size="sm"
+              className="gap-1.5 rounded-xl font-bold text-xs h-9 cursor-pointer shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Tambah Kategori</span>
+            </Button>
+          </div>
+          <DataTable
+            columns={categoryColumns}
+            data={categories}
+            isLoading={loadingCats}
+            searchKey="name"
+            searchPlaceholder="Cari kategori kaos..."
+            emptyTitle="Belum Ada Kategori"
+            emptyDescription="Mulai tambahkan kategori kaos baru di katalog Anda."
+            pageSize={10}
+          />
+        </div>
       )}
 
       {activeTab === 'colors' && (
-        <DataTable
-          columns={colorColumns}
-          data={colors}
-          isLoading={loadingCols}
-          searchKey="name"
-          searchPlaceholder="Cari warna..."
-          emptyTitle="Belum Ada Warna"
-          emptyDescription="Mulai tambahkan varian warna kain baru."
-          pageSize={10}
-        />
+        <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/20">
+            <div className="space-y-0.5">
+              <h2 className="text-base font-extrabold text-foreground">Master Warna</h2>
+              <p className="text-xs text-muted-foreground">
+                Kelola pilihan varian warna kain untuk produk.
+              </p>
+            </div>
+            <Button
+              onClick={handleOpenCreate}
+              size="sm"
+              className="gap-1.5 rounded-xl font-bold text-xs h-9 cursor-pointer shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Tambah Warna</span>
+            </Button>
+          </div>
+          <DataTable
+            columns={colorColumns}
+            data={colors}
+            isLoading={loadingCols}
+            searchKey="name"
+            searchPlaceholder="Cari warna..."
+            emptyTitle="Belum Ada Warna"
+            emptyDescription="Mulai tambahkan varian warna kain baru."
+            pageSize={10}
+          />
+        </div>
+      )}
+
+      {activeTab === 'materials' && (
+        <Tabs
+          value={activeMaterialSubTab}
+          onValueChange={(val) => setActiveMaterialSubTab(val as 'FABRIC' | 'ORIGIN')}
+          className="w-full space-y-4"
+        >
+          <TabsList
+            variant="pills"
+            className="w-full flex-wrap justify-start gap-2 bg-muted/40 p-1.5 rounded-2xl border border-border/40"
+          >
+            {MATERIAL_SECTIONS.map((section) => {
+              const isActive = activeMaterialSubTab === section.type;
+              return (
+                <TabsTrigger
+                  key={section.type}
+                  value={section.type}
+                  variant="pills"
+                  className={cn(
+                    'gap-2 px-4 py-2 text-xs font-bold rounded-xl cursor-pointer transition-all',
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <span>{section.title}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {MATERIAL_SECTIONS.map((section) => {
+            const sectionData = mockMaterials.filter((m) => m.type === section.type);
+            return (
+              <TabsContent key={section.type} value={section.type} className="mt-2">
+                <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/20">
+                    <div className="space-y-0.5">
+                      <h2 className="text-base font-extrabold text-foreground">{section.title}</h2>
+                      <p className="text-xs text-muted-foreground">{section.desc}</p>
+                    </div>
+
+                    <Button
+                      onClick={() => handleOpenCreateWithType(section.type)}
+                      size="sm"
+                      className="gap-1.5 rounded-xl font-bold text-xs h-9 cursor-pointer shrink-0"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Tambah {section.shortTitle}</span>
+                    </Button>
+                  </div>
+
+                  <DataTable
+                    columns={sectionMaterialColumns}
+                    data={sectionData}
+                    isLoading={loadingMaterials}
+                    searchKey="name"
+                    searchPlaceholder={`Cari ${section.shortTitle.toLowerCase()}...`}
+                    emptyTitle={`Belum Ada Data ${section.shortTitle}`}
+                    emptyDescription={`Tambahkan opsi ${section.shortTitle.toLowerCase()} baru.`}
+                    pageSize={10}
+                  />
+                </div>
+              </TabsContent>
+            );
+          })}
+        </Tabs>
       )}
 
       {activeTab === 'banks' && (
-        <DataTable
-          columns={bankColumns}
-          data={banks}
-          isLoading={loadingBanks}
-          searchKey="name"
-          searchPlaceholder="Cari nama bank..."
-          emptyTitle="Belum Ada Master Bank"
-          emptyDescription="Mulai tambahkan nama bank baru untuk pilihan transfer pembayaran."
-          pageSize={10}
-        />
+        <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/20">
+            <div className="space-y-0.5">
+              <h2 className="text-base font-extrabold text-foreground">Master Bank Transfer</h2>
+              <p className="text-xs text-muted-foreground">
+                Kelola daftar bank yang tersedia untuk opsi pembayaran pelanggan.
+              </p>
+            </div>
+            <Button
+              onClick={handleOpenCreate}
+              size="sm"
+              className="gap-1.5 rounded-xl font-bold text-xs h-9 cursor-pointer shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Tambah Bank</span>
+            </Button>
+          </div>
+          <DataTable
+            columns={bankColumns}
+            data={banks}
+            isLoading={loadingBanks}
+            searchKey="name"
+            searchPlaceholder="Cari nama bank..."
+            emptyTitle="Belum Ada Master Bank"
+            emptyDescription="Mulai tambahkan nama bank baru untuk pilihan transfer pembayaran."
+            pageSize={10}
+          />
+        </div>
       )}
 
       {activeTab === 'editions' && (
-        <DataTable
-          columns={editionColumns}
-          data={editions}
-          isLoading={loadingEditions}
-          searchKey="name"
-          searchPlaceholder="Cari edisi atau drop kaos..."
-          emptyTitle="Belum Ada Edisi / Drop"
-          emptyDescription="Mulai tambahkan edisi rilis kaos baru."
-          pageSize={10}
-        />
+        <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/20">
+            <div className="space-y-0.5">
+              <h2 className="text-base font-extrabold text-foreground">Edisi / Drop Kaos</h2>
+              <p className="text-xs text-muted-foreground">
+                Kelola penamaan edisi rilis koleksi kaos Anda.
+              </p>
+            </div>
+            <Button
+              onClick={handleOpenCreate}
+              size="sm"
+              className="gap-1.5 rounded-xl font-bold text-xs h-9 cursor-pointer shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Tambah Edisi</span>
+            </Button>
+          </div>
+          <DataTable
+            columns={editionColumns}
+            data={editions}
+            isLoading={loadingEditions}
+            searchKey="name"
+            searchPlaceholder="Cari edisi atau drop kaos..."
+            emptyTitle="Belum Ada Edisi / Drop"
+            emptyDescription="Mulai tambahkan edisi rilis kaos baru."
+            pageSize={10}
+          />
+        </div>
       )}
 
       {activeTab === 'topics' && (
-        <DataTable
-          columns={topicColumns}
-          data={topics}
-          isLoading={loadingTopics}
-          searchKey="name"
-          searchPlaceholder="Cari topik jurnal..."
-          emptyTitle="Belum Ada Topik Jurnal"
-          emptyDescription="Tambahkan topik editorial/kategori tulisan blog baru."
-          pageSize={10}
-        />
+        <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/20">
+            <div className="space-y-0.5">
+              <h2 className="text-base font-extrabold text-foreground">Topik Jurnal / Editorial</h2>
+              <p className="text-xs text-muted-foreground">
+                Kelola kategori topik tulisan artikel dan blog editorial.
+              </p>
+            </div>
+            <Button
+              onClick={handleOpenCreate}
+              size="sm"
+              className="gap-1.5 rounded-xl font-bold text-xs h-9 cursor-pointer shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Tambah Topik</span>
+            </Button>
+          </div>
+          <DataTable
+            columns={topicColumns}
+            data={topics}
+            isLoading={loadingTopics}
+            searchKey="name"
+            searchPlaceholder="Cari topik jurnal..."
+            emptyTitle="Belum Ada Topik Jurnal"
+            emptyDescription="Tambahkan topik editorial/kategori tulisan blog baru."
+            pageSize={10}
+          />
+        </div>
       )}
 
       {activeTab === 'sizes' && (
-        <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-4 max-w-2xl">
-          <div className="flex items-start gap-3 bg-muted/20 border border-border/20 p-4 rounded-xl">
-            <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <h4 className="text-xs font-bold text-foreground">Atur Standarisasi Ukuran Kaos</h4>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Ukuran yang aktif akan muncul sebagai opsi checkbox saat menambah atau mengedit
-                model kaos di Products CMS.
+        <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/20">
+            <div className="space-y-0.5">
+              <h2 className="text-base font-extrabold text-foreground">Master Ukuran Kaos</h2>
+              <p className="text-xs text-muted-foreground">
+                Kelola variasi standar ukuran kaos di katalog.
               </p>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-            {sizes.map((s) => (
-              <button
-                key={s.size}
-                type="button"
-                onClick={async () => {
-                  const nextActive = !s.isActive;
-                  try {
-                    await masterMutations.toggleSize({ size: s.size, isActive: nextActive });
-                    toggleSize(s.size);
-                    toast.success(
-                      `Ukuran "${s.size}" berhasil ${nextActive ? 'diaktifkan' : 'dinonaktifkan'}`
-                    );
-                  } catch (error) {
-                    console.error(error);
-                    toast.error('Gagal memperbarui status ukuran');
-                  }
-                }}
-                className={cn(
-                  'h-14 flex items-center justify-between px-4 font-bold border rounded-2xl transition-all cursor-pointer select-none',
-                  s.isActive
-                    ? 'bg-foreground text-background border-foreground shadow-xs'
-                    : 'border-border/40 text-muted-foreground hover:border-foreground/30'
-                )}
-              >
-                <span>Ukuran {s.size}</span>
-                {s.isActive ? (
-                  <Check className="h-4 w-4 text-background shrink-0" />
-                ) : (
-                  <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase border border-border/40 px-1.5 py-0.5 rounded-md">
-                    Nonaktif
-                  </span>
-                )}
-              </button>
-            ))}
-            <button
-              type="button"
+            <Button
               onClick={handleOpenCreate}
-              aria-label="Tambah Ukuran"
-              data-testid="add-size-card-button"
-              className="h-14 flex items-center justify-center gap-2 px-4 font-bold border border-dashed border-border/60 hover:border-primary text-primary hover:bg-primary/5 rounded-2xl transition-all cursor-pointer select-none text-xs"
+              size="sm"
+              className="gap-1.5 rounded-xl font-bold text-xs h-9 cursor-pointer shrink-0"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               <span>Tambah Ukuran</span>
-            </button>
+            </Button>
           </div>
+          <DataTable
+            columns={sizeColumns}
+            data={sizes}
+            isLoading={loadingSizes}
+            searchKey="size"
+            searchPlaceholder="Cari ukuran..."
+            emptyTitle="Belum Ada Ukuran"
+            emptyDescription="Mulai tambahkan ukuran kaos baru."
+            pageSize={10}
+            getRowId={(item) => item.size}
+          />
         </div>
       )}
 
@@ -754,12 +1174,20 @@ function MasterDataPageContent() {
         <DialogContent className="max-w-md bg-card border-border/40 rounded-2xl">
           <DialogHeader className="border-b border-border/20 pb-4">
             <DialogTitle className="text-sm font-extrabold flex items-center gap-2 uppercase tracking-widest text-muted-foreground/80">
-              {editingItem ? 'Edit Data Master' : activeTab === 'sizes' ? 'Tambah Ukuran Kaos' : 'Tambah Data Master Baru'}
+              {editingItem
+                ? 'Edit Data Master'
+                : activeTab === 'sizes'
+                  ? 'Tambah Ukuran Kaos'
+                  : activeTab === 'materials'
+                    ? `Tambah ${MATERIAL_TYPE_CONFIG[materialType]?.title || 'Material'} Baru`
+                    : 'Tambah Data Master Baru'}
             </DialogTitle>
             <DialogDescription className="text-xs pt-1">
               {editingItem
                 ? 'Update detail parameter master data Anda.'
-                : `Lengkapi parameter baru untuk tab ${activeTab === 'categories' ? 'Kategori Kaos' : activeTab === 'colors' ? 'Warna' : activeTab === 'sizes' ? 'Ukuran Kaos' : activeTab === 'banks' ? 'Master Bank' : 'Topik Jurnal'}.`}
+                : activeTab === 'materials'
+                  ? `Lengkapi detail opsi baru untuk ${MATERIAL_TYPE_CONFIG[materialType]?.title || 'material'}.`
+                  : `Lengkapi parameter baru untuk tab ${activeTab}.`}
             </DialogDescription>
           </DialogHeader>
 
@@ -770,7 +1198,9 @@ function MasterDataPageContent() {
                   ? 'Nama / Label Bank'
                   : activeTab === 'sizes'
                     ? 'Nama / Kode Ukuran (misal: XS, 3XL, All Size)'
-                    : 'Nama'}
+                    : activeTab === 'materials'
+                      ? MATERIAL_TYPE_CONFIG[materialType]?.label || 'Nama Material'
+                      : 'Nama'}
               </Label>
               <Input
                 id="item-name"
@@ -782,9 +1212,12 @@ function MasterDataPageContent() {
                     ? 'Misal: Bank BCA, Mandiri, Bank Jago...'
                     : activeTab === 'sizes'
                       ? 'Misal: XS, 3XL, 4XL, All Size...'
-                      : 'Misal: Heavy-Weight, Crimson Red, Culture...'
+                      : activeTab === 'materials'
+                        ? MATERIAL_TYPE_CONFIG[materialType]?.placeholder ||
+                          'Misal: Cotton Combed 30s...'
+                        : 'Misal: Heavy-Weight, Crimson Red, Culture...'
                 }
-                className="h-10 rounded-xl"
+                className="h-10 rounded-xl text-xs"
                 required
               />
             </div>
@@ -855,8 +1288,7 @@ function MasterDataPageContent() {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={!itemName.trim()}
-              className="h-10 rounded-xl text-xs cursor-pointer font-bold"
+              className="h-10 rounded-xl text-xs font-bold cursor-pointer"
             >
               Simpan
             </Button>
@@ -864,32 +1296,23 @@ function MasterDataPageContent() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Modal */}
       <ConfirmModal
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-        title="Konfirmasi Hapus Data Master"
-        description={
-          deleteTarget ? `Apakah Anda yakin ingin menghapus "${deleteTarget.name}"?` : ''
-        }
-        confirmText="Hapus"
-        cancelText="Batal"
-        variant="destructive"
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Hapus Data Master"
+        description={`Apakah Anda yakin ingin menghapus "${deleteTarget?.name}"? Tindakan ini tidak dapat dibatalkan.`}
         onConfirm={confirmDeleteAction}
       />
     </VStack>
   );
 }
 
-export default function MasterDataPage() {
+export default function MasterPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-foreground" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading master panel...</p>
-        </div>
+        <div className="p-8 text-center text-xs text-muted-foreground">Memuat Master Data...</div>
       }
     >
       <MasterDataPageContent />

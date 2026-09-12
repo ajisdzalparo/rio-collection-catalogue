@@ -45,6 +45,15 @@ export interface BankItem {
   createdAt?: string;
 }
 
+export interface MaterialItem {
+  id: string;
+  type: 'FABRIC' | 'TREATMENT' | 'ORIGIN' | 'CARE';
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  createdAt?: string;
+}
+
 export interface EditionItem {
   id: string;
   name: string;
@@ -60,14 +69,16 @@ interface MasterDataState {
   topics: TopicItem[];
   editions: EditionItem[];
   banks: BankItem[];
+  materials: MaterialItem[];
 
-  // Setters for seeding from mock API
+  // Setters for seeding from API
   setCategories: (categories: CategoryItem[]) => void;
   setColors: (colors: ColorItem[]) => void;
   setSizes: (sizes: SizeItem[]) => void;
   setTopics: (topics: TopicItem[]) => void;
   setEditions: (editions: EditionItem[]) => void;
   setBanks: (banks: BankItem[]) => void;
+  setMaterials: (materials: MaterialItem[]) => void;
 
   // Categories CRUD
   addCategory: (name: string, description?: string) => void;
@@ -82,6 +93,7 @@ interface MasterDataState {
   // Sizes Actions
   toggleSize: (size: string) => void;
   addSize: (size: string) => void;
+  deleteSize: (size: string) => void;
 
   // Topics CRUD
   addTopic: (name: string, description?: string) => void;
@@ -99,166 +111,195 @@ interface MasterDataState {
   deleteBank: (id: string) => void;
 }
 
-const getSlug = (text: string) => {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
-};
-
 export const useMasterStore = create<MasterDataState>()(
   persist(
     (set) => ({
       categories: [],
       colors: [],
-      sizes: [],
+      sizes: [
+        { size: 'S', isActive: true },
+        { size: 'M', isActive: true },
+        { size: 'L', isActive: true },
+        { size: 'XL', isActive: true },
+        { size: 'XXL', isActive: true }
+      ],
       topics: [],
       editions: [],
       banks: [],
+      materials: [],
 
-      // Setters
       setCategories: (categories) => set({ categories }),
       setColors: (colors) => set({ colors }),
       setSizes: (sizes) => set({ sizes }),
       setTopics: (topics) => set({ topics }),
       setEditions: (editions) => set({ editions }),
       setBanks: (banks) => set({ banks }),
+      setMaterials: (materials) => set({ materials }),
 
-      // Categories
-      addCategory: (name, description) => set((state) => ({
-        categories: [
-          ...state.categories,
-          { id: `cat-${Date.now()}`, name, slug: getSlug(name), description, isActive: true }
-        ]
-      })),
-      updateCategory: (id, name, description, isActive) => set((state) => ({
-        categories: state.categories.map((c) =>
-          c.id === id
-            ? {
-                ...c,
-                name: name !== undefined ? name : c.name,
-                slug: name !== undefined ? getSlug(name) : c.slug,
-                description: description !== undefined ? description : c.description,
-                isActive: isActive !== undefined ? isActive : c.isActive
-              }
-            : c
-        )
-      })),
-      deleteCategory: (id) => set((state) => ({
-        categories: state.categories.filter((c) => c.id !== id)
-      })),
+      addCategory: (name, description) =>
+        set((state) => ({
+          categories: [
+            ...state.categories,
+            {
+              id: `cat-${Date.now()}`,
+              name,
+              slug: name.toLowerCase().replace(/\s+/g, '-'),
+              description,
+              isActive: true
+            }
+          ]
+        })),
 
-      // Colors
-      addColor: (name, hex) => set((state) => ({
-        colors: [
-          ...state.colors,
-          { id: `col-${Date.now()}`, name, hex, isActive: true }
-        ]
-      })),
-      updateColor: (id, name, hex, isActive) => set((state) => ({
-        colors: state.colors.map((c) =>
-          c.id === id
-            ? {
-                ...c,
-                name: name !== undefined ? name : c.name,
-                hex: hex !== undefined ? hex : c.hex,
-                isActive: isActive !== undefined ? isActive : c.isActive
-              }
-            : c
-        )
-      })),
-      deleteColor: (id) => set((state) => ({
-        colors: state.colors.filter((c) => c.id !== id)
-      })),
+      updateCategory: (id, name, description, isActive) =>
+        set((state) => ({
+          categories: state.categories.map((c) =>
+            c.id === id
+              ? {
+                  ...c,
+                  ...(name !== undefined && { name, slug: name.toLowerCase().replace(/\s+/g, '-') }),
+                  ...(description !== undefined && { description }),
+                  ...(isActive !== undefined && { isActive })
+                }
+              : c
+          )
+        })),
 
-      // Sizes
-      toggleSize: (size) => set((state) => ({
-        sizes: state.sizes.map((s) =>
-          s.size === size ? { ...s, isActive: !s.isActive } : s
-        )
-      })),
-      addSize: (size) => set((state) => {
-        const normalized = size.trim().toUpperCase();
-        if (state.sizes.some((s) => s.size === normalized)) {
-          return {
-            sizes: state.sizes.map((s) => s.size === normalized ? { ...s, isActive: true } : s)
-          };
-        }
-        return {
-          sizes: [...state.sizes, { size: normalized, isActive: true }]
-        };
-      }),
+      deleteCategory: (id) =>
+        set((state) => ({
+          categories: state.categories.filter((c) => c.id !== id)
+        })),
 
-      // Topics
-      addTopic: (name, description) => set((state) => ({
-        topics: [
-          ...state.topics,
-          { id: `top-${Date.now()}`, name: name.toUpperCase(), description, isActive: true }
-        ]
-      })),
-      updateTopic: (id, name, description, isActive) => set((state) => ({
-        topics: state.topics.map((t) =>
-          t.id === id
-            ? {
-                ...t,
-                name: name !== undefined ? name.toUpperCase() : t.name,
-                description: description !== undefined ? description : t.description,
-                isActive: isActive !== undefined ? isActive : t.isActive
-              }
-            : t
-        )
-      })),
-      deleteTopic: (id) => set((state) => ({
-        topics: state.topics.filter((t) => t.id !== id)
-      })),
+      addColor: (name, hex) =>
+        set((state) => ({
+          colors: [...state.colors, { id: `col-${Date.now()}`, name, hex, isActive: true }]
+        })),
 
-      // Editions
-      addEdition: (name, description, releaseYear) => set((state) => ({
-        editions: [
-          ...state.editions,
-          { id: `ed-${Date.now()}`, name, slug: getSlug(name), description, releaseYear: releaseYear || '2026' }
-        ]
-      })),
-      updateEdition: (id, name, description, releaseYear) => set((state) => ({
-        editions: state.editions.map((e) =>
-          e.id === id ? { ...e, name, slug: getSlug(name), description, releaseYear } : e
-        )
-      })),
-      deleteEdition: (id) => set((state) => ({
-        editions: state.editions.filter((e) => e.id !== id)
-      })),
+      updateColor: (id, name, hex, isActive) =>
+        set((state) => ({
+          colors: state.colors.map((c) =>
+            c.id === id
+              ? {
+                  ...c,
+                  ...(name !== undefined && { name }),
+                  ...(hex !== undefined && { hex }),
+                  ...(isActive !== undefined && { isActive })
+                }
+              : c
+          )
+        })),
 
-      // Banks
-      addBank: (name, code, logoUrl) => set((state) => ({
-        banks: [
-          ...state.banks,
-          { id: `bank-${Date.now()}`, name, code: code || name.toUpperCase(), logoUrl, isActive: true }
-        ]
-      })),
-      updateBank: (id, name, code, logoUrl, isActive) => set((state) => ({
-        banks: state.banks.map((b) =>
-          b.id === id
-            ? {
-                ...b,
-                name: name !== undefined ? name : b.name,
-                code: code !== undefined ? code : b.code,
-                logoUrl: logoUrl !== undefined ? logoUrl : b.logoUrl,
-                isActive: isActive !== undefined ? isActive : b.isActive
-              }
-            : b
-        )
-      })),
-      deleteBank: (id) => set((state) => ({
-        banks: state.banks.filter((b) => b.id !== id)
-      }))
+      deleteColor: (id) =>
+        set((state) => ({
+          colors: state.colors.filter((c) => c.id !== id)
+        })),
+
+      toggleSize: (size) =>
+        set((state) => ({
+          sizes: state.sizes.map((s) => (s.size === size ? { ...s, isActive: !s.isActive } : s))
+        })),
+
+      addSize: (size) =>
+        set((state) => ({
+          sizes: state.sizes.some((s) => s.size === size)
+            ? state.sizes
+            : [...state.sizes, { size, isActive: true }]
+        })),
+
+      deleteSize: (size) =>
+        set((state) => ({
+          sizes: state.sizes.filter((s) => s.size !== size)
+        })),
+
+      addTopic: (name, description) =>
+        set((state) => ({
+          topics: [...state.topics, { id: `top-${Date.now()}`, name, description, isActive: true }]
+        })),
+
+      updateTopic: (id, name, description, isActive) =>
+        set((state) => ({
+          topics: state.topics.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  ...(name !== undefined && { name }),
+                  ...(description !== undefined && { description }),
+                  ...(isActive !== undefined && { isActive })
+                }
+              : t
+          )
+        })),
+
+      deleteTopic: (id) =>
+        set((state) => ({
+          topics: state.topics.filter((t) => t.id !== id)
+        })),
+
+      addEdition: (name, description, releaseYear) =>
+        set((state) => ({
+          editions: [
+            ...state.editions,
+            {
+              id: `ed-${Date.now()}`,
+              name,
+              slug: name.toLowerCase().replace(/\s+/g, '-'),
+              description,
+              releaseYear
+            }
+          ]
+        })),
+
+      updateEdition: (id, name, description, releaseYear) =>
+        set((state) => ({
+          editions: state.editions.map((e) =>
+            e.id === id
+              ? {
+                  ...e,
+                  name,
+                  slug: name.toLowerCase().replace(/\s+/g, '-'),
+                  description,
+                  releaseYear
+                }
+              : e
+          )
+        })),
+
+      deleteEdition: (id) =>
+        set((state) => ({
+          editions: state.editions.filter((e) => e.id !== id)
+        })),
+
+      addBank: (name, code, logoUrl) =>
+        set((state) => ({
+          banks: [...state.banks, { id: `bank-${Date.now()}`, name, code, logoUrl, isActive: true }]
+        })),
+
+      updateBank: (id, name, code, logoUrl, isActive) =>
+        set((state) => ({
+          banks: state.banks.map((b) =>
+            b.id === id
+              ? {
+                  ...b,
+                  ...(name !== undefined && { name }),
+                  ...(code !== undefined && { code }),
+                  ...(logoUrl !== undefined && { logoUrl }),
+                  ...(isActive !== undefined && { isActive })
+                }
+              : b
+          )
+        })),
+
+      deleteBank: (id) =>
+        set((state) => ({
+          banks: state.banks.filter((b) => b.id !== id)
+        }))
     }),
     {
-      name: 'rio-master-data-store'
+      name: 'master-data-storage'
     }
   )
 );
 
-// React Query hooks for fetching from native backend API
+// React Query hooks to fetch from API
 export function useCategoriesQuery() {
   return useQuery({
     queryKey: ['categories'],
@@ -331,6 +372,19 @@ export function useBanksQuery(activeOnly = false) {
       const { data } = await axios.get(`/api/v1/banks${activeOnly ? '?activeOnly=true' : ''}`);
       if (data.code === 200 && data.data) {
         return data.data as BankItem[];
+      }
+      return Array.isArray(data) ? data : [];
+    }
+  });
+}
+
+export function useMaterialsQuery() {
+  return useQuery({
+    queryKey: ['materials'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/v1/materials');
+      if (data.code === 200 && data.data) {
+        return data.data as MaterialItem[];
       }
       return Array.isArray(data) ? data : [];
     }
@@ -428,6 +482,14 @@ export function useMasterMutations() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sizes'] })
   });
 
+  const deleteSizeMutation = useMutation({
+    mutationFn: async (size: string) => {
+      await axios.delete(`/api/v1/sizes/${encodeURIComponent(size)}`);
+      return size;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sizes'] })
+  });
+
   const addBankMutation = useMutation({
     mutationFn: async ({ name, code, logoUrl, isActive }: { name: string; code?: string; logoUrl?: string; isActive?: boolean }) => {
       const { data } = await axios.post('/api/v1/banks', { name, code, logoUrl, isActive });
@@ -452,6 +514,30 @@ export function useMasterMutations() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['banks'] })
   });
 
+  const addMaterialMutation = useMutation({
+    mutationFn: async ({ type, name, description }: { type: 'FABRIC' | 'TREATMENT' | 'ORIGIN' | 'CARE'; name: string; description?: string }) => {
+      const { data } = await axios.post('/api/v1/materials', { type, name, description });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['materials'] })
+  });
+
+  const updateMaterialMutation = useMutation({
+    mutationFn: async ({ id, name, description, isActive }: { id: string; name?: string; description?: string; isActive?: boolean }) => {
+      const { data } = await axios.put('/api/v1/materials', { id, name, description, isActive });
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['materials'] })
+  });
+
+  const deleteMaterialMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(`/api/v1/materials?id=${id}`);
+      return id;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['materials'] })
+  });
+
   return {
     addCategory: addCategoryMutation.mutateAsync,
     updateCategory: updateCategoryMutation.mutateAsync,
@@ -464,8 +550,12 @@ export function useMasterMutations() {
     deleteTopic: deleteTopicMutation.mutateAsync,
     toggleSize: toggleSizeMutation.mutateAsync,
     addSize: addSizeMutation.mutateAsync,
+    deleteSize: deleteSizeMutation.mutateAsync,
     addBank: addBankMutation.mutateAsync,
     updateBank: updateBankMutation.mutateAsync,
-    deleteBank: deleteBankMutation.mutateAsync
+    deleteBank: deleteBankMutation.mutateAsync,
+    addMaterial: addMaterialMutation.mutateAsync,
+    updateMaterial: updateMaterialMutation.mutateAsync,
+    deleteMaterial: deleteMaterialMutation.mutateAsync
   };
 }
