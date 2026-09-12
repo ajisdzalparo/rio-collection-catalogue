@@ -47,11 +47,11 @@ function TabsTrigger({
       className={cn(
         'inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold transition-all cursor-pointer select-none disabled:pointer-events-none disabled:opacity-50 group',
         variant === 'pills' &&
-          'rounded-md text-muted-foreground hover:text-foreground data-selected:bg-primary data-selected:text-primary-foreground data-selected:shadow-md data-selected:shadow-primary/25',
+          'rounded-xl text-muted-foreground hover:text-foreground data-selected:bg-primary data-selected:text-primary-foreground aria-selected:bg-primary aria-selected:text-primary-foreground data-state-active:bg-primary data-state-active:text-primary-foreground data-active:bg-primary data-active:text-primary-foreground data-selected:shadow-md data-selected:shadow-primary/20',
         variant === 'line' &&
-          'pb-2.5 rounded-none border-b-[3px] border-transparent text-muted-foreground hover:text-foreground data-selected:border-primary data-selected:bg-primary/10 data-selected:text-primary data-selected:font-extrabold',
+          'pb-2.5 rounded-none border-b-[3px] border-transparent text-muted-foreground hover:text-foreground data-selected:border-primary data-selected:bg-primary/10 data-selected:text-primary data-selected:font-extrabold aria-selected:border-primary aria-selected:bg-primary/10 aria-selected:text-primary data-state-active:border-primary data-state-active:bg-primary/10 data-state-active:text-primary',
         variant === 'cards' &&
-          'rounded-lg border border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 data-selected:border-primary data-selected:bg-primary data-selected:text-primary-foreground data-selected:shadow-md data-selected:shadow-primary/25',
+          'rounded-xl border border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 data-selected:border-primary data-selected:bg-primary data-selected:text-primary-foreground aria-selected:border-primary aria-selected:bg-primary aria-selected:text-primary-foreground data-state-active:border-primary data-state-active:bg-primary data-state-active:text-primary-foreground',
         className
       )}
       {...props}
