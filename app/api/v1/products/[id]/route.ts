@@ -100,7 +100,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         if (stock !== undefined) dataToUpdate.stock = Number(stock);
         if (stockMode !== undefined) dataToUpdate.stockMode = stockMode;
         if (orderLimitMode !== undefined) dataToUpdate.orderLimitMode = orderLimitMode;
-        if (maxPurchaseLimit !== undefined) dataToUpdate.maxPurchaseLimit = Number(maxPurchaseLimit);
+        if (maxPurchaseLimit !== undefined)
+          dataToUpdate.maxPurchaseLimit = Number(maxPurchaseLimit);
         if (status !== undefined) dataToUpdate.status = status;
         if (imageUrl !== undefined) dataToUpdate.imageUrl = imageUrl;
         if (images !== undefined) dataToUpdate.images = images;
