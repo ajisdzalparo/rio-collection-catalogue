@@ -3,6 +3,7 @@
 import React, { use, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useProducts } from '@/hooks/use-products';
 import { CMSBadge } from '@/components/shared';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ interface ProductDetailPageProps {
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
+  const router = useRouter();
   const { id } = use(params);
   const { data: products = [], isLoading, deleteProduct } = useProducts();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -86,7 +88,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       setIsDeleting(true);
       await deleteProduct(product.id);
       toast.success(`Produk "${product.name}" berhasil dihapus`);
-      window.location.href = '/dashboard/products';
+      router.push('/dashboard/products');
     } catch {
       toast.error('Gagal menghapus produk');
       setIsDeleting(false);

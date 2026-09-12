@@ -8,7 +8,6 @@ import {
   Trash2,
   Edit,
   Eye,
-  EyeOff,
   Calendar,
   ImageIcon,
   Info,
@@ -16,6 +15,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -54,7 +54,7 @@ export default function TestimoniesCmsPage() {
     addTestimony,
     updateTestimony,
     deleteTestimony,
-    toggleTestimonyStatus
+    isUpdating
   } = useTestimonies();
 
   const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
@@ -147,6 +147,7 @@ export default function TestimoniesCmsPage() {
     {
       accessorKey: 'imageUrl',
       header: 'Screenshot Testimoni',
+      sortable: false,
       cell: (item: Testimony) => (
         <div className="relative h-20 w-14 overflow-hidden rounded-lg border border-border/60 bg-muted/30 shadow-xs">
           <SafeImage
@@ -162,6 +163,7 @@ export default function TestimoniesCmsPage() {
     {
       accessorKey: 'clientName',
       header: 'Keterangan / Klien',
+      sortable: false,
       cell: (item: Testimony) => (
         <div>
           <span className="font-semibold text-foreground text-sm block">
@@ -176,15 +178,30 @@ export default function TestimoniesCmsPage() {
     {
       accessorKey: 'status',
       header: 'Status Tampil',
+      sortable: false,
       cell: (item: Testimony) => (
-        <CMSBadge variant={item.status === 'ACTIVE' ? 'success' : 'neutral'}>
-          {item.status === 'ACTIVE' ? 'Aktif (Tampil)' : 'Disembunyikan'}
-        </CMSBadge>
+        <div className="flex items-center gap-2.5">
+          <Switch
+            size="sm"
+            checked={item.status === 'ACTIVE'}
+            disabled={isUpdating}
+            onCheckedChange={(checked) => {
+              void updateTestimony(item.id, { status: checked ? 'ACTIVE' : 'HIDDEN' }).catch(() => {
+                toast.error('Gagal memperbarui status testimoni.');
+              });
+            }}
+            aria-label={`${item.status === 'ACTIVE' ? 'Sembunyikan' : 'Tampilkan'} testimoni ${item.clientName || item.alt}`}
+          />
+          <span className="text-xs font-semibold text-muted-foreground">
+            {item.status === 'ACTIVE' ? 'Aktif' : 'Disembunyikan'}
+          </span>
+        </div>
       )
     },
     {
       accessorKey: 'createdAt',
       header: 'Tanggal Dibuat',
+      sortable: true,
       cell: (item: Testimony) => (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Calendar size={13} className="shrink-0" />
@@ -210,23 +227,10 @@ export default function TestimoniesCmsPage() {
             variant="ghost"
             onClick={() => handleOpenDetail(item)}
             title="Lihat Detail"
+            aria-label={`Lihat detail testimoni ${item.clientName || item.alt}`}
             className="h-8 w-8 rounded-lg text-primary hover:bg-primary/10 cursor-pointer"
           >
-            <Info size={15} />
-          </Button>
-
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => toggleTestimonyStatus(item.id)}
-            title={item.status === 'ACTIVE' ? 'Sembunyikan' : 'Tampilkan'}
-            className="h-8 w-8 rounded-lg hover:bg-muted cursor-pointer"
-          >
-            {item.status === 'ACTIVE' ? (
-              <EyeOff size={15} className="text-muted-foreground" />
-            ) : (
-              <Eye size={15} className="text-emerald-600" />
-            )}
+            <Eye size={15} />
           </Button>
 
           <Button
@@ -308,6 +312,8 @@ export default function TestimoniesCmsPage() {
       <DataTable
         columns={columns}
         data={filteredTestimonies}
+        searchKey="clientName"
+        extraSearchKeys={['alt']}
         searchPlaceholder="Cari nama atau keterangan..."
         filterComponents={
           <Sheet open={isFilterOpen} onOpenChange={handleOpenFilterDrawer}>

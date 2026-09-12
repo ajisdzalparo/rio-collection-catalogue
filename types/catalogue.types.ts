@@ -50,6 +50,10 @@ export interface Product {
   journalIds?: string[];
 }
 
+export type ProductMutationInput = Product & {
+  journalIds: string[];
+};
+
 export type ProductSummary = Product;
 export type JournalSummary = JournalArticle;
 

@@ -18,9 +18,9 @@ import {
 import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
@@ -77,6 +77,10 @@ function OrdersPageContent() {
 
   const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
   const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
+  const [appliedStartDate, setAppliedStartDate] = useState<Date | undefined>();
+  const [appliedEndDate, setAppliedEndDate] = useState<Date | undefined>();
+  const [draftStartDate, setDraftStartDate] = useState<Date | undefined>();
+  const [draftEndDate, setDraftEndDate] = useState<Date | undefined>();
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
 
   const [cancelTargetOrder, setCancelTargetOrder] = useState<Order | null>(null);
@@ -85,22 +89,35 @@ function OrdersPageContent() {
   const handleOpenFilterDrawer = (open: boolean) => {
     if (open) {
       setDraftStatuses(appliedStatuses);
+      setDraftStartDate(appliedStartDate);
+      setDraftEndDate(appliedEndDate);
     }
     setIsFilterOpen(open);
   };
 
   const handleApplyFilters = () => {
+    if (draftStartDate && draftEndDate && draftStartDate > draftEndDate) {
+      toast.error('Start Date tidak boleh melewati End Date.');
+      return;
+    }
     setAppliedStatuses(draftStatuses);
+    setAppliedStartDate(draftStartDate);
+    setAppliedEndDate(draftEndDate);
     setIsFilterOpen(false);
   };
 
   const handleResetFilters = () => {
     setDraftStatuses([]);
     setAppliedStatuses([]);
+    setDraftStartDate(undefined);
+    setDraftEndDate(undefined);
+    setAppliedStartDate(undefined);
+    setAppliedEndDate(undefined);
     setIsFilterOpen(false);
   };
 
-  const activeFilterCount = appliedStatuses.length;
+  const activeFilterCount =
+    appliedStatuses.length + (appliedStartDate || appliedEndDate ? 1 : 0);
 
   const handleRunCronCleanup = async () => {
     try {
@@ -132,9 +149,19 @@ function OrdersPageContent() {
   };
 
   const filteredOrders = useMemo(() => {
-    if (appliedStatuses.length === 0) return orders;
-    return orders.filter((order) => appliedStatuses.includes(order.status));
-  }, [orders, appliedStatuses]);
+    const startBoundary = appliedStartDate ? new Date(appliedStartDate) : undefined;
+    const endBoundary = appliedEndDate ? new Date(appliedEndDate) : undefined;
+    startBoundary?.setHours(0, 0, 0, 0);
+    endBoundary?.setHours(23, 59, 59, 999);
+
+    return orders.filter((order) => {
+      if (appliedStatuses.length > 0 && !appliedStatuses.includes(order.status)) return false;
+      const createdAt = new Date(order.createdAt);
+      if (startBoundary && createdAt < startBoundary) return false;
+      if (endBoundary && createdAt > endBoundary) return false;
+      return true;
+    });
+  }, [orders, appliedStatuses, appliedStartDate, appliedEndDate]);
 
   const columns: Column<Order>[] = useMemo(
     () => [
@@ -173,100 +200,20 @@ function OrdersPageContent() {
         accessorKey: 'fullName',
         sortable: true,
         cell: (order) => (
-          <div className="flex flex-col text-xs max-w-45">
-            <TruncatedText
-              text={order.fullName}
-              maxWidth="max-w-[160px]"
-              className="font-semibold text-foreground"
-            />
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[10px] text-muted-foreground">+{order.whatsapp}</span>
-              {order.waFollowedUp ? (
-                <span className="text-[9px] font-extrabold text-background bg-foreground px-1 py-0 rounded border border-transparent shrink-0">
-                  WA OK
-                </span>
-              ) : (
-                <span className="text-[9px] font-semibold text-muted-foreground bg-muted/20 px-1 py-0 rounded border border-border/10 shrink-0">
-                  Belum WA
-                </span>
-              )}
-            </div>
-          </div>
+          <TruncatedText
+            text={order.fullName}
+            maxWidth="max-w-[180px]"
+            className="font-semibold text-foreground text-xs"
+          />
         )
       },
       {
-        header: 'Pengiriman & Resi',
-        className: 'min-w-[160px]',
-        cell: (order) => (
-          <div className="text-xs space-y-0.5 max-w-45">
-            <div className="font-semibold text-foreground flex items-center gap-1">
-              <TruncatedText text={order.courierName || 'JNE Express'} maxWidth="max-w-[150px]" />
-            </div>
-            <div className="text-[10px] text-muted-foreground">
-              Ongkir:{' '}
-              <span className="font-bold text-foreground">
-                {formatIDR(order.shippingFee || 15000)}
-              </span>
-            </div>
-            {order.trackingNumber ? (
-              <div className="text-[10px] text-foreground font-mono font-bold">
-                Resi:{' '}
-                <TruncatedText
-                  text={order.trackingNumber}
-                  maxWidth="max-w-[130px]"
-                  className="inline-block"
-                />
-              </div>
-            ) : (
-              <div className="text-[10px] text-muted-foreground/60 italic">Resi: Belum diinput</div>
-            )}
-          </div>
-        )
-      },
-      {
-        header: 'Item Pesanan',
-        className: 'w-full min-w-[180px]',
-        cell: (order) => (
-          <div className="text-muted-foreground text-xs space-y-1 max-w-60">
-            {order.items.map((item, idx) => (
-              <div key={idx} className="flex flex-wrap items-center gap-1">
-                <TruncatedText
-                  text={item.name}
-                  maxWidth="max-w-[140px]"
-                  className="text-foreground font-medium"
-                />
-                <span className="text-muted-foreground shrink-0">({item.size})</span>
-                <span className="font-bold text-foreground shrink-0">x{item.quantity}</span>
-                {item.isPreOrder && (
-                  <Badge
-                    variant="secondary"
-                    className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-transparent text-[9px] px-1 py-0 font-bold shrink-0"
-                  >
-                    PO
-                  </Badge>
-                )}
-              </div>
-            ))}
-          </div>
-        )
-      },
-      {
-        header: 'Total & Profit',
+        header: 'Total',
         accessorKey: 'totalPrice',
         sortable: true,
         className: 'font-bold text-xs',
         cell: (order) => (
-          <div className="flex flex-col text-xs">
-            <span className="font-extrabold text-foreground">{formatIDR(order.totalPrice)}</span>
-            <div className="flex gap-1.5 text-[10px] mt-0.5">
-              <span className="text-muted-foreground/75">
-                HPP: {formatIDR(order.totalCogs || 0)}
-              </span>
-              <span className="text-emerald-500 font-bold">
-                +{formatIDR(order.estimatedProfit || 0)}
-              </span>
-            </div>
-          </div>
+          <span className="font-extrabold text-foreground">{formatIDR(order.totalPrice)}</span>
         )
       },
       {
@@ -424,7 +371,7 @@ function OrdersPageContent() {
                   )}
                 </div>
                 <SheetDescription className="text-xs text-muted-foreground mt-1">
-                  Saring data pesanan pelanggan berdasarkan status transaksi.
+                  Saring data pesanan berdasarkan status dan periode transaksi.
                 </SheetDescription>
               </SheetHeader>
 
@@ -440,6 +387,33 @@ function OrdersPageContent() {
                     searchPlaceholder="Cari status..."
                     emptyText="Status tidak ditemukan"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground">Start Date</Label>
+                    <DatePicker
+                      mode="single"
+                      value={draftStartDate}
+                      onChange={setDraftStartDate}
+                      maxDate={draftEndDate}
+                      placeholder="Pilih tanggal mulai"
+                      format="dd MMM yyyy"
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground">End Date</Label>
+                    <DatePicker
+                      mode="single"
+                      value={draftEndDate}
+                      onChange={setDraftEndDate}
+                      minDate={draftStartDate}
+                      placeholder="Pilih tanggal akhir"
+                      format="dd MMM yyyy"
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </div>
 

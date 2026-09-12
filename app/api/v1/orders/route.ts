@@ -6,6 +6,7 @@ import { createOrder, OrderError } from '@/lib/create-order';
 import { verifyOtp, OtpError } from '@/lib/otp';
 import { getCustomerFromRequest } from '@/lib/customer-auth';
 import { allowCheckoutAttempt } from '@/lib/checkout-rate-limit';
+import { normalizeEmail, normalizeWhatsapp } from '@/lib/customer-identity';
 
 export async function GET() {
   try {
@@ -48,12 +49,29 @@ export async function POST(request: Request) {
       }, { status: 429, headers: { 'Retry-After': '60' } });
     }
 
-    // Check if customer is already logged in
+    // Resolve identity on the server. Never trust a customer ID supplied by the browser.
     const loggedCustomer = await getCustomerFromRequest(request);
-    const orderEmail = parsed.data.email.toLowerCase();
+    let orderEmail: string;
+    let orderWhatsapp: string;
+    let customerId: string;
 
-    // If not authenticated as this customer, require and verify OTP
-    if (!loggedCustomer || loggedCustomer.email.toLowerCase() !== orderEmail) {
+    if (loggedCustomer) {
+      if (!loggedCustomer.whatsapp) {
+        return NextResponse.json(
+          {
+            code: 409,
+            status: 'error',
+            message: 'Tambahkan nomor WhatsApp terverifikasi di Profil sebelum membuat pesanan.'
+          },
+          { status: 409 }
+        );
+      }
+      orderEmail = normalizeEmail(loggedCustomer.email);
+      orderWhatsapp = normalizeWhatsapp(loggedCustomer.whatsapp);
+      customerId = loggedCustomer.id;
+    } else {
+      orderEmail = normalizeEmail(parsed.data.email);
+      orderWhatsapp = normalizeWhatsapp(parsed.data.whatsapp);
       if (!parsed.data.otpCode) {
         return NextResponse.json({
           code: 400,
@@ -68,19 +86,23 @@ export async function POST(request: Request) {
         type: 'ORDER',
         consume: true
       });
-    }
 
-    // Attach customer ID if available
-    let customerId = loggedCustomer?.id || parsed.data.customerId;
-    if (!customerId) {
-      const existingCustomer = await prisma.customer.findUnique({ where: { email: orderEmail } });
-      if (existingCustomer) {
-        customerId = existingCustomer.id;
-      }
+      const customer = await prisma.customer.upsert({
+        where: { email: orderEmail },
+        create: {
+          email: orderEmail,
+          fullName: parsed.data.fullName,
+          whatsapp: orderWhatsapp
+        },
+        update: {}
+      });
+      customerId = customer.id;
     }
 
     const order = await createOrder({
       ...parsed.data,
+      email: orderEmail,
+      whatsapp: orderWhatsapp,
       customerId
     });
 

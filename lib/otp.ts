@@ -17,7 +17,7 @@ export function generateOtpCode(): string {
 
 interface RequestOtpParams {
   email: string;
-  type?: 'ORDER' | 'LOGIN';
+  type?: 'ORDER' | 'LOGIN' | 'PHONE_CHANGE' | 'PASSWORD_RESET';
 }
 
 export async function requestOtp({ email, type = 'ORDER' }: RequestOtpParams) {
@@ -63,7 +63,7 @@ export async function requestOtp({ email, type = 'ORDER' }: RequestOtpParams) {
   });
 
   // Save new OTP
-  await prisma.otpVerification.create({
+  const createdOtp = await prisma.otpVerification.create({
     data: {
       email: normalizedEmail,
       code,
@@ -89,6 +89,14 @@ export async function requestOtp({ email, type = 'ORDER' }: RequestOtpParams) {
     storeName
   });
 
+  if (!sendResult.success) {
+    await prisma.otpVerification.update({
+      where: { id: createdOtp.id },
+      data: { isUsed: true }
+    });
+    throw new OtpError('Email OTP gagal dikirim. Periksa konfigurasi SMTP lalu coba lagi.', 502);
+  }
+
   return {
     success: true,
     email: normalizedEmail,
@@ -103,7 +111,7 @@ export async function requestOtp({ email, type = 'ORDER' }: RequestOtpParams) {
 interface VerifyOtpParams {
   email: string;
   code: string;
-  type?: 'ORDER' | 'LOGIN';
+  type?: 'ORDER' | 'LOGIN' | 'PHONE_CHANGE' | 'PASSWORD_RESET';
   consume?: boolean; // whether to mark isUsed=true
 }
 

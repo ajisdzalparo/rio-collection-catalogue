@@ -40,6 +40,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const {
       storeName,
+      logoUrl,
       whatsappNumber,
       bankName,
       bankAccountNumber,
@@ -91,6 +92,7 @@ export async function PUT(request: Request) {
       where: { id: 'default' },
       update: {
         ...(storeName && { storeName }),
+        ...(logoUrl !== undefined && { logoUrl }),
         ...(whatsappNumber && { whatsappNumber }),
         ...(bankName && { bankName }),
         ...(bankAccountNumber && { bankAccountNumber }),
@@ -140,6 +142,7 @@ export async function PUT(request: Request) {
       create: {
         id: 'default',
         storeName: storeName || 'RIO COLLECTION',
+        logoUrl,
         whatsappNumber: whatsappNumber || '628123456789',
         bankName: bankName || 'BCA',
         bankAccountNumber: bankAccountNumber || '1234567890',

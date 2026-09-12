@@ -10,6 +10,7 @@ import {
   useShippingSubdistricts
 } from '@/hooks/use-shipping-locations';
 import { SearchableSelect } from '@/components/catalogue/searchable-select';
+import { CustomerWhatsappChange } from '@/components/catalogue/customer-whatsapp-change';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -19,7 +20,6 @@ interface CustomerProfileFormProps {
 
 export function CustomerProfileForm({ customer }: CustomerProfileFormProps) {
   const [fullName, setFullName] = useState(customer.fullName || '');
-  const [whatsapp, setWhatsapp] = useState(customer.whatsapp || '');
   const [address, setAddress] = useState(customer.address || '');
   const [provinceName, setProvinceName] = useState(customer.provinceName || '');
   const [cityName, setCityName] = useState(customer.cityName || '');
@@ -28,14 +28,10 @@ export function CustomerProfileForm({ customer }: CustomerProfileFormProps) {
   const [postalCode, setPostalCode] = useState(customer.postalCode || '');
 
   const updateProfileMutation = useUpdateCustomerProfile();
-
-  // Location Queries
   const { data: provinces = [], isLoading: isLoadingProvinces } = useShippingProvinces();
-
   const matchedProv = useMemo(() => {
     return provinces.find((p) => p.province.toLowerCase() === provinceName.toLowerCase());
   }, [provinces, provinceName]);
-
   const { data: cities = [], isLoading: isLoadingCities } = useShippingCities(
     matchedProv?.province_id,
     provinceName
@@ -107,7 +103,6 @@ export function CustomerProfileForm({ customer }: CustomerProfileFormProps) {
     try {
       await updateProfileMutation.mutateAsync({
         fullName: fullName.trim(),
-        whatsapp: whatsapp.trim(),
         address: address.trim(),
         provinceName: provinceName.trim(),
         cityName: cityName.trim(),
@@ -120,7 +115,6 @@ export function CustomerProfileForm({ customer }: CustomerProfileFormProps) {
       toast.error(error instanceof Error ? error.message : 'Gagal memperbarui profil.');
     }
   };
-
   return (
     <div className="max-w-2xl bg-(--cat-surface-container-low) border border-(--cat-stone) p-6 md:p-8">
       <h2 className="font-eb-garamond text-[22px] text-(--cat-on-surface) mb-6">
@@ -153,18 +147,7 @@ export function CustomerProfileForm({ customer }: CustomerProfileFormProps) {
           />
         </div>
 
-        <div>
-          <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
-            Nomor WhatsApp
-          </label>
-          <input
-            type="tel"
-            value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
-            placeholder="081234567890"
-            className="w-full h-11 px-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
-          />
-        </div>
+        <CustomerWhatsappChange customer={customer} />
 
         <div>
           <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
@@ -179,7 +162,6 @@ export function CustomerProfileForm({ customer }: CustomerProfileFormProps) {
           />
         </div>
 
-        {/* RajaOngkir Dropdown Selector */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">

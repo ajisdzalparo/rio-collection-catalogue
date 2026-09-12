@@ -68,6 +68,7 @@ export default function StoreSettingsPage() {
 
   // Form local state
   const [storeName, setStoreName] = useState('RIO COLLECTION');
+  const [logoUrl, setLogoUrl] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('628123456789');
   const [contactEmail, setContactEmail] = useState('');
   const [enabledCouriers, setEnabledCouriers] = useState<string>('jne,pos,tiki,sicepat,jnt');
@@ -124,6 +125,7 @@ export default function StoreSettingsPage() {
     setPrevSettings(mockSettings);
     setSettings(mockSettings);
     if (mockSettings.storeName) setStoreName(mockSettings.storeName);
+    setLogoUrl(mockSettings.logoUrl || '');
     if (mockSettings.whatsappNumber) setWhatsappNumber(mockSettings.whatsappNumber);
     if (mockSettings.contactEmail) setContactEmail(mockSettings.contactEmail);
     if (mockSettings.enabledCouriers) setEnabledCouriers(mockSettings.enabledCouriers);
@@ -182,6 +184,7 @@ export default function StoreSettingsPage() {
     try {
       const payload = {
         storeName,
+        logoUrl,
         whatsappNumber,
         contactEmail,
         waTemplatePending: waTemplates.waTemplatePending,
@@ -355,7 +358,18 @@ export default function StoreSettingsPage() {
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-[11rem_1fr_1fr] md:items-start">
+                  <div className="space-y-1.5 md:row-span-2">
+                    <Label className="text-xs font-bold text-foreground">Logo Toko</Label>
+                    <ImageUpload
+                      value={logoUrl}
+                      onChange={setLogoUrl}
+                      aspectRatio="1:1"
+                      placeholder="Upload logo toko"
+                      helperText="Gunakan logo persegi, PNG transparan, atau SVG."
+                    />
+                  </div>
+
                   <div className="space-y-1.5">
                     <Label htmlFor="store-name" className="text-xs font-bold text-foreground">
                       Nama Toko / Judul Katalog

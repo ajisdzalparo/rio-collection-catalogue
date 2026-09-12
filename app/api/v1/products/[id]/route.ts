@@ -4,7 +4,7 @@ import { mapProductRelations } from '@/lib/catalogue-relations';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-const journalIdsSchema = z.array(z.string().min(1)).max(100).default([]);
+const journalIdsSchema = z.array(z.string().min(1)).max(100);
 const journalSummarySelect = {
   id: true,
   slug: true,

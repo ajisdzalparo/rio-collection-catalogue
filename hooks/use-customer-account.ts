@@ -4,6 +4,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useCustomerStore, type Customer } from '@/lib/customer-store';
 
+function getApiError(error: unknown, fallback: string): Error {
+  if (axios.isAxiosError(error)) {
+    const message = error.response?.data?.message;
+    if (typeof message === 'string' && message.trim()) return new Error(message);
+  }
+  return error instanceof Error ? error : new Error(fallback);
+}
+
 export interface CustomerOrderItem {
   id: string;
   name: string;
@@ -26,13 +34,17 @@ export interface CustomerOrder {
 
 export interface UpdateProfilePayload {
   fullName?: string;
-  whatsapp?: string;
   address?: string;
   provinceName?: string;
   cityName?: string;
   cityId?: string;
   district?: string;
   postalCode?: string;
+}
+
+export interface WhatsappChangePayload {
+  whatsapp: string;
+  otpCode: string;
 }
 
 export interface SendOtpResponse {
@@ -85,6 +97,66 @@ export function useUpdateCustomerProfile() {
         throw new Error(data.message || 'Gagal memperbarui profil.');
       }
       return data.data;
+    },
+    onSuccess: (updatedData) => {
+      updateCustomer(updatedData);
+      queryClient.invalidateQueries({ queryKey: ['customer'] });
+    }
+  });
+}
+
+export function useRequestWhatsappChangeOtp() {
+  const token = useCustomerStore((s) => s.token);
+
+  return useMutation<SendOtpResponse, Error, { whatsapp: string }>({
+    mutationFn: async ({ whatsapp }) => {
+      try {
+        const { data } = await axios.post(
+          '/api/v1/customer/me/whatsapp',
+          { whatsapp: whatsapp.trim() },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            }
+          }
+        );
+        if (data.status !== 'success') {
+          throw new Error(data.message || 'Gagal mengirim kode OTP.');
+        }
+        return data.data;
+      } catch (error) {
+        throw getApiError(error, 'Gagal mengirim kode OTP.');
+      }
+    }
+  });
+}
+
+export function useUpdateCustomerWhatsapp() {
+  const queryClient = useQueryClient();
+  const token = useCustomerStore((s) => s.token);
+  const updateCustomer = useCustomerStore((s) => s.updateCustomer);
+
+  return useMutation<Customer, Error, WhatsappChangePayload>({
+    mutationFn: async ({ whatsapp, otpCode }) => {
+      try {
+        const { data } = await axios.put(
+          '/api/v1/customer/me/whatsapp',
+          { whatsapp: whatsapp.trim(), otpCode: otpCode.trim() },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            }
+          }
+        );
+        if (data.status !== 'success') {
+          throw new Error(data.message || 'Gagal memperbarui nomor WhatsApp.');
+        }
+        return data.data;
+      } catch (error) {
+        throw getApiError(error, 'Gagal memperbarui nomor WhatsApp.');
+      }
     },
     onSuccess: (updatedData) => {
       updateCustomer(updatedData);

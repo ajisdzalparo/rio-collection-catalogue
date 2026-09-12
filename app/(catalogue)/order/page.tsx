@@ -37,7 +37,7 @@ function OrderContent() {
   const productSlug = searchParams.get('product');
 
   const enabledCouriersSetting = useStoreSettingsStore((s) => s.enabledCouriers);
-  const { customer, isAuthenticated } = useCustomerStore();
+  const { customer, token: customerToken, isAuthenticated } = useCustomerStore();
   const { items: cartItems, clearCart } = useCartStore();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -617,7 +617,6 @@ function OrderContent() {
             totalPrice,
             shippingFee,
             otpCode: isOtpVerified ? otpCode || '000000' : undefined,
-            customerId: customer?.id || undefined,
             shipping: {
               destination: selectedRate.destination,
               courier: selectedRate.courierCode,
@@ -629,7 +628,7 @@ function OrderContent() {
               size: item.size,
               quantity: item.quantity
             }))
-          }),
+          }, customerToken || undefined),
         'Mengirim pesanan Anda...'
       );
 
@@ -818,15 +817,28 @@ function OrderContent() {
                   <input
                     type="tel"
                     required
+                    disabled={Boolean(isAuthenticated && customer)}
                     value={formData.whatsapp}
                     onChange={(e) => setFormData((prev) => ({ ...prev, whatsapp: e.target.value }))}
                     placeholder="081234567890"
-                    className="w-full h-11 px-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
+                    className="w-full h-11 px-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors disabled:cursor-not-allowed disabled:bg-(--cat-surface-container-low) disabled:text-(--cat-on-surface-variant) disabled:opacity-100"
                   />
-                  <p className="mt-1 font-hanken text-[11px] text-(--cat-on-surface-variant)">
-                    Kami akan mengirim konfirmasi pesanan dan instruksi pembayaran transfer bank via
-                    WhatsApp ini.
-                  </p>
+                  {isAuthenticated && customer ? (
+                    <p className="mt-1 font-hanken text-[11px] text-(--cat-on-surface-variant)">
+                      Nomor mengikuti profil terverifikasi.{' '}
+                      <Link
+                        href="/customer/account#profil"
+                        className="font-semibold text-(--cat-on-surface) underline underline-offset-2"
+                      >
+                        Ganti nomor di Profil
+                      </Link>
+                    </p>
+                  ) : (
+                    <p className="mt-1 font-hanken text-[11px] text-(--cat-on-surface-variant)">
+                      Kami akan mengirim konfirmasi pesanan dan instruksi pembayaran transfer bank
+                      via WhatsApp ini.
+                    </p>
+                  )}
                 </div>
 
                 {/* Email & OTP Section */}

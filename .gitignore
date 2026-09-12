@@ -40,4 +40,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-testsprite_tests/
+
+# tests & scripts
+/tests/
+/testsprite_tests/
+/scripts/
+
+# docs & specs (dev-only)
+/docs/
+DESIGN_SYSTEM_UI_UX.md
+CLAUDE.md
+tshirt_catalogue_order_management_prd.md
+
+# manual sql scripts
+*.sql
+prisma/*.sql

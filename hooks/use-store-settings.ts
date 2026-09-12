@@ -7,6 +7,7 @@ import axios from 'axios';
 
 export interface StoreSettings {
   storeName: string;
+  logoUrl?: string | null;
   whatsappNumber: string;
   bankName?: string | null;
   bankAccountNumber?: string | null;
@@ -63,6 +64,7 @@ export const useStoreSettingsStore = create<StoreSettingsState>()(
   persist(
     (set) => ({
       storeName: '',
+      logoUrl: '',
       whatsappNumber: '',
       instagramUrl: '',
       tiktokUrl: '',

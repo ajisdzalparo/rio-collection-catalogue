@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { deductStock } from '@/lib/stock';
 import { orderSchema } from '@/lib/order-schema';
 import { calculateShippingCost } from '@/lib/rajaongkir';
 import { isOrderableStatus, normalizeProductAvailability } from '@/lib/product-availability';
@@ -17,7 +16,7 @@ export class OrderError extends Error {
   }
 }
 
-export async function createOrder(input: z.infer<typeof orderSchema>) {
+export async function createOrder(input: z.infer<typeof orderSchema> & { customerId: string }) {
   const whatsapp = normalizeWhatsapp(input.whatsapp);
   const email = normalizeEmail(input.email);
   if (!/^62\d{7,13}$/.test(whatsapp))
@@ -98,7 +97,7 @@ export async function createOrder(input: z.infer<typeof orderSchema>) {
           const priorOrder = await tx.order.findFirst({
             where: {
               OR: [
-                ...(input.customerId ? [{ customerId: input.customerId }] : []),
+                { customerId: input.customerId },
                 { email },
                 { whatsapp }
               ],
@@ -127,7 +126,7 @@ export async function createOrder(input: z.infer<typeof orderSchema>) {
           orderNumber: `RC-${randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase()}`,
           fullName: input.fullName,
           email,
-          customerId: input.customerId ?? null,
+          customerId: input.customerId,
           whatsapp,
           address: input.address,
           notes: input.notes ?? '',

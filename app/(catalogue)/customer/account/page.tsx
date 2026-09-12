@@ -25,6 +25,18 @@ export default function CustomerAccountPage() {
     fetchProfile();
   }, [isAuthenticated, router, fetchProfile]);
 
+  useEffect(() => {
+    const showLinkedTab = () => {
+      if (window.location.hash === '#profil') setActiveTab('PROFILE');
+    };
+    const timeoutId = window.setTimeout(showLinkedTab, 0);
+    window.addEventListener('hashchange', showLinkedTab);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('hashchange', showLinkedTab);
+    };
+  }, []);
+
   const handleLogout = () => {
     logout();
     toast.success('Anda telah keluar.');
@@ -94,7 +106,9 @@ export default function CustomerAccountPage() {
         {activeTab === 'ORDERS' ? (
           <CustomerOrdersTab />
         ) : (
-          <CustomerProfileForm key={customer.updatedAt || customer.id} customer={customer} />
+          <div id="profil">
+            <CustomerProfileForm key={customer.updatedAt || customer.id} customer={customer} />
+          </div>
         )}
       </div>
     </div>

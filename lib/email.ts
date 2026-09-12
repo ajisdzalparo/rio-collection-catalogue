@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 interface SendOtpEmailParams {
   to: string;
   code: string;
-  type?: 'ORDER' | 'LOGIN';
+  type?: 'ORDER' | 'LOGIN' | 'PHONE_CHANGE' | 'PASSWORD_RESET';
   storeName?: string;
 }
 
@@ -23,12 +23,20 @@ export async function sendOtpEmail({
   const subject =
     type === 'LOGIN'
       ? `Kode OTP Masuk Akun - ${storeName}`
-      : `Kode Verifikasi Pesanan Anda - ${storeName}`;
+      : type === 'PASSWORD_RESET'
+        ? `Kode Reset Kata Sandi - ${storeName}`
+      : type === 'PHONE_CHANGE'
+        ? `Kode Pergantian Nomor WhatsApp - ${storeName}`
+        : `Kode Verifikasi Pesanan Anda - ${storeName}`;
 
   const purposeText =
     type === 'LOGIN'
       ? 'Gunakan kode OTP di bawah ini untuk masuk ke akun Anda.'
-      : 'Gunakan kode verifikasi berikut untuk menyelesaikan pesanan Anda.';
+      : type === 'PASSWORD_RESET'
+        ? 'Gunakan kode OTP di bawah ini untuk mengatur ulang kata sandi akun dashboard Anda.'
+      : type === 'PHONE_CHANGE'
+        ? 'Gunakan kode OTP di bawah ini untuk mengonfirmasi pergantian nomor WhatsApp pada profil Anda.'
+        : 'Gunakan kode verifikasi berikut untuk menyelesaikan pesanan Anda.';
 
   const html = `
     <!DOCTYPE html>

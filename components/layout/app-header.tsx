@@ -19,6 +19,7 @@ import { User, LogOut, Settings, KeyRound } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
 import { ChangePasswordDialog } from '@/components/auth/change-password-dialog';
+import { OrderNotifications } from '@/components/dashboard/order-notifications';
 
 export default function AppHeader() {
   const { user, logout, isLoggingOut } = useAuth();
@@ -36,6 +37,7 @@ export default function AppHeader() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
+          <OrderNotifications />
 
           {/* User Profile Avatar */}
           <DropdownMenu>

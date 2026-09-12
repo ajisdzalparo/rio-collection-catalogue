@@ -7,7 +7,6 @@ export const orderSchema = z.object({
   address: z.string().trim().min(1).max(2000),
   notes: z.string().max(5000).optional(),
   otpCode: z.string().trim().min(6).max(6).optional(), // required unless bypass/authenticated
-  customerId: z.string().optional(),
   shippingFee: z.number().int().nonnegative(),
   shipping: z.object({
     destination: z.string().min(1).max(100),

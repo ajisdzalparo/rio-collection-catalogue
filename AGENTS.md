@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # COMPONENT, HOOK & API DEVELOPMENT SKILLS & RULES
 
-Before writing any new component, hook, utility, or API route in this project, you **MUST** follow the rules defined in [docs/COMPONENT_DEVELOPMENT_RULES.md](file:///e:/KERJAAN/SIDE%20PROJECT/T%20SHIRT%20CATALOGUE/rio-collection-catalogue/docs/COMPONENT_DEVELOPMENT_RULES.md) and the `.agents/skills/component-development-rules/SKILL.md` skill.
+Before writing any new component, hook, utility, or API route in this project, you **MUST** follow the rules defined in the `.agents/skills/component-development-rules/SKILL.md` skill.
 
 ### Core Mandatory Directives:
 

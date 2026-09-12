@@ -227,14 +227,16 @@ export async function submitOrder(orderPayload: {
   totalPrice?: number;
   shippingFee?: number;
   otpCode?: string;
-  customerId?: string;
   shipping: { destination: string; courier: string; service: string };
   items: Array<{ productId: string; color?: string; size: string; quantity: number }>;
-}) {
+}, customerToken?: string) {
   const baseUrl = getBaseUrl();
   const res = await fetch(`${baseUrl}/v1/orders`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(customerToken ? { Authorization: `Bearer ${customerToken}` } : {})
+    },
     body: JSON.stringify(orderPayload)
   });
   const result = await res.json();

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, Suspense } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -10,9 +9,7 @@ import {
   Layers,
   Trash2,
   Eye,
-  Pencil,
   Package,
-  Shirt,
   AlertCircle,
   X,
   SlidersHorizontal,
@@ -28,8 +25,7 @@ import { VStack, Flex } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { SafeImage, CMSBadge } from '@/components/shared';
-import { cn, formatIDR } from '@/lib/utils';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { formatIDR } from '@/lib/utils';
 import {
   Sheet,
   SheetContent,
@@ -481,7 +477,7 @@ function ProductsContent() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 rounded-lg text-xs font-medium cursor-pointer"
+                  className="h-10 sm:h-9 gap-2 rounded-lg text-xs font-medium cursor-pointer"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   <span>Filter</span>

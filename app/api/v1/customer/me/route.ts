@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCustomerFromRequest } from '@/lib/customer-auth';
+import { customerProfileSchema } from '@/lib/customer-profile-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,30 +39,22 @@ export async function PUT(request: Request) {
       );
     }
 
-    const body = await request.json().catch(() => ({}));
-    const {
-      fullName,
-      whatsapp,
-      address,
-      cityId,
-      cityName,
-      provinceName,
-      district,
-      postalCode
-    } = body;
+    const parsed = customerProfileSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          code: 400,
+          status: 'error',
+          message: 'Data profil tidak valid. Email dan nomor WhatsApp tidak dapat diubah dari form ini.',
+          details: parsed.error.flatten()
+        },
+        { status: 400 }
+      );
+    }
 
     const updated = await prisma.customer.update({
       where: { id: customer.id },
-      data: {
-        fullName: fullName !== undefined ? fullName : customer.fullName,
-        whatsapp: whatsapp !== undefined ? whatsapp : customer.whatsapp,
-        address: address !== undefined ? address : customer.address,
-        cityId: cityId !== undefined ? cityId : customer.cityId,
-        cityName: cityName !== undefined ? cityName : customer.cityName,
-        provinceName: provinceName !== undefined ? provinceName : customer.provinceName,
-        district: district !== undefined ? district : customer.district,
-        postalCode: postalCode !== undefined ? postalCode : customer.postalCode
-      }
+      data: parsed.data
     });
 
     return NextResponse.json({

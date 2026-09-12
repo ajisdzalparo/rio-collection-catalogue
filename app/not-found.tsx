@@ -15,8 +15,7 @@ export default function NotFound() {
   // Detect if the user is attempting to access a dashboard path
   const isDashboardPath =
     pathname?.startsWith('/dashboard') ||
-    pathname?.startsWith('/users') ||
-    pathname?.startsWith('/components');
+    pathname?.startsWith('/users');
 
   if (!isDashboardPath) {
     // Return a beautiful, minimalist, design-system aligned Catalogue 404 page

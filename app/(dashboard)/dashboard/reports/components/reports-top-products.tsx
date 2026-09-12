@@ -6,10 +6,9 @@ import type { TopSellingProduct } from './types';
 interface ReportsTopProductsProps {
   topProducts: TopSellingProduct[];
   selectedProduct: string;
-  onProductChange: (product: string) => void;
 }
 
-export function ReportsTopProducts({ topProducts, selectedProduct, onProductChange }: ReportsTopProductsProps) {
+export function ReportsTopProducts({ topProducts, selectedProduct }: ReportsTopProductsProps) {
   return (
     <div className="bg-card border border-border/40 rounded-xl p-5 space-y-4 shadow-2xs w-full">
       <div className="flex items-center justify-between border-b border-border/10 pb-3">
@@ -50,13 +49,9 @@ export function ReportsTopProducts({ topProducts, selectedProduct, onProductChan
               );
 
             return (
-              <button
+              <div
                 key={p.name}
-                type="button"
-                aria-label={`Lihat laporan penjualan ${p.name}`}
-                aria-pressed={selectedProduct === p.name}
-                onClick={() => onProductChange(selectedProduct === p.name ? 'ALL' : p.name)}
-                className="w-full text-left cursor-pointer border border-border/30 rounded-xl p-3.5 space-y-2.5 bg-card/60 hover:bg-muted/10 flex flex-col justify-between hover:border-primary/30 transition-all shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 aria-pressed:border-primary/50 aria-pressed:bg-primary/5"
+                className="w-full border border-border/30 rounded-xl p-3.5 space-y-2.5 bg-card/60 flex flex-col justify-between shadow-2xs"
               >
                 <div className="flex items-center justify-between">
                   {rankBadge}
@@ -72,7 +67,7 @@ export function ReportsTopProducts({ topProducts, selectedProduct, onProductChan
                     {formatIDR(p.revenue)}
                   </p>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>

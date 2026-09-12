@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { navigation } from '@/config/navigation';
@@ -21,6 +22,7 @@ import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRbac } from '@/features/users/hooks/use-rbac';
 import type { RolePermissions } from '@/features/users/types/roles.types';
+import { useStoreSettingsQuery } from '@/hooks/use-store-settings';
 
 const NAVIGATION_PERMISSION_MAP: Record<string, string> = {
   'Overview': 'overview.view',
@@ -34,9 +36,48 @@ const NAVIGATION_PERMISSION_MAP: Record<string, string> = {
   'Customers': 'orders.view'
 };
 
+interface SidebarBrandMarkProps {
+  logoUrl?: string | null;
+  storeName: string;
+}
+
+function SidebarBrandMark({ logoUrl, storeName }: SidebarBrandMarkProps) {
+  const [failedLogoUrl, setFailedLogoUrl] = React.useState<string | null>(null);
+  const showLogo = Boolean(logoUrl && failedLogoUrl !== logoUrl);
+
+  return (
+    <div
+      className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-2xs ${
+        showLogo ? 'border border-border/60 bg-card' : 'bg-foreground text-background'
+      }`}
+    >
+      {showLogo && logoUrl ? (
+        <Image
+          src={logoUrl}
+          alt={`Logo ${storeName}`}
+          width={36}
+          height={36}
+          unoptimized
+          onError={() => setFailedLogoUrl(logoUrl)}
+          className="h-full w-full object-contain p-1"
+        />
+      ) : (
+        <div className="grid h-4 w-4 grid-cols-2 gap-1" aria-hidden="true">
+          <div className="h-1.5 w-1.5 rounded-full bg-background" />
+          <div className="h-1.5 w-1.5 rounded-full bg-background" />
+          <div className="h-1.5 w-1.5 rounded-full bg-background" />
+          <div className="h-1.5 w-1.5 rounded-full bg-background opacity-40" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AppSidebar() {
   const pathname = usePathname();
   const { hasPermission } = useRbac();
+  const { data: storeSettings } = useStoreSettingsQuery();
+  const storeName = storeSettings?.storeName || 'RIO COLLECTION';
 
   const [openSubMenus, setOpenSubMenus] = React.useState<Record<string, boolean>>(() => {
     const initialState: Record<string, boolean> = {};
@@ -64,17 +105,10 @@ export default function AppSidebar() {
     <Sidebar variant="floating" collapsible="icon" className="shrink-0">
       <SidebarHeader className="p-4 group-data-[collapsible=icon]:px-2">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background font-bold shrink-0 shadow-2xs">
-            <div className="grid grid-cols-2 gap-1 w-4 h-4">
-              <div className="bg-background rounded-full w-1.5 h-1.5" />
-              <div className="bg-background rounded-full w-1.5 h-1.5" />
-              <div className="bg-background rounded-full w-1.5 h-1.5" />
-              <div className="bg-background rounded-full w-1.5 h-1.5 opacity-40" />
-            </div>
-          </div>
+          <SidebarBrandMark logoUrl={storeSettings?.logoUrl} storeName={storeName} />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="font-extrabold tracking-tight text-base text-foreground">
-              RIO COLLECTION
+              {storeName}
             </span>
           </div>
         </div>

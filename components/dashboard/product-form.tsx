@@ -22,7 +22,7 @@ import { ImageUpload, MultiImageUpload } from '@/components/shared/image-upload'
 import { useProducts } from '@/hooks/use-products';
 import { useJournals } from '@/hooks/use-journals';
 import { useMasterStore, useSizesQuery, useMaterialsQuery } from '@/hooks/use-master-data';
-import type { Product, ProductStatus } from '@/types/catalogue.types';
+import type { Product, ProductMutationInput, ProductStatus } from '@/types/catalogue.types';
 
 interface ProductFormProps {
   initialProduct?: Product;
@@ -63,7 +63,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
   const [imageUrl, setImageUrl] = useState(initialProduct?.imageUrl || '');
   const [imagesList, setImagesList] = useState<string[]>(initialProduct?.images || []);
   const [journalIds, setJournalIds] = useState<string[]>(
-    initialProduct?.journals?.map((j) => j.id) || []
+    initialProduct?.journalIds ?? initialProduct?.journals?.map((journal) => journal.id) ?? []
   );
 
   // Materials & Care State
@@ -118,7 +118,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
       }
     }
 
-    const payload: Product = {
+    const payload: ProductMutationInput = {
       id: initialProduct?.id || `prod-${Date.now()}`,
       name,
       slug,
@@ -150,7 +150,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
         origin: origin || '',
         careInstruction: careInstruction || ''
       },
-      journals: journals.filter((j) => journalIds.includes(j.id)),
+      journalIds,
       variants,
       stock: computedTotalStock
     };

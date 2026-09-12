@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,18 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { KeyRound, Mail, CheckCircle2, ArrowRight, ShieldAlert, Loader2 } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  Mail,
+  ShieldAlert
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { usePasswordReset } from '@/hooks/use-password-reset';
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -20,46 +30,92 @@ interface ForgotPasswordDialogProps {
   defaultEmail?: string;
 }
 
+type RecoveryStep = 'email' | 'otp' | 'success';
+
+function getErrorMessage(error: unknown) {
+  return (
+    (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+    (error as Error)?.message ||
+    'Permintaan pemulihan akun gagal.'
+  );
+}
+
 export function ForgotPasswordDialog({
   open,
   onOpenChange,
   defaultEmail = ''
 }: ForgotPasswordDialogProps) {
-  const [email, setEmail] = useState(defaultEmail);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { requestReset, confirmReset, isRequesting, isConfirming } = usePasswordReset();
+  const [step, setStep] = useState<RecoveryStep>('email');
+  const [email, setEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const targetEmail = (email || defaultEmail).trim().toLowerCase();
 
-  const [prevOpen, setPrevOpen] = useState(open);
-
-  if (open !== prevOpen) {
-    setPrevOpen(open);
-    if (open) {
-      setEmail(defaultEmail);
-      setIsSubmitted(false);
-    }
-  }
+  const resetState = () => {
+    setStep('email');
+    setEmail('');
+    setOtpCode('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowPassword(false);
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setIsSubmitted(false);
-    }
+    if (!nextOpen) resetState();
     onOpenChange(nextOpen);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) {
+  const handleRequestOtp = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!targetEmail) {
       toast.error('Masukkan alamat email Anda.');
       return;
     }
 
-    setIsLoading(true);
-    // Simulate recovery request
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSubmitted(true);
-      toast.success('Permintaan reset kata sandi telah dikirim.');
-    }, 800);
+    try {
+      const result = await requestReset(targetEmail);
+      setEmail(targetEmail);
+      setStep('otp');
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
+  const handleConfirmReset = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!/^\d{6}$/.test(otpCode)) {
+      toast.error('Kode OTP harus terdiri dari 6 digit.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error('Kata sandi baru minimal 8 karakter.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Konfirmasi kata sandi tidak cocok.');
+      return;
+    }
+
+    try {
+      const message = await confirmReset({ email: targetEmail, otpCode, newPassword });
+      setStep('success');
+      toast.success(message);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
+  const resendOtp = async () => {
+    try {
+      const result = await requestReset(targetEmail);
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
   };
 
   return (
@@ -70,99 +126,75 @@ export function ForgotPasswordDialog({
             <KeyRound className="h-4 w-4" />
             <span>Pemulihan Akun</span>
           </div>
-          <DialogTitle className="text-lg font-bold text-foreground">Lupa Kata Sandi?</DialogTitle>
+          <DialogTitle className="text-lg font-bold text-foreground">
+            {step === 'success' ? 'Kata Sandi Diperbarui' : 'Lupa Kata Sandi?'}
+          </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-            {isSubmitted
-              ? 'Instruksi pemulihan telah dikirimkan ke alamat email Anda.'
-              : 'Masukkan alamat email akun terdaftar Anda untuk menerima tautan pemulihan kata sandi.'}
+            {step === 'email' && 'Masukkan email akun terdaftar untuk menerima kode OTP pemulihan.'}
+            {step === 'otp' && `Masukkan kode OTP yang dikirim ke ${targetEmail}, lalu buat kata sandi baru.`}
+            {step === 'success' && 'Pemulihan akun selesai. Anda sekarang dapat masuk memakai kata sandi baru.'}
           </DialogDescription>
         </DialogHeader>
 
-        {isSubmitted ? (
-          <div className="space-y-4 py-3">
-            <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-foreground space-y-2">
-              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Email Pemulihan Terkirim</span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Kami telah mengirimkan instruksi reset kata sandi ke{' '}
-                <strong className="text-foreground">{email}</strong>. Periksa kotak masuk atau
-                folder spam Anda.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-lg bg-muted/20 border border-border/30 text-muted-foreground text-xs space-y-1">
-              <span className="font-bold text-foreground block">Opsi Alternatif untuk Staf:</span>
-              <p className="text-[11px] leading-relaxed">
-                Anda juga dapat meminta Administrator / Super Admin toko untuk langsung mereset kata
-                sandi akun Anda melalui menu <strong>Kelola Pengguna (RBAC)</strong>.
-              </p>
-            </div>
-
-            <DialogFooter className="pt-2">
-              <Button
-                type="button"
-                onClick={() => handleOpenChange(false)}
-                className="w-full h-10 rounded-lg text-xs font-bold cursor-pointer"
-              >
-                Kembali ke Halaman Login
-              </Button>
-            </DialogFooter>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        {step === 'email' ? (
+          <form onSubmit={handleRequestOtp} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">Alamat Email Terdaftar</label>
+              <label htmlFor="recovery-email" className="text-xs font-bold text-foreground">Alamat Email Terdaftar</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="email"
-                  placeholder="admin@riocollection.id"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-10 text-xs rounded-lg bg-muted/20 border-border/50"
-                  required
-                />
+                <Input id="recovery-email" type="email" value={email || defaultEmail} onChange={(event) => setEmail(event.target.value)} placeholder="admin@riocollection.id" className="pl-10 h-10 text-xs rounded-lg bg-muted/20 border-border/50" required />
               </div>
             </div>
-
             <div className="p-3.5 rounded-lg bg-primary/5 border border-primary/15 text-primary text-[11px] leading-relaxed flex items-start gap-2.5">
               <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>
-                Jika Anda adalah staf operasional dan tidak memiliki akses email, hubungi Super
-                Admin untuk membuatkan kata sandi sementara.
-              </span>
+              <span>OTP berlaku selama 10 menit dan maksimal lima kali percobaan.</span>
             </div>
-
             <DialogFooter className="gap-2 sm:gap-0 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleOpenChange(false)}
-                className="h-9 rounded-lg text-xs font-semibold cursor-pointer"
-              >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="h-9 rounded-lg text-xs font-bold gap-1.5 cursor-pointer bg-foreground text-background hover:bg-foreground/90 shadow-xs"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Mengirim...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Kirim Link Reset</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </>
-                )}
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="h-9 rounded-lg text-xs font-semibold">Batal</Button>
+              <Button type="submit" disabled={isRequesting} className="h-9 rounded-lg text-xs font-bold gap-1.5">
+                {isRequesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+                <span>{isRequesting ? 'Mengirim...' : 'Kirim Kode OTP'}</span>
               </Button>
             </DialogFooter>
           </form>
+        ) : step === 'otp' ? (
+          <form onSubmit={handleConfirmReset} className="space-y-3 pt-2">
+            <div className="space-y-1.5">
+              <label htmlFor="recovery-otp" className="text-xs font-bold text-foreground">Kode OTP</label>
+              <Input id="recovery-otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={otpCode} onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, ''))} placeholder="000000" className="h-10 text-center font-mono text-base tracking-[0.35em] rounded-lg" required />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="recovery-password" className="text-xs font-bold text-foreground">Kata Sandi Baru</label>
+              <div className="relative">
+                <Input id="recovery-password" type={showPassword ? 'text' : 'password'} minLength={8} maxLength={128} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Minimal 8 karakter" className="h-10 pr-10 rounded-lg" required />
+                <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}>
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="recovery-password-confirm" className="text-xs font-bold text-foreground">Konfirmasi Kata Sandi</label>
+              <Input id="recovery-password-confirm" type={showPassword ? 'text' : 'password'} minLength={8} maxLength={128} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Ulangi kata sandi baru" className="h-10 rounded-lg" required />
+            </div>
+            <div className="flex items-center justify-between text-[11px]">
+              <button type="button" onClick={() => setStep('email')} className="font-semibold text-muted-foreground hover:text-foreground">Ganti email</button>
+              <button type="button" onClick={resendOtp} disabled={isRequesting} className="font-semibold text-primary disabled:opacity-50">Kirim ulang OTP</button>
+            </div>
+            <DialogFooter className="pt-2">
+              <Button type="submit" disabled={isConfirming} className="w-full h-10 rounded-lg text-xs font-bold gap-1.5">
+                {isConfirming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
+                <span>{isConfirming ? 'Memverifikasi...' : 'Reset Kata Sandi'}</span>
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : (
+          <div className="space-y-4 pt-3">
+            <div className="flex items-start gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4">
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+              <p className="text-xs leading-relaxed text-muted-foreground">Kata sandi untuk <strong className="text-foreground">{targetEmail}</strong> berhasil diperbarui.</p>
+            </div>
+            <Button type="button" onClick={() => handleOpenChange(false)} className="w-full h-10 rounded-lg text-xs font-bold">Kembali ke Login</Button>
+          </div>
         )}
       </DialogContent>
     </Dialog>

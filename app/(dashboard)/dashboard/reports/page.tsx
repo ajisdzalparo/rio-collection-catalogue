@@ -101,7 +101,6 @@ function ReportsPageContent() {
         <ReportsTopProducts
           topProducts={topProducts}
           selectedProduct={selectedProduct}
-          onProductChange={setSelectedProduct}
         />
       </div>
     </VStack>

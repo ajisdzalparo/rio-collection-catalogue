@@ -28,27 +28,27 @@ export async function exportReportToExcel({
     workbook.modified = new Date();
 
     const worksheet = workbook.addWorksheet('Laporan Penjualan', {
-      views: [{ showGridLines: true, state: 'frozen', ySplit: 5 }]
+      views: [{ showGridLines: false, state: 'frozen', ySplit: 5 }]
     });
 
-    // Color Palette Tokens (ARGB)
-    const PRIMARY_HEADER_FILL = 'FF0F172A'; // Dark Slate / Navy #0F172A
-    const TITLE_BG_FILL = 'FFF8FAFC';       // Slate-50 #F8FAFC
-    const ZEBRA_EVEN_FILL = 'FFFFFFFF';     // White
-    const ZEBRA_ODD_FILL = 'FFF8FAFC';      // Slate-50
-    const TOTAL_ROW_FILL = 'FFF1F5F9';      // Slate-100 #F1F5F9
-    const BORDER_COLOR = 'FFE2E8F0';        // Slate-200
-    const HEADER_BORDER_COLOR = 'FF334155'; // Slate-700
-    const TOTAL_TOP_BORDER = 'FF94A3B8';    // Slate-400
+    // Restrained monochrome palette (ARGB)
+    const INK_COLOR = 'FF111827';
+    const MUTED_COLOR = 'FF6B7280';
+    const HEADER_FILL = 'FF1F2937';
+    const SUBTLE_FILL = 'FFF3F4F6';
+    const BORDER_COLOR = 'FFE5E7EB';
+    const STRONG_BORDER_COLOR = 'FF9CA3AF';
+    const WHITE_COLOR = 'FFFFFFFF';
+    const FONT_NAME = 'Arial';
 
     // Standard Currency and Number Formats
-    const CURRENCY_FORMAT = '_("Rp "* #,##0_);_("Rp "* (#,##0);_("Rp "* "-"_);_(@_)';
+    const CURRENCY_FORMAT = '"Rp" #,##0;("Rp" #,##0);"-"';
     const NUMBER_FORMAT = '#,##0';
     const PERCENT_FORMAT = '0.0%';
 
     // Define Columns with Explicit Widths
     worksheet.columns = [
-      { key: 'orderNumber', width: 20 },   // A: No. Pesanan
+      { key: 'orderNumber', width: 25 },   // A: No. Pesanan
       { key: 'date', width: 14 },          // B: Tanggal
       { key: 'time', width: 10 },          // C: Waktu
       { key: 'customerName', width: 24 },  // D: Nama Pelanggan
@@ -62,7 +62,7 @@ export async function exportReportToExcel({
       { key: 'cogs', width: 20 },          // L: Total HPP (Rp)
       { key: 'profit', width: 22 },        // M: Estimasi Laba Kotor (Rp)
       { key: 'margin', width: 14 },        // N: Margin (%)
-      { key: 'address', width: 55 }        // O: Alamat Pengiriman (Wider to fit Indonesian full address)
+      { key: 'address', width: 52 }        // O: Alamat Pengiriman
     ];
 
     // ==========================================
@@ -70,20 +70,18 @@ export async function exportReportToExcel({
     // ==========================================
     worksheet.mergeCells('A1:O1');
     const titleCell1 = worksheet.getCell('A1');
-    titleCell1.value = 'RIO COLLECTION — LAPORAN KEUANGAN & PENJUALAN';
-    titleCell1.font = { name: 'Segoe UI', size: 16, bold: true, color: { argb: 'FF0F172A' } };
-    titleCell1.alignment = { vertical: 'middle', horizontal: 'center' };
-    titleCell1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TITLE_BG_FILL } };
-    worksheet.getRow(1).height = 32;
+    titleCell1.value = 'LAPORAN PENJUALAN';
+    titleCell1.font = { name: FONT_NAME, size: 15, bold: true, color: { argb: INK_COLOR } };
+    titleCell1.alignment = { vertical: 'middle', horizontal: 'left' };
+    worksheet.getRow(1).height = 28;
 
     worksheet.mergeCells('A2:O2');
     const titleCell2 = worksheet.getCell('A2');
     const cleanProdLabel = selectedProduct === 'ALL' ? 'Semua Produk Kaos' : selectedProduct;
-    titleCell2.value = `Periode: ${startDate} s/d ${endDate}    |    Filter: ${cleanProdLabel}`;
-    titleCell2.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF334155' } };
-    titleCell2.alignment = { vertical: 'middle', horizontal: 'center' };
-    titleCell2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TITLE_BG_FILL } };
-    worksheet.getRow(2).height = 22;
+    titleCell2.value = `RIO COLLECTION  •  Periode ${startDate} s.d. ${endDate}  •  ${cleanProdLabel}`;
+    titleCell2.font = { name: FONT_NAME, size: 10, color: { argb: INK_COLOR } };
+    titleCell2.alignment = { vertical: 'middle', horizontal: 'left' };
+    worksheet.getRow(2).height = 18;
 
     worksheet.mergeCells('A3:O3');
     const titleCell3 = worksheet.getCell('A3');
@@ -94,11 +92,10 @@ export async function exportReportToExcel({
       hour: '2-digit',
       minute: '2-digit'
     });
-    titleCell3.value = `Dokumen Resmi Internal Perusahaan  •  Digenerate otomatis pada: ${printDateStr} WIB`;
-    titleCell3.font = { name: 'Segoe UI', size: 9, italic: true, color: { argb: 'FF64748B' } };
-    titleCell3.alignment = { vertical: 'middle', horizontal: 'center' };
-    titleCell3.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TITLE_BG_FILL } };
-    worksheet.getRow(3).height = 18;
+    titleCell3.value = `Dibuat ${printDateStr} WIB`;
+    titleCell3.font = { name: FONT_NAME, size: 9, italic: true, color: { argb: MUTED_COLOR } };
+    titleCell3.alignment = { vertical: 'middle', horizontal: 'left' };
+    worksheet.getRow(3).height = 16;
 
     // Row 4 is blank separator
     worksheet.getRow(4).height = 10;
@@ -132,13 +129,13 @@ export async function exportReportToExcel({
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: PRIMARY_HEADER_FILL }
+        fgColor: { argb: HEADER_FILL }
       };
       cell.font = {
-        name: 'Segoe UI',
+        name: FONT_NAME,
         size: 10,
         bold: true,
-        color: { argb: 'FFFFFFFF' }
+        color: { argb: WHITE_COLOR }
       };
       cell.alignment = {
         vertical: 'middle',
@@ -146,10 +143,8 @@ export async function exportReportToExcel({
         wrapText: true
       };
       cell.border = {
-        top: { style: 'thin', color: { argb: HEADER_BORDER_COLOR } },
-        bottom: { style: 'medium', color: { argb: HEADER_BORDER_COLOR } },
-        left: { style: 'thin', color: { argb: HEADER_BORDER_COLOR } },
-        right: { style: 'thin', color: { argb: HEADER_BORDER_COLOR } }
+        bottom: { style: 'medium', color: { argb: INK_COLOR } },
+        right: { style: 'thin', color: { argb: STRONG_BORDER_COLOR } }
       };
     });
 
@@ -185,6 +180,7 @@ export async function exportReportToExcel({
     let initialTotalRev = 0;
     let initialTotalHpp = 0;
     let initialTotalProfit = 0;
+    let initialMaxRev = 0;
 
     currentOrders.forEach((order) => {
       order.items.forEach((item) => {
@@ -199,70 +195,63 @@ export async function exportReportToExcel({
         initialTotalRev += rev;
         initialTotalHpp += hpp;
         initialTotalProfit += profit;
+        initialMaxRev = Math.max(initialMaxRev, rev);
 
         const dateObj = new Date(order.createdAt);
-        const dateStr = dateObj.toLocaleDateString('id-ID', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        });
-        const timeStr = dateObj.toLocaleTimeString('id-ID', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
+        const timeValue = (dateObj.getHours() * 60 + dateObj.getMinutes()) / (24 * 60);
 
         const rNum = currentRowIndex;
         const dataRow = worksheet.getRow(rNum);
-        dataRow.height = 22;
-
-        const isOddRow = (rNum - startDataRow) % 2 === 1;
-        const rowBgColor = isOddRow ? ZEBRA_ODD_FILL : ZEBRA_EVEN_FILL;
+        const addressLength = order.address?.length ?? 0;
+        dataRow.height = addressLength > 90 ? 38 : addressLength > 50 ? 30 : 22;
 
         dataRow.values = [
-          order.orderNumber,                                 // A: No. Pesanan
-          dateStr,                                           // B: Tanggal
-          timeStr,                                           // C: Waktu
-          order.fullName,                                    // D: Nama Pelanggan
-          order.whatsapp || '-',                             // E: WhatsApp
-          order.status,                                      // F: Status
-          item.name,                                         // G: Nama Produk
-          item.size || '-',                                  // H: Ukuran
-          item.quantity,                                     // I: Qty (Pcs)
-          item.price,                                        // J: Harga Satuan (Rp)
-          { formula: `I${rNum}*J${rNum}`, result: rev },     // K: Total Omset Formula
-          hpp,                                               // L: Total HPP
-          { formula: `K${rNum}-L${rNum}`, result: profit },  // M: Estimasi Laba Formula
+          order.orderNumber || '-',                            // A: No. Pesanan
+          dateObj,                                             // B: Tanggal
+          timeValue,                                           // C: Waktu
+          order.fullName || '-',                               // D: Nama Pelanggan
+          order.whatsapp || '-',                               // E: WhatsApp
+          order.status || '-',                                 // F: Status
+          item.name || '-',                                    // G: Nama Produk
+          item.size || '-',                                    // H: Ukuran
+          item.quantity ?? 0,                                  // I: Qty (Pcs)
+          item.price ?? 0,                                     // J: Harga Satuan (Rp)
+          { formula: `I${rNum}*J${rNum}`, result: rev },      // K: Total Omset Formula
+          hpp,                                                 // L: Total HPP
+          { formula: `K${rNum}-L${rNum}`, result: profit },   // M: Estimasi Laba Formula
           { formula: `IF(K${rNum}>0, M${rNum}/K${rNum}, 0)`, result: margin }, // N: Margin Formula
-          order.address || '-'                               // O: Alamat
+          order.address || '-'                                 // O: Alamat
         ];
 
         // Format and style individual data cells
         dataRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF1E293B' } };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBgColor } };
+          cell.font = { name: FONT_NAME, size: 9.5, color: { argb: INK_COLOR } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: WHITE_COLOR } };
           cell.border = {
             top: { style: 'thin', color: { argb: BORDER_COLOR } },
-            bottom: { style: 'thin', color: { argb: BORDER_COLOR } },
             left: { style: 'thin', color: { argb: BORDER_COLOR } },
+            bottom: { style: 'thin', color: { argb: BORDER_COLOR } },
             right: { style: 'thin', color: { argb: BORDER_COLOR } }
           };
 
           // Alignment and number formatting rules per column
           if (colNumber === 1) {
             cell.alignment = { vertical: 'middle', horizontal: 'left' };
-            cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF334155' } };
+            cell.font = { name: FONT_NAME, size: 9.5, bold: true, color: { argb: INK_COLOR } };
           } else if (colNumber === 2 || colNumber === 3) {
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.numFmt = colNumber === 2 ? 'dd mmm yyyy' : 'hh:mm';
           } else if (colNumber === 4) {
             cell.alignment = { vertical: 'middle', horizontal: 'left' };
           } else if (colNumber === 5) {
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.numFmt = '@';
           } else if (colNumber === 6) {
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
-            cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF475569' } };
+            cell.font = { name: FONT_NAME, size: 9, bold: true, color: { argb: INK_COLOR } };
           } else if (colNumber === 7) {
             cell.alignment = { vertical: 'middle', horizontal: 'left' };
-            cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF0F172A' } };
+            cell.font = { name: FONT_NAME, size: 9.5, bold: true, color: { argb: INK_COLOR } };
           } else if (colNumber === 8) {
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
           } else if (colNumber === 9) {
@@ -271,17 +260,11 @@ export async function exportReportToExcel({
           } else if (colNumber === 10 || colNumber === 11 || colNumber === 12 || colNumber === 13) {
             cell.alignment = { vertical: 'middle', horizontal: 'right' };
             cell.numFmt = CURRENCY_FORMAT;
-            if (colNumber === 11) {
-              cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF1E40AF' } }; // Blue bold
-            } else if (colNumber === 13) {
-              cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF065F46' } }; // Emerald bold
-            }
           } else if (colNumber === 14) {
             cell.alignment = { vertical: 'middle', horizontal: 'right' };
             cell.numFmt = PERCENT_FORMAT;
-            cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF475569' } };
           } else if (colNumber === 15) {
-            cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+            cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
           }
         });
 
@@ -321,13 +304,11 @@ export async function exportReportToExcel({
     worksheet.mergeCells(`A${currentRowIndex}:H${currentRowIndex}`);
 
     totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TOTAL_ROW_FILL } };
-      cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: SUBTLE_FILL } };
+      cell.font = { name: FONT_NAME, size: 10, bold: true, color: { argb: INK_COLOR } };
       cell.border = {
-        top: { style: 'thin', color: { argb: TOTAL_TOP_BORDER } },
-        bottom: { style: 'double', color: { argb: 'FF0F172A' } }, // Professional accounting double underline
-        left: { style: 'thin', color: { argb: BORDER_COLOR } },
-        right: { style: 'thin', color: { argb: BORDER_COLOR } }
+        top: { style: 'medium', color: { argb: STRONG_BORDER_COLOR } },
+        bottom: { style: 'double', color: { argb: INK_COLOR } }
       };
 
       if (colNumber === 1) {
@@ -352,10 +333,11 @@ export async function exportReportToExcel({
     worksheet.mergeCells(`B${statsStartRow}:E${statsStartRow}`);
     const statHeader = worksheet.getCell(`B${statsStartRow}`);
     statHeader.value = 'IKHTISAR EKSEKUTIF PENJUALAN';
-    statHeader.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
-    statHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PRIMARY_HEADER_FILL } };
-    statHeader.alignment = { vertical: 'middle', horizontal: 'center' };
-    worksheet.getRow(statsStartRow).height = 24;
+    statHeader.font = { name: FONT_NAME, size: 10, bold: true, color: { argb: INK_COLOR } };
+    statHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: SUBTLE_FILL } };
+    statHeader.alignment = { vertical: 'middle', horizontal: 'left' };
+    statHeader.border = { bottom: { style: 'medium', color: { argb: STRONG_BORDER_COLOR } } };
+    worksheet.getRow(statsStartRow).height = 22;
 
     const statsItems = [
       {
@@ -373,7 +355,7 @@ export async function exportReportToExcel({
       {
         label: 'Omset Tertinggi dalam 1 Transaksi',
         formula: `MAX(K${startDataRow}:K${endDataRow})`,
-        result: initialTotalRev,
+        result: initialMaxRev,
         format: CURRENCY_FORMAT
       },
       {
@@ -391,27 +373,19 @@ export async function exportReportToExcel({
       worksheet.mergeCells(`B${sRowNum}:D${sRowNum}`);
       const lblCell = worksheet.getCell(`B${sRowNum}`);
       lblCell.value = stat.label;
-      lblCell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF334155' } };
+      lblCell.font = { name: FONT_NAME, size: 9, color: { argb: INK_COLOR } };
       lblCell.alignment = { vertical: 'middle', horizontal: 'left' };
-      lblCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: sIdx % 2 === 0 ? ZEBRA_EVEN_FILL : ZEBRA_ODD_FILL } };
       lblCell.border = {
-        top: { style: 'thin', color: { argb: BORDER_COLOR } },
-        bottom: { style: 'thin', color: { argb: BORDER_COLOR } },
-        left: { style: 'thin', color: { argb: BORDER_COLOR } },
-        right: { style: 'thin', color: { argb: BORDER_COLOR } }
+        bottom: { style: 'thin', color: { argb: BORDER_COLOR } }
       };
 
       const valCell = worksheet.getCell(`E${sRowNum}`);
       valCell.value = { formula: stat.formula, result: stat.result };
-      valCell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF0F172A' } };
+      valCell.font = { name: FONT_NAME, size: 9.5, bold: true, color: { argb: INK_COLOR } };
       valCell.alignment = { vertical: 'middle', horizontal: 'right' };
       valCell.numFmt = stat.format;
-      valCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: sIdx % 2 === 0 ? ZEBRA_EVEN_FILL : ZEBRA_ODD_FILL } };
       valCell.border = {
-        top: { style: 'thin', color: { argb: BORDER_COLOR } },
-        bottom: { style: 'thin', color: { argb: BORDER_COLOR } },
-        left: { style: 'thin', color: { argb: BORDER_COLOR } },
-        right: { style: 'thin', color: { argb: BORDER_COLOR } }
+        bottom: { style: 'thin', color: { argb: BORDER_COLOR } }
       };
     });
 

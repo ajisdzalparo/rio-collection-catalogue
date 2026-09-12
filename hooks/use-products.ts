@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Product } from '@/types/catalogue.types';
+import type { Product, ProductMutationInput } from '@/types/catalogue.types';
 import { normalizeProductAvailability } from '@/lib/product-availability';
 import axios from 'axios';
 
@@ -28,7 +28,7 @@ export function useProducts() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newProduct: Product) => {
+    mutationFn: async (newProduct: ProductMutationInput) => {
       const { data } = await axios.post('/api/v1/products', newProduct);
       return data.data || newProduct;
     },
@@ -38,7 +38,7 @@ export function useProducts() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (updatedProduct: Product) => {
+    mutationFn: async (updatedProduct: ProductMutationInput) => {
       const { data } = await axios.put(`/api/v1/products/${updatedProduct.id}`, updatedProduct);
       return data.data || updatedProduct;
     },
