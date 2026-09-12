@@ -103,8 +103,36 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
       <article className="mx-auto max-w-3xl px-4 md:px-8 pb-16 md:pb-24">
         {article.contentHtml ? (
           <div
-            className="font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant) [&_p]:mt-6 [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[34px] [&_h2]:text-(--cat-on-surface) [&_h2]:mt-10 [&_h2]:mb-4 [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[26px] [&_h3]:text-(--cat-on-surface) [&_h3]:mt-8 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4 [&_blockquote]:my-8 [&_blockquote]:pl-4 [&_blockquote]:border-l-2 [&_blockquote]:border-(--cat-stone) [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[20px] [&_img]:w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/20 [&_img]:my-8 [&_img]:shadow-sm [&_a]:underline [&_a]:underline-offset-2"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.contentHtml) }}
+            className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-(--cat-on-surface-variant) [&_p]:mt-6 [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-(--cat-on-surface) [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-(--cat-on-surface) [&_h3]:mt-10 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-10 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-(--cat-stone) [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-(--cat-on-surface) [&_hr]:my-12 [&_hr]:border-(--cat-stone) [&_img]:w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/30 [&_img]:my-8 [&_img]:shadow-sm [&_figure]:my-8 [&_figure]:text-center [&_figcaption]:text-xs [&_figcaption]:text-muted-foreground [&_figcaption]:mt-2 [&_figcaption]:italic [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono [&_pre]:p-4 [&_pre]:rounded-2xl [&_pre]:bg-muted [&_pre]:overflow-x-auto [&_pre]:my-6 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_a]:transition-opacity [&_a:hover]:opacity-80"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(article.contentHtml, {
+                ALLOWED_TAGS: [
+                  'p',
+                  'h2',
+                  'h3',
+                  'h4',
+                  'blockquote',
+                  'ul',
+                  'ol',
+                  'li',
+                  'strong',
+                  'em',
+                  's',
+                  'u',
+                  'a',
+                  'img',
+                  'figure',
+                  'figcaption',
+                  'hr',
+                  'br',
+                  'code',
+                  'pre',
+                  'span',
+                  'div'
+                ],
+                ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'title', 'class', 'style', 'width', 'height']
+              })
+            }}
           />
         ) : (
           <>

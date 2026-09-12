@@ -3,7 +3,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting comprehensive database seeding (Roles, User, Products, Categories, Colors, Master Data & Settings)...');
+  console.log(
+    '🌱 Starting comprehensive database seeding (Roles, User, Products, Categories, Colors, Master Data & Settings)...'
+  );
 
   // 1. Roles
   const roles = [
@@ -112,9 +114,21 @@ async function main() {
 
   // 3. Master Categories
   const categories = [
-    { name: 'Heavy-Weight', slug: 'heavy-weight', description: 'Kaos berbobot tebal 240-280 GSM berkualitas tinggi' },
-    { name: 'Graphic Edition', slug: 'graphic-edition', description: 'Kaos dengan sablon seni visual grafis bernilai artistik' },
-    { name: 'Core Silhouette', slug: 'core-silhouette', description: 'Potongan siluet dasar esensial brand RIO COLLECTION' }
+    {
+      name: 'Heavy-Weight',
+      slug: 'heavy-weight',
+      description: 'Kaos berbobot tebal 240-280 GSM berkualitas tinggi'
+    },
+    {
+      name: 'Graphic Edition',
+      slug: 'graphic-edition',
+      description: 'Kaos dengan sablon seni visual grafis bernilai artistik'
+    },
+    {
+      name: 'Core Silhouette',
+      slug: 'core-silhouette',
+      description: 'Potongan siluet dasar esensial brand RIO COLLECTION'
+    }
   ];
 
   for (const cat of categories) {
@@ -137,7 +151,10 @@ async function main() {
   for (const col of colors) {
     const existing = await prisma.color.findFirst({ where: { name: col.name } });
     if (existing) {
-      await prisma.color.update({ where: { id: existing.id }, data: { hex: col.hex, isActive: true } });
+      await prisma.color.update({
+        where: { id: existing.id },
+        data: { hex: col.hex, isActive: true }
+      });
     } else {
       await prisma.color.create({ data: { ...col, isActive: true } });
     }
@@ -155,6 +172,41 @@ async function main() {
   }
   console.log('✅ Sizes seeded');
 
+  // 5.5 Master Materials (Fabric & Origin)
+  const defaultMaterials = [
+    { type: 'ORIGIN' as const, name: 'Indonesia', description: 'Buatan dan manufaktur Indonesia' },
+    { type: 'ORIGIN' as const, name: 'Made in Indonesia', description: 'Lokal buatan Indonesia' },
+    {
+      type: 'ORIGIN' as const,
+      name: 'Imported Cotton',
+      description: 'Material impor dari luar negeri'
+    },
+    {
+      type: 'FABRIC' as const,
+      name: '100% Premium Heavyweight Cotton',
+      description: 'Katun tebal premium 240-280 GSM'
+    },
+    { type: 'FABRIC' as const, name: 'Cotton Combed 24s', description: 'Katun combed 24s lembut' },
+    { type: 'FABRIC' as const, name: 'Cotton Combed 30s', description: 'Katun combed 30s ringan' }
+  ];
+
+  // Clean up legacy TREATMENT and CARE entries from DB
+  await prisma.materialMaster.deleteMany({
+    where: { type: { in: ['TREATMENT', 'CARE'] } }
+  });
+
+  for (const mat of defaultMaterials) {
+    const existing = await prisma.materialMaster.findFirst({
+      where: { type: mat.type, name: mat.name }
+    });
+    if (!existing) {
+      await prisma.materialMaster.create({
+        data: { ...mat, isActive: true }
+      });
+    }
+  }
+  console.log('✅ Master Materials seeded');
+
   // 6. Products & Variants
   const productsData = [
     {
@@ -171,16 +223,16 @@ async function main() {
       status: 'AVAILABLE',
       edition: 'Edition 001',
       category: 'heavy-weight',
-      imageUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+      imageUrl:
+        'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
       images: [
         'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80'
       ],
-      description: 'A meticulously crafted boxy silhouette made from 100% premium heavy-weight cotton. Designed for durability and comfort.',
-      storyTitle: 'The Architecture of Daily Wear',
-      storyText: 'Konstruksi siluet boxy dengan jahitan ganda di setiap sambungan menghasilkan jatuhan kain yang tegas dan proporsional.',
+      description:
+        'A meticulously crafted boxy silhouette made from 100% premium heavy-weight cotton. Designed for durability and comfort.',
       variants: [
         { size: 'S', inStock: true, stock: 12 },
         { size: 'M', inStock: true, stock: 15 },
@@ -202,16 +254,16 @@ async function main() {
       status: 'AVAILABLE',
       edition: 'Edition 001',
       category: 'graphic-edition',
-      imageUrl: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
+      imageUrl:
+        'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
       images: [
         'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80'
       ],
-      description: 'Limited collaboration graphic tee featuring hand-drawn abstract artwork on premium cotton canvas.',
-      storyTitle: 'Visual Rhythm & Monochrome Identity',
-      storyText: 'Eksplorasi grafis brutalist dengan teknik sablon manual berdaya tahan tinggi yang menyatu sempurna dengan serat katun.',
+      description:
+        'Limited collaboration graphic tee featuring hand-drawn abstract artwork on premium cotton canvas.',
       variants: [
         { size: 'S', inStock: true, stock: 8 },
         { size: 'M', inStock: true, stock: 12 },
@@ -233,16 +285,16 @@ async function main() {
       status: 'AVAILABLE',
       edition: 'Edition 001',
       category: 'core-silhouette',
-      imageUrl: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=800&auto=format&fit=crop&q=80',
+      imageUrl:
+        'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=800&auto=format&fit=crop&q=80',
       images: [
         'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1200&auto=format&fit=crop&q=80'
       ],
-      description: 'An elevated everyday essential with a relaxed oversized fit. Constructed from heavyweight 280gsm cotton.',
-      storyTitle: 'Relaxed Silhouette for Everyday Life',
-      storyText: 'Dirancang untuk kenyamanan maksimal dalam mobilitas harian dengan drop-shoulder cut yang clean.',
+      description:
+        'An elevated everyday essential with a relaxed oversized fit. Constructed from heavyweight 280gsm cotton.',
       variants: [
         { size: 'S', inStock: true, stock: 10 },
         { size: 'M', inStock: true, stock: 15 },
@@ -264,13 +316,15 @@ async function main() {
       status: 'COMING_SOON',
       edition: 'Edition 001',
       category: 'heavy-weight',
-      imageUrl: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&auto=format&fit=crop&q=80',
+      imageUrl:
+        'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&auto=format&fit=crop&q=80',
       images: [
         'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80'
       ],
-      description: 'Architectural precision meets deep indigo dye. A structured silhouette in our signature heavy-weight fabrication.',
+      description:
+        'Architectural precision meets deep indigo dye. A structured silhouette in our signature heavy-weight fabrication.',
       variants: [
         { size: 'S', inStock: false, stock: 0 },
         { size: 'M', inStock: false, stock: 0 },
@@ -329,32 +383,93 @@ async function main() {
       slug: 'pencarian-katun-sempurna',
       title: 'Pencarian Katun Sempurna',
       author: 'RIO COLLECTION Editorial Team',
-      excerpt: 'Dalam dunia pakaian esensial, pencarian akan material yang sempurna seringkali terasa seperti mitos. Bagi kami di RIO COLLECTION, ini adalah sebuah obsesi.',
+      excerpt:
+        'Dalam dunia pakaian esensial, pencarian akan material yang sempurna seringkali terasa seperti mitos. Bagi kami di RIO COLLECTION, ini adalah sebuah obsesi.',
       category: 'MATERIAL STUDY',
-      imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
-      pullQuote: 'Bukan tentang menciptakan sesuatu yang baru, melainkan menyempurnakan sesuatu yang mendasar.',
-      relatedProductSlug: 'heavy-weight-boxy-tee',
+      imageUrl:
+        'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
+      pullQuote:
+        'Bukan tentang menciptakan sesuatu yang baru, melainkan menyempurnakan sesuatu yang mendasar.',
       content: [
         'Dalam dunia pakaian esensial, pencarian akan material yang sempurna seringkali terasa seperti mitos. Bagi kami di RIO COLLECTION, ini adalah sebuah obsesi.',
         'T-shirt yang baik harus terasa seperti ekstensi dari penggunanya. Ia tidak boleh terlalu ringan, namun harus mempertahankan strukturnya setelah puluhan kali dicucian.',
         'Kami menemukan jawabannya pada katun dengan berat 240gsm. Berat yang tidak lazim untuk iklim tropis, namun krusial untuk menciptakan siluet yang kaku dan maskulin.',
         'Konstruksi kerah menjadi area fokus berikutnya. Rib tebal yang dijahit ganda tidak hanya menjamin bentuk kerah dari peregangan seiring waktu, tetapi juga memberikan aksen visual yang tegas.'
-      ]
+      ],
+      contentHtml: `<h2>Memahami Esensi Material Heavyweight</h2>
+<p>Dalam dunia pakaian esensial, pencarian akan material yang sempurna seringkali terasa seperti mitos. Bagi kami di <strong>RIO COLLECTION</strong>, ini adalah sebuah obsesi berkelanjutan untuk menemukan titik seimbang antara daya tahan, struktur, dan kenyamanan sehari-hari.</p>
+<p>T-shirt yang baik harus terasa seperti ekstensi dari penggunanya. Ia tidak boleh terlalu ringan hingga jatuh meliuk tanpa bentuk, namun harus mempertahankan strukturnya secara konsisten bahkan setelah puluhan kali proses pencucian.</p>
+
+<blockquote>Bukan tentang menciptakan sesuatu yang baru dari nol, melainkan menyempurnakan sesuatu yang sangat mendasar hingga mencapai taraf presisi tertinggi.</blockquote>
+
+<h2>Bobot Kain 240 GSM & Struktur Siluet Boxy</h2>
+<p>Kami menemukan jawabannya pada benang <strong>100% Cotton Heavyweight 240 GSM</strong>. Berat yang tidak lazim untuk iklim tropis, namun sangat krusial untuk menciptakan potongan <em>boxy fit</em> yang kaku, rapi, dan memberikan bentuk tubuh yang tegas.</p>
+
+<h3>Keunggulan Utama Benang 240 GSM:</h3>
+<ul>
+  <li><strong>Siluet Tetap Struktur:</strong> Tidak mudah kusut atau melempai saat dipakai beraktivitas.</li>
+  <li><strong>Daya Serap Maksimal:</strong> Tetap adem dan menyerap keringat dengan baik berkat serat katun alami tanpa campuran sintetis.</li>
+  <li><strong>Kerah Tidak Mudah Mulur:</strong> Rib kerah tebal 2.5cm dengan jahitan ganda (double-needle stitch) yang tahan lama.</li>
+</ul>
+
+<h2>Kesimpulan</h2>
+<p>Perjalanan menemukan material ini membuktikan bahwa kualitas sejati terletak pada detail-detail kecil yang dirasakan langsung oleh pemakainya setiap hari.</p>`
     },
     {
       date: '28 September 2024',
       slug: 'melihat-di-balik-layar',
       title: 'Melihat di Balik Layar: Arsitektur Sebuah Koleksi',
       author: 'RIO COLLECTION Editorial Team',
-      excerpt: 'Eksplorasi material mentah dan siluet brutalist dalam proses perancangan Archive Series.',
+      excerpt:
+        'Eksplorasi material mentah dan siluet brutalist dalam proses perancangan Archive Series.',
       category: 'PROSES KREATIF',
-      imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+      imageUrl:
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
       pullQuote: 'Setiap karya lahir dari detail-detail kecil yang tidak terlihat.',
       content: [
         'Setiap koleksi dimulai dari keheningan. Bukan keheningan yang kosong, tetapi keheningan yang penuh dengan kemungkinan.',
         'Archive Series lahir dari eksperimen panjang dengan konstruksi garmen yang tidak konvensional.',
         'Hasilnya adalah koleksi yang berbicara melalui detail-detail kecil: kelim yang dikerjakan dengan tangan dan label yang dijahit presisi.'
-      ]
+      ],
+      contentHtml: `<h2>Pendekatan Arsitektural dalam Rancang Busana</h2>
+<p>Setiap koleksi dimulai dari keheningan studio. Bukan keheningan yang kosong, tetapi keheningan yang penuh dengan eksperimen visual dan eksplorasi garis desain.</p>
+<p><strong>Archive Series</strong> lahir dari eksplorasi panjang dengan konstruksi garmen yang terinspirasi dari arsitektur brutalist: bentuk geometris yang tegas, potongan bahu <em>drop-shoulder</em> yang rileks, serta pemotongan kain tanpa sisa berlebih.</p>
+
+<blockquote>Setiap karya hebat selalu lahir dari akumulasi detail-detail kecil yang sepintas tidak terlihat oleh mata awam.</blockquote>
+
+<h2>Proses Prototipe & Uji Ketahanan</h2>
+<p>Sebelum rilis resmi, setiap karya melewati 5 tahap <em>sample prototype testing</em>:</p>
+<ol>
+  <li><strong>Pattern Drafting:</strong> Menentukan proporsi rasio panjang badan dan lebar dada.</li>
+  <li><strong>Dyeing Test:</strong> Memastikan ketahanan pigmen warna reaktif agar tidak luntur.</li>
+  <li><strong>Fit Test:</strong> Diuji pakai pada berbagai bentuk postur tubuh untuk memastikan kenyamanan bergerak.</li>
+</ol>`
+    },
+    {
+      date: '05 November 2024',
+      slug: 'seni-merawat-heavyweight-cotton',
+      title: 'Seni Merawat Heavyweight Cotton Agar Tahan Bertahun-tahun',
+      author: 'CREATIVE DIRECTION',
+      excerpt:
+        'Panduan praktis merawat kaos katun tebal agar warna tetap pekat dan serat kain tidak cepat rusak.',
+      category: 'PROCESS',
+      imageUrl:
+        'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=1200&auto=format&fit=crop&q=80',
+      pullQuote: 'Pakaian berkualitas layak mendapatkan perawatan yang baik.',
+      content: [
+        'Investasi pada kaos berkualitas tinggi perlu diimbangi dengan cara perawatan yang benar.',
+        'Cuci dengan air dingin dan balikkan posisi baju sebelum dimasukkan ke dalam mesin pencuci.',
+        'Hindari penggunaan pemutih keras dan jemur di tempat teduh agar serat katun tetap lembut.'
+      ],
+      contentHtml: `<h2>Panduan Perawatan Kaos Katun Premium</h2>
+<p>Investasi pada kaos katun berbobot tebal (heavyweight) perlu diimbangi dengan metode perawatan yang tepat. Dengan perawatan yang baik, kaos favorit Anda dapat bertahan hingga bertahun-tahun tanpa kehilangan bentuk maupun warna aslinya.</p>
+
+<h2>3 Langkah Mudah Pencucian:</h2>
+<ul>
+  <li><strong>Balikkan Kaos (Inside Out):</strong> Selalu balikkan kaos sehingga bagian luar berada di dalam sebelum dicuci untuk melindungi permukaan kain dan sablonan.</li>
+  <li><strong>Gunakan Air Dingin:</strong> Suhu air dingin mencegah penyusutan serat katun (shrinkage) dan menjaga kepekatan warna hitam atau putih.</li>
+  <li><strong>Jemur Angin (Air Dry):</strong> Hindari pemakaian mesin pengering panas berlebih. Cukup gantung di tempat teduh terhindar dari paparan matahari langsung.</li>
+</ul>`
     }
   ];
 
@@ -367,38 +482,43 @@ async function main() {
   }
   console.log('✅ Topics & Journals seeded');
 
-  // 8. Archives
-  const archives = [
-    {
-      name: 'Edition 00 — Genesis',
-      slug: 'edition-00-genesis',
-      status: 'SOLD_OUT',
-      imageUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
-      description: 'The inaugural drop that started it all. Raw construction, zero compromise.'
-    },
-    {
-      name: 'Edition 00 — Proto',
-      slug: 'edition-00-proto',
-      status: 'SOLD_OUT',
-      imageUrl: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=800&auto=format&fit=crop&q=80',
-      description: 'Prototype series exploring fabric weight and architectural draping.'
-    }
-  ];
-
-  for (const arc of archives) {
-    await prisma.archive.upsert({
-      where: { slug: arc.slug },
-      update: arc,
-      create: arc
+  const seededProduct = await prisma.product.findUnique({
+    where: { slug: 'heavy-weight-boxy-tee' }
+  });
+  const seededJournal = await prisma.journal.findUnique({
+    where: { slug: 'pencarian-katun-sempurna' }
+  });
+  if (seededProduct && seededJournal) {
+    await prisma.productJournal.upsert({
+      where: {
+        productId_journalId: { productId: seededProduct.id, journalId: seededJournal.id }
+      },
+      update: {},
+      create: { productId: seededProduct.id, journalId: seededJournal.id }
     });
   }
-  console.log('✅ Archives seeded');
+  console.log('✅ Product-journal relationships seeded');
 
   // 9. Testimonies
   const testimonies = [
-    { alt: 'Customer WhatsApp Chat Screenshot 1', imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80', status: 'ACTIVE' },
-    { alt: 'Customer WhatsApp Chat Screenshot 2', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80', status: 'ACTIVE' },
-    { alt: 'Customer WhatsApp Chat Screenshot 3', imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&auto=format&fit=crop&q=80', status: 'ACTIVE' }
+    {
+      alt: 'Customer WhatsApp Chat Screenshot 1',
+      imageUrl:
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80',
+      status: 'ACTIVE'
+    },
+    {
+      alt: 'Customer WhatsApp Chat Screenshot 2',
+      imageUrl:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
+      status: 'ACTIVE'
+    },
+    {
+      alt: 'Customer WhatsApp Chat Screenshot 3',
+      imageUrl:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&auto=format&fit=crop&q=80',
+      status: 'ACTIVE'
+    }
   ];
 
   for (const tst of testimonies) {
@@ -433,8 +553,20 @@ async function main() {
   if (existingStoreBanks.length === 0) {
     await prisma.storeBank.createMany({
       data: [
-        { bankName: 'Bank BCA', accountNumber: '1234567890', accountOwner: 'RIO COLLECTION', isActive: true, sortOrder: 1 },
-        { bankName: 'Bank Mandiri', accountNumber: '0987654321', accountOwner: 'RIO COLLECTION', isActive: true, sortOrder: 2 }
+        {
+          bankName: 'Bank BCA',
+          accountNumber: '1234567890',
+          accountOwner: 'RIO COLLECTION',
+          isActive: true,
+          sortOrder: 1
+        },
+        {
+          bankName: 'Bank Mandiri',
+          accountNumber: '0987654321',
+          accountOwner: 'RIO COLLECTION',
+          isActive: true,
+          sortOrder: 2
+        }
       ]
     });
   }
@@ -451,35 +583,58 @@ async function main() {
       bankName: 'Bank BCA',
       bankAccountNumber: '1234567890',
       bankAccountOwner: 'RIO COLLECTION',
-      flatShippingRate: 15000,
       heroTitle: 'ARCHIVAL ESSENTIALS',
-      heroSubtitle: 'Refined heavyweight cotton silhouettes crafted for modern character and longevity.',
+      heroSubtitle:
+        'Refined heavyweight cotton silhouettes crafted for modern character and longevity.',
       heroLayout: '2-grid',
-      heroLeftImage: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
-      heroRightImage: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
+      heroLeftImage:
+        'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+      heroRightImage:
+        'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
       heroCtaText: 'Jelajahi Koleksi',
       heroCtaLink: '/catalogue',
       homeManifestoTitle: 'Mendefinisikan Ulang Esensi Kualitas & Estetika.',
-      homeManifestoText: 'Setiap karya pakaian dari RIO COLLECTION lahir dari kombinasi riset bahan katun berbobot tinggi (240-280 GSM), siluet kaku modern, serta detail jahitan presisi. Kami menghadirkan pakaian esensial tahan lama yang berkarakter.',
-      homeManifestoImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+      homeManifestoText:
+        'Setiap karya pakaian dari RIO COLLECTION lahir dari kombinasi riset bahan katun berbobot tinggi (240-280 GSM), siluet kaku modern, serta detail jahitan presisi. Kami menghadirkan pakaian esensial tahan lama yang berkarakter.',
+      homeManifestoImage:
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
       homeBannerText: 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.',
       homeBannerButton: 'Jelajahi Katalog Lengkap',
-      archiveHeaderSub: 'Desain masa lalu dan koleksi arsip rilisan terdahulu yang kami lestarikan.',
+      archiveHeaderSub:
+        'Desain masa lalu dan koleksi arsip rilisan terdahulu yang kami lestarikan.',
       archiveQuoteTitle: 'Merekam jejak perjalanan estetika dan eksperimen material kami.',
-      archiveQuoteText: 'Setiap siluet yang telah habis tidak pernah benar-benar hilang, melainkan menjadi bagian dari sejarah dan fondasi karya kami berikutnya.',
-      aboutHeroImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+      archiveQuoteText:
+        'Setiap siluet yang telah habis tidak pernah benar-benar hilang, melainkan menjadi bagian dari sejarah dan fondasi karya kami berikutnya.',
+      aboutHeroImage:
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
       aboutHeading: 'Independen. Archival. Uncompromising.',
-      aboutParagraph1: 'RIO COLLECTION berdiri sebagai studio independen yang berfokus pada eksplorasi pakaian katun berkonstruksi kaku dan bernilai arsip.',
-      aboutParagraph2: 'Kami percaya bahwa pakaian esensial tidak harus polos tanpa karakter. Melalui pemilihan kain berkualitas tinggi, potong jahitan yang presisi, serta kuantitas rilisan yang terbatas, setiap produk dirancang untuk tahan lama.',
+      aboutParagraph1:
+        'RIO COLLECTION berdiri sebagai studio independen yang berfokus pada eksplorasi pakaian katun berkonstruksi kaku dan bernilai arsip.',
+      aboutParagraph2:
+        'Kami percaya bahwa pakaian esensial tidak harus polos tanpa karakter. Melalui pemilihan kain berkualitas tinggi, potong jahitan yang presisi, serta kuantitas rilisan yang terbatas, setiap produk dirancang untuk tahan lama.',
       aboutValuesTitle: 'Prinsip & Nilai Kami',
       aboutValues: [
-        { title: 'Slow & Conscious Design', description: 'Memilih kualitas bahan dan kerapian konstruksi dibanding produksi cepat masal.' },
-        { title: 'Archival Cotton Silhouette', description: 'Mengembangkan katun berbobot 240-280 GSM yang mempertahankan struktur kaku siluet.' },
-        { title: 'Limited Batch Quantity', description: 'Setiap rilisan dibuat dalam kuantitas terbatas untuk menjaga eksklusivitas karya.' }
+        {
+          title: 'Slow & Conscious Design',
+          description:
+            'Memilih kualitas bahan dan kerapian konstruksi dibanding produksi cepat masal.'
+        },
+        {
+          title: 'Archival Cotton Silhouette',
+          description:
+            'Mengembangkan katun berbobot 240-280 GSM yang mempertahankan struktur kaku siluet.'
+        },
+        {
+          title: 'Limited Batch Quantity',
+          description:
+            'Setiap rilisan dibuat dalam kuantitas terbatas untuk menjaga eksklusivitas karya.'
+        }
       ],
-      aboutQuote: 'Bukan tentang menciptakan sesuatu yang baru, melainkan menyempurnakan sesuatu yang mendasar.',
+      aboutQuote:
+        'Bukan tentang menciptakan sesuatu yang baru, melainkan menyempurnakan sesuatu yang mendasar.',
       aboutQuoteText: 'RIO COLLECTION Editorial & Design Team',
-      aboutStudioImage: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80'
+      aboutStudioImage:
+        'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80'
     }
   });
   console.log('✅ Store Settings seeded');

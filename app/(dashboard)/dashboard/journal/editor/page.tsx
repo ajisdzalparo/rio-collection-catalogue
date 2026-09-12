@@ -147,7 +147,7 @@ function JournalEditorContent() {
       // New article — set defaults
       setInitialized(true);
       setDate(new Date().toISOString().split('T')[0]);
-      setImageUrl('/images/brand/manifesto.jpg');
+      setImageUrl('');
     }
   }
 
@@ -225,14 +225,15 @@ function JournalEditorContent() {
       {/* Header Container */}
       <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-border/20">
         <div className="flex items-start gap-3.5">
-          {/* Micro-interactive back button */}
-          <button
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => router.push('/dashboard/journal')}
-            className="group flex items-center justify-center h-11 w-11 rounded-2xl bg-card border border-border/50 shadow-2xs hover:border-foreground/35 hover:shadow-xs transition-all duration-200 cursor-pointer shrink-0"
+            className="h-9 w-9 rounded-xl cursor-pointer shrink-0"
             title="Kembali ke Daftar Journal"
           >
-            <ArrowLeft className="h-4.5 w-4.5 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-transform duration-200" />
-          </button>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
 
           <div className="space-y-0.5">
             <h1 className="text-2xl font-black tracking-tight text-foreground">
@@ -265,9 +266,7 @@ function JournalEditorContent() {
             )}
           >
             <Save className="h-4 w-4" />
-            <span>
-              {isSaving ? 'Menyimpan...' : isEditing ? 'Simpan Perubahan' : 'Terbitkan Artikel'}
-            </span>
+            <span>{isSaving ? 'Menyimpan...' : 'Simpan'}</span>
           </Button>
         </div>
       </div>
@@ -366,9 +365,7 @@ function JournalEditorContent() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label
-                  className="text-xs font-bold text-foreground flex items-center gap-1"
-                >
+                <Label className="text-xs font-bold text-foreground flex items-center gap-1">
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" /> Tanggal Rilis
                 </Label>
                 <DatePicker
