@@ -17,7 +17,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+      <div className="flex flex-col items-center justify-center min-h-100 gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-xs text-muted-foreground font-medium">Memuat data produk...</p>
       </div>
@@ -28,7 +28,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
   if (!product) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-100 gap-4 text-center">
         <AlertCircle className="h-10 w-10 text-destructive" />
         <div>
           <h2 className="text-lg font-bold text-foreground">Produk Tidak Ditemukan</h2>
