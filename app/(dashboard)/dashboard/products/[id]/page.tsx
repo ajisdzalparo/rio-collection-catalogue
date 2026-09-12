@@ -162,16 +162,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </div>
       </div>
 
-      {/* Main Grid Detail */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Gallery (5 Cols) */}
-        <div className="lg:col-span-5 space-y-4">
+      {/* Main Content Layout: Compact Left Gallery + Full Remaining Width for Details */}
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Left Column: Fixed Compact Gallery */}
+        <div className="w-full lg:w-80 xl:w-90 shrink-0 space-y-4">
           <div className="relative aspect-4/5 w-full overflow-hidden rounded-2xl bg-card border border-border/40 shadow-xs group transition-all duration-300">
             <Image
               src={activeImage}
               alt={product.name}
               fill
-              sizes="(max-width: 1024px) 100vw, 40vw"
+              sizes="(max-width: 1024px) 100vw, 360px"
               className="object-cover transition-transform duration-300 group-hover:scale-102"
               style={{ objectFit: 'cover' }}
               priority
@@ -234,8 +234,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           )}
         </div>
 
-        {/* Right Column: Information & Specs (7 Cols) */}
-        <div className="lg:col-span-7 space-y-6">
+        {/* Right Column: Information & Specs (Expands to full remaining width) */}
+        <div className="flex-1 min-w-0 w-full space-y-6">
           {/* Main Attributes Header */}
           <div className="space-y-3 bg-card border border-border/40 rounded-2xl p-5">
             <div className="flex flex-wrap items-center gap-2">
