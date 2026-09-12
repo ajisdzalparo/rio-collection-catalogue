@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
+import axios from 'axios';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -237,12 +238,8 @@ export function RichTextEditor({
       formData.append('file', file);
       formData.append('purpose', 'journal-image');
 
-      const res = await fetch('/api/v1/upload', {
-        method: 'POST',
-        body: formData
-      });
+      const { data: json } = await axios.post('/api/v1/upload', formData);
 
-      const json = await res.json();
       if (json.code === 200 && json.data?.url) {
         editor
           .chain()

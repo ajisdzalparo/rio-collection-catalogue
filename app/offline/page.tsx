@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import axios from 'axios';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { WifiOff, RefreshCw, Home, CheckCircle2, HardDrive, Globe, Radio } from 'lucide-react';
@@ -32,7 +33,7 @@ export default function OfflinePage() {
     }, 200);
 
     try {
-      await fetch('/favicon.ico', { method: 'HEAD', cache: 'no-store' });
+      await axios.head('/favicon.ico', { headers: { 'Cache-Control': 'no-cache' } });
       clearInterval(interval);
       setProgressValue(100);
       setStatusText('Koneksi terhubung! Mengalihkan ke dashboard...');

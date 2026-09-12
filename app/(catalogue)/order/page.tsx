@@ -1,16 +1,18 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
+import axios from 'axios';
 import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Truck, Loader2, Mail, CheckCircle2, Send, AlertCircle } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
-import { getProducts, submitOrder } from '@/lib/api';
+import { submitOrder } from '@/lib/api';
+import { useProducts } from '@/hooks/use-products';
+import { useSendOrderOtp, useVerifyOrderOtp } from '@/hooks/use-customer-account';
 import { useStoreSettingsStore } from '@/hooks/use-store-settings';
 import { useCustomerStore } from '@/lib/customer-store';
 import { useCartStore } from '@/lib/cart-store';
-import type { Product } from '@/types/catalogue.types';
 import { SearchableSelect } from '@/components/catalogue/searchable-select';
 import { isOrderableStatus } from '@/lib/product-availability';
 import { withActionLoading } from '@/hooks/use-action-loading';
@@ -40,7 +42,14 @@ function OrderContent() {
   const { customer, token: customerToken, isAuthenticated } = useCustomerStore();
   const { items: cartItems, clearCart } = useCartStore();
 
-  const [product, setProduct] = useState<Product | null>(null);
+  const { data: allProducts = [] } = useProducts();
+  const product = useMemo(() => {
+    if (isCartMode || allProducts.length === 0) return null;
+    if (productSlug) {
+      return allProducts.find((p) => p.slug === productSlug) || null;
+    }
+    return allProducts.find((p) => isOrderableStatus(p.status)) || null;
+  }, [isCartMode, allProducts, productSlug]);
   const selectedSize = sizeParam || 'M';
   const selectedColor = colorParam || '';
   const quantity = useMemo(() => {
@@ -66,8 +75,10 @@ function OrderContent() {
 
   // OTP Verification State
   const [otpCode, setOtpCode] = useState('');
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const sendOrderOtpMutation = useSendOrderOtp();
+  const verifyOrderOtpMutation = useVerifyOrderOtp();
+  const isSendingOtp = sendOrderOtpMutation.isPending;
+  const isVerifyingOtp = verifyOrderOtpMutation.isPending;
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -99,31 +110,24 @@ function OrderContent() {
   const prefilledCustIdRef = useRef<string | null>(null);
   const isDefaultInitializedRef = useRef(false);
 
-  // Initial products setup
-  useEffect(() => {
-    if (!isCartMode) {
-      getProducts().then((prods) => {
-        if (prods.length > 0) {
-          const found = productSlug ? prods.find((p) => p.slug === productSlug) : null;
-          setProduct(
-            productSlug ? found || null : prods.find((p) => isOrderableStatus(p.status)) || null
-          );
-        }
-      });
-    }
-  }, [isCartMode, productSlug]);
-
   // Dynamic provinces & customer profile address prefill
   useEffect(() => {
     const normalizeCity = (name: string) =>
-      name.toLowerCase().replace(/^(kota|kabupaten|kab\.)\s+/i, '').trim();
+      name
+        .toLowerCase()
+        .replace(/^(kota|kabupaten|kab\.)\s+/i, '')
+        .trim();
     const normalizeDistrict = (name: string) =>
-      name.toLowerCase().replace(/^(kec\.|kecamatan)\s+/i, '').trim();
+      name
+        .toLowerCase()
+        .replace(/^(kec\.|kecamatan)\s+/i, '')
+        .trim();
 
     const loadLocationsAndPrefill = async () => {
       try {
-        const provRes = await fetch('/api/v1/shipping/provinces').then((r) => r.json());
-        if (provRes.code !== 200 || !Array.isArray(provRes.data) || provRes.data.length === 0) return;
+        const { data: provRes } = await axios.get('/api/v1/shipping/provinces');
+        if (provRes.code !== 200 || !Array.isArray(provRes.data) || provRes.data.length === 0)
+          return;
 
         const provs = provRes.data;
         setProvinces(provs);
@@ -145,33 +149,41 @@ function OrderContent() {
           : provs[0];
 
         // Fetch cities
-        const cityRes = await fetch(
+        const { data: cityRes } = await axios.get(
           `/api/v1/shipping/cities?provinceId=${matchedProv.province_id}&provinceName=${encodeURIComponent(matchedProv.province)}`
-        ).then((r) => r.json());
+        );
 
         let matchedCityFormatted = '';
         let matchedCityId = '';
         let matchedCityName = '';
-        let citiesList: Array<{ city_id: string; province_id: string; city_name: string; type: string }> = [];
+        let citiesList: Array<{
+          city_id: string;
+          province_id: string;
+          city_name: string;
+          type: string;
+        }> = [];
 
         if (cityRes.code === 200 && Array.isArray(cityRes.data) && cityRes.data.length > 0) {
           citiesList = cityRes.data;
           setCities(citiesList);
 
-          const matchedCity = targetCityName || targetCityId
-            ? citiesList.find((c) => {
-                if (targetCityId && c.city_id === targetCityId) return true;
-                const fullCity = `${c.type} ${c.city_name}`.toLowerCase();
-                const tName = (targetCityName || '').toLowerCase();
-                if (fullCity === tName || c.city_name.toLowerCase() === tName) return true;
-                if (tName && normalizeCity(c.city_name) === normalizeCity(tName)) return true;
-                return false;
-              }) || citiesList[0]
-            : citiesList[0];
+          const matchedCity =
+            targetCityName || targetCityId
+              ? citiesList.find((c) => {
+                  if (targetCityId && c.city_id === targetCityId) return true;
+                  const fullCity = `${c.type} ${c.city_name}`.toLowerCase();
+                  const tName = (targetCityName || '').toLowerCase();
+                  if (fullCity === tName || c.city_name.toLowerCase() === tName) return true;
+                  if (tName && normalizeCity(c.city_name) === normalizeCity(tName)) return true;
+                  return false;
+                }) || citiesList[0]
+              : citiesList[0];
 
           matchedCityId = matchedCity.city_id;
           matchedCityName = matchedCity.city_name;
-          matchedCityFormatted = matchedCity.city_name.toLowerCase().startsWith(matchedCity.type.toLowerCase())
+          matchedCityFormatted = matchedCity.city_name
+            .toLowerCase()
+            .startsWith(matchedCity.type.toLowerCase())
             ? matchedCity.city_name
             : `${matchedCity.type} ${matchedCity.city_name}`;
         }
@@ -181,9 +193,9 @@ function OrderContent() {
         let matchedPostal = targetPostalCode || '';
 
         if (matchedCityId) {
-          const subRes = await fetch(
+          const { data: subRes } = await axios.get(
             `/api/v1/shipping/subdistricts?cityId=${matchedCityId}&cityName=${encodeURIComponent(matchedCityName)}`
-          ).then((r) => r.json());
+          );
 
           if (subRes.code === 200 && Array.isArray(subRes.data) && subRes.data.length > 0) {
             const subsList = subRes.data;
@@ -194,7 +206,8 @@ function OrderContent() {
                   const sName = s.subdistrict_name.toLowerCase();
                   const tDist = targetDistrict.toLowerCase();
                   if (sName === tDist) return true;
-                  if (normalizeDistrict(s.subdistrict_name) === normalizeDistrict(tDist)) return true;
+                  if (normalizeDistrict(s.subdistrict_name) === normalizeDistrict(tDist))
+                    return true;
                   return false;
                 }) || subsList[0]
               : subsList[0];
@@ -311,45 +324,48 @@ function OrderContent() {
 
     if (matchedProv) {
       setIsShippingLoading(true);
-      fetch(
-        `/api/v1/shipping/cities?provinceId=${matchedProv.province_id}&provinceName=${encodeURIComponent(matchedProv.province)}`
-      )
-        .then((res) => res.json())
-        .then((res) => {
+      (async () => {
+        try {
+          const { data: res } = await axios.get(
+            `/api/v1/shipping/cities?provinceId=${matchedProv.province_id}&provinceName=${encodeURIComponent(matchedProv.province)}`
+          );
           if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
             setCities(res.data);
             const defaultCity = `${res.data[0].type} ${res.data[0].city_name}`;
             setFormData((prev) => ({ ...prev, city: defaultCity }));
 
-            fetch(
-              `/api/v1/shipping/subdistricts?cityId=${res.data[0].city_id}&cityName=${encodeURIComponent(res.data[0].city_name)}`
-            )
-              .then((sRes) => sRes.json())
-              .then((sRes) => {
-                if (sRes.code === 200 && Array.isArray(sRes.data) && sRes.data.length > 0) {
-                  setSubdistricts(sRes.data);
-                  setFormData((prev) => ({
-                    ...prev,
-                    district: sRes.data[0].subdistrict_name,
-                    postalCode: sRes.data[0].postal_code || prev.postalCode
-                  }));
-                }
-              })
-              .catch(() => {});
+            try {
+              const { data: sRes } = await axios.get(
+                `/api/v1/shipping/subdistricts?cityId=${res.data[0].city_id}&cityName=${encodeURIComponent(res.data[0].city_name)}`
+              );
+              if (sRes.code === 200 && Array.isArray(sRes.data) && sRes.data.length > 0) {
+                setSubdistricts(sRes.data);
+                setFormData((prev) => ({
+                  ...prev,
+                  district: sRes.data[0].subdistrict_name,
+                  postalCode: sRes.data[0].postal_code || prev.postalCode
+                }));
+              }
+            } catch (err) {
+              console.error('Failed to load subdistricts:', err);
+            }
           } else {
             setCities([]);
             setSubdistricts([]);
           }
-        })
-        .catch(() => {
+        } catch (err) {
+          console.error('Failed to load cities:', err);
+          toast.error('Gagal memuat daftar kota untuk provinsi yang dipilih.');
           setCities([]);
           setSubdistricts([]);
-        })
-        .finally(() => setIsShippingLoading(false));
+        } finally {
+          setIsShippingLoading(false);
+        }
+      })();
     }
   };
 
-  const handleCityChange = (newCity: string) => {
+  const handleCityChange = async (newCity: string) => {
     const matchedCity = cities.find(
       (c) =>
         `${c.type} ${c.city_name}`.toLowerCase() === newCity.toLowerCase() ||
@@ -365,24 +381,26 @@ function OrderContent() {
     }));
 
     if (matchedCity) {
-      fetch(
-        `/api/v1/shipping/subdistricts?cityId=${matchedCity.city_id}&cityName=${encodeURIComponent(matchedCity.city_name)}`
-      )
-        .then((res) => res.json())
-        .then((res) => {
-          if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
-            setSubdistricts(res.data);
-            const defaultSub = res.data[0];
-            setFormData((prev) => ({
-              ...prev,
-              district: defaultSub.subdistrict_name,
-              postalCode: defaultSub.postal_code || prev.postalCode
-            }));
-          } else {
-            setSubdistricts([]);
-          }
-        })
-        .catch(() => setSubdistricts([]));
+      try {
+        const { data: res } = await axios.get(
+          `/api/v1/shipping/subdistricts?cityId=${matchedCity.city_id}&cityName=${encodeURIComponent(matchedCity.city_name)}`
+        );
+        if (res.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
+          setSubdistricts(res.data);
+          const defaultSub = res.data[0];
+          setFormData((prev) => ({
+            ...prev,
+            district: defaultSub.subdistrict_name,
+            postalCode: defaultSub.postal_code || prev.postalCode
+          }));
+        } else {
+          setSubdistricts([]);
+        }
+      } catch (err) {
+        console.error('Failed to load subdistricts:', err);
+        toast.error('Gagal memuat daftar kecamatan untuk kota yang dipilih.');
+        setSubdistricts([]);
+      }
     }
   };
 
@@ -417,18 +435,15 @@ function OrderContent() {
 
       try {
         const results = await Promise.all(
-          activeCourierCodes.map((courier) =>
-            fetch('/api/v1/shipping/cost', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                destination: matchedCity.city_id,
-                destinationType: 'city',
-                weight: weightInGrams,
-                courier
-              })
-            }).then((res) => res.json())
-          )
+          activeCourierCodes.map(async (courier) => {
+            const { data } = await axios.post('/api/v1/shipping/cost', {
+              destination: matchedCity.city_id,
+              destinationType: 'city',
+              weight: weightInGrams,
+              courier
+            });
+            return data;
+          })
         );
 
         if (!isMounted) return;
@@ -454,7 +469,8 @@ function OrderContent() {
                     const lowerCode = code.toLowerCase();
                     if (
                       lowerSrv.startsWith(lowerCode) ||
-                      (lowerCode === 'jnt' && (lowerSrv.startsWith('j&t') || lowerSrv.startsWith('jnt'))) ||
+                      (lowerCode === 'jnt' &&
+                        (lowerSrv.startsWith('j&t') || lowerSrv.startsWith('jnt'))) ||
                       (lowerCode === 'sicepat' && lowerSrv.startsWith('sicepat'))
                     ) {
                       return srv;
@@ -492,6 +508,7 @@ function OrderContent() {
         }
       } catch (err) {
         console.error('Failed to fetch RajaOngkir rates:', err);
+        toast.error('Gagal memuat tarif ongkos kirim. Silakan coba lagi.');
       } finally {
         if (isMounted) {
           setIsShippingLoading(false);
@@ -513,30 +530,17 @@ function OrderContent() {
       return;
     }
 
-    setIsSendingOtp(true);
     setDevOtpHint(null);
     try {
-      const res = await fetch('/api/v1/auth/otp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email.trim(), type: 'ORDER' })
-      });
-
-      const json = await res.json();
-      if (!res.ok || json.status !== 'success') {
-        throw new Error(json.message || 'Gagal mengirim OTP.');
-      }
-
+      const data = await sendOrderOtpMutation.mutateAsync({ email: formData.email });
       setOtpSent(true);
       setCountdown(60);
       toast.success('Kode OTP telah dikirim ke email Anda.');
-      if (json.data?.isDevMode && json.data?.message) {
-        setDevOtpHint(json.data.message);
+      if (data.isDevMode && data.message) {
+        setDevOtpHint(data.message);
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Gagal mengirim OTP.');
-    } finally {
-      setIsSendingOtp(false);
     }
   };
 
@@ -547,29 +551,15 @@ function OrderContent() {
       return;
     }
 
-    setIsVerifyingOtp(true);
     try {
-      const res = await fetch('/api/v1/auth/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email.trim(),
-          code: otpCode.trim(),
-          type: 'ORDER'
-        })
+      await verifyOrderOtpMutation.mutateAsync({
+        email: formData.email,
+        code: otpCode
       });
-
-      const json = await res.json();
-      if (!res.ok || json.status !== 'success') {
-        throw new Error(json.message || 'Kode OTP tidak valid.');
-      }
-
       setIsOtpVerified(true);
       toast.success('Email berhasil diverifikasi!');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Verifikasi OTP gagal.');
-    } finally {
-      setIsVerifyingOtp(false);
     }
   };
 
@@ -608,27 +598,30 @@ function OrderContent() {
 
       const res = await withActionLoading(
         () =>
-          submitOrder({
-            fullName: formData.fullName.trim(),
-            email: formData.email.trim(),
-            whatsapp: formData.whatsapp.trim(),
-            address: fullAddress,
-            notes: formData.notes.trim() || undefined,
-            totalPrice,
-            shippingFee,
-            otpCode: isOtpVerified ? otpCode || '000000' : undefined,
-            shipping: {
-              destination: selectedRate.destination,
-              courier: selectedRate.courierCode,
-              service: selectedRate.service
+          submitOrder(
+            {
+              fullName: formData.fullName.trim(),
+              email: formData.email.trim(),
+              whatsapp: formData.whatsapp.trim(),
+              address: fullAddress,
+              notes: formData.notes.trim() || undefined,
+              totalPrice,
+              shippingFee,
+              otpCode: isOtpVerified ? otpCode || '000000' : undefined,
+              shipping: {
+                destination: selectedRate.destination,
+                courier: selectedRate.courierCode,
+                service: selectedRate.service
+              },
+              items: orderItems.map((item) => ({
+                productId: item.productId,
+                color: item.color,
+                size: item.size,
+                quantity: item.quantity
+              }))
             },
-            items: orderItems.map((item) => ({
-              productId: item.productId,
-              color: item.color,
-              size: item.size,
-              quantity: item.quantity
-            }))
-          }, customerToken || undefined),
+            customerToken || undefined
+          ),
         'Mengirim pesanan Anda...'
       );
 

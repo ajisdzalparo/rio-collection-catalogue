@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import axios from 'axios';
 import { CheckCircle2, ExternalLink, Eye, FileText, Loader2, Upload, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -57,9 +58,8 @@ export function PaymentProofUpload({
         const formData = new FormData();
         formData.append('file', file);
         formData.append('purpose', 'payment-proof');
-        const response = await fetch('/api/v1/upload', { method: 'POST', body: formData });
-        const result = (await response.json()) as { data?: { url?: string }; message?: string };
-        if (!response.ok || !result.data?.url) {
+        const { data: result } = await axios.post<{ data?: { url?: string }; message?: string }>('/api/v1/upload', formData);
+        if (!result.data?.url) {
           throw new Error(result.message || 'Upload bukti gagal.');
         }
         onChange(result.data.url);

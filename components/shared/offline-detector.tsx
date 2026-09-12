@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import axios from 'axios';
 import { WifiOff, RefreshCw, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,7 @@ export function OfflineDetector() {
   const handleRetry = async () => {
     setIsChecking(true);
     try {
-      await fetch('/favicon.ico', { method: 'HEAD', cache: 'no-store' });
+      await axios.head('/favicon.ico', { headers: { 'Cache-Control': 'no-cache' } });
       setShowReconnected(true);
       setTimeout(() => setShowReconnected(false), 4000);
     } catch {

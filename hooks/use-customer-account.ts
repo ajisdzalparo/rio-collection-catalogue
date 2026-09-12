@@ -59,6 +59,38 @@ export interface VerifyOtpResponse {
   token: string;
 }
 
+export function useCustomerProfile() {
+  const token = useCustomerStore((s) => s.token);
+  const isAuthenticated = useCustomerStore((s) => s.isAuthenticated);
+  const updateCustomer = useCustomerStore((s) => s.updateCustomer);
+  const logout = useCustomerStore((s) => s.logout);
+
+  return useQuery<Customer | null, Error>({
+    queryKey: ['customer', 'profile', token],
+    queryFn: async () => {
+      if (!token) return null;
+      try {
+        const { data } = await axios.get('/api/v1/customer/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (data.status === 'success' && data.data) {
+          updateCustomer(data.data);
+          return data.data;
+        }
+        logout();
+        return null;
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          logout();
+        }
+        throw getApiError(err, 'Gagal mengambil data profil');
+      }
+    },
+    enabled: Boolean(isAuthenticated && token),
+    staleTime: 1000 * 60 * 5 // 5 minutes cache
+  });
+}
+
 export function useCustomerOrders() {
   const token = useCustomerStore((s) => s.token);
   const isAuthenticated = useCustomerStore((s) => s.isAuthenticated);
@@ -168,13 +200,17 @@ export function useUpdateCustomerWhatsapp() {
 export function useSendCustomerOtp() {
   return useMutation<SendOtpResponse, Error, { email: string }>({
     mutationFn: async ({ email }) => {
-      const { data } = await axios.post('/api/v1/customer/auth/send-otp', {
-        email: email.trim()
-      });
-      if (data.status !== 'success') {
-        throw new Error(data.message || 'Gagal mengirim OTP.');
+      try {
+        const { data } = await axios.post('/api/v1/customer/auth/send-otp', {
+          email: email.trim()
+        });
+        if (data.status !== 'success') {
+          throw new Error(data.message || 'Gagal mengirim OTP.');
+        }
+        return data.data;
+      } catch (error) {
+        throw getApiError(error, 'Gagal mengirim OTP.');
       }
-      return data.data;
     }
   });
 }
@@ -188,14 +224,58 @@ export function useVerifyCustomerOtp() {
     { email: string; code: string; fullName?: string; whatsapp?: string }
   >({
     mutationFn: async (payload) => {
-      const { data } = await axios.post('/api/v1/customer/auth/verify-otp', payload);
-      if (data.status !== 'success') {
-        throw new Error(data.message || 'Verifikasi OTP gagal.');
+      try {
+        const { data } = await axios.post('/api/v1/customer/auth/verify-otp', payload);
+        if (data.status !== 'success') {
+          throw new Error(data.message || 'Verifikasi OTP gagal.');
+        }
+        return data.data;
+      } catch (error) {
+        throw getApiError(error, 'Verifikasi OTP gagal.');
       }
-      return data.data;
     },
     onSuccess: (resData) => {
       setAuth(resData.customer, resData.token);
     }
   });
 }
+
+export function useSendOrderOtp() {
+  return useMutation<SendOtpResponse, Error, { email: string }>({
+    mutationFn: async ({ email }) => {
+      try {
+        const { data } = await axios.post('/api/v1/auth/otp/send', {
+          email: email.trim(),
+          type: 'ORDER'
+        });
+        if (data.status !== 'success') {
+          throw new Error(data.message || 'Gagal mengirim OTP.');
+        }
+        return data.data || data;
+      } catch (error) {
+        throw getApiError(error, 'Gagal mengirim OTP.');
+      }
+    }
+  });
+}
+
+export function useVerifyOrderOtp() {
+  return useMutation<boolean, Error, { email: string; code: string }>({
+    mutationFn: async ({ email, code }) => {
+      try {
+        const { data } = await axios.post('/api/v1/auth/otp/verify', {
+          email: email.trim(),
+          code: code.trim(),
+          type: 'ORDER'
+        });
+        if (data.status !== 'success') {
+          throw new Error(data.message || 'Kode OTP tidak valid.');
+        }
+        return true;
+      } catch (error) {
+        throw getApiError(error, 'Kode OTP tidak valid.');
+      }
+    }
+  });
+}
+

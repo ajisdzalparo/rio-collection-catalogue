@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, ShoppingBag, LogOut, Loader2 } from 'lucide-react';
 import { useCustomerStore } from '@/lib/customer-store';
-import { useCustomerOrders } from '@/hooks/use-customer-account';
+import { useCustomerOrders, useCustomerProfile } from '@/hooks/use-customer-account';
 import { CustomerOrdersTab } from '@/components/catalogue/customer-orders-tab';
 import { CustomerProfileForm } from '@/components/catalogue/customer-profile-form';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,8 @@ import { toast } from 'sonner';
 
 export default function CustomerAccountPage() {
   const router = useRouter();
-  const { customer, isAuthenticated, logout, fetchProfile } = useCustomerStore();
+  const { customer, isAuthenticated, logout } = useCustomerStore();
+  useCustomerProfile();
   const { data: orders = [] } = useCustomerOrders();
 
   const [activeTab, setActiveTab] = useState<'ORDERS' | 'PROFILE'>('ORDERS');
@@ -20,10 +21,8 @@ export default function CustomerAccountPage() {
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/customer/login');
-      return;
     }
-    fetchProfile();
-  }, [isAuthenticated, router, fetchProfile]);
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     const showLinkedTab = () => {

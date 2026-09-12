@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import axios from 'axios';
 import Image from 'next/image';
 import { Upload, X, Crop, Image as ImageIcon, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -59,17 +60,11 @@ export function ImageUpload({
       await withActionLoading(async () => {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch('/api/v1/upload', {
-          method: 'POST',
-          body: formData
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data?.url) {
-            onChange(json.data.url);
-            setIsUploading(false);
-            return;
-          }
+        const { data } = await axios.post('/api/v1/upload', formData);
+        if (data?.data?.url) {
+          onChange(data.data.url);
+          setIsUploading(false);
+          return;
         }
       }, 'Mengunggah gambar...');
     } catch (error) {
@@ -449,15 +444,9 @@ export function MultiImageUpload({
       await withActionLoading(async () => {
         const formData = new FormData();
         formData.append('file', croppedFile);
-        const res = await fetch('/api/v1/upload', {
-          method: 'POST',
-          body: formData
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data?.url) {
-            finalUrl = json.data.url;
-          }
+        const { data } = await axios.post('/api/v1/upload', formData);
+        if (data?.data?.url) {
+          finalUrl = data.data.url;
         }
       }, 'Mengunggah gambar...');
     } catch {

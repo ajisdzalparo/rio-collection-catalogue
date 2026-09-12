@@ -1,3 +1,4 @@
+import axios from 'axios';
 import type { Product, JournalArticle, Testimony } from '@/types/catalogue.types';
 import { normalizeProductAvailability } from '@/lib/product-availability';
 import { mapJournalRelations, mapProductRelations } from '@/lib/catalogue-relations';
@@ -39,10 +40,8 @@ export function getBaseUrl(): string {
 export async function getTestimonies(): Promise<Testimony[]> {
   if (typeof window !== 'undefined') {
     try {
-      const res = await fetch('/api/v1/testimonies');
-      if (!res.ok) return [];
-      const json = await res.json();
-      return json.data || json || [];
+      const { data } = await axios.get('/api/v1/testimonies');
+      return data?.data || data || [];
     } catch (error) {
       console.error('Browser testimonies fetch failed:', error);
       return [];
@@ -67,10 +66,8 @@ export async function getTestimonies(): Promise<Testimony[]> {
 export async function getProducts(): Promise<Product[]> {
   if (typeof window !== 'undefined') {
     try {
-      const res = await fetch('/api/v1/products');
-      if (!res.ok) return [];
-      const json = await res.json();
-      return json.data || json || [];
+      const { data } = await axios.get('/api/v1/products');
+      return data?.data || data || [];
     } catch (error) {
       console.error('Browser products fetch failed:', error);
       return [];
@@ -154,10 +151,8 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
 export async function getJournals(): Promise<JournalArticle[]> {
   if (typeof window !== 'undefined') {
     try {
-      const res = await fetch('/api/v1/journals');
-      if (!res.ok) return [];
-      const json = await res.json();
-      return json.data || json || [];
+      const { data } = await axios.get('/api/v1/journals');
+      return data?.data || data || [];
     } catch (error) {
       console.error('Browser journals fetch failed:', error);
       return [];
@@ -231,17 +226,15 @@ export async function submitOrder(orderPayload: {
   items: Array<{ productId: string; color?: string; size: string; quantity: number }>;
 }, customerToken?: string) {
   const baseUrl = getBaseUrl();
-  const res = await fetch(`${baseUrl}/v1/orders`, {
-    method: 'POST',
+  const { data: result } = await axios.post(`${baseUrl}/v1/orders`, orderPayload, {
     headers: {
       'Content-Type': 'application/json',
       ...(customerToken ? { Authorization: `Bearer ${customerToken}` } : {})
-    },
-    body: JSON.stringify(orderPayload)
+    }
   });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message || 'Pesanan gagal dikirim. Silakan coba lagi.');
-  if (!result.data?.orderNumber) throw new Error('Respons pesanan tidak valid. Hubungi toko sebelum mencoba lagi.');
+  if (result.status !== 'success' && !result.data?.orderNumber) {
+    throw new Error(result.message || 'Pesanan gagal dikirim. Silakan coba lagi.');
+  }
   return result;
 }
 

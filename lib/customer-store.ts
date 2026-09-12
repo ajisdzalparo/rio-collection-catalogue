@@ -1,5 +1,6 @@
 'use client';
 
+import axios from 'axios';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -65,14 +66,13 @@ export const useCustomerStore = create<CustomerState>()(
 
         set({ isLoading: true });
         try {
-          const res = await fetch('/api/v1/customer/me', {
+          const { data } = await axios.get('/api/v1/customer/me', {
             headers: {
               Authorization: `Bearer ${token}`
             }
           });
-          const json = await res.json();
-          if (json.status === 'success' && json.data) {
-            set({ customer: json.data, isAuthenticated: true, isLoading: false });
+          if (data.status === 'success' && data.data) {
+            set({ customer: data.data, isAuthenticated: true, isLoading: false });
           } else {
             get().logout();
           }
