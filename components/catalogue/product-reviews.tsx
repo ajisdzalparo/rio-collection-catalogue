@@ -2,22 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Star, CheckCircle2, MessageSquare, Plus, Loader2, X, Send, Lock, User } from 'lucide-react';
 import { StarRating } from '@/components/catalogue/star-rating';
-import { useCustomerStore } from '@/lib/customer-store';
+import { useProductReviews } from '@/hooks/use-product-reviews';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-interface Review {
-  id: string;
-  customerName: string;
-  customerEmail?: string | null;
-  rating: number;
-  comment: string;
-  isVerifiedBuyer: boolean;
-  createdAt: string;
-}
 
 interface ProductReviewsProps {
   productSlug: string;
@@ -25,54 +14,24 @@ interface ProductReviewsProps {
 }
 
 export function ProductReviews({ productSlug, productName }: ProductReviewsProps) {
-  const queryClient = useQueryClient();
-  const { customer, isAuthenticated, token } = useCustomerStore();
-  const [selectedFilter, setSelectedFilter] = useState<number | null>(null); // null = all
+  const {
+    reviews,
+    averageRating,
+    totalReviews,
+    ratingDistribution,
+    hasUserReviewed,
+    isAuthenticated,
+    customer,
+    isLoading,
+    submitReview,
+    isSubmitting
+  } = useProductReviews(productSlug);
 
-  // Form & Login Prompt State
+  const [selectedFilter, setSelectedFilter] = useState<number | null>(null); // null = all
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [formRating, setFormRating] = useState(5);
   const [formComment, setFormComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { data: reviewData, isLoading } = useQuery({
-    queryKey: ['reviews', productSlug],
-    queryFn: async () => {
-      const res = await fetch(`/api/v1/products/${productSlug}/reviews`);
-      const json = await res.json();
-      if (json.status === 'success' && json.data) {
-        return json.data;
-      }
-      return {
-        reviews: [],
-        averageRating: 0,
-        totalReviews: 0,
-        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-      };
-    }
-  });
-
-  const reviews: Review[] = reviewData?.reviews || [];
-  const averageRating: number = reviewData?.averageRating || 0;
-  const totalReviews: number = reviewData?.totalReviews || 0;
-  const ratingDistribution: Record<number, number> = reviewData?.ratingDistribution || {
-    1: 0,
-    2: 0,
-    3: 0,
-    4: 0,
-    5: 0
-  };
-
-  // Check if current user has already submitted a review for this product
-  const hasUserReviewed = Boolean(
-    customer &&
-      reviews.some(
-        (r) =>
-          (customer.email && r.customerEmail?.toLowerCase() === customer.email.toLowerCase()) ||
-          r.customerName.toLowerCase() === (customer.fullName || '').toLowerCase()
-      )
-  );
 
   const handleOpenForm = () => {
     if (!isAuthenticated || !customer) {
@@ -95,33 +54,12 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/v1/products/${productSlug}/reviews`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          rating: formRating,
-          comment: formComment.trim()
-        })
-      });
-
-      const json = await res.json();
-      if (!res.ok || json.status !== 'success') {
-        throw new Error(json.message || 'Gagal mengirim ulasan.');
-      }
-
-      toast.success('Ulasan Anda berhasil dikirim! Terima kasih.');
+      await submitReview({ rating: formRating, comment: formComment.trim() });
       setFormComment('');
       setIsFormOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['reviews', productSlug] });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Gagal mengirim ulasan.');
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // Error toast already handled by hook
     }
   };
 

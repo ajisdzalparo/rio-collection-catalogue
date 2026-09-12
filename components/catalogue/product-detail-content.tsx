@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useProductReviews } from '@/hooks/use-product-reviews';
 import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
 import { ArrowRight, ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag } from 'lucide-react';
@@ -23,25 +24,12 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const { addItem, items } = useCartStore();
+  const { averageRating, totalReviews } = useProductReviews(product.slug);
 
-  const [ratingData, setRatingData] = useState<{ averageRating: number; totalReviews: number }>({
-    averageRating: 0,
-    totalReviews: 0
-  });
-
-  useEffect(() => {
-    fetch(`/api/v1/products/${product.slug}/reviews`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.status === 'success' && json.data) {
-          setRatingData({
-            averageRating: json.data.averageRating || 0,
-            totalReviews: json.data.totalReviews || 0
-          });
-        }
-      })
-      .catch(() => {});
-  }, [product.slug]);
+  const ratingData = useMemo(() => ({
+    averageRating,
+    totalReviews
+  }), [averageRating, totalReviews]);
 
   const colorsList = useMemo(
     () => (product.colors?.length ? product.colors : [product.color].filter(Boolean)),

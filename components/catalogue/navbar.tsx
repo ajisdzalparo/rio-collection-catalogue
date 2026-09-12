@@ -66,39 +66,42 @@ export function CatalogueNavbar({ storeName, className }: CatalogueNavbarProps) 
             </nav>
 
             {/* Action Icons */}
-            <div className="flex items-center gap-2.5 md:gap-3.5">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3.5">
               {/* Search Icon */}
               <button
                 aria-label="Search"
                 onClick={() => setSearchModalOpen(true)}
-                className="p-1.5 text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer"
               >
                 <Search size={18} strokeWidth={1.5} />
               </button>
 
               {/* Shopping Cart Drawer Trigger */}
-              <CartButton />
+              <CartButton className="w-9 h-9" />
 
-              {/* Customer Account / Login */}
+              {/* Customer Account / Login (Desktop) */}
               <Link
                 href={mounted && isAuthenticated ? '/customer/account' : '/customer/login'}
                 aria-label={mounted && isAuthenticated ? 'Akun Saya' : 'Masuk Akun'}
-                className="p-1.5 text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer relative"
+                className="hidden md:flex w-9 h-9 items-center justify-center text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer relative"
                 title={mounted && isAuthenticated ? (customer?.fullName || customer?.email || 'Akun Saya') : 'Masuk Akun'}
               >
                 <User size={18} strokeWidth={1.5} />
                 {mounted && isAuthenticated && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-(--cat-surface)" />
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-(--cat-surface)" />
                 )}
               </Link>
 
               {/* Mobile Hamburger */}
               <button
                 aria-label="Open navigation menu"
-                className="md:hidden p-1.5 text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer"
+                className="md:hidden w-9 h-9 flex items-center justify-center text-(--cat-on-surface) hover:opacity-70 transition-opacity cursor-pointer relative"
                 onClick={() => setMobileNavOpen(true)}
               >
                 <Menu size={20} strokeWidth={1.5} />
+                {mounted && isAuthenticated && (
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-(--cat-surface)" />
+                )}
               </button>
             </div>
           </div>

@@ -62,7 +62,6 @@ export function HeroSection({ settings, className }: HeroSectionProps) {
                   fill
                   sizes="33vw"
                   className="object-cover object-center"
-                  priority
                 />
               )}
             </div>
@@ -74,7 +73,6 @@ export function HeroSection({ settings, className }: HeroSectionProps) {
                   fill
                   sizes="33vw"
                   className="object-cover object-center"
-                  priority
                 />
               )}
             </div>
@@ -102,7 +100,6 @@ export function HeroSection({ settings, className }: HeroSectionProps) {
                   fill
                   sizes="50vw"
                   className="object-cover"
-                  priority
                 />
               )}
             </div>
