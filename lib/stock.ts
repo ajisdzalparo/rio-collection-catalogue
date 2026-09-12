@@ -27,21 +27,37 @@ export async function deductStock(items: OrderItemInfo[], tx: Prisma.Transaction
     });
 
     if (!variant) {
-      throw new Error(`Variant untuk produk ${product.name} dengan ukuran ${item.size} tidak ditemukan.`);
+      throw new Error(`Ukuran ${item.size} untuk produk "${product.name}" tidak ditemukan.`);
     }
 
     if (variant.stock < item.quantity) {
-      throw new Error(`Stok untuk produk ${product.name} (Ukuran ${item.size}) tidak mencukupi. Tersedia: ${variant.stock}, diminta: ${item.quantity}.`);
+      if (variant.stock <= 0) {
+        throw new Error(
+          `Mohon maaf, stok untuk produk "${product.name}" (Ukuran ${item.size}) saat ini sedang habis.`
+        );
+      }
+      throw new Error(
+        `Mohon maaf, stok untuk produk "${product.name}" (Ukuran ${item.size}) tersisa ${variant.stock} pcs.`
+      );
     }
 
     const deduction = await tx.productVariant.updateMany({
       where: { id: variant.id, stock: { gte: item.quantity } },
       data: { stock: { decrement: item.quantity } }
     });
-    if (deduction.count !== 1) throw new Error(`Stok ${product.name} tidak mencukupi. Silakan pilih ulang ukuran.`);
-    await tx.productVariant.updateMany({ where: { id: variant.id, stock: 0 }, data: { inStock: false } });
+    if (deduction.count !== 1)
+      throw new Error(
+        `Stok untuk produk "${product.name}" (Ukuran ${item.size}) telah diperbarui. Silakan periksa kembali pesanan Anda.`
+      );
+    await tx.productVariant.updateMany({
+      where: { id: variant.id, stock: 0 },
+      data: { inStock: false }
+    });
 
-    const totals = await tx.productVariant.aggregate({ where: { productId: product.id }, _sum: { stock: true } });
+    const totals = await tx.productVariant.aggregate({
+      where: { productId: product.id },
+      _sum: { stock: true }
+    });
     await tx.product.update({
       where: { id: product.id },
       data: {
@@ -80,7 +96,10 @@ export async function restoreStock(items: OrderItemInfo[], tx: Prisma.Transactio
     });
 
     // Update overall product total stock
-    const totals = await tx.productVariant.aggregate({ where: { productId: product.id }, _sum: { stock: true } });
+    const totals = await tx.productVariant.aggregate({
+      where: { productId: product.id },
+      _sum: { stock: true }
+    });
     await tx.product.update({
       where: { id: product.id },
       data: {
