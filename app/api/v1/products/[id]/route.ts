@@ -19,6 +19,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await request.json();
+
+    const existingProduct = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        variants: true,
+        journalLinks: true
+      }
+    });
+
+    if (!existingProduct) {
+      return NextResponse.json({ message: 'Produk tidak ditemukan' }, { status: 404 });
+    }
+
     const {
       name,
       slug,
@@ -43,59 +56,82 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       materialsAndCare,
       journalIds
     } = body;
-    const parsedJournalIds = journalIdsSchema.safeParse(journalIds);
-    if (!parsedJournalIds.success) {
-      return NextResponse.json({ message: 'Relasi jurnal tidak valid' }, { status: 400 });
+
+    let parsedJournalIdsData: string[] | undefined = undefined;
+    if (journalIds !== undefined) {
+      const parsedJournalIds = journalIdsSchema.safeParse(journalIds);
+      if (!parsedJournalIds.success) {
+        return NextResponse.json({ message: 'Relasi jurnal tidak valid' }, { status: 400 });
+      }
+      parsedJournalIdsData = parsedJournalIds.data;
     }
 
     const updatedProduct = await prisma.$transaction(
       async (tx) => {
-        await tx.productVariant.deleteMany({ where: { productId: id } });
-        await tx.productJournal.deleteMany({ where: { productId: id } });
+        if (Array.isArray(variants)) {
+          await tx.productVariant.deleteMany({ where: { productId: id } });
+        }
+        if (parsedJournalIdsData !== undefined) {
+          await tx.productJournal.deleteMany({ where: { productId: id } });
+        }
+
+        const dataToUpdate: Record<string, unknown> = {};
+
+        if (name !== undefined) dataToUpdate.name = name;
+        if (slug !== undefined) dataToUpdate.slug = slug;
+        if (edition !== undefined) dataToUpdate.edition = edition;
+        if (category !== undefined) dataToUpdate.category = category;
+        if (color !== undefined) dataToUpdate.color = color;
+        if (colorHex !== undefined) dataToUpdate.colorHex = colorHex;
+        if (colors !== undefined) {
+          dataToUpdate.colors =
+            Array.isArray(colors) && colors.length > 0
+              ? colors
+              : [color || existingProduct.color].filter(Boolean);
+        }
+        if (colorHexes !== undefined) {
+          dataToUpdate.colorHexes =
+            Array.isArray(colorHexes) && colorHexes.length > 0
+              ? colorHexes
+              : [colorHex || existingProduct.colorHex || '#1A1A1A'];
+        }
+        if (price !== undefined) dataToUpdate.price = Number(price);
+        if (hpp !== undefined) dataToUpdate.hpp = hpp === null ? null : Number(hpp);
+        if (stock !== undefined) dataToUpdate.stock = Number(stock);
+        if (stockMode !== undefined) dataToUpdate.stockMode = stockMode;
+        if (orderLimitMode !== undefined) dataToUpdate.orderLimitMode = orderLimitMode;
+        if (maxPurchaseLimit !== undefined) dataToUpdate.maxPurchaseLimit = Number(maxPurchaseLimit);
+        if (status !== undefined) dataToUpdate.status = status;
+        if (imageUrl !== undefined) dataToUpdate.imageUrl = imageUrl;
+        if (images !== undefined) dataToUpdate.images = images;
+        if (imageDetails !== undefined) dataToUpdate.imageDetails = imageDetails;
+        if (description !== undefined) dataToUpdate.description = description;
+        if (materialsAndCare !== undefined) dataToUpdate.materialsAndCare = materialsAndCare;
+
+        if (Array.isArray(variants)) {
+          dataToUpdate.variants = {
+            createMany: {
+              data: variants.map((v: { size: string; inStock?: boolean; stock?: number }) => ({
+                size: v.size,
+                inStock: Boolean(v.inStock),
+                stock: Number(v.stock ?? (v.inStock ? 10 : 0))
+              }))
+            }
+          };
+        }
+
+        if (parsedJournalIdsData !== undefined) {
+          dataToUpdate.journalLinks = {
+            createMany: {
+              data: parsedJournalIdsData.map((journalId) => ({ journalId })),
+              skipDuplicates: true
+            }
+          };
+        }
+
         return tx.product.update({
           where: { id },
-          data: {
-            name,
-            slug,
-            edition,
-            category,
-            color,
-            colorHex,
-            colors: Array.isArray(colors) && colors.length > 0 ? colors : [color].filter(Boolean),
-            colorHexes:
-              Array.isArray(colorHexes) && colorHexes.length > 0
-                ? colorHexes
-                : [colorHex || '#1A1A1A'],
-            price: Number(price),
-            hpp: hpp === undefined ? null : Number(hpp),
-            stock: stock === undefined ? 0 : Number(stock),
-            stockMode: stockMode || 'QUANTITY',
-            orderLimitMode: orderLimitMode || 'UNLIMITED',
-            maxPurchaseLimit: maxPurchaseLimit !== undefined ? Number(maxPurchaseLimit) : 1,
-            status,
-            imageUrl,
-            images,
-            imageDetails: imageDetails || null,
-            description,
-            materialsAndCare: materialsAndCare || null,
-            variants: {
-              createMany: {
-                data: (variants || []).map(
-                  (v: { size: string; inStock?: boolean; stock?: number }) => ({
-                    size: v.size,
-                    inStock: Boolean(v.inStock),
-                    stock: Number(v.stock ?? (v.inStock ? 10 : 0))
-                  })
-                )
-              }
-            },
-            journalLinks: {
-              createMany: {
-                data: parsedJournalIds.data.map((journalId) => ({ journalId })),
-                skipDuplicates: true
-              }
-            }
-          },
+          data: dataToUpdate,
           include: {
             variants: true,
             journalLinks: { include: { journal: { select: journalSummarySelect } } }
@@ -125,6 +161,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       { status: 500 }
     );
   }
+}
+
+export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  return PUT(request, context);
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
