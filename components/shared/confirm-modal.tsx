@@ -27,7 +27,7 @@ export interface ConfirmModalProps {
 export function ConfirmModal({
   open,
   onOpenChange,
-  title = 'Konfirmasi Hapus Data Master',
+  title = 'Konfirmasi Hapus Data',
   description = 'Apakah Anda yakin ingin menghapus data ini?',
   confirmText = 'Hapus',
   cancelText = 'Batal',
@@ -40,38 +40,38 @@ export function ConfirmModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full sm:max-w-107.5 bg-[#121214] border-[#27272a] text-white p-7 rounded-[24px] shadow-2xl shadow-black/90 gap-0 overflow-hidden">
+      <DialogContent className="w-full sm:max-w-md bg-card border border-border/60 text-foreground p-6 sm:p-7 rounded-2xl shadow-xl gap-0 overflow-hidden">
         <DialogHeader className="gap-0 flex flex-col items-center text-center space-y-0">
           {/* Alert Icon Badge */}
           <div
             className={cn(
-              'w-12 h-12 rounded-full flex items-center justify-center shrink-0 border mx-auto',
+              'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border mx-auto shadow-2xs',
               variant === 'destructive'
-                ? 'bg-[#ef4444]/15 text-[#f87171] border-[#ef4444]/25'
-                : 'bg-[#f59e0b]/15 text-[#fbbf24] border-[#f59e0b]/25'
+                ? 'bg-destructive/10 text-destructive border-destructive/20'
+                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
             )}
           >
             <AlertTriangle className="w-5 h-5 stroke-[2.2]" />
           </div>
 
           {/* Title & Description */}
-          <div className="mt-5 space-y-2 text-center">
-            <DialogTitle className="text-xl font-bold tracking-tight text-white leading-tight">
+          <div className="mt-4 space-y-2 text-center">
+            <DialogTitle className="text-lg font-bold tracking-tight text-foreground leading-tight">
               {title}
             </DialogTitle>
-            <DialogDescription className="text-sm text-[#a1a1aa] font-medium leading-relaxed">
+            <DialogDescription className="text-xs text-muted-foreground font-medium leading-relaxed">
               {description}
             </DialogDescription>
           </div>
         </DialogHeader>
 
-        {/* Bottom Action Buttons */}
-        <div className="mt-8 flex items-center justify-end gap-3 w-full">
+        {/* Bottom Action Buttons: Full Width & Justify Between */}
+        <div className="mt-7 flex items-center justify-between gap-3 w-full">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={isBusy}
-            className="h-10 px-6 rounded-full text-xs font-bold text-white bg-[#27272a] hover:bg-[#3f3f46] transition-colors cursor-pointer disabled:opacity-50"
+            className="w-full flex-1 h-10 px-4 rounded-xl text-xs font-bold text-foreground bg-muted/60 hover:bg-muted border border-border/40 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center"
           >
             {cancelText}
           </button>
@@ -80,14 +80,13 @@ export function ConfirmModal({
             type="button"
             onClick={() => {
               onConfirm();
-              onOpenChange(false);
             }}
             disabled={isBusy}
             className={cn(
-              'h-10 px-7 rounded-full text-xs font-extrabold transition-all cursor-pointer shadow-md disabled:opacity-50',
+              'w-full flex-1 h-10 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center',
               variant === 'destructive'
-                ? 'bg-[#f87171] hover:bg-[#ef4444] text-white shadow-rose-950/50'
-                : 'bg-white hover:bg-zinc-200 text-black shadow-zinc-950/50'
+                ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
+                : 'bg-primary hover:bg-primary/90 text-primary-foreground'
             )}
           >
             {isBusy ? (
