@@ -110,3 +110,37 @@ jobs:
           build-args: |
             NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${{ secrets.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '' }}
             NEXT_PUBLIC_API_URL=/api
+
+  # ============================================================================
+  # 3. Trigger Dokploy Auto-Deployment via Tailscale VPN
+  # ============================================================================
+  trigger-deploy:
+    name: Trigger Dokploy Deployment
+    needs: docker-build-push
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/production' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect to Tailscale VPN
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: Trigger Dokploy Webhook
+        run: |
+          echo "Sending deployment trigger to Dokploy via Tailscale..."
+          if [ -z "${{ secrets.DOKPLOY_WEBHOOK_URL }}" ]; then
+            echo "::error::DOKPLOY_WEBHOOK_URL secret is not configured!"
+            exit 1
+          fi
+          
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${{ secrets.DOKPLOY_WEBHOOK_URL }}")
+          echo "Dokploy Webhook Response HTTP Status: $response"
+          
+          if [ "$response" -ge 200 ] && [ "$response" -lt 300 ]; then
+            echo "Successfully triggered Dokploy auto-deployment!"
+          else
+            echo "::error::Failed to trigger Dokploy deployment. Response code: $response"
+            exit 1
+          fi
+
