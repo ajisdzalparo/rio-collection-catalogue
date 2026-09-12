@@ -46,7 +46,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
   if (!product) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-100 gap-4 text-center">
         <AlertCircle className="h-10 w-10 text-destructive" />
         <div>
           <h2 className="text-lg font-bold text-foreground">Produk Tidak Ditemukan</h2>
@@ -166,7 +166,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Gallery (5 Cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="relative aspect-4/5 w-full max-h-[420px] max-w-md mx-auto overflow-hidden rounded-2xl bg-card border border-border/40 shadow-xs group transition-all duration-300">
+          <div className="relative aspect-4/5 w-full max-h-105 max-w-md mx-auto overflow-hidden rounded-2xl bg-card border border-border/40 shadow-xs group transition-all duration-300">
             <Image
               src={activeImage}
               alt={product.name}

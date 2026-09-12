@@ -2,19 +2,9 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Building2,
-  Shirt,
-  Sparkles,
-  Globe,
-  HeartHandshake
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, Building2, Shirt, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,13 +13,6 @@ import { cn } from '@/lib/utils';
 import { VStack, Flex } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -521,109 +504,6 @@ function MasterDataPageContent() {
             variant="ghost"
             size="icon"
             onClick={() => handleDelete('col', item.id, item.name)}
-            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )
-    }
-  ];
-
-  const materialColumns: Column<MaterialItem>[] = [
-    {
-      header: 'Kategori / Tipe Material',
-      accessorKey: 'type',
-      sortable: true,
-      className: 'w-1/4',
-      cell: (item) => {
-        const labels: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-          FABRIC: {
-            label: 'Fabric / Material Bahan',
-            icon: <Shirt className="h-3.5 w-3.5" />,
-            color: 'bg-blue-500/10 text-blue-600 border-blue-500/20'
-          },
-          TREATMENT: {
-            label: 'Treatment Bahan',
-            icon: <Sparkles className="h-3.5 w-3.5" />,
-            color: 'bg-purple-500/10 text-purple-600 border-purple-500/20'
-          },
-          ORIGIN: {
-            label: 'Origin / Negara Asal',
-            icon: <Globe className="h-3.5 w-3.5" />,
-            color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-          },
-          CARE: {
-            label: 'Care Instruction',
-            icon: <HeartHandshake className="h-3.5 w-3.5" />,
-            color: 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-          }
-        };
-        const config = labels[item.type] || {
-          label: item.type,
-          icon: null,
-          color: 'bg-muted text-muted-foreground'
-        };
-        return (
-          <Badge
-            variant="outline"
-            className={`gap-1.5 font-bold text-[10px] uppercase px-2 py-0.5 ${config.color}`}
-          >
-            {config.icon}
-            <span>{config.label}</span>
-          </Badge>
-        );
-      }
-    },
-    {
-      header: 'Nama / Nilai Master Opsi',
-      accessorKey: 'name',
-      sortable: true,
-      className: 'font-bold text-xs w-1/3'
-    },
-    {
-      header: 'Keterangan / Deskripsi',
-      accessorKey: 'description',
-      className: 'text-xs text-muted-foreground w-1/3',
-      cell: (item) => item.description || '-'
-    },
-    {
-      header: 'Status',
-      className: 'w-20',
-      cell: (item) => (
-        <Switch
-          checked={item.isActive}
-          onCheckedChange={async (checked) => {
-            try {
-              await masterMutations.updateMaterial({ id: item.id, isActive: checked });
-              toast.success(
-                `Material "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
-              );
-            } catch (error) {
-              console.error(error);
-              toast.error('Gagal memperbarui status');
-            }
-          }}
-        />
-      )
-    },
-    {
-      header: 'Aksi',
-      className: 'text-right w-24',
-      cell: (item) => (
-        <div className="flex justify-end gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleOpenEdit('material', item)}
-            className="h-8 w-8 rounded-lg cursor-pointer"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleDelete('material', item.id, item.name)}
             className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive cursor-pointer"
           >
             <Trash2 className="h-3.5 w-3.5" />

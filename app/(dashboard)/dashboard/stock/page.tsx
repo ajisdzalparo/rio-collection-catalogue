@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { SlidersHorizontal, RotateCcw, Check, Edit } from 'lucide-react';
+import { SlidersHorizontal, RotateCcw, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
-import { cn } from '@/lib/utils';
 
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 
@@ -77,10 +76,7 @@ export default function StockManagementPage() {
   const [stockModeDraft, setStockModeDraft] = useState<'QUANTITY' | 'ALWAYS_AVAILABLE'>('QUANTITY');
 
   // Fetch products
-  const {
-    data: products = [],
-    isLoading
-  } = useQuery<StockProduct[]>({
+  const { data: products = [], isLoading } = useQuery<StockProduct[]>({
     queryKey: ['admin-stock-products'],
     queryFn: async () => {
       const { data } = await axios.get('/api/v1/products');
@@ -317,9 +313,7 @@ export default function StockManagementPage() {
     <VStack gap="lg" className="pb-12">
       <Flex direction="responsive" justify="between" align="center" gap="md">
         <VStack gap="xs">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Manajemen Stok
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Manajemen Stok</h1>
           <p className="text-xs text-muted-foreground">
             Kelola kuantitas stok varian ukuran dan mode ketersediaan produk.
           </p>
@@ -606,5 +600,3 @@ export default function StockManagementPage() {
     </VStack>
   );
 }
-
-
