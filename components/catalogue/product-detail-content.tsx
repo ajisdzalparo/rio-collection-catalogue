@@ -45,13 +45,16 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
   // Read all images entered in the CMS (cover image + all uploaded detail images)
   const imagesList = useMemo(() => {
-    const detailUrls = (product.imageDetails ?? []).map((img) => img.url).filter(Boolean);
+    const rawDetails = Array.isArray(product.imageDetails) ? product.imageDetails : [];
+    const detailUrls = rawDetails.map((img) => img?.url).filter(Boolean) as string[];
 
-    const fallbackDetails = (product.images ?? []).filter((img) => img && img !== product.imageUrl);
+    const fallbackDetails = (Array.isArray(product.images) ? product.images : []).filter(
+      (img) => Boolean(img) && img !== product.imageUrl
+    );
 
     const allDetails = detailUrls.length > 0 ? detailUrls : fallbackDetails;
 
-    return Array.from(new Set([product.imageUrl, ...allDetails].filter(Boolean)));
+    return Array.from(new Set([product.imageUrl, ...allDetails].filter(Boolean) as string[]));
   }, [product.imageDetails, product.images, product.imageUrl]);
 
   const activeImage = imagesList[activeImageIndex] || product.imageUrl;
@@ -68,7 +71,8 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const isUnlimitedStock =
     product.stockMode === 'ALWAYS_AVAILABLE' || product.status === 'PRE_ORDER';
   const isQuantityBased = !isUnlimitedStock;
-  const selectedVariant = product.variants.find((variant) => variant.size === selectedSize);
+  const productVariants = Array.isArray(product.variants) ? product.variants : [];
+  const selectedVariant = productVariants.find((variant) => variant.size === selectedSize);
   const selectedStock =
     selectedVariant?.stock === undefined ? undefined : Math.max(0, selectedVariant.stock);
   const availableStock = isUnlimitedStock
@@ -86,7 +90,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const totalStock = isQuantityBased
     ? Math.max(
         0,
-        product.variants.reduce((total, variant) => total + Math.max(0, variant.stock ?? 0), 0)
+        productVariants.reduce((total, variant) => total + Math.max(0, variant.stock ?? 0), 0)
       )
     : undefined;
 
@@ -339,7 +343,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 </button>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                {product.variants.map((variant) => {
+                {productVariants.map((variant) => {
                   const variantStock = Math.max(0, variant.stock ?? 0);
                   const isVariantAvailable = isUnlimitedStock
                     ? variant.inStock !== false
