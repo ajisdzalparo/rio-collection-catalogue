@@ -44,9 +44,15 @@ import {
 import { RupiahInput } from '@/components/ui/rupiah-input';
 import { PaymentProofUpload } from '@/components/shared/payment-proof-upload';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
+import { Stepper } from '@/components/ui/stepper';
 import { useOrders, type Order } from '@/hooks/use-orders';
-import { useStoreSettingsStore } from '@/hooks/use-store-settings';
+import { useStoreSettingsQuery, useStoreSettingsStore } from '@/hooks/use-store-settings';
 import { formatIDR, formatWaNumber } from '@/lib/utils';
+import { getEnabledCourierOptions } from '@/lib/couriers';
+import {
+  buildWhatsAppMessage,
+  type WhatsAppMessageStage
+} from '@/lib/order-whatsapp';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -56,7 +62,9 @@ export default function OrderDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { id } = use(params);
   const { data: orders = [], isLoading: ordersLoading, updateOrder, isUpdating } = useOrders();
-  const storeSettings = useStoreSettingsStore();
+  const persistedStoreSettings = useStoreSettingsStore();
+  const { data: latestStoreSettings } = useStoreSettingsQuery();
+  const storeSettings = latestStoreSettings || persistedStoreSettings;
 
   const order = useMemo(() => {
     return orders.find((o) => o.id === id || o.orderNumber === id) || null;
@@ -83,14 +91,18 @@ export default function OrderDetailPage({ params }: PageProps) {
     desc: string;
   } | null>(null);
 
-  // Track if WA has been followed up in current session
-  const [waFollowedUp, setWaFollowedUp] = useState(false);
+  const [openedWhatsApp, setOpenedWhatsApp] = useState<{
+    orderId: string;
+    stage: WhatsAppMessageStage;
+  } | null>(null);
+  const [shippingAdjustmentWaOpened, setShippingAdjustmentWaOpened] = useState(false);
+  const [shippingAdjustmentWaConfirmed, setShippingAdjustmentWaConfirmed] = useState(false);
 
   // Sync state from order
   const [prevOrderId, setPrevOrderId] = useState<string | null>(null);
   if (order && order.id !== prevOrderId) {
     setPrevOrderId(order.id);
-    setCourierName(order.courierName || 'JNE Express (REG)');
+    setCourierName(order.courierName || '');
     setTrackingNumber(order.trackingNumber || '');
     setActualShippingFee(order.shippingFee ?? order.quotedShippingFee ?? 15000);
     setAdditionalPaymentProofUrl(order.additionalPaymentProofUrl || '');
@@ -100,6 +112,48 @@ export default function OrderDetailPage({ params }: PageProps) {
   const quotedShippingFee = order?.quotedShippingFee ?? order?.shippingFee ?? 15000;
   const shippingDifference = actualShippingFee - quotedShippingFee;
   const hasShippingDifference = shippingDifference !== 0;
+  const courierOptions = useMemo(
+    () => getEnabledCourierOptions(storeSettings.enabledCouriers, courierName || order?.courierName),
+    [courierName, order?.courierName, storeSettings.enabledCouriers]
+  );
+  const resolvedShippingAdjustmentStatuses = [
+    'NONE',
+    'CUSTOMER_CONFIRMED',
+    'REFUNDED',
+    'REFUND_WAIVED'
+  ];
+  const isShippingAdjustmentResolved = resolvedShippingAdjustmentStatuses.includes(
+    order?.shippingAdjustmentStatus || 'NONE'
+  );
+  const workflowStep =
+    order?.status === 'PENDING'
+      ? 0
+      : order?.status === 'CONFIRMED' || order?.status === 'WAITING_PAYMENT'
+        ? 1
+        : 2;
+  const workflowSteps = [
+    {
+      id: 'order',
+      title: 'Order & Tagihan',
+      description: 'Konfirmasi pesanan',
+      icon: FileText,
+      isCompleted: Boolean(order && order.status !== 'PENDING')
+    },
+    {
+      id: 'payment',
+      title: 'Pembayaran',
+      description: 'Verifikasi transfer',
+      icon: CheckCircle2,
+      isCompleted: Boolean(order && ['PAID', 'FULFILLED'].includes(order.status))
+    },
+    {
+      id: 'shipping',
+      title: 'Pengiriman',
+      description: 'Kurir dan nomor resi',
+      icon: Truck,
+      isCompleted: order?.status === 'FULFILLED'
+    }
+  ];
 
   const handleCopyResi = async () => {
     if (!order?.trackingNumber) return;
@@ -111,64 +165,18 @@ export default function OrderDetailPage({ params }: PageProps) {
     }
   };
 
-  const getActionWaLink = (orderItem: Order, nextStatus: Order['status']) => {
-    let template = '';
-    const customMsg =
-      nextStatus === 'CONFIRMED'
-        ? storeSettings.waTemplatePending
-        : nextStatus === 'WAITING_PAYMENT'
-          ? storeSettings.waTemplatePayment
-          : nextStatus === 'FULFILLED'
-            ? storeSettings.waTemplateShipping
-            : undefined;
-
-    if (customMsg) {
-      template = customMsg;
-    } else {
-      switch (nextStatus) {
-        case 'CONFIRMED':
-          template =
-            'Halo {nama_pelanggan},\n\nPesanan Anda #{nomor_order} di RIO COLLECTION telah DIKONFIRMASI!\n\nTotal Pembayaran: {total_pembayaran}\n\nSilakan transfer ke rekening:\n{rekening_bank}\n\nSetelah transfer, mohon kirimkan bukti pembayaran ke WhatsApp ini. Terima kasih!';
-          break;
-        case 'WAITING_PAYMENT':
-          template =
-            'Halo {nama_pelanggan},\n\nBerikut tagihan untuk pesanan Anda #{nomor_order}.\nTotal: {total_pembayaran}\n\nRekening:\n{rekening_bank}\n\nMohon selesaikan pembayaran agar pesanan Anda dapat segera kami proses. Terima kasih!';
-          break;
-        case 'PAID':
-          template =
-            'Halo {nama_pelanggan},\n\nPembayaran untuk pesanan #{nomor_order} sebesar {total_pembayaran} telah kami terima. Pesanan Anda sedang disiapkan.';
-          break;
-        case 'FULFILLED':
-          template =
-            'Halo {nama_pelanggan},\n\nPesanan Anda #{nomor_order} telah dikirim via {kurir}.\nNomor Resi: {nomor_resi}\n\nTerima kasih telah berbelanja di RIO COLLECTION!';
-          break;
-        case 'CANCELLED':
-          template =
-            'Halo {nama_pelanggan},\n\nKami menginformasikan bahwa pesanan Anda #{nomor_order} dari RIO COLLECTION telah DIBATALKAN.\n\nAlasan pembatalan: {alasan_pembatalan}\n\nTerima kasih atas pengertian Anda.';
-          break;
-        case 'REJECTED':
-          template =
-            'Halo {nama_pelanggan},\n\nMohon maaf, pesanan Anda #{nomor_order} dari RIO COLLECTION telah DITOLAK.\n\nAlasan penolakan: {alasan_pembatalan}\n\nTerima kasih atas pengertian Anda.';
-          break;
-        default:
-          template = `Halo {nama_pelanggan},\n\nUpdate pesanan Anda #{nomor_order} saat ini berstatus: ${nextStatus}.`;
-      }
-    }
-
+  const getStageWaLink = (orderItem: Order, stage: WhatsAppMessageStage) => {
     const bankText = `${storeSettings.bankName || 'BCA'}: ${storeSettings.bankAccountNumber || '1234567890'} a.n ${storeSettings.bankAccountOwner || 'RIO COLLECTION'}`;
-    const diff = actualShippingFee - (orderItem.shippingFee || 15000);
-
-    const message = template
-      .replaceAll('{nama_pelanggan}', orderItem.fullName)
-      .replaceAll('{nomor_order}', orderItem.orderNumber)
-      .replaceAll('{total_pembayaran}', formatIDR(orderItem.totalPrice))
-      .replaceAll('{rekening_bank}', bankText)
-      .replaceAll('{kurir}', courierName || 'JNE Express (REG)')
-      .replaceAll('{kurir_awal}', orderItem.courierName || 'Default')
-      .replaceAll('{selisih}', formatIDR(diff))
-      .replaceAll('{selisih_abs}', formatIDR(Math.abs(diff)))
-      .replaceAll('{nomor_resi}', trackingNumber || '-')
-      .replaceAll('{alasan_pembatalan}', cancelReason || 'Kondisi operasional toko');
+    const message = buildWhatsAppMessage({
+      stage,
+      templates: storeSettings,
+      customerName: orderItem.fullName,
+      orderNumber: orderItem.orderNumber,
+      totalPayment: orderItem.totalPrice,
+      bankDetails: bankText,
+      courierName,
+      trackingNumber
+    });
 
     return `https://wa.me/${formatWaNumber(orderItem.whatsapp)}?text=${encodeURIComponent(message)}`;
   };
@@ -176,9 +184,9 @@ export default function OrderDetailPage({ params }: PageProps) {
   const getShippingAdjustmentWaLink = (orderItem: Order, type: 'SURCHARGE' | 'REFUND_OFFER') => {
     const bankText = `${storeSettings.bankName || 'BCA'}: ${storeSettings.bankAccountNumber || '1234567890'} a.n ${storeSettings.bankAccountOwner || 'RIO COLLECTION'}`;
     const courierLine =
-      courierName !== (orderItem.courierName || 'JNE Express (REG)')
-        ? `Ekspedisi pesanan Anda kami sesuaikan menjadi ${courierName} (sebelumnya ${orderItem.courierName || 'JNE Express (REG)'}).`
-        : `Pesanan Anda akan dikirim via ${courierName || orderItem.courierName || 'JNE Express (REG)'}.`;
+      courierName !== (orderItem.courierName || '')
+        ? `Ekspedisi pesanan Anda kami sesuaikan menjadi ${courierName} (sebelumnya ${orderItem.courierName || 'belum dipilih'}).`
+        : `Pesanan Anda akan dikirim via ${courierName || orderItem.courierName || 'ekspedisi pilihan toko'}.`;
 
     let message = '';
     if (type === 'SURCHARGE') {
@@ -517,108 +525,112 @@ export default function OrderDetailPage({ params }: PageProps) {
           )}
 
           {/* Progressive Order Actions & Workflow Steps */}
-          {['PENDING', 'CONFIRMED', 'WAITING_PAYMENT', 'PAID'].includes(order.status) && (
+          {['PENDING', 'CONFIRMED', 'WAITING_PAYMENT', 'PAID', 'FULFILLED'].includes(order.status) && (
             <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-5">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
-                  Aksi Alur Pesanan (Progressive Step Workflow)
+                  Alur Pesanan
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Lakukan langkah di bawah secara bertahap untuk memproses pesanan dan mengabari customer.
+                  Selesaikan setiap langkah secara berurutan. Tahap berikutnya terkunci sampai WhatsApp dikonfirmasi telah dikirim.
                 </p>
               </div>
 
-              {/* Step for PENDING status */}
+              <Stepper
+                steps={workflowSteps}
+                currentStep={workflowStep}
+                variant="cards"
+                clickableSteps={false}
+              />
+
               {order.status === 'PENDING' && (
-                <div className="space-y-3 p-4 bg-muted/15 border border-border/30 rounded-lg">
+                <div className="space-y-4 p-4 bg-muted/15 border border-border/30 rounded-lg">
                   <span className="text-xs font-bold text-foreground block">
-                    Tahap 1: Verifikasi &amp; Konfirmasi Pesanan Masuk
+                    Tahap 1: Kirim Konfirmasi Order &amp; Tagihan
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
                     <a
-                      href={getActionWaLink(order, 'CONFIRMED')}
+                      href={getStageWaLink(order, 'ORDER')}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={async () => {
-                        setWaFollowedUp(true);
-                        try {
-                          await updateOrder({ id: order.id, waFollowedUp: true });
-                        } catch {
-                          console.error('Failed to update waFollowedUp');
-                        }
-                      }}
+                      onClick={() => setOpenedWhatsApp({ orderId: order.id, stage: 'ORDER' })}
                       className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
                     >
                       <WhatsAppIcon size={16} className="h-4 w-4" />
-                      <span>1. Kirim WA (Notifikasi Setuju)</span>
+                      <span>1. Buka WhatsApp Order</span>
                     </a>
 
                     <Button
+                      type="button"
+                      variant="outline"
                       onClick={async () => {
-                        try {
-                          await updateOrder({ id: order.id, status: 'CONFIRMED' });
-                          toast.success(`Pesanan ${order.orderNumber} berhasil dikonfirmasi!`);
-                        } catch {
-                          toast.error('Gagal memperbarui status');
-                        }
-                      }}
-                      disabled={isUpdating || (!waFollowedUp && !order.waFollowedUp)}
-                      className="h-10 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 cursor-pointer disabled:opacity-50"
-                    >
-                      2. Setujui Pesanan (CONFIRMED)
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Step for CONFIRMED status */}
-              {order.status === 'CONFIRMED' && (
-                <div className="space-y-3 p-4 bg-muted/15 border border-border/30 rounded-lg">
-                  <span className="text-xs font-bold text-foreground block">
-                    Tahap 2: Kirim Tagihan &amp; Tunggu Pembayaran
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <a
-                      href={getActionWaLink(order, 'WAITING_PAYMENT')}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={async () => {
-                        setWaFollowedUp(true);
                         try {
                           await updateOrder({ id: order.id, waFollowedUp: true });
+                          toast.success('Pengiriman WhatsApp order telah dikonfirmasi.');
                         } catch {
-                          console.error('Failed to update waFollowedUp');
+                          toast.error('Gagal menyimpan konfirmasi WhatsApp.');
                         }
                       }}
-                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
+                      disabled={
+                        isUpdating ||
+                        order.waFollowedUp ||
+                        openedWhatsApp?.orderId !== order.id ||
+                        openedWhatsApp.stage !== 'ORDER'
+                      }
+                      className="h-10 rounded-lg text-xs font-bold"
                     >
-                      <WhatsAppIcon size={16} className="h-4 w-4" />
-                      <span>1. Kirim WA (Tagihan Rekening)</span>
-                    </a>
+                      2. Saya Sudah Mengirim
+                    </Button>
 
                     <Button
                       onClick={async () => {
                         try {
                           await updateOrder({ id: order.id, status: 'WAITING_PAYMENT' });
-                          toast.success(`Status pesanan diubah ke Menunggu Pembayaran`);
+                          toast.success('Pesanan sekarang menunggu pembayaran.');
                         } catch {
-                          toast.error('Gagal memperbarui status');
+                          toast.error('Tahap belum dapat dilanjutkan.');
                         }
                       }}
-                      disabled={isUpdating || (!waFollowedUp && !order.waFollowedUp)}
+                      disabled={isUpdating || !order.waFollowedUp}
                       className="h-10 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 cursor-pointer disabled:opacity-50"
                     >
-                      2. Ubah ke Waiting Payment
+                      3. Lanjut Menunggu Pembayaran
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* Step for WAITING_PAYMENT status */}
+              {order.status === 'CONFIRMED' && (
+                <div className="space-y-3 p-4 bg-muted/15 border border-border/30 rounded-lg">
+                  <span className="text-xs font-bold text-foreground block">
+                    Order Lama: Normalisasi Status
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    Status CONFIRMED berasal dari alur lama. Pindahkan ke Menunggu Pembayaran tanpa mengirim ulang tagihan.
+                  </p>
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          await updateOrder({ id: order.id, status: 'WAITING_PAYMENT' });
+                          toast.success('Status lama berhasil dinormalisasi.');
+                        } catch {
+                          toast.error('Gagal memperbarui status');
+                        }
+                      }}
+                      disabled={isUpdating}
+                      className="h-10 rounded-lg text-xs font-bold"
+                    >
+                      Pindahkan ke Menunggu Pembayaran
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {order.status === 'WAITING_PAYMENT' && (
                 <div className="space-y-4 p-4 bg-muted/15 border border-border/30 rounded-lg">
                   <span className="text-xs font-bold text-foreground block">
-                    Tahap 3: Verifikasi Bukti Pembayaran Masuk
+                    Tahap 2: Verifikasi Pembayaran
                   </span>
                   <PaymentProofUpload
                     label="Unggah Bukti Transfer Pembayaran Customer"
@@ -632,56 +644,95 @@ export default function OrderDetailPage({ params }: PageProps) {
                       }
                     }}
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <a
+                    href={getStageWaLink(order, 'REMINDER')}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition-colors hover:bg-emerald-700"
+                  >
+                    <WhatsAppIcon size={16} className="h-4 w-4" />
+                    <span>Kirim reminder pembayaran (opsional)</span>
+                  </a>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
                     <a
-                      href={getActionWaLink(order, 'PAID')}
+                      href={order.paymentProofUrl ? getStageWaLink(order, 'PAYMENT') : undefined}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={async () => {
-                        setWaFollowedUp(true);
-                        try {
-                          await updateOrder({ id: order.id, waFollowedUp: true });
-                        } catch {
-                          console.error('Failed to update waFollowedUp');
+                      aria-disabled={!order.paymentProofUrl}
+                      onClick={(event) => {
+                        if (!order.paymentProofUrl) {
+                          event.preventDefault();
+                          toast.error('Unggah bukti pembayaran terlebih dahulu.');
+                          return;
                         }
+                        setOpenedWhatsApp({ orderId: order.id, stage: 'PAYMENT' });
                       }}
-                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
+                      className={`inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold transition-colors select-none ${
+                        order.paymentProofUrl
+                          ? 'bg-foreground text-background hover:bg-foreground/90 cursor-pointer'
+                          : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+                      }`}
                     >
                       <WhatsAppIcon size={16} className="h-4 w-4" />
-                      <span>1. Kirim WA (Pembayaran Diterima)</span>
+                      <span>1. Buka WhatsApp Pembayaran</span>
                     </a>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await updateOrder({ id: order.id, waFollowedUp: true });
+                          toast.success('WhatsApp pembayaran telah dikonfirmasi.');
+                        } catch {
+                          toast.error('Gagal menyimpan konfirmasi WhatsApp.');
+                        }
+                      }}
+                      disabled={
+                        isUpdating ||
+                        order.waFollowedUp ||
+                        !order.paymentProofUrl ||
+                        openedWhatsApp?.orderId !== order.id ||
+                        openedWhatsApp.stage !== 'PAYMENT'
+                      }
+                      className="h-10 rounded-lg text-xs font-bold"
+                    >
+                      2. Saya Sudah Mengirim
+                    </Button>
 
                     <Button
                       onClick={async () => {
                         try {
                           await updateOrder({ id: order.id, status: 'PAID' });
-                          toast.success(`Status pesanan diubah ke PAID (Lunas)!`);
+                          toast.success('Pembayaran telah diverifikasi sebagai lunas.');
                         } catch {
-                          toast.error('Gagal memperbarui status');
+                          toast.error('Tahap pembayaran belum dapat diselesaikan.');
                         }
                       }}
-                      disabled={isUpdating || (!waFollowedUp && !order.waFollowedUp)}
+                      disabled={isUpdating || !order.paymentProofUrl || !order.waFollowedUp}
                       className="h-10 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer disabled:opacity-50"
                     >
-                      <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                      <span>2. Verifikasi Lunas (PAID)</span>
+                      <span>3. Tandai Lunas</span>
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* Step for PAID status */}
               {order.status === 'PAID' && (
                 <div className="space-y-4 p-4 bg-muted/15 border border-border/30 rounded-lg">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-xs font-bold text-foreground block">
-                      Tahap 4: Pengiriman Paket &amp; Input Nomor Resi
+                      Tahap 3: Pengiriman Paket &amp; Nomor Resi
                     </span>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setIsExpeditionDialogOpen(true)}
+                      onClick={() => {
+                        setShippingAdjustmentWaOpened(false);
+                        setShippingAdjustmentWaConfirmed(false);
+                        setIsExpeditionDialogOpen(true);
+                      }}
                       className="h-8 rounded-lg text-xs font-bold border-border/60 gap-1.5"
                     >
                       <Truck className="h-3.5 w-3.5 text-primary" />
@@ -694,12 +745,22 @@ export default function OrderDetailPage({ params }: PageProps) {
                       <label className="text-[10px] font-bold text-muted-foreground uppercase">
                         Kurir Terpilih
                       </label>
-                      <Input
-                        value={courierName || order.courierName || 'JNE Express (REG)'}
-                        onChange={(e) => setCourierName(e.target.value)}
-                        placeholder="Nama Kurir..."
-                        className="h-10 text-xs rounded-lg"
-                      />
+                      <Select
+                        value={courierName}
+                        disabled={isUpdating || order.waFollowedUp}
+                        onValueChange={(value) => value && setCourierName(value)}
+                      >
+                        <SelectTrigger className="h-10 text-xs rounded-lg">
+                          <SelectValue placeholder="Pilih ekspedisi aktif" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courierOptions.map((courier) => (
+                            <SelectItem key={courier.value} value={courier.value}>
+                              {courier.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-muted-foreground uppercase">
@@ -708,30 +769,83 @@ export default function OrderDetailPage({ params }: PageProps) {
                       <Input
                         value={trackingNumber}
                         onChange={(e) => setTrackingNumber(e.target.value)}
+                        disabled={isUpdating || order.waFollowedUp}
                         placeholder="Contoh: JNE1234567890"
                         className="h-10 text-xs rounded-lg font-mono font-bold"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  {!isShippingAdjustmentResolved && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      Selesaikan penyesuaian ongkir terlebih dahulu melalui tombol “Ubah Kurir / Ongkir Aktual”.
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 pt-1">
                     <a
-                      href={getActionWaLink(order, 'FULFILLED')}
+                      href={
+                        courierName.trim() && trackingNumber.trim() && isShippingAdjustmentResolved
+                          ? getStageWaLink(order, 'SHIPPING')
+                          : undefined
+                      }
                       target="_blank"
                       rel="noreferrer"
-                      onClick={async () => {
-                        setWaFollowedUp(true);
-                        try {
-                          await updateOrder({ id: order.id, waFollowedUp: true });
-                        } catch {
-                          console.error('Failed to update waFollowedUp');
+                      aria-disabled={
+                        !courierName.trim() || !trackingNumber.trim() || !isShippingAdjustmentResolved
+                      }
+                      onClick={(event) => {
+                        if (!courierName.trim() || !trackingNumber.trim()) {
+                          event.preventDefault();
+                          toast.error('Pilih kurir dan isi nomor resi terlebih dahulu.');
+                          return;
                         }
+                        if (!isShippingAdjustmentResolved) {
+                          event.preventDefault();
+                          toast.error('Selesaikan penyesuaian ongkir terlebih dahulu.');
+                          return;
+                        }
+                        setOpenedWhatsApp({ orderId: order.id, stage: 'SHIPPING' });
                       }}
-                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer select-none"
+                      className={`inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-xs font-bold transition-colors select-none ${
+                        courierName.trim() && trackingNumber.trim() && isShippingAdjustmentResolved
+                          ? 'bg-foreground text-background hover:bg-foreground/90 cursor-pointer'
+                          : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+                      }`}
                     >
                       <WhatsAppIcon size={16} className="h-4 w-4" />
-                      <span>1. Kirim WA (Resi &amp; Dikirim)</span>
+                      <span>1. Buka WhatsApp Resi</span>
                     </a>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await updateOrder({
+                            id: order.id,
+                            courierName: courierName.trim(),
+                            trackingNumber: trackingNumber.trim(),
+                            waFollowedUp: true
+                          });
+                          toast.success('WhatsApp pengiriman telah dikonfirmasi.');
+                        } catch {
+                          toast.error('Gagal menyimpan konfirmasi pengiriman.');
+                        }
+                      }}
+                      disabled={
+                        isUpdating ||
+                        order.waFollowedUp ||
+                        openedWhatsApp?.orderId !== order.id ||
+                        openedWhatsApp.stage !== 'SHIPPING' ||
+                        !courierName.trim() ||
+                        !trackingNumber.trim() ||
+                        !isShippingAdjustmentResolved
+                      }
+                      className="h-10 rounded-lg text-xs font-bold"
+                    >
+                      2. Saya Sudah Mengirim
+                    </Button>
 
                     <Button
                       onClick={async () => {
@@ -751,18 +865,31 @@ export default function OrderDetailPage({ params }: PageProps) {
                           toast.error('Gagal memperbarui status');
                         }
                       }}
-                      disabled={isUpdating || (!waFollowedUp && !order.waFollowedUp)}
+                      disabled={
+                        isUpdating ||
+                        !order.waFollowedUp ||
+                        !courierName.trim() ||
+                        !trackingNumber.trim() ||
+                        !isShippingAdjustmentResolved
+                      }
                       className="h-10 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50"
                     >
-                      <Truck className="h-4 w-4 mr-1.5" />
-                      <span>2. Konfirmasi Kirim (FULFILLED)</span>
+                      <span>3. Selesaikan Pengiriman</span>
                     </Button>
                   </div>
                 </div>
               )}
 
+              {order.status === 'FULFILLED' && (
+                <div className="flex items-center gap-2 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Semua tahap selesai. Pesanan telah dikirim dan nomor resi sudah diinformasikan.
+                </div>
+              )}
+
               {/* Danger Zone Actions: Cancel or Reject */}
-              <div className="pt-3 border-t border-border/20 flex items-center justify-end gap-2 flex-wrap">
+              {order.status !== 'FULFILLED' && (
+                <div className="pt-3 border-t border-border/20 flex items-center justify-end gap-2 flex-wrap">
                 <Button
                   variant="outline"
                   size="sm"
@@ -790,7 +917,8 @@ export default function OrderDetailPage({ params }: PageProps) {
                     <span>Tolak Pesanan (Spam)</span>
                   </Button>
                 )}
-              </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -862,7 +990,7 @@ export default function OrderDetailPage({ params }: PageProps) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Kurir / Ekspedisi</span>
                 <span className="font-bold text-foreground">
-                  {order.courierName || 'JNE Express (REG)'}
+                  {order.courierName || 'Belum dipilih'}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -928,18 +1056,24 @@ export default function OrderDetailPage({ params }: PageProps) {
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-foreground">Pilih Kurir</label>
-              <Select value={courierName} onValueChange={(v) => v && setCourierName(v)}>
+              <Select
+                value={courierName}
+                onValueChange={(value) => {
+                  if (!value) return;
+                  setCourierName(value);
+                  setShippingAdjustmentWaOpened(false);
+                  setShippingAdjustmentWaConfirmed(false);
+                }}
+              >
                 <SelectTrigger className="h-10 rounded-lg text-xs bg-muted/20">
                   <SelectValue placeholder="Pilih Kurir" />
                 </SelectTrigger>
                 <SelectContent className="rounded-lg">
-                  <SelectItem value="JNE Express (REG)">JNE Express (REG)</SelectItem>
-                  <SelectItem value="J&T Express">J&T Express</SelectItem>
-                  <SelectItem value="SiCepat Reguler">SiCepat Reguler</SelectItem>
-                  <SelectItem value="GoSend Instant">GoSend Instant</SelectItem>
-                  <SelectItem value="GrabExpress Instant">GrabExpress Instant</SelectItem>
-                  <SelectItem value="Pos Indonesia">Pos Indonesia</SelectItem>
-                  <SelectItem value="TIKI">TIKI</SelectItem>
+                  {courierOptions.map((courier) => (
+                    <SelectItem key={courier.value} value={courier.value}>
+                      {courier.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -961,7 +1095,11 @@ export default function OrderDetailPage({ params }: PageProps) {
               </label>
               <RupiahInput
                 value={actualShippingFee}
-                onValueChange={setActualShippingFee}
+                onValueChange={(value) => {
+                  setActualShippingFee(value);
+                  setShippingAdjustmentWaOpened(false);
+                  setShippingAdjustmentWaConfirmed(false);
+                }}
                 className="h-10 rounded-lg text-xs bg-muted/20"
               />
             </div>
@@ -1033,7 +1171,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                   href={getShippingAdjustmentWaLink(order, 'SURCHARGE')}
                   target="_blank"
                   rel="noreferrer"
-                  onClick={() => setWaFollowedUp(true)}
+                  onClick={() => setShippingAdjustmentWaOpened(true)}
                   className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-xs font-bold bg-foreground text-background w-full"
                 >
                   <WhatsAppIcon size={14} className="h-3.5 w-3.5" />
@@ -1057,7 +1195,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                   href={getShippingAdjustmentWaLink(order, 'REFUND_OFFER')}
                   target="_blank"
                   rel="noreferrer"
-                  onClick={() => setWaFollowedUp(true)}
+                  onClick={() => setShippingAdjustmentWaOpened(true)}
                   className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-xs font-bold bg-foreground text-background w-full"
                 >
                   <WhatsAppIcon size={14} className="h-3.5 w-3.5" />
@@ -1098,6 +1236,21 @@ export default function OrderDetailPage({ params }: PageProps) {
                 )}
               </div>
             )}
+
+            {hasShippingDifference && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!shippingAdjustmentWaOpened || shippingAdjustmentWaConfirmed}
+                onClick={() => {
+                  setShippingAdjustmentWaConfirmed(true);
+                  toast.success('Pengiriman WhatsApp penyesuaian ongkir telah dikonfirmasi.');
+                }}
+                className="w-full h-9 rounded-lg text-xs font-bold"
+              >
+                2. Saya Sudah Mengirim Update Ongkir
+              </Button>
+            )}
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0 pt-2">
@@ -1113,8 +1266,13 @@ export default function OrderDetailPage({ params }: PageProps) {
               type="button"
               disabled={
                 isUpdating ||
-                (shippingDifference > 0 && (!waFollowedUp || !additionalPaymentProofUrl)) ||
-                (shippingDifference < 0 && !shippingAdjustmentChoice)
+                (shippingDifference > 0 &&
+                  (!shippingAdjustmentWaConfirmed || !additionalPaymentProofUrl)) ||
+                (shippingDifference < 0 &&
+                  (!shippingAdjustmentWaConfirmed ||
+                    !shippingAdjustmentChoice ||
+                    (shippingAdjustmentChoice === 'REFUND' &&
+                      (!refundReason.trim() || !refundProofUrl))))
               }
               onClick={async () => {
                 try {
@@ -1123,6 +1281,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                     courierName,
                     trackingNumber,
                     shippingFee: actualShippingFee,
+                    shippingAdjustmentWaSent: hasShippingDifference,
                     ...(shippingDifference > 0
                       ? {
                           shippingAdjustmentStatus: 'CUSTOMER_CONFIRMED',

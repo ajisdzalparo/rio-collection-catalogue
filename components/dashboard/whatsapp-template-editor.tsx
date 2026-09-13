@@ -17,13 +17,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import {
+  DEFAULT_WA_TEMPLATES,
+  type WhatsAppTemplates
+} from '@/lib/order-whatsapp';
 
-export interface WhatsAppTemplates {
-  waTemplatePending: string;
-  waTemplatePayment: string;
-  waTemplateShipping: string;
-  waTemplateRemind: string;
-}
+export { DEFAULT_WA_TEMPLATES, type WhatsAppTemplates } from '@/lib/order-whatsapp';
 
 interface WhatsAppTemplateEditorProps {
   templates: WhatsAppTemplates;
@@ -31,17 +30,6 @@ interface WhatsAppTemplateEditorProps {
   onSave?: () => void;
   isSaving?: boolean;
 }
-
-export const DEFAULT_WA_TEMPLATES: WhatsAppTemplates = {
-  waTemplatePending:
-    'Halo {nama_pelanggan},\n\nTerima kasih telah memesan di RIO COLLECTION!\nKami telah menerima pesanan Anda dengan nomor #{nomor_order}.\n\nTotal Tagihan: {total_pembayaran}\n\nSilakan lakukan pembayaran melalui rekening bank berikut:\n{rekening_bank}\n\nHarap kirimkan bukti transfer ke WhatsApp ini setelah pembayaran. Terima kasih!',
-  waTemplatePayment:
-    'Halo {nama_pelanggan},\n\nKami mengonfirmasi bahwa pembayaran untuk pesanan #{nomor_order} sebesar {total_pembayaran} telah DITERIMA & LUNAS.\n\nPesanan Anda saat ini sedang disiapkan untuk pengiriman. Terima kasih telah berbelanja di RIO COLLECTION!',
-  waTemplateShipping:
-    'Halo {nama_pelanggan},\n\nPesanan Anda #{nomor_order} telah dikirim via {kurir}!\nNomor Resi: {nomor_resi}\n\nAnda dapat melacak kiriman Anda melalui situs resmi ekspedisi. Terima kasih telah memilih RIO COLLECTION!',
-  waTemplateRemind:
-    'Halo {nama_pelanggan},\n\nKami dari RIO COLLECTION menginformasikan bahwa pesanan #{nomor_order} senilai {total_pembayaran} belum selesai pembayarannya.\n\nApakah ada kendala saat melakukan pembayaran?\nMohon konfirmasi agar pesanan Anda dapat segera kami proses & kirim. Terima kasih!'
-};
 
 const TEMPLATE_KEYS: Array<{
   key: keyof WhatsAppTemplates;
@@ -52,28 +40,28 @@ const TEMPLATE_KEYS: Array<{
 }> = [
   {
     key: 'waTemplatePending',
-    label: 'Order Baru (Pending)',
+    label: '1. Order & Tagihan',
     badge: 'Pending',
     icon: Clock,
-    description: 'Dikirim saat pelanggan baru pertama kali membuat pesanan di katalog'
+    description: 'Pesan pertama setelah admin menyetujui order dan mengirim instruksi pembayaran'
   },
   {
     key: 'waTemplatePayment',
-    label: 'Konfirmasi Bayar Lunas',
+    label: '2. Pembayaran Diterima',
     badge: 'Paid',
     icon: CheckCircle2,
     description: 'Dikirim setelah admin memverifikasi bukti bayar pelanggan'
   },
   {
     key: 'waTemplateShipping',
-    label: 'Notifikasi Resi Pengiriman',
+    label: '3. Pengiriman & Resi',
     badge: 'Shipped',
     icon: Truck,
     description: 'Dikirim saat pesanan sudah diproses dan menginput nomor resi'
   },
   {
     key: 'waTemplateRemind',
-    label: 'Follow-Up Remind Tagihan',
+    label: 'Opsional: Reminder Tagihan',
     badge: 'Follow-Up',
     icon: AlertCircle,
     description: 'Dikirim untuk mengingatkan pelanggan yang belum mentransfer pembayaran'

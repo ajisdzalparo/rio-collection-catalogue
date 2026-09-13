@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     const orderWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
 
-    const successfulStatuses = ['CONFIRMED', 'PAID', 'FULFILLED'];
+    const successfulStatuses = ['PAID', 'FULFILLED'];
 
     const totalOrders = await prisma.order.count({
       where: orderWhere

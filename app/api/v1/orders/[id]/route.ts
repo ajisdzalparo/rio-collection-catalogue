@@ -41,6 +41,24 @@ const updateOrderSchema = z.object({
 
 type UpdateOrderBody = z.infer<typeof updateOrderSchema>;
 
+class OrderWorkflowError extends Error {
+  constructor(message: string, readonly statusCode: 400 | 409 = 400) {
+    super(message);
+    this.name = 'OrderWorkflowError';
+  }
+}
+
+const allowedStatusTransitions: Record<string, readonly string[]> = {
+  PENDING: ['WAITING_PAYMENT', 'CANCELLED', 'REJECTED'],
+  CONFIRMED: ['WAITING_PAYMENT', 'CANCELLED'],
+  WAITING_PAYMENT: ['PAID', 'CANCELLED'],
+  PAID: ['FULFILLED', 'CANCELLED'],
+  FULFILLED: [],
+  CANCELLED: [],
+  REJECTED: [],
+  EXPIRED: []
+};
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -62,7 +80,85 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const currentStatus = existingOrder.status;
       const newStatus = body.status;
+      const quotedShippingFee = existingOrder.quotedShippingFee ?? existingOrder.shippingFee ?? 15000;
+      const actualShippingFee = body.shippingFee ?? existingOrder.shippingFee ?? quotedShippingFee;
+      const shippingAdjustmentAmount = actualShippingFee - quotedShippingFee;
+      const adjustmentStatus = shippingAdjustmentAmount === 0
+        ? 'NONE'
+        : body.shippingAdjustmentStatus ??
+          (body.shippingFee !== undefined
+            ? 'CUSTOMER_CONFIRMATION_PENDING'
+            : existingOrder.shippingAdjustmentStatus || 'CUSTOMER_CONFIRMATION_PENDING');
+      const nextPaymentProofUrl = body.paymentProofUrl ?? existingOrder.paymentProofUrl;
+      const nextCourierName = body.courierName ?? existingOrder.courierName;
+      const nextTrackingNumber = body.trackingNumber ?? existingOrder.trackingNumber;
+      const nextWaFollowedUp = body.waFollowedUp ?? existingOrder.waFollowedUp;
+      const resolvedAdjustmentStatuses = [
+        'NONE',
+        'CUSTOMER_CONFIRMED',
+        'REFUNDED',
+        'REFUND_WAIVED'
+      ];
+
+      if (body.waFollowedUp === true) {
+        if (currentStatus === 'WAITING_PAYMENT' && !nextPaymentProofUrl) {
+          throw new OrderWorkflowError(
+            'Bukti pembayaran wajib diunggah sebelum mengonfirmasi WhatsApp pembayaran'
+          );
+        }
+        if (currentStatus === 'PAID') {
+          if (!nextCourierName?.trim() || !nextTrackingNumber?.trim()) {
+            throw new OrderWorkflowError(
+              'Kurir dan nomor resi wajib disimpan sebelum mengonfirmasi WhatsApp pengiriman'
+            );
+          }
+          if (!resolvedAdjustmentStatuses.includes(adjustmentStatus)) {
+            throw new OrderWorkflowError(
+              'Penyesuaian ongkir harus diselesaikan sebelum mengonfirmasi WhatsApp pengiriman'
+            );
+          }
+        }
+      }
+
       if (newStatus && newStatus !== currentStatus) {
+        if (!allowedStatusTransitions[currentStatus]?.includes(newStatus)) {
+          throw new OrderWorkflowError(
+            `Status tidak dapat diubah langsung dari ${currentStatus} ke ${newStatus}`,
+            409
+          );
+        }
+
+        if (currentStatus === 'PENDING' && newStatus === 'WAITING_PAYMENT' && !nextWaFollowedUp) {
+          throw new OrderWorkflowError(
+            'Konfirmasi pengiriman WhatsApp order dan tagihan wajib diselesaikan terlebih dahulu'
+          );
+        }
+        if (currentStatus === 'WAITING_PAYMENT' && newStatus === 'PAID') {
+          if (!nextPaymentProofUrl) {
+            throw new OrderWorkflowError('Bukti pembayaran wajib diunggah sebelum menandai lunas');
+          }
+          if (!nextWaFollowedUp) {
+            throw new OrderWorkflowError(
+              'WhatsApp konfirmasi pembayaran wajib dikirim sebelum menandai lunas'
+            );
+          }
+        }
+        if (currentStatus === 'PAID' && newStatus === 'FULFILLED') {
+          if (!nextCourierName?.trim() || !nextTrackingNumber?.trim()) {
+            throw new OrderWorkflowError('Kurir dan nomor resi wajib diisi sebelum pengiriman');
+          }
+          if (!resolvedAdjustmentStatuses.includes(adjustmentStatus)) {
+            throw new OrderWorkflowError(
+              'Penyesuaian ongkir harus diselesaikan sebelum menyelesaikan pengiriman'
+            );
+          }
+          if (!nextWaFollowedUp) {
+            throw new OrderWorkflowError(
+              'WhatsApp nomor resi wajib dikirim sebelum menyelesaikan pengiriman'
+            );
+          }
+        }
+
         const paidStatuses = ['PAID', 'FULFILLED'];
         const wasPaid = paidStatuses.includes(currentStatus);
         const isNowPaid = paidStatuses.includes(newStatus);
@@ -73,12 +169,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         }
       }
 
-      const quotedShippingFee = existingOrder.quotedShippingFee ?? existingOrder.shippingFee ?? 15000;
-      const actualShippingFee = body.shippingFee ?? existingOrder.shippingFee ?? quotedShippingFee;
-      const shippingAdjustmentAmount = actualShippingFee - quotedShippingFee;
-      const adjustmentStatus = shippingAdjustmentAmount === 0
-        ? 'NONE'
-        : body.shippingAdjustmentStatus ?? 'CUSTOMER_CONFIRMATION_PENDING';
       const previousAppliedSurcharge = existingOrder.shippingAdjustmentStatus === 'CUSTOMER_CONFIRMED'
         ? Math.max(existingOrder.shippingAdjustmentAmount ?? 0, 0)
         : 0;
@@ -129,6 +219,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } catch (error) {
     console.error('Error updating order:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to update order';
+    if (error instanceof OrderWorkflowError) {
+      return NextResponse.json(
+        { code: error.statusCode, status: 'error', message: error.message },
+        { status: error.statusCode }
+      );
+    }
     const isClientError = errorMessage.includes('tidak mencukupi') || errorMessage.includes('tidak ditemukan') || errorMessage.includes('wajib diunggah');
     return NextResponse.json(
       { code: isClientError ? 400 : 500, status: 'error', message: errorMessage },
