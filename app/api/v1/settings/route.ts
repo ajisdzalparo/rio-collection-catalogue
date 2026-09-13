@@ -4,6 +4,37 @@ import { revalidatePath } from 'next/cache';
 import { DEFAULT_ENABLED_COURIERS } from '@/lib/couriers';
 import { getAuthenticatedUser } from '@/lib/auth/authorization';
 import { recordActivity } from '@/lib/activity-log';
+import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
+
+const heroSlidesSchema = z
+  .array(
+    z.object({
+      id: z.string().trim().min(1).max(80),
+      imageUrl: z.string().trim().min(1).max(2_000_000),
+      altText: z.string().trim().min(1).max(160),
+      title: z.string().trim().max(200).optional(),
+      subtitle: z.string().trim().max(300).optional(),
+      ctaText: z.string().trim().max(100).optional(),
+      ctaLink: z
+        .string()
+        .trim()
+        .max(2_000)
+        .refine((value) => !value || value.startsWith('/') || /^https?:\/\//i.test(value), {
+          message: 'Link CTA harus berupa path internal atau URL http(s).'
+        })
+        .optional(),
+      isActive: z.boolean()
+    })
+  )
+  .superRefine((slides, context) => {
+    if (slides.length > 0 && !slides.some((slide) => slide.isActive)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Minimal satu slide banner harus aktif.'
+      });
+    }
+  });
 
 export async function GET() {
   try {
@@ -57,6 +88,7 @@ export async function PUT(request: Request) {
       heroTitle,
       heroSubtitle,
       heroLayout,
+      heroSlides,
       heroLeftImage,
       heroCenterImage,
       heroRightImage,
@@ -92,6 +124,18 @@ export async function PUT(request: Request) {
       originProvinceName
     } = body;
 
+    const parsedHeroSlides = heroSlides === undefined ? undefined : heroSlidesSchema.safeParse(heroSlides);
+    if (parsedHeroSlides && !parsedHeroSlides.success) {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: 'Data slide banner tidak valid.', details: parsedHeroSlides.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const validatedHeroSlides = parsedHeroSlides?.success
+      ? (parsedHeroSlides.data as Prisma.InputJsonValue)
+      : undefined;
+
     const updatedSettings = await prisma.storeSettings.upsert({
       where: { id: 'default' },
       update: {
@@ -109,6 +153,7 @@ export async function PUT(request: Request) {
         ...(heroTitle !== undefined && { heroTitle }),
         ...(heroSubtitle !== undefined && { heroSubtitle }),
         ...(heroLayout !== undefined && { heroLayout }),
+        ...(validatedHeroSlides !== undefined && { heroSlides: validatedHeroSlides }),
         ...(heroLeftImage !== undefined && { heroLeftImage }),
         ...(heroCenterImage !== undefined && { heroCenterImage }),
         ...(heroRightImage !== undefined && { heroRightImage }),
@@ -159,6 +204,7 @@ export async function PUT(request: Request) {
         heroTitle: heroTitle || 'EDITION 001',
         heroSubtitle: heroSubtitle || 'ARCHIVAL COTTON SILHOUETTE',
         heroLayout: heroLayout || '2-grid',
+        heroSlides: validatedHeroSlides,
         heroLeftImage:
           heroLeftImage ||
           'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=1200&auto=format&fit=crop&q=80',

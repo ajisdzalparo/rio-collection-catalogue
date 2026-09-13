@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getAuthenticatedUser } from '@/lib/auth/authorization';
 import { recordActivity } from '@/lib/activity-log';
+import { syncDueProductReleases, validateReleaseSchedule } from '@/lib/product-release';
 
 const journalIdsSchema = z.array(z.string().min(1)).max(100).default([]);
 const journalSummarySelect = {
@@ -14,6 +15,7 @@ const journalSummarySelect = {
 
 export async function GET() {
   try {
+    await syncDueProductReleases();
     const products = await prisma.product.findMany({
       where: {
         deletedAt: null
@@ -86,6 +88,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Relasi jurnal tidak valid' }, { status: 400 });
     }
 
+    const normalizedStatus = typeof status === 'string' ? status : 'AVAILABLE';
+    const releaseValidation = validateReleaseSchedule(normalizedStatus, releaseDate);
+    if (!releaseValidation.valid) {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: releaseValidation.message },
+        { status: 400 }
+      );
+    }
+    if (stockMode !== undefined && stockMode !== 'QUANTITY' && stockMode !== 'ALWAYS_AVAILABLE') {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: 'Mode stok produk tidak valid.' },
+        { status: 400 }
+      );
+    }
+
     const newProduct = await prisma.product.create({
       data: {
         name,
@@ -103,8 +120,8 @@ export async function POST(request: Request) {
         stockMode: stockMode || 'QUANTITY',
         orderLimitMode: orderLimitMode || 'UNLIMITED',
         maxPurchaseLimit: maxPurchaseLimit !== undefined ? Number(maxPurchaseLimit) : 1,
-        status: status || 'AVAILABLE',
-        releaseDate: releaseDate ? new Date(releaseDate) : null,
+        status: normalizedStatus,
+        releaseDate: releaseValidation.date,
         imageUrl:
           imageUrl ||
           'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',

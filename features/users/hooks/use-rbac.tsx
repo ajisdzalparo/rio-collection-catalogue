@@ -113,7 +113,7 @@ const DEFAULT_ROLES: UserRole[] = [
   },
   {
     name: 'Designer',
-    description: 'Pengelola konten produk dan artikel jurnal',
+    description: 'Pengelola konten produk dan artikel blog',
     isSystemRole: false,
     isActive: true,
     permissions: {

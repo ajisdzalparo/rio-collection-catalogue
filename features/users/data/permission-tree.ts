@@ -98,17 +98,17 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   },
   {
     id: 'journal',
-    menuName: '6. Jurnal & Artikel Blog',
+    menuName: '6. Blog & Artikel',
     description: 'Akses ke publikasi konten visual, artikel, & update brand',
     actions: [
       {
         key: 'journal.view',
-        label: 'Lihat Artikel Jurnal',
+        label: 'Lihat Artikel Blog',
         description: 'Melihat rincian daftar artikel yang dipublikasikan'
       },
       {
         key: 'journal.manage',
-        label: 'Kelola Artikel Jurnal',
+        label: 'Kelola Artikel Blog',
         description: 'Menulis artikel baru, edit draf, & publikasi konten'
       }
     ]

@@ -18,7 +18,7 @@ export async function PUT(
     const { id } = await params;
     const actor = await getAuthenticatedUser();
     const parsed = journalSchema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ message: 'Data jurnal tidak valid', details: parsed.error.flatten() }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ message: 'Data artikel blog tidak valid', details: parsed.error.flatten() }, { status: 400 });
     const updatedJournal = await prisma.journal.update({
       where: { id },
       data: parsed.data,
@@ -35,7 +35,7 @@ export async function PUT(
       actor,
       action: 'UPDATE',
       module: 'JOURNALS',
-      description: `Memperbarui jurnal ${updatedJournal.title}.`,
+      description: `Memperbarui artikel blog ${updatedJournal.title}.`,
       entityType: 'Journal',
       entityId: updatedJournal.id,
       metadata: { slug: updatedJournal.slug, category: updatedJournal.category },
@@ -73,7 +73,7 @@ export async function DELETE(
       actor,
       action: 'DELETE',
       module: 'JOURNALS',
-      description: `Menghapus jurnal ${journal.title}.`,
+      description: `Menghapus artikel blog ${journal.title}.`,
       entityType: 'Journal',
       entityId: journal.id,
       metadata: { slug: journal.slug },
@@ -82,7 +82,7 @@ export async function DELETE(
     return NextResponse.json({
       code: 200,
       status: 'success',
-      message: 'Journal deleted successfully'
+      message: 'Blog article deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting journal:', error);

@@ -6,15 +6,14 @@ import {
   ListObjectsV2Command,
   PutObjectCommand
 } from '@aws-sdk/client-s3';
-import { minioBucketName, minioPublicUrl, s3Client } from '@/lib/minio';
+import { minioBucketName, s3Client } from '@/lib/minio';
 import type { NotificationSound, NotificationSoundLibrary } from '@/lib/notification-sound-types';
 
 const SOUND_PREFIX = 'notification-sounds/';
 const SETTINGS_KEY = `${SOUND_PREFIX}settings.json`;
 
 function getPublicUrl(key: string) {
-  const encodedKey = key.split('/').map(encodeURIComponent).join('/');
-  return `${minioPublicUrl.replace(/\/$/, '')}/${encodedKey}`;
+  return `/api/v1/notification-sounds/file?key=${encodeURIComponent(key)}`;
 }
 
 function getDisplayName(key: string) {

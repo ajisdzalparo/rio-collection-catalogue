@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getAuthenticatedUser } from '@/lib/auth/authorization';
 import { recordActivity } from '@/lib/activity-log';
+import { validateReleaseSchedule } from '@/lib/product-release';
 
 const journalIdsSchema = z.array(z.string().min(1)).max(100);
 const journalSummarySelect = {
@@ -61,6 +62,25 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       journalIds
     } = body;
 
+    const normalizedStatus = status === undefined ? existingProduct.status : String(status);
+    const effectiveReleaseDate =
+      releaseDate === undefined
+        ? existingProduct.releaseDate?.toISOString() ?? null
+        : releaseDate;
+    const releaseValidation = validateReleaseSchedule(normalizedStatus, effectiveReleaseDate);
+    if (!releaseValidation.valid) {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: releaseValidation.message },
+        { status: 400 }
+      );
+    }
+    if (stockMode !== undefined && stockMode !== 'QUANTITY' && stockMode !== 'ALWAYS_AVAILABLE') {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: 'Mode stok produk tidak valid.' },
+        { status: 400 }
+      );
+    }
+
     let parsedJournalIdsData: string[] | undefined = undefined;
     if (journalIds !== undefined) {
       const parsedJournalIds = journalIdsSchema.safeParse(journalIds);
@@ -106,9 +126,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         if (orderLimitMode !== undefined) dataToUpdate.orderLimitMode = orderLimitMode;
         if (maxPurchaseLimit !== undefined)
           dataToUpdate.maxPurchaseLimit = Number(maxPurchaseLimit);
-        if (status !== undefined) dataToUpdate.status = status;
-        if (releaseDate !== undefined) {
-          dataToUpdate.releaseDate = releaseDate ? new Date(releaseDate) : null;
+        if (status !== undefined) dataToUpdate.status = normalizedStatus;
+        if (status !== undefined || releaseDate !== undefined) {
+          dataToUpdate.releaseDate = releaseValidation.date;
         }
         if (imageUrl !== undefined) dataToUpdate.imageUrl = imageUrl;
         if (images !== undefined) dataToUpdate.images = images;

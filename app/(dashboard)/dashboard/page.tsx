@@ -359,7 +359,7 @@ export default function DashboardPage() {
                 className="w-full inline-flex items-center justify-between p-3.5 rounded-xl border border-border/40 bg-muted/10 hover:bg-muted/30 transition-all group"
               >
                 <div className="flex flex-col text-left">
-                  <span className="text-xs font-semibold text-foreground">Journal & Editorial</span>
+                  <span className="text-xs font-semibold text-foreground">Blog & Editorial</span>
                   <span className="text-[10px] text-muted-foreground">
                     Tulis artikel, drops, & creative story
                   </span>

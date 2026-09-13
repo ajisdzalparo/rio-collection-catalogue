@@ -5,6 +5,7 @@ const minioAccessKey = process.env.MINIO_ACCESS_KEY || 'minioadmin';
 const minioSecretKey = process.env.MINIO_SECRET_KEY || 'minioadmin';
 export const minioBucketName = process.env.MINIO_BUCKET_NAME || 'rio-collection-bucket';
 export const minioPublicUrl = process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || `${minioEndpoint}/${minioBucketName}`;
+const IMAGE_PREFIX = 'images/';
 
 const minioRegion = process.env.MINIO_REGION || 'us-east-1';
 
@@ -23,15 +24,16 @@ export const s3Client = new S3Client({
  */
 export async function uploadToMinio(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<string> {
   const cleanFileName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+  const objectKey = `${IMAGE_PREFIX}${cleanFileName}`;
 
   await s3Client.send(
     new PutObjectCommand({
       Bucket: minioBucketName,
-      Key: cleanFileName,
+      Key: objectKey,
       Body: fileBuffer,
       ContentType: mimeType
     })
   );
 
-  return `${minioPublicUrl}/${cleanFileName}`;
+  return `${minioPublicUrl}/${objectKey}`;
 }

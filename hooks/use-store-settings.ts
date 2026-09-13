@@ -4,6 +4,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import type { HeroSlide } from '@/types/store-settings.types';
+
+export type { HeroSlide } from '@/types/store-settings.types';
 
 export interface StoreSettings {
   storeName: string;
@@ -20,6 +23,7 @@ export interface StoreSettings {
   heroTitle?: string | null;
   heroSubtitle?: string | null;
   heroLayout?: 'single' | '2-grid' | '3-grid' | string | null;
+  heroSlides?: HeroSlide[] | null;
   heroLeftImage?: string | null;
   heroCenterImage?: string | null;
   heroRightImage?: string | null;
@@ -74,6 +78,7 @@ export const useStoreSettingsStore = create<StoreSettingsState>()(
       heroTitle: '',
       heroSubtitle: '',
       heroLayout: '2-grid',
+      heroSlides: [],
       heroLeftImage: '',
       heroCenterImage: '',
       heroRightImage: '',

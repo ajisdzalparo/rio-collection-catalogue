@@ -29,7 +29,7 @@ const NAVIGATION_PERMISSION_MAP: Record<string, string> = {
   'Orders': 'orders.view',
   'Stock Management': 'stock.view',
   'Master Data': 'products.view',
-  'Journal': 'journal.view',
+  'Blog': 'journal.view',
   'Testimonials': 'testimonies.view',
   'Laporan Penjualan': 'reports.view',
   'Super Admin Finance': 'platform.finance.view',

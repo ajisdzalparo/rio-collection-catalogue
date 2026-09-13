@@ -15,7 +15,7 @@ const emptySubscribe = () => () => {};
 const NAV_LINKS = [
   { href: '/catalogue', label: 'Catalogue' },
   { href: '/archive', label: 'Archive' },
-  { href: '/journal', label: 'Journal' },
+  { href: '/journal', label: 'Blog' },
   { href: '/about', label: 'About' }
 ] as const;
 

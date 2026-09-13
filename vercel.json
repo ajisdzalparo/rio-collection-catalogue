@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/cleanup-activity-logs",
       "schedule": "15 17 1 * *"
+    },
+    {
+      "path": "/api/cron/release-products",
+      "schedule": "* * * * *"
     }
   ]
 }

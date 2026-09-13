@@ -84,6 +84,9 @@ export interface JournalArticle {
   contentHtml?: string;
   pullQuote?: string;
   relatedProductSlug?: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  ogImageUrl?: string | null;
   relatedProducts?: Product[];
 }
 

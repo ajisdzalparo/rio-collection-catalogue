@@ -48,12 +48,12 @@ export const navigation: NavigationItem[] = [
       { title: 'Ukuran', href: '/dashboard/master?tab=sizes' },
       { title: 'Bahan & Perawatan', href: '/dashboard/master?tab=materials' },
       { title: 'Edisi / Drop Kaos', href: '/dashboard/master?tab=editions' },
-      { title: 'Topik Jurnal', href: '/dashboard/master?tab=topics' },
+      { title: 'Topik Blog', href: '/dashboard/master?tab=topics' },
       { title: 'Master Bank', href: '/dashboard/master?tab=banks' }
     ]
   },
   {
-    title: 'Journal',
+    title: 'Blog',
     href: '/dashboard/journal',
     icon: BookOpen
   },

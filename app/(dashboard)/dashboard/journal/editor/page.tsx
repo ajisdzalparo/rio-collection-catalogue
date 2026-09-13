@@ -11,7 +11,8 @@ import {
   Layers,
   Image as ImageIcon,
   Quote as QuoteIcon,
-  Link2
+  Link2,
+  SearchCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,6 +90,9 @@ function JournalEditorContent() {
   const [contentHtml, setContentHtml] = useState('');
   const [pullQuote, setPullQuote] = useState('');
   const [relatedProductSlug, setRelatedProductSlug] = useState('');
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
+  const [ogImageUrl, setOgImageUrl] = useState('');
 
   const selectedDate = React.useMemo(() => {
     if (!date) return undefined;
@@ -139,6 +143,9 @@ function JournalEditorContent() {
         setImageUrl(existing.imageUrl);
         setPullQuote(existing.pullQuote || '');
         setRelatedProductSlug(existing.relatedProductSlug || '');
+        setSeoTitle(existing.seoTitle || '');
+        setSeoDescription(existing.seoDescription || '');
+        setOgImageUrl(existing.ogImageUrl || '');
 
         // Use contentHtml if available, fallback to joining content paragraphs
         if (existing.contentHtml) {
@@ -198,7 +205,10 @@ function JournalEditorContent() {
       content: paragraphs,
       contentHtml,
       pullQuote: pullQuote || undefined,
-      relatedProductSlug: relatedProductSlug || undefined
+      relatedProductSlug: relatedProductSlug || undefined,
+      seoTitle: seoTitle || undefined,
+      seoDescription: seoDescription || undefined,
+      ogImageUrl: ogImageUrl || undefined
     };
 
     try {
@@ -231,7 +241,7 @@ function JournalEditorContent() {
             size="icon"
             onClick={() => router.push('/dashboard/journal')}
             className="h-9 w-9 rounded-xl cursor-pointer shrink-0"
-            title="Kembali ke Daftar Journal"
+            title="Kembali ke Daftar Blog"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -343,7 +353,7 @@ function JournalEditorContent() {
                 <Select
                   value={effectiveAuthor}
                   onValueChange={(val) => setAuthor(val || loggedInAuthor)}
-                  disabled={!articleId}
+                  disabled
                 >
                   <SelectTrigger
                     id="art-author"
@@ -368,6 +378,11 @@ function JournalEditorContent() {
                 {!articleId && (
                   <p className="text-[10px] text-muted-foreground">
                     Otomatis mengikuti akun yang sedang login.
+                  </p>
+                )}
+                {articleId && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Penulis artikel terkunci dan tidak dapat diubah dari editor.
                   </p>
                 )}
               </div>
@@ -461,6 +476,53 @@ function JournalEditorContent() {
                 onChange={(e) => setPullQuote(e.target.value)}
                 placeholder="Kutipan menonjol di tengah artikel..."
                 className="h-10 rounded-xl bg-muted/20 border-border/55"
+              />
+            </div>
+          </div>
+
+          {/* SEO Card */}
+          <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-4.5 shadow-2xs hover:shadow-xs transition-shadow duration-300">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 border-b border-border/20 pb-2">
+              <SearchCheck className="h-4 w-4 text-muted-foreground/75" />
+              SEO Blog
+            </h3>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Kosongkan jika ingin memakai fallback otomatis dari judul, ringkasan, dan cover artikel.
+            </p>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="seo-title" className="text-xs font-bold text-foreground">Meta Title</Label>
+                <span className="text-[10px] text-muted-foreground">{seoTitle.length}/70</span>
+              </div>
+              <Input
+                id="seo-title"
+                value={seoTitle}
+                onChange={(event) => setSeoTitle(event.target.value.slice(0, 70))}
+                placeholder={title || 'Judul artikel untuk mesin pencari'}
+                className="h-10 rounded-xl bg-muted/20 border-border/55 text-xs"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="seo-description" className="text-xs font-bold text-foreground">Meta Description</Label>
+                <span className="text-[10px] text-muted-foreground">{seoDescription.length}/160</span>
+              </div>
+              <Textarea
+                id="seo-description"
+                value={seoDescription}
+                onChange={(event) => setSeoDescription(event.target.value.slice(0, 160))}
+                placeholder={excerpt || 'Ringkasan artikel untuk hasil pencarian'}
+                className="min-h-20 rounded-xl bg-muted/20 border-border/55 text-xs"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-foreground">Open Graph Image</Label>
+              <ImageUpload
+                value={ogImageUrl}
+                onChange={setOgImageUrl}
+                placeholder="Upload gambar khusus preview sosial (opsional)"
+                aspectRatio="16:9"
+                helperText="Jika kosong, cover artikel akan digunakan."
               />
             </div>
           </div>

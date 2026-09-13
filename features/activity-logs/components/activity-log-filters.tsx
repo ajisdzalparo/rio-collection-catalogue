@@ -71,7 +71,9 @@ export function ActivityLogFilterDrawer({ filters, onApply }: ActivityLogFilters
               <SelectTrigger id="activity-module" className="h-10 w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {['ALL', 'AUTH', 'USERS', 'ORDERS', 'PRODUCTS', 'JOURNALS', 'SETTINGS', 'FINANCE'].map((value) => (
-                  <SelectItem key={value} value={value}>{value === 'ALL' ? 'Semua modul' : value}</SelectItem>
+                  <SelectItem key={value} value={value}>
+                    {value === 'ALL' ? 'Semua modul' : value === 'JOURNALS' ? 'Blog' : value}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

@@ -23,7 +23,7 @@ import { ReleaseScheduleField } from '@/components/dashboard/release-schedule-fi
 import { useProducts } from '@/hooks/use-products';
 import { useJournals } from '@/hooks/use-journals';
 import { useMasterStore, useSizesQuery, useMaterialsQuery } from '@/hooks/use-master-data';
-import type { Product, ProductMutationInput, ProductStatus } from '@/types/catalogue.types';
+import type { Product, ProductMutationInput, ProductStatus, StockMode } from '@/types/catalogue.types';
 
 interface ProductFormProps {
   initialProduct?: Product;
@@ -59,7 +59,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
   const [status, setStatus] = useState<ProductStatus>(initialProduct?.status || 'AVAILABLE');
 
   const [releaseDate, setReleaseDate] = useState<string | null>(initialProduct?.releaseDate ?? null);
-  const stockMode = initialProduct?.stockMode || 'QUANTITY';
+  const [stockMode, setStockMode] = useState<StockMode>(initialProduct?.stockMode || 'QUANTITY');
   const orderLimitMode = initialProduct?.orderLimitMode || 'UNLIMITED';
   const [edition, setEdition] = useState(initialProduct?.edition || 'Edition 001');
   const [description, setDescription] = useState(initialProduct?.description || '');
@@ -92,6 +92,13 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
     if (!imageUrl) {
       toast.error('Foto Utama Kaos wajib diunggah');
       return;
+    }
+
+    if (status === 'COMING_SOON') {
+      if (!releaseDate || new Date(releaseDate).getTime() <= Date.now()) {
+        toast.error('Produk Coming Soon wajib memiliki tanggal rilis di masa depan');
+        return;
+      }
     }
 
     const slug = getSlug(name);
@@ -336,7 +343,14 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                 <Label className="text-xs font-bold text-foreground">
                   Status Availability Produk
                 </Label>
-                <Select value={status} onValueChange={(val) => setStatus(val as ProductStatus)}>
+                <Select
+                  value={status}
+                  onValueChange={(val) => {
+                    const nextStatus = val as ProductStatus;
+                    setStatus(nextStatus);
+                    if (nextStatus !== 'COMING_SOON') setReleaseDate(null);
+                  }}
+                >
                   <SelectTrigger className="h-10 rounded-xl">
                     <SelectValue placeholder="Status Produk" />
                   </SelectTrigger>
@@ -352,7 +366,26 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
             </div>
 
             {status === 'COMING_SOON' && (
-              <ReleaseScheduleField value={releaseDate} onChange={setReleaseDate} />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <ReleaseScheduleField value={releaseDate} onChange={setReleaseDate} />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">Mode Setelah Rilis</Label>
+                  <Select value={stockMode} onValueChange={(value) => setStockMode(value as StockMode)}>
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue placeholder="Pilih mode stok" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="QUANTITY">Limited / Stok Terbatas</SelectItem>
+                      <SelectItem value="ALWAYS_AVAILABLE">Selalu Tersedia</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground">
+                    {stockMode === 'QUANTITY'
+                      ? 'Jumlah per ukuran diambil dari Manajemen Stok saat produk dirilis.'
+                      : 'Produk otomatis tersedia tanpa batas stok saat dirilis.'}
+                  </p>
+                </div>
+              </div>
             )}
 
             {/* Description */}
@@ -366,9 +399,9 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
               />
             </div>
 
-            {/* Related Journals */}
+            {/* Related Blog Articles */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Jurnal Terkait (Opsional)</Label>
+              <Label className="text-xs font-bold text-foreground">Blog Terkait (Opsional)</Label>
               <MultiSelect
                 value={journalIds}
                 onChange={setJournalIds}
@@ -377,8 +410,8 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                   label: j.title,
                   description: `${j.category} · ${j.date}`
                 }))}
-                placeholder={loadingJournals ? 'Memuat jurnal...' : 'Pilih jurnal terkait'}
-                searchPlaceholder="Cari jurnal..."
+                placeholder={loadingJournals ? 'Memuat artikel blog...' : 'Pilih artikel blog terkait'}
+                searchPlaceholder="Cari artikel blog..."
                 maxCount={2}
                 disabled={loadingJournals}
               />

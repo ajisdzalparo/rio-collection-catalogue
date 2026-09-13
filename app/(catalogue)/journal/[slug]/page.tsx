@@ -29,15 +29,37 @@ export async function generateMetadata({ params }: JournalDetailProps): Promise<
   const article = await getJournalBySlug(slug);
   if (!article) return { title: 'Article Not Found' };
 
+  const seoTitle = article.seoTitle?.trim() || article.title;
+  const seoDescription = article.seoDescription?.trim() || article.excerpt;
+  const ogImage = article.ogImageUrl?.trim() || article.imageUrl;
+  const parsedDate = Date.parse(article.date);
+
   return {
-    title: article.title,
-    description: article.excerpt,
+    title: seoTitle,
+    description: seoDescription,
+    alternates: {
+      canonical: `/journal/${article.slug}`
+    },
     openGraph: {
-      title: `${article.title} — RIO COLLECTION Journal`,
-      description: article.excerpt,
-      images: article.imageUrl ? [article.imageUrl] : []
+      title: seoTitle,
+      description: seoDescription,
+      url: `/journal/${article.slug}`,
+      type: 'article',
+      ...(Number.isNaN(parsedDate) ? {} : { publishedTime: new Date(parsedDate).toISOString() }),
+      authors: article.author ? [article.author] : [],
+      images: ogImage ? [ogImage] : []
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seoTitle,
+      description: seoDescription,
+      images: ogImage ? [ogImage] : []
     }
   };
+}
+
+function serializeJsonLd(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
 }
 
 export default async function JournalDetailPage({ params }: JournalDetailProps) {
@@ -57,9 +79,30 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
     : null;
 
   const relatedArticles = allJournals.filter((a) => a.id !== article.id).slice(0, 2);
+  const seoDescription = article.seoDescription?.trim() || article.excerpt;
+  const ogImage = article.ogImageUrl?.trim() || article.imageUrl;
+  const siteUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://rio-collection.ajisdzalparo.com').replace(/\/$/, '');
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: article.seoTitle?.trim() || article.title,
+    description: seoDescription,
+    image: ogImage ? [ogImage] : undefined,
+    author: {
+      '@type': 'Person',
+      name: article.author
+    },
+    datePublished: article.date,
+    articleSection: article.category,
+    url: `${siteUrl}/journal/${article.slug}`
+  };
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       {/* Header */}
       <section className="mx-auto max-w-350 px-4 md:px-16 pt-8 md:pt-12">
         {/* Breadcrumbs */}
@@ -72,7 +115,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
           </Link>
           <span className="mx-2">/</span>
           <Link href="/journal" className="hover:text-(--cat-on-surface) transition-colors">
-            Journal
+            Blog
           </Link>
           <span className="mx-2">/</span>
           <span className="text-(--cat-on-surface) font-semibold">{article.title}</span>

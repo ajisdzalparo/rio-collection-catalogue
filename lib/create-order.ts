@@ -7,6 +7,7 @@ import { calculateShippingCost } from '@/lib/rajaongkir';
 import { isOrderableStatus, normalizeProductAvailability } from '@/lib/product-availability';
 import { normalizeEmail, normalizeWhatsapp } from '@/lib/customer-identity';
 import { parseEnabledCourierCodes } from '@/lib/couriers';
+import { syncDueProductReleases } from '@/lib/product-release';
 
 export class OrderError extends Error {
   constructor(
@@ -18,6 +19,7 @@ export class OrderError extends Error {
 }
 
 export async function createOrder(input: z.infer<typeof orderSchema> & { customerId: string }) {
+  await syncDueProductReleases();
   const whatsapp = normalizeWhatsapp(input.whatsapp);
   const email = normalizeEmail(input.email);
   if (!/^62\d{7,13}$/.test(whatsapp))

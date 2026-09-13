@@ -43,13 +43,13 @@ export async function POST(request: Request) {
     const user = await getAuthenticatedUser();
     if (!user) {
       return NextResponse.json(
-        { code: 401, status: 'error', message: 'Anda harus login untuk menulis jurnal.' },
+        { code: 401, status: 'error', message: 'Anda harus login untuk menulis artikel blog.' },
         { status: 401 }
       );
     }
 
     const parsed = journalSchema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ message: 'Data jurnal tidak valid', details: parsed.error.flatten() }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ message: 'Data artikel blog tidak valid', details: parsed.error.flatten() }, { status: 400 });
     const journal = await prisma.journal.create({
       data: {
         ...parsed.data,
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       actor: user,
       action: 'CREATE',
       module: 'JOURNALS',
-      description: `Menerbitkan jurnal ${journal.title}.`,
+      description: `Menerbitkan artikel blog ${journal.title}.`,
       entityType: 'Journal',
       entityId: journal.id,
       metadata: { slug: journal.slug, category: journal.category },

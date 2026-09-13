@@ -11,5 +11,8 @@ export const journalSchema = z.object({
   excerpt: z.string().max(10000),
   content: z.array(z.string()),
   contentHtml: z.string().max(2000000).optional().transform((html) => html ? DOMPurify.sanitize(html) : null),
-  pullQuote: z.string().max(10000).nullish().transform((value) => value || null)
+  pullQuote: z.string().max(10000).nullish().transform((value) => value || null),
+  seoTitle: z.string().trim().max(70).nullish().transform((value) => value || null),
+  seoDescription: z.string().trim().max(160).nullish().transform((value) => value || null),
+  ogImageUrl: z.string().trim().max(2000000).nullish().transform((value) => value || null)
 });

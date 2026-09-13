@@ -135,8 +135,8 @@ function MasterDataPageContent() {
       desc: 'Kelola edisi peluncuran rilis produk (drops).'
     },
     topics: {
-      title: 'Topik Jurnal',
-      desc: 'Kelola topik tulisan untuk jurnal editorial blog.'
+      title: 'Topik Blog',
+      desc: 'Kelola topik tulisan untuk artikel blog editorial.'
     },
     banks: {
       title: 'Master Bank Pembayaran',
@@ -519,7 +519,7 @@ function MasterDataPageContent() {
 
   const topicColumns: Column<TopicItem>[] = [
     {
-      header: 'Nama Topik Jurnal',
+      header: 'Nama Topik Blog',
       accessorKey: 'name',
       sortable: true,
       className: 'font-bold text-xs w-1/3 uppercase tracking-wider'
@@ -997,7 +997,7 @@ function MasterDataPageContent() {
         <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/20">
             <div className="space-y-0.5">
-              <h2 className="text-base font-extrabold text-foreground">Topik Jurnal / Editorial</h2>
+              <h2 className="text-base font-extrabold text-foreground">Topik Blog / Editorial</h2>
               <p className="text-xs text-muted-foreground">
                 Kelola kategori topik tulisan artikel dan blog editorial.
               </p>
@@ -1016,8 +1016,8 @@ function MasterDataPageContent() {
             data={topics}
             isLoading={loadingTopics}
             searchKey="name"
-            searchPlaceholder="Cari topik jurnal..."
-            emptyTitle="Belum Ada Topik Jurnal"
+            searchPlaceholder="Cari topik blog..."
+            emptyTitle="Belum Ada Topik Blog"
             emptyDescription="Tambahkan topik editorial/kategori tulisan blog baru."
             pageSize={10}
           />

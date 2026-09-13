@@ -43,6 +43,8 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import { COURIERS, DEFAULT_ENABLED_COURIERS } from '@/lib/couriers';
+import type { HeroSlide } from '@/types/store-settings.types';
+import { HeroSlidesEditor } from '@/components/dashboard/hero-slides-editor';
 
 type SettingsTab =
   'profile' | 'couriers' | 'whatsapp' | 'payments' | 'socials' | 'hero' | 'homepage' | 'pages';
@@ -82,6 +84,7 @@ export default function StoreSettingsPage() {
   const [heroRightImage, setHeroRightImage] = useState('');
   const [heroCtaText, setHeroCtaText] = useState('Eksplor Koleksi Terkini');
   const [heroCtaLink, setHeroCtaLink] = useState('/catalogue');
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
 
   const [homeFeaturedTitle, setHomeFeaturedTitle] = useState('');
   const [homeViewAllLabel, setHomeViewAllLabel] = useState('');
@@ -144,6 +147,29 @@ export default function StoreSettingsPage() {
     setHeroRightImage(mockSettings.heroRightImage || '');
     setHeroCtaText(mockSettings.heroCtaText || 'Eksplor Koleksi Terkini');
     setHeroCtaLink(mockSettings.heroCtaLink || '/catalogue');
+    const persistedHeroSlides = Array.isArray(mockSettings.heroSlides)
+      ? mockSettings.heroSlides
+      : [];
+    setHeroSlides(
+      persistedHeroSlides.length
+        ? persistedHeroSlides
+        : [
+            mockSettings.heroLeftImage,
+            mockSettings.heroCenterImage,
+            mockSettings.heroRightImage
+          ]
+            .filter((image): image is string => Boolean(image))
+            .map((imageUrl, index) => ({
+              id: `legacy-hero-${index + 1}`,
+              imageUrl,
+              altText: mockSettings.heroTitle || 'Editorial campaign',
+              title: mockSettings.heroTitle || '',
+              subtitle: mockSettings.heroSubtitle || '',
+              ctaText: mockSettings.heroCtaText || '',
+              ctaLink: mockSettings.heroCtaLink || '/catalogue',
+              isActive: true
+            }))
+    );
 
     setHomeFeaturedTitle(mockSettings.homeFeaturedTitle || '');
     setHomeViewAllLabel(mockSettings.homeViewAllLabel || '');
@@ -193,6 +219,7 @@ export default function StoreSettingsPage() {
         heroRightImage,
         heroCtaText,
         heroCtaLink,
+        heroSlides,
         homeFeaturedTitle,
         homeViewAllLabel,
         homeManifestoTitle,
@@ -227,6 +254,45 @@ export default function StoreSettingsPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const addHeroSlide = () => {
+    setHeroSlides((slides) => [
+      ...slides,
+      {
+        id: `hero-${Date.now()}`,
+        imageUrl: '',
+        altText: 'Editorial campaign',
+        title: '',
+        subtitle: '',
+        ctaText: '',
+        ctaLink: '/catalogue',
+        isActive: true
+      }
+    ]);
+  };
+
+  const updateHeroSlide = (id: string, changes: Partial<HeroSlide>) => {
+    setHeroSlides((slides) =>
+      slides.map((slide) => (slide.id === id ? { ...slide, ...changes } : slide))
+    );
+  };
+
+  const reorderHeroSlides = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+    setHeroSlides((slides) => {
+      const sourceIndex = slides.findIndex((slide) => slide.id === sourceId);
+      const targetIndex = slides.findIndex((slide) => slide.id === targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return slides;
+      const next = [...slides];
+      const [movedSlide] = next.splice(sourceIndex, 1);
+      next.splice(targetIndex, 0, movedSlide);
+      return next;
+    });
+  };
+
+  const removeHeroSlide = (id: string) => {
+    setHeroSlides((slides) => slides.filter((slide) => slide.id !== id));
   };
 
   const toggleCourier = (code: string) => {
@@ -646,6 +712,28 @@ export default function StoreSettingsPage() {
 
             {/* TAB 4: Hero Banner CMS */}
             {activeTab === 'hero' && (
+              <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
+                <div className="border-b border-border/20 pb-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
+                    <LayoutTemplate className="h-4 w-4 text-primary" />
+                    Banner Hero Katalog Depan (Slider)
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Banner akan berganti otomatis setiap 5 detik dan tetap bisa dikontrol dengan panah, dot, keyboard, atau swipe.
+                  </p>
+                </div>
+                <HeroSlidesEditor
+                  slides={heroSlides}
+                  onAdd={addHeroSlide}
+                  onUpdate={updateHeroSlide}
+                  onReorder={reorderHeroSlides}
+                  onRemove={removeHeroSlide}
+                />
+              </div>
+            )}
+
+            {/* Legacy layout editor retained in source only for backwards-compatible state fields. */}
+            {false && activeTab === 'hero' && (
               <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
                 <div className="border-b border-border/20 pb-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">

@@ -76,6 +76,8 @@ export async function getProducts(): Promise<Product[]> {
 
   try {
     const { prisma } = await import('@/lib/prisma');
+    const { syncDueProductReleases } = await import('@/lib/product-release');
+    await syncDueProductReleases();
     const products = await prisma.product.findMany({
       where: {
         deletedAt: null
@@ -115,6 +117,8 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
 
   try {
     const { prisma } = await import('@/lib/prisma');
+    const { syncDueProductReleases } = await import('@/lib/product-release');
+    await syncDueProductReleases();
     const product = await prisma.product.findFirst({
       where: {
         slug,
@@ -237,4 +241,3 @@ export async function submitOrder(orderPayload: {
   }
   return result;
 }
-

@@ -5,18 +5,18 @@ import { ArrowRight } from 'lucide-react';
 import { getJournals } from '@/lib/api';
 
 export const metadata: Metadata = {
-  title: 'Journal',
+  title: 'Blog',
   description:
-    'Stories, ideas, and the work behind each drop. The RIO COLLECTION brand journal.',
+    'Stories, ideas, and the work behind each drop. The RIO COLLECTION brand blog.',
   openGraph: {
-    title: 'Journal — RIO COLLECTION',
-    description: 'Stories, ideas, and the work behind each drop. The RIO COLLECTION brand journal.',
+    title: 'Blog — RIO COLLECTION',
+    description: 'Stories, ideas, and the work behind each drop. The RIO COLLECTION brand blog.',
     images: [
       {
         url: '/ms-icon-310x310.png',
         width: 310,
         height: 310,
-        alt: 'RIO COLLECTION Journal',
+        alt: 'RIO COLLECTION Blog',
       },
     ],
   },
@@ -31,7 +31,7 @@ export default async function JournalPage() {
     return (
       <div className="mx-auto max-w-350 px-4 md:px-16 py-32 text-center">
         <h1 className="font-eb-garamond text-[32px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface)">
-          Journal
+          Blog
         </h1>
         <p className="mt-4 font-hanken text-[14px] text-(--cat-on-surface-variant)">
           Belum ada cerita yang dibagikan. Silakan tambahkan artikel dari CMS dashboard.
@@ -48,7 +48,7 @@ export default async function JournalPage() {
       {/* Header */}
       <section className="mx-auto max-w-350 px-4 md:px-16 pt-12 md:pt-20 pb-8 md:pb-12 text-center">
         <h1 className="font-eb-garamond text-[40px] md:text-[64px] font-normal leading-tight text-(--cat-on-surface)">
-          Journal
+          Blog
         </h1>
         <p className="mt-2 font-hanken text-[14px] md:text-[16px] text-(--cat-on-surface-variant)">
           Stories, ideas, and the work behind each drop.

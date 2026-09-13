@@ -27,7 +27,7 @@ const FOOTER_LINKS = [
   {
     title: 'Brand',
     links: [
-      { href: '/journal', label: 'Journal' },
+      { href: '/journal', label: 'Blog' },
       { href: '/about', label: 'About' }
     ]
   },

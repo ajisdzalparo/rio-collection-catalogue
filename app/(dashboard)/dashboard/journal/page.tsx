@@ -189,7 +189,7 @@ function JournalCmsPageContent() {
     <VStack gap="lg" className="pb-10">
       <Flex direction="responsive" justify="between" align="center" gap="md">
         <VStack gap="xs">
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Journal CMS</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Blog CMS</h1>
           <p className="text-sm text-muted-foreground pt-1">
             Tulis creative process, brand philosophy, dan artikel editorial RIO COLLECTION
           </p>
@@ -203,7 +203,7 @@ function JournalCmsPageContent() {
         </Button>
       </Flex>
 
-      {/* Journal DataTable */}
+      {/* Blog DataTable */}
       <DataTable
         columns={columns}
         data={filteredArticles}
@@ -234,7 +234,7 @@ function JournalCmsPageContent() {
           </div>
         }
         emptyTitle="Artikel Tidak Ditemukan"
-        emptyDescription="Tidak ada data artikel jurnal yang cocok dengan filter atau pencarian Anda."
+        emptyDescription="Tidak ada data artikel blog yang cocok dengan filter atau pencarian Anda."
         pageSize={10}
       />
 
@@ -365,7 +365,7 @@ function JournalCmsPageContent() {
         onOpenChange={(open) => {
           if (!open) setDeleteTargetArticle(null);
         }}
-        title="Konfirmasi Hapus Artikel Jurnal"
+        title="Konfirmasi Hapus Artikel Blog"
         description={
           deleteTargetArticle
             ? `Apakah Anda yakin ingin menghapus artikel "${deleteTargetArticle.title}" dari CMS?`

@@ -24,7 +24,7 @@ export default async function CatalogueLayout({ children }: { children: React.Re
       <div className="relative z-10 flex flex-col min-h-screen flex-1">
         <CatalogueNavbar storeName={settings?.storeName} />
         <main className="flex-1">{children}</main>
-        <CatalogueFooter settings={settings} />
+        <CatalogueFooter settings={settings as unknown as Partial<StoreSettings>} />
       </div>
     </div>
   );

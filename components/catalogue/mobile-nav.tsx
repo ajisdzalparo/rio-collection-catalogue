@@ -39,7 +39,7 @@ const NAV_ITEMS = [
   {
     num: '03',
     href: '/journal',
-    label: 'Journal',
+    label: 'Blog',
     desc: 'Studio Stories & Craft'
   },
   {

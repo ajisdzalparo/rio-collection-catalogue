@@ -36,7 +36,13 @@ export default async function HomePage() {
   ]);
   const featuredProducts = products.slice(0, 3);
   const comingSoonProduct =
-    products.find((p) => p.status === 'COMING_SOON' && p.releaseDate) || null;
+    products
+      .filter((product) => product.status === 'COMING_SOON' && product.releaseDate)
+      .sort(
+        (first, second) =>
+          new Date(first.releaseDate as string).getTime() -
+          new Date(second.releaseDate as string).getTime()
+      )[0] || null;
   const bannerText =
     settings?.homeBannerText ?? 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.';
   const bannerButton = settings?.homeBannerButton ?? 'Jelajahi Katalog Lengkap';

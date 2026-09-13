@@ -158,6 +158,9 @@ model Journal {
   content      String[]
   contentHtml  String?
   pullQuote    String?
+  seoTitle     String?
+  seoDescription String?
+  ogImageUrl   String?
   productLinks ProductJournal[]
   createdAt    DateTime         @default(now())
 
@@ -310,6 +313,7 @@ model StoreSettings {
   heroTitle          String?
   heroSubtitle       String?
   heroLayout         String?  @default("2-grid")
+  heroSlides         Json?
   heroLeftImage      String?
   heroCenterImage    String?
   heroRightImage     String?

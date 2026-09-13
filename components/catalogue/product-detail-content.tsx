@@ -509,11 +509,11 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
         </div>
       </section>
 
-      {/* Related journals — hidden when the product has no journal relation */}
+      {/* Related blog articles — hidden when the product has no journal relation */}
       {product.journals && product.journals.length > 0 && (
         <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
           <h2 className="font-eb-garamond text-[28px] md:text-[36px] font-normal leading-tight text-(--cat-on-surface)">
-            Jurnal Terkait
+            Blog Terkait
           </h2>
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
             {product.journals.map((journal) => (
