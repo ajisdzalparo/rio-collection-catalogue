@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
+import { getOrderNotificationSnapshot } from '@/lib/order-notifications.server';
 
 const sinceSchema = z.coerce.date();
 
@@ -36,29 +36,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [unreadCount, latestOrders] = await prisma.$transaction([
-      prisma.order.count({
-        where: { createdAt: { gt: parsedSince.data } }
-      }),
-      prisma.order.findMany({
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        take: 8,
-        select: {
-          id: true,
-          orderNumber: true,
-          fullName: true,
-          totalPrice: true,
-          status: true,
-          createdAt: true
-        }
-      })
-    ]);
+    const snapshot = await getOrderNotificationSnapshot(parsedSince.data);
 
     return NextResponse.json(
       {
         code: 200,
         status: 'success',
-        data: { unreadCount, latestOrders }
+        data: snapshot
       },
       {
         headers: {

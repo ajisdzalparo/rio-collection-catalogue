@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Bell, BellRing, Check, ShoppingBag, Volume2, VolumeX } from 'lucide-react';
+import { Bell, BellRing, Check, Music2, ShoppingBag, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useOrderNotifications } from '@/hooks/use-order-notifications';
 import { formatIDR } from '@/lib/utils';
+import { NotificationSoundManager } from '@/components/dashboard/notification-sound-manager';
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -21,18 +23,21 @@ const dateFormatter = new Intl.DateTimeFormat('id-ID', {
 });
 
 export function OrderNotifications() {
+  const [isSoundManagerOpen, setIsSoundManagerOpen] = useState(false);
   const {
     notifications,
     unreadCount,
     soundEnabled,
     isLoading,
     isError,
+    connectionStatus,
     markAllAsRead,
     toggleSound
   } = useOrderNotifications();
   const hasUnread = unreadCount > 0;
 
   return (
+    <>
     <DropdownMenu onOpenChange={(open) => open && markAllAsRead()}>
       <DropdownMenuTrigger
         render={
@@ -62,7 +67,13 @@ export function OrderNotifications() {
         <div className="flex items-center justify-between gap-3 px-2 py-1.5">
           <div>
             <p className="text-sm font-extrabold text-foreground">Order Terbaru</p>
-            <p className="text-[10px] text-muted-foreground">Diperbarui otomatis setiap 5 detik</p>
+            <p className="text-[10px] text-muted-foreground">
+              {connectionStatus === 'connected'
+                ? 'Realtime aktif'
+                : connectionStatus === 'connecting'
+                  ? 'Menghubungkan realtime...'
+                  : 'Menghubungkan kembali · fallback aktif'}
+            </p>
           </div>
           <button
             type="button"
@@ -121,6 +132,13 @@ export function OrderNotifications() {
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          onClick={() => setIsSoundManagerOpen(true)}
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-xl py-2"
+        >
+          <Music2 className="h-3.5 w-3.5" />
+          <span>Kelola suara notifikasi</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
           render={
             <Link
               href="/dashboard/orders"
@@ -133,5 +151,7 @@ export function OrderNotifications() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    <NotificationSoundManager open={isSoundManagerOpen} onOpenChange={setIsSoundManagerOpen} />
+    </>
   );
 }

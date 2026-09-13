@@ -35,3 +35,5 @@ export interface ChartInsights {
 }
 
 export type PresetRangeType = '7D' | '30D' | 'THIS_MONTH' | 'LAST_MONTH' | 'ALL' | 'CUSTOM';
+
+export type ReportStatus = 'PAID' | 'FULFILLED';

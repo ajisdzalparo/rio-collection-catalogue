@@ -5,24 +5,15 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { formatIDR } from '@/lib/utils';
+import type { OrderNotificationSnapshot } from '@/lib/order-notification-types';
+import { useNotificationSounds } from '@/hooks/use-notification-sounds';
+import { playNotificationSound } from '@/lib/notification-sound-player';
 
 const LAST_SEEN_KEY = 'rio-dashboard-orders-last-seen-at';
 const SOUND_ENABLED_KEY = 'rio-dashboard-order-sound-enabled';
-const POLL_INTERVAL_MS = 15_000;
+const FALLBACK_POLL_INTERVAL_MS = 15_000;
 
-export interface OrderNotification {
-  id: string;
-  orderNumber: string;
-  fullName: string;
-  totalPrice: number;
-  status: string;
-  createdAt: string;
-}
-
-interface OrderNotificationResponse {
-  unreadCount: number;
-  latestOrders: OrderNotification[];
-}
+export type NotificationConnectionStatus = 'connecting' | 'connected' | 'reconnecting';
 
 interface InitialNotificationPreferences {
   lastSeenAt: string;
@@ -30,45 +21,12 @@ interface InitialNotificationPreferences {
   hadStoredBaseline: boolean;
 }
 
-type BrowserWindow = Window &
-  typeof globalThis & {
-    webkitAudioContext?: typeof AudioContext;
-  };
-
-async function playNotificationSound() {
-  const AudioContextConstructor =
-    window.AudioContext || (window as BrowserWindow).webkitAudioContext;
-  if (!AudioContextConstructor) return;
-
-  try {
-    const audioContext = new AudioContextConstructor();
-    await audioContext.resume();
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    const start = audioContext.currentTime;
-
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(880, start);
-    oscillator.frequency.setValueAtTime(660, start + 0.12);
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.32);
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-    oscillator.start(start);
-    oscillator.stop(start + 0.34);
-    oscillator.addEventListener('ended', () => void audioContext.close(), { once: true });
-  } catch {
-    // Browsers may block audio until the user has interacted with the page.
-  }
-}
-
-async function fetchOrderNotifications(since: string): Promise<OrderNotificationResponse> {
+async function fetchOrderNotifications(since: string): Promise<OrderNotificationSnapshot> {
   const { data } = await axios.get('/api/v1/orders/notifications', { params: { since } });
   if (data.code !== 200 || !data.data) {
     throw new Error(data.message || 'Respons notifikasi pesanan tidak valid');
   }
-  return data.data as OrderNotificationResponse;
+  return data.data as OrderNotificationSnapshot;
 }
 
 function getInitialPreferences(): InitialNotificationPreferences {
@@ -96,9 +54,12 @@ function getInitialPreferences(): InitialNotificationPreferences {
 
 export function useOrderNotifications() {
   const queryClient = useQueryClient();
+  const { selectedSound } = useNotificationSounds();
   const [initialPreferences] = useState(getInitialPreferences);
   const [lastSeenAt, setLastSeenAt] = useState(initialPreferences.lastSeenAt);
   const [soundEnabled, setSoundEnabled] = useState(initialPreferences.soundEnabled);
+  const [connectionStatus, setConnectionStatus] =
+    useState<NotificationConnectionStatus>('connecting');
   const hadStoredBaselineRef = useRef(initialPreferences.hadStoredBaseline);
   const previousNewestIdRef = useRef<string | null>(null);
 
@@ -111,13 +72,39 @@ export function useOrderNotifications() {
     }
   }, [lastSeenAt, soundEnabled]);
 
-  const query = useQuery<OrderNotificationResponse, Error>({
+  const query = useQuery<OrderNotificationSnapshot, Error>({
     queryKey: ['orders', 'notifications', lastSeenAt],
     queryFn: () => fetchOrderNotifications(lastSeenAt as string),
-    refetchInterval: POLL_INTERVAL_MS,
+    refetchInterval:
+      connectionStatus === 'connected' ? false : FALLBACK_POLL_INTERVAL_MS,
     refetchIntervalInBackground: false,
     retry: 1
   });
+
+  useEffect(() => {
+    if (typeof EventSource === 'undefined') {
+      return;
+    }
+
+    const source = new EventSource(
+      `/api/v1/orders/notifications/stream?since=${encodeURIComponent(lastSeenAt)}`
+    );
+
+    source.onopen = () => setConnectionStatus('connected');
+    source.addEventListener('orders', (event) => {
+      try {
+        const snapshot = JSON.parse((event as MessageEvent<string>).data) as OrderNotificationSnapshot;
+        queryClient.setQueryData(['orders', 'notifications', lastSeenAt], snapshot);
+        setConnectionStatus('connected');
+      } catch {
+        setConnectionStatus('reconnecting');
+      }
+    });
+    source.addEventListener('stream-error', () => setConnectionStatus('reconnecting'));
+    source.onerror = () => setConnectionStatus('reconnecting');
+
+    return () => source.close();
+  }, [lastSeenAt, queryClient]);
 
   useEffect(() => {
     const notificationData = query.data;
@@ -136,13 +123,13 @@ export function useOrderNotifications() {
 
     if (!shouldNotify || previousNewestId === newestOrder.id) return;
 
-    if (soundEnabled) void playNotificationSound();
+    if (soundEnabled) void playNotificationSound(selectedSound?.url);
     toast.info(notificationData.unreadCount > 1 ? `${notificationData.unreadCount} order baru masuk` : 'Order baru masuk', {
       description: `${newestOrder.fullName} · ${formatIDR(newestOrder.totalPrice)}`
     });
     void queryClient.invalidateQueries({ queryKey: ['orders'] });
     void queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-  }, [lastSeenAt, query.data, queryClient, soundEnabled]);
+  }, [lastSeenAt, query.data, queryClient, selectedSound?.url, soundEnabled]);
 
   const markAllAsRead = () => {
     const newestCreatedAt = query.data?.latestOrders[0]?.createdAt;
@@ -152,6 +139,7 @@ export function useOrderNotifications() {
     } catch {
       // The in-memory state still keeps notifications usable.
     }
+    setConnectionStatus('connecting');
     setLastSeenAt(nextLastSeenAt);
   };
 
@@ -163,7 +151,7 @@ export function useOrderNotifications() {
     } catch {
       // The preference remains active for the current page session.
     }
-    if (nextValue) void playNotificationSound();
+    if (nextValue) void playNotificationSound(selectedSound?.url);
   };
 
   return {
@@ -172,6 +160,7 @@ export function useOrderNotifications() {
     soundEnabled,
     isLoading: query.isLoading,
     isError: query.isError,
+    connectionStatus,
     markAllAsRead,
     toggleSound
   };

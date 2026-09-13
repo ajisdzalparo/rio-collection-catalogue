@@ -89,11 +89,11 @@ async function fetchOrders(): Promise<Order[]> {
   return (data.data as Order[]).map((order) => {
     const enrichedItems = (order.items || []).map((item) => ({
       ...item,
-      cogs: item.cogs ?? Math.round(item.price * 0.4)
+      cogs: item.cogs
     }));
     const itemsSubtotal = enrichedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
     const totalCogs = enrichedItems.reduce(
-      (acc, item) => acc + (item.cogs ?? 0) * item.quantity,
+      (acc, item) => acc + (item.cogs ?? 180000) * item.quantity,
       0
     );
     const shippingFee = order.shippingFee ?? 15000;
@@ -102,8 +102,7 @@ async function fetchOrders(): Promise<Order[]> {
     const subtotal = order.subtotal ?? itemsSubtotal;
     const createdTime = new Date(order.createdAt).getTime();
     const isStale =
-      (order.status === 'PENDING' || order.status === 'WAITING_PAYMENT') &&
-      now - createdTime > STALE_PENDING_THRESHOLD_MS;
+      order.status === 'PENDING' && now - createdTime > STALE_PENDING_THRESHOLD_MS;
     const status: Order['status'] = isStale ? 'EXPIRED' : order.status;
     const adminNotes = isStale
       ? order.adminNotes
@@ -137,7 +136,10 @@ export function useOrders() {
       const { data } = await axios.patch(`/api/v1/orders/${id}`, payload);
       return data.data as Order;
     },
-    onSuccess: () => {
+    onSuccess: (updatedOrder) => {
+      queryClient.setQueryData<Order[]>(['orders'], (orders) =>
+        orders?.map((order) => (order.id === updatedOrder.id ? { ...order, ...updatedOrder } : order))
+      );
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
     }
@@ -159,8 +161,7 @@ export function useOrders() {
         return old.map((order) => {
           const createdTime = new Date(order.createdAt).getTime();
           const isStale =
-            (order.status === 'PENDING' || order.status === 'WAITING_PAYMENT') &&
-            now - createdTime > STALE_PENDING_THRESHOLD_MS;
+            order.status === 'PENDING' && now - createdTime > STALE_PENDING_THRESHOLD_MS;
           return isStale
             ? {
                 ...order,
@@ -175,11 +176,25 @@ export function useOrders() {
     }
   });
 
+  const deleteExpiredMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await axios.delete('/api/v1/orders/expired');
+      return Number(data.data?.deletedCount ?? 0);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['orders', 'notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+    }
+  });
+
   return {
     ...query,
     updateOrder: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
     cleanupStaleOrders: cleanupCronMutation.mutateAsync,
-    isCleaningUp: cleanupCronMutation.isPending
+    isCleaningUp: cleanupCronMutation.isPending,
+    deleteExpiredOrders: deleteExpiredMutation.mutateAsync,
+    isDeletingExpired: deleteExpiredMutation.isPending
   };
 }

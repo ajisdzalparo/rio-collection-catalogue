@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Calendar,
-  CheckCircle2,
   XCircle,
   MoreHorizontal,
   Clock,
@@ -13,7 +12,9 @@ import {
   AlertTriangle,
   Eye,
   SlidersHorizontal,
-  RotateCcw
+  RotateCcw,
+  Trash2,
+  BellRing
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { toast } from 'sonner';
@@ -52,6 +53,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatIDR, formatWaNumber } from '@/lib/utils';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { useStoreSettingsQuery, useStoreSettingsStore } from '@/hooks/use-store-settings';
+import { buildWhatsAppMessage } from '@/lib/order-whatsapp';
 
 const ORDER_STATUS_OPTIONS: MultiSelectOption[] = [
   { value: 'PENDING', label: 'Menunggu Konfirmasi' },
@@ -66,13 +70,18 @@ const ORDER_STATUS_OPTIONS: MultiSelectOption[] = [
 
 function OrdersPageContent() {
   const router = useRouter();
+  const persistedStoreSettings = useStoreSettingsStore();
+  const { data: latestStoreSettings } = useStoreSettingsQuery();
+  const storeSettings = latestStoreSettings || persistedStoreSettings;
   const {
     data: orders = [],
     isLoading: loading,
     updateOrder,
     isUpdating,
     cleanupStaleOrders,
-    isCleaningUp
+    isCleaningUp,
+    deleteExpiredOrders,
+    isDeletingExpired
   } = useOrders();
 
   const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
@@ -82,6 +91,7 @@ function OrdersPageContent() {
   const [draftStartDate, setDraftStartDate] = useState<Date | undefined>();
   const [draftEndDate, setDraftEndDate] = useState<Date | undefined>();
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  const [isDeleteExpiredOpen, setIsDeleteExpiredOpen] = useState(false);
 
   const [cancelTargetOrder, setCancelTargetOrder] = useState<Order | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -131,22 +141,40 @@ function OrdersPageContent() {
     }
   };
 
-  const handleApproveOrder = useCallback(
-    async (order: Order, e?: React.MouseEvent) => {
-      e?.stopPropagation();
-      try {
-        await updateOrder({ id: order.id, status: 'CONFIRMED' });
-        toast.success(`Pesanan #${order.orderNumber} berhasil disetujui.`);
-      } catch {
-        toast.error('Gagal menyetujui pesanan.');
-      }
-    },
-    [updateOrder]
-  );
+  const expiredOrderCount = orders.filter((order) => order.status === 'EXPIRED').length;
+
+  const handleDeleteExpiredOrders = async () => {
+    try {
+      const deletedCount = await deleteExpiredOrders();
+      toast.success(`${deletedCount} order kedaluwarsa berhasil dihapus.`);
+      setIsDeleteExpiredOpen(false);
+    } catch (err: unknown) {
+      toast.error('Gagal menghapus order kedaluwarsa', {
+        description: err instanceof Error ? err.message : undefined
+      });
+    }
+  };
 
   const getStatusBadge = (status: Order['status']) => {
     return <OrderStatusBadge status={status} />;
   };
+
+  const getReminderWaLink = useCallback(
+    (order: Order) => {
+      const bankDetails = `${storeSettings.bankName || 'BCA'}: ${storeSettings.bankAccountNumber || '1234567890'} a.n ${storeSettings.bankAccountOwner || 'RIO COLLECTION'}`;
+      const message = buildWhatsAppMessage({
+        stage: 'REMINDER',
+        templates: storeSettings,
+        customerName: order.fullName,
+        orderNumber: order.orderNumber,
+        totalPayment: order.totalPrice,
+        bankDetails
+      });
+
+      return `https://wa.me/${formatWaNumber(order.whatsapp)}?text=${encodeURIComponent(message)}`;
+    },
+    [storeSettings]
+  );
 
   const filteredOrders = useMemo(() => {
     const startBoundary = appliedStartDate ? new Date(appliedStartDate) : undefined;
@@ -247,7 +275,7 @@ function OrdersPageContent() {
                   className="gap-2 cursor-pointer font-medium"
                 >
                   <Eye className="h-3.5 w-3.5 text-primary" />
-                  <span>Lihat Detail Pesanan</span>
+                  <span>Lihat &amp; Proses Pesanan</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
@@ -260,17 +288,24 @@ function OrdersPageContent() {
                   <span>Chat WA Pelanggan</span>
                 </DropdownMenuItem>
 
-                {order.status === 'PENDING' && (
+                {order.status === 'WAITING_PAYMENT' && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={(e) => handleApproveOrder(order, e)}
-                      disabled={isUpdating}
+                      onClick={() => {
+                        window.open(getReminderWaLink(order), '_blank', 'noopener,noreferrer');
+                      }}
                       className="gap-2 cursor-pointer font-medium text-emerald-600 dark:text-emerald-400"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>Setujui Pesanan</span>
+                      <BellRing className="h-3.5 w-3.5" />
+                      <span>Kirim Reminder Tagihan</span>
                     </DropdownMenuItem>
+                  </>
+                )}
+
+                {order.status === 'PENDING' && (
+                  <>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => setCancelTargetOrder(order)}
                       disabled={isUpdating}
@@ -287,7 +322,7 @@ function OrdersPageContent() {
         )
       }
     ],
-    [handleApproveOrder, isUpdating, router]
+    [getReminderWaLink, isUpdating, router]
   );
 
   return (
@@ -313,16 +348,28 @@ function OrdersPageContent() {
             </span>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRunCronCleanup}
-          disabled={isCleaningUp}
-          className="h-9 px-3.5 rounded-xl text-xs font-bold gap-1.5 cursor-pointer shrink-0 border-border/30 hover:bg-muted"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isCleaningUp ? 'animate-spin' : ''}`} />
-          <span>{isCleaningUp ? 'Memproses Cron...' : 'Jalankan Cron Now'}</span>
-        </Button>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRunCronCleanup}
+            disabled={isCleaningUp}
+            className="h-9 px-3.5 rounded-xl text-xs font-bold gap-1.5 cursor-pointer border-border/30 hover:bg-muted"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isCleaningUp ? 'animate-spin' : ''}`} />
+            <span>{isCleaningUp ? 'Memproses Cron...' : 'Perbarui Status Expired'}</span>
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setIsDeleteExpiredOpen(true)}
+            disabled={expiredOrderCount === 0 || isDeletingExpired}
+            className="h-9 gap-1.5 rounded-xl px-3.5 text-xs font-bold"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Hapus Expired ({expiredOrderCount})</span>
+          </Button>
+        </div>
       </div>
 
       {/* Orders DataTable */}
@@ -511,6 +558,17 @@ function OrdersPageContent() {
           </DialogContent>
         )}
       </Dialog>
+
+      <ConfirmDialog
+        open={isDeleteExpiredOpen}
+        onOpenChange={setIsDeleteExpiredOpen}
+        title="Hapus Semua Order Kedaluwarsa"
+        description={`${expiredOrderCount} order berstatus kedaluwarsa akan dihapus permanen beserta itemnya. Order aktif, lunas, dan sudah dikirim tidak akan terhapus.`}
+        confirmText={`Hapus ${expiredOrderCount} Order`}
+        cancelText="Batal"
+        isLoading={isDeletingExpired}
+        onConfirm={() => void handleDeleteExpiredOrders()}
+      />
     </VStack>
   );
 }

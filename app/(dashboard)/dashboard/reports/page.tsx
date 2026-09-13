@@ -10,7 +10,7 @@ import {
   ReportsFilterBar,
   ReportsMetricsCards,
   ReportsSalesChart,
-  ReportsSalesLog,
+  ReportsSalesTable,
   ReportsTopProducts
 } from './components';
 
@@ -22,8 +22,10 @@ function ReportsPageContent() {
     setEndDate,
     presetRange,
     setPresetRange,
-    selectedProduct,
-    setSelectedProduct,
+    selectedProducts,
+    setSelectedProducts,
+    selectedStatuses,
+    setSelectedStatuses,
     availableProducts,
     currentOrders,
     previousOrders,
@@ -37,11 +39,15 @@ function ReportsPageContent() {
   const handleExportExcel = () => {
     exportReportToExcel({
       currentOrders,
-      selectedProduct,
+      selectedProducts,
+      selectedStatuses,
       startDate,
       endDate
     });
   };
+
+  const selectedProductLabel =
+    selectedProducts.length === 0 ? 'ALL' : selectedProducts.join(', ');
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
     if (!range) return;
@@ -58,8 +64,10 @@ function ReportsPageContent() {
     <VStack gap="lg" className="w-full pb-12">
       {/* Header and Filter Controls */}
       <ReportsFilterBar
-        selectedProduct={selectedProduct}
-        onProductChange={setSelectedProduct}
+        selectedProducts={selectedProducts}
+        onProductsChange={setSelectedProducts}
+        selectedStatuses={selectedStatuses}
+        onStatusesChange={setSelectedStatuses}
         availableProducts={availableProducts}
         startDate={startDate}
         endDate={endDate}
@@ -75,32 +83,25 @@ function ReportsPageContent() {
           hasPreviousPeriod={previousOrders.length > 0}
         />
 
-        {/* Chart & Detailed Transaction Log Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          <div className="lg:col-span-8">
-            <ReportsSalesChart
-              chartDataPoints={chartDataPoints}
-              chartInsights={chartInsights}
-              hasPreviousPeriod={previousOrders.length > 0}
-              startDate={startDate}
-              endDate={endDate}
-              selectedProduct={selectedProduct}
-              presetRange={presetRange}
-            />
-          </div>
+        <ReportsSalesChart
+          chartDataPoints={chartDataPoints}
+          chartInsights={chartInsights}
+          hasPreviousPeriod={previousOrders.length > 0}
+          startDate={startDate}
+          endDate={endDate}
+          selectedProduct={selectedProductLabel}
+          presetRange={presetRange}
+        />
 
-          <div className="lg:col-span-4">
-            <ReportsSalesLog
-              currentOrders={currentOrders}
-              selectedProduct={selectedProduct}
-            />
-          </div>
-        </div>
+        <ReportsSalesTable
+          currentOrders={currentOrders}
+          selectedProducts={selectedProducts}
+        />
 
         {/* Top Best-Selling Kaos Section */}
         <ReportsTopProducts
           topProducts={topProducts}
-          selectedProduct={selectedProduct}
+          selectedProduct={selectedProductLabel}
         />
       </div>
     </VStack>

@@ -7,7 +7,8 @@ import type {
   TopSellingProduct,
   DailyChartPoint,
   ChartInsights,
-  PresetRangeType
+  PresetRangeType,
+  ReportStatus
 } from './types';
 
 export const formatDateToInput = (d: Date): string => {
@@ -27,6 +28,10 @@ export const formatDisplayDate = (dateStr: string): string => {
 
 export function useReportsData() {
   const { data: orders = [] } = useOrders();
+  const recordedOrders = useMemo(
+    () => orders.filter((order) => order.status === 'PAID' || order.status === 'FULFILLED'),
+    [orders]
+  );
 
   const [startDate, setStartDate] = useState<string>(() => {
     const d = new Date();
@@ -37,7 +42,8 @@ export function useReportsData() {
     return formatDateToInput(new Date());
   });
   const [presetRange, setPresetRange] = useState<PresetRangeType>('30D');
-  const [selectedProduct, setSelectedProduct] = useState<string>('ALL');
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<ReportStatus[]>([]);
 
   const applyPreset = useCallback(
     (preset: PresetRangeType) => {
@@ -75,11 +81,21 @@ export function useReportsData() {
 
   const availableProducts = useMemo(() => {
     const names = new Set<string>();
-    orders.forEach((o) => {
+    recordedOrders.forEach((o) => {
       o.items.forEach((item) => names.add(item.name));
     });
     return Array.from(names);
-  }, [orders]);
+  }, [recordedOrders]);
+
+  const statusFilteredOrders = useMemo(
+    () =>
+      selectedStatuses.length === 0
+        ? recordedOrders
+        : recordedOrders.filter((order) =>
+            selectedStatuses.includes(order.status as ReportStatus)
+          ),
+    [recordedOrders, selectedStatuses]
+  );
 
   const { currentOrders, previousOrders } = useMemo(() => {
     if (!startDate || !endDate) return { currentOrders: [], previousOrders: [] };
@@ -93,18 +109,18 @@ export function useReportsData() {
     const prevEnd = new Date(start.getTime() - 1);
     const prevStart = new Date(prevEnd.getTime() - diffMs);
 
-    const current = orders.filter((o) => {
+    const current = statusFilteredOrders.filter((o) => {
       const d = new Date(o.createdAt);
       return d >= start && d <= end;
     });
 
-    const previous = orders.filter((o) => {
+    const previous = statusFilteredOrders.filter((o) => {
       const d = new Date(o.createdAt);
       return d >= prevStart && d <= prevEnd;
     });
 
     return { currentOrders: current, previousOrders: previous };
-  }, [orders, startDate, endDate]);
+  }, [statusFilteredOrders, startDate, endDate]);
 
   const calculateMetrics = useCallback(
     (orderList: Order[]): ReportMetrics => {
@@ -114,10 +130,10 @@ export function useReportsData() {
 
       orderList.forEach((o) => {
         o.items.forEach((item) => {
-          if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
+          if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
 
           const rev = item.price * item.quantity;
-          const hpp = (item.cogs || 180000) * item.quantity;
+          const hpp = (item.cogs ?? 180000) * item.quantity;
           revenue += rev;
           totalHpp += hpp;
           totalQty += item.quantity;
@@ -129,7 +145,7 @@ export function useReportsData() {
 
       return { revenue, totalHpp, netProfit, profitMargin, totalQty };
     },
-    [selectedProduct]
+    [selectedProducts]
   );
 
   const currentMetrics = useMemo(
@@ -160,11 +176,11 @@ export function useReportsData() {
 
     currentOrders.forEach((o) => {
       o.items.forEach((item) => {
-        if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
+        if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
 
         const key = item.name;
         const rev = item.price * item.quantity;
-        const hpp = (item.cogs || 180000) * item.quantity;
+        const hpp = (item.cogs ?? 180000) * item.quantity;
         const profit = rev - hpp;
 
         const current = map.get(key) || { name: item.name, totalQty: 0, revenue: 0, profit: 0 };
@@ -180,7 +196,7 @@ export function useReportsData() {
     return Array.from(map.values())
       .sort((a, b) => b.totalQty - a.totalQty)
       .slice(0, 5);
-  }, [currentOrders, selectedProduct]);
+  }, [currentOrders, selectedProducts]);
 
   const chartDataPoints: DailyChartPoint[] = useMemo(() => {
     if (!startDate || !endDate) return [];
@@ -214,9 +230,9 @@ export function useReportsData() {
         const orderDateStr = new Date(o.createdAt).toLocaleDateString('id-ID');
         if (orderDateStr === keyDateStr) {
           o.items.forEach((item) => {
-            if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
+            if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
             const rev = item.price * item.quantity;
-            const hpp = (item.cogs || 180000) * item.quantity;
+            const hpp = (item.cogs ?? 180000) * item.quantity;
             dailyRevenue += rev;
             dailyProfit += rev - hpp;
           });
@@ -228,7 +244,7 @@ export function useReportsData() {
           const orderDateStr = new Date(o.createdAt).toLocaleDateString('id-ID');
           if (orderDateStr === prevKeyDateStr) {
             o.items.forEach((item) => {
-              if (selectedProduct !== 'ALL' && item.name !== selectedProduct) return;
+              if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
               prevDailyRevenue += item.price * item.quantity;
             });
           }
@@ -242,7 +258,7 @@ export function useReportsData() {
         prevRevenue: prevDailyRevenue
       };
     });
-  }, [currentOrders, previousOrders, startDate, endDate, selectedProduct]);
+  }, [currentOrders, previousOrders, startDate, endDate, selectedProducts]);
 
   const chartInsights: ChartInsights = useMemo(() => {
     let peakRevenue = 0;
@@ -278,8 +294,10 @@ export function useReportsData() {
     setEndDate,
     presetRange,
     setPresetRange,
-    selectedProduct,
-    setSelectedProduct,
+    selectedProducts,
+    setSelectedProducts,
+    selectedStatuses,
+    setSelectedStatuses,
     applyPreset,
     availableProducts,
     currentOrders,

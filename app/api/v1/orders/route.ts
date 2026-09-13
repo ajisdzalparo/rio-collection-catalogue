@@ -7,18 +7,22 @@ import { verifyOtp, OtpError } from '@/lib/otp';
 import { getCustomerFromRequest } from '@/lib/customer-auth';
 import { allowCheckoutAttempt } from '@/lib/checkout-rate-limit';
 import { normalizeEmail, normalizeWhatsapp } from '@/lib/customer-identity';
+import { publishOrderCreated } from '@/lib/order-notifications.server';
 
 export async function GET() {
   try {
     const orders = await prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: 'desc' } });
     const products = await prisma.product.findMany({
       where: { id: { in: orders.flatMap((order) => order.items.flatMap((item) => item.productId ? [item.productId] : [])) } },
-      select: { id: true, status: true }
+      select: { id: true, status: true, hpp: true }
     });
     const preOrderIds = new Set(products.filter((product) => product.status === 'PRE_ORDER').map((product) => product.id));
+    const productHpp = new Map(products.map((product) => [product.id, product.hpp]));
     return NextResponse.json({ code: 200, status: 'success', data: orders.map((order) => ({
       ...order, items: order.items.map((item) => ({
-        ...item, isPreOrder: item.isPreOrder ?? (item.productId ? preOrderIds.has(item.productId) : false)
+        ...item,
+        isPreOrder: item.isPreOrder ?? (item.productId ? preOrderIds.has(item.productId) : false),
+        cogs: item.productId ? productHpp.get(item.productId) ?? undefined : undefined
       }))
     })) });
   } catch (error) {
@@ -105,6 +109,7 @@ export async function POST(request: Request) {
       whatsapp: orderWhatsapp,
       customerId
     });
+    publishOrderCreated();
 
     return NextResponse.json({
       code: 201,

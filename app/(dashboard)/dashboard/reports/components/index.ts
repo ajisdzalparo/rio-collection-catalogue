@@ -4,5 +4,5 @@ export * from './reports-export-excel';
 export * from './reports-filter-bar';
 export * from './reports-metrics-cards';
 export * from './reports-sales-chart';
-export * from './reports-sales-log';
+export * from './reports-sales-table';
 export * from './reports-top-products';
