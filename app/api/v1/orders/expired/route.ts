@@ -2,15 +2,12 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+import { parseAuthCookieUser } from '@/lib/auth/roles';
+
 async function isAuthenticated() {
-  const token = (await cookies()).get('auth_token')?.value;
-  if (!token) return false;
-  try {
-    JSON.parse(token);
-    return true;
-  } catch {
-    return false;
-  }
+  const cookieStore = await cookies();
+  const token = cookieStore.get('auth_token')?.value;
+  return Boolean(parseAuthCookieUser(token));
 }
 
 export async function DELETE() {

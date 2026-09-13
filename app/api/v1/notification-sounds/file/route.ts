@@ -6,15 +6,14 @@ import { minioBucketName, s3Client } from '@/lib/minio';
 const SOUND_PREFIX = 'notification-sounds/';
 const SETTINGS_KEY = `${SOUND_PREFIX}settings.json`;
 
-async function isAuthenticated() {
-  const token = (await cookies()).get('auth_token')?.value;
-  if (!token) return false;
-  try {
-    JSON.parse(token);
-    return true;
-  } catch {
-    return false;
-  }
+import { parseAuthCookieUser } from '@/lib/auth/roles';
+
+async function isAuthenticated(request?: Request) {
+  const cookieStore = await cookies();
+  const rawCookie = cookieStore.get('auth_token')?.value;
+  const authHeader = request?.headers.get('authorization')?.replace('Bearer ', '');
+  const token = rawCookie || authHeader;
+  return Boolean(parseAuthCookieUser(token));
 }
 
 function errorResponse(message: string, status: number) {
@@ -22,7 +21,7 @@ function errorResponse(message: string, status: number) {
 }
 
 export async function GET(request: Request) {
-  if (!(await isAuthenticated())) return errorResponse('Sesi admin tidak valid', 401);
+  if (!(await isAuthenticated(request))) return errorResponse('Sesi admin tidak valid', 401);
 
   const key = new URL(request.url).searchParams.get('key');
   if (!key || !key.startsWith(SOUND_PREFIX) || key === SETTINGS_KEY || key.includes('..')) {
@@ -36,12 +35,40 @@ export async function GET(request: Request) {
     const body = await object.Body?.transformToByteArray();
     if (!body) return errorResponse('File audio kosong', 404);
 
+    const rangeHeader = request.headers.get('range');
+    const totalLength = body.byteLength;
+
+    if (rangeHeader && rangeHeader.startsWith('bytes=')) {
+      const parts = rangeHeader.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10) || 0;
+      const end = parts[1] ? parseInt(parts[1], 10) : totalLength - 1;
+
+      if (start >= totalLength || end >= totalLength) {
+        return new Response(null, {
+          status: 416,
+          headers: { 'Content-Range': `bytes */${totalLength}` }
+        });
+      }
+
+      const chunk = body.subarray(start, end + 1);
+      return new Response(Buffer.from(chunk), {
+        status: 206,
+        headers: {
+          'Content-Type': object.ContentType || 'audio/mpeg',
+          'Content-Range': `bytes ${start}-${end}/${totalLength}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': String(chunk.byteLength),
+          'Cache-Control': 'private, max-age=86400'
+        }
+      });
+    }
+
     return new Response(Buffer.from(body), {
       status: 200,
       headers: {
         'Content-Type': object.ContentType || 'audio/mpeg',
-        'Content-Length': String(body.byteLength),
-        'Cache-Control': 'private, max-age=3600',
+        'Content-Length': String(totalLength),
+        'Cache-Control': 'private, max-age=86400',
         'Accept-Ranges': 'bytes'
       }
     });

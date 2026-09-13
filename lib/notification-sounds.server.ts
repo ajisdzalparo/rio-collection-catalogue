@@ -38,9 +38,18 @@ async function readSelectedKey(): Promise<string | null> {
     ) {
       return parsed.selectedKey;
     }
-  } catch (error) {
-    const errorName = error instanceof Error ? error.name : '';
-    if (errorName !== 'NoSuchKey' && errorName !== 'NotFound') throw error;
+  } catch (error: unknown) {
+    const err = error as { name?: string; Code?: string; code?: string; $metadata?: { httpStatusCode?: number } };
+    const isNotFound =
+      err?.name === 'NoSuchKey' ||
+      err?.name === 'NotFound' ||
+      err?.Code === 'NoSuchKey' ||
+      err?.code === 'NoSuchKey' ||
+      err?.$metadata?.httpStatusCode === 404;
+
+    if (!isNotFound) {
+      console.error('Unexpected error reading sound settings:', error);
+    }
   }
   return null;
 }

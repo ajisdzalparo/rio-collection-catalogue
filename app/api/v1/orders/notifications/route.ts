@@ -3,24 +3,20 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getOrderNotificationSnapshot } from '@/lib/order-notifications.server';
 
+import { parseAuthCookieUser } from '@/lib/auth/roles';
+
 const sinceSchema = z.coerce.date();
 
 export async function GET(request: Request) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value;
+  const rawCookie = cookieStore.get('auth_token')?.value;
+  const authHeader = request.headers.get('authorization')?.replace('Bearer ', '');
+  const token = rawCookie || authHeader;
+  const user = parseAuthCookieUser(token);
 
-  if (!token) {
+  if (!user) {
     return NextResponse.json(
-      { code: 401, status: 'error', message: 'Belum login' },
-      { status: 401 }
-    );
-  }
-
-  try {
-    JSON.parse(token);
-  } catch {
-    return NextResponse.json(
-      { code: 401, status: 'error', message: 'Sesi tidak valid' },
+      { code: 401, status: 'error', message: 'Sesi tidak valid atau belum login' },
       { status: 401 }
     );
   }

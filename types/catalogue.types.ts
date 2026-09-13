@@ -69,7 +69,7 @@ export interface ArchiveCollection {
 }
 
 export type JournalCategory =
-  'PROSES KREATIF' | 'CULTURE' | 'PROCESS' | 'DESIGN' | 'MATERIAL STUDY';
+  'PROSES KREATIF' | 'CULTURE' | 'PROCESS' | 'DESIGN' | 'MATERIAL STUDY' | 'ARCHIVE' | 'LOOKBOOK' | 'COMMUNITY';
 
 export interface JournalArticle {
   id: string;

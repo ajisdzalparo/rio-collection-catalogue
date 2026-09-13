@@ -238,11 +238,11 @@ export function ReportsSalesChart({
   }, []);
 
   return (
-    <div className="bg-card border border-border/40 rounded-xl p-5 flex flex-col justify-between space-y-4 shadow-xs">
+    <div className="bg-card border border-border/40 rounded-xl p-5 flex flex-col justify-between space-y-4 shadow-xs w-full min-w-0 max-w-full">
       {/* Header: Title and Type Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/15 pb-3">
-        <div>
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/15 pb-3 min-w-0">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
               Aktivitas & Tren Penjualan
             </h4>
@@ -250,7 +250,7 @@ export function ReportsSalesChart({
               {formatDisplayDate(startDate)} - {formatDisplayDate(endDate)}
             </Badge>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
+          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
             {selectedProduct === 'ALL'
               ? 'Performa harian omset dan estimasi laba kotor'
               : `Filter produk: ${selectedProduct}`}
@@ -288,8 +288,8 @@ export function ReportsSalesChart({
       </div>
 
       {/* KPI Summary Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-        <div className="bg-muted/15 border border-border/30 rounded-lg p-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full min-w-0">
+        <div className="bg-muted/15 border border-border/30 rounded-lg p-3 min-w-0">
           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
             Puncak Penjualan
           </span>
@@ -307,7 +307,7 @@ export function ReportsSalesChart({
           </div>
         </div>
 
-        <div className="bg-muted/15 border border-border/30 rounded-lg p-3">
+        <div className="bg-muted/15 border border-border/30 rounded-lg p-3 min-w-0">
           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
             Rata-rata / Hari
           </span>
@@ -316,7 +316,7 @@ export function ReportsSalesChart({
           </div>
         </div>
 
-        <div className="bg-muted/15 border border-border/30 rounded-lg p-3">
+        <div className="bg-muted/15 border border-border/30 rounded-lg p-3 min-w-0">
           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
             Hari Transaksi Aktif
           </span>
@@ -389,7 +389,7 @@ export function ReportsSalesChart({
         )}
       </div>
 
-      <div className="w-full h-80 relative pt-1">
+      <div className="w-full min-w-0 max-w-full h-80 relative pt-1 overflow-hidden">
         <Chart
           type={chartType === 'area' ? 'line' : 'bar'}
           data={mixedChartData}

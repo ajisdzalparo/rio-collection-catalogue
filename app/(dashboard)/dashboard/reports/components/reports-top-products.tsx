@@ -10,10 +10,10 @@ interface ReportsTopProductsProps {
 
 export function ReportsTopProducts({ topProducts, selectedProduct }: ReportsTopProductsProps) {
   return (
-    <div className="bg-card border border-border/40 rounded-xl p-5 space-y-4 shadow-2xs w-full">
-      <div className="flex items-center justify-between border-b border-border/10 pb-3">
+    <div className="bg-card border border-border/40 rounded-xl p-5 space-y-4 shadow-2xs w-full min-w-0">
+      <div className="flex items-center justify-between border-b border-border/10 pb-3 flex-wrap gap-2">
         <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-          <Flame className="h-4 w-4 text-orange-500" />
+          <Flame className="h-4 w-4 text-orange-500 shrink-0" />
           <span>
             {selectedProduct === 'ALL'
               ? 'Top 5 Kaos Terlaris Periode Ini'
@@ -26,7 +26,7 @@ export function ReportsTopProducts({ topProducts, selectedProduct }: ReportsTopP
       </div>
 
       {topProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 w-full min-w-0">
           {topProducts.map((p, idx) => {
             const rankBadge =
               idx === 0 ? (
@@ -51,7 +51,7 @@ export function ReportsTopProducts({ topProducts, selectedProduct }: ReportsTopP
             return (
               <div
                 key={p.name}
-                className="w-full border border-border/30 rounded-xl p-3.5 space-y-2.5 bg-card/60 flex flex-col justify-between shadow-2xs"
+                className="w-full border border-border/30 rounded-xl p-3.5 space-y-2.5 bg-card/60 flex flex-col justify-between shadow-2xs min-w-0"
               >
                 <div className="flex items-center justify-between">
                   {rankBadge}
@@ -62,7 +62,7 @@ export function ReportsTopProducts({ topProducts, selectedProduct }: ReportsTopP
                 </div>
 
                 <div className="space-y-1 pt-1">
-                  <h5 className="text-xs font-bold text-foreground line-clamp-1">{p.name}</h5>
+                  <h5 className="text-xs font-bold text-foreground line-clamp-1 truncate">{p.name}</h5>
                   <p className="text-[11px] font-extrabold text-emerald-500">
                     {formatIDR(p.revenue)}
                   </p>

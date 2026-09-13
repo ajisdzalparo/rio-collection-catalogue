@@ -412,7 +412,10 @@ async function main() {
     { name: 'CULTURE', description: 'Artikel seputar budaya dan brand lifestyle' },
     { name: 'PROCESS', description: 'Langkah pengerjaan sablon dan bahan' },
     { name: 'DESIGN', description: 'Estetika desain pakaian minimalis' },
-    { name: 'MATERIAL STUDY', description: 'Pembahasan jenis kain katun bersertifikat' }
+    { name: 'MATERIAL STUDY', description: 'Pembahasan jenis kain katun bersertifikat' },
+    { name: 'ARCHIVE', description: 'Koleksi arsip dan rilisan terdahulu' },
+    { name: 'LOOKBOOK', description: 'Eksplorasi gaya dan visual campaign' },
+    { name: 'COMMUNITY', description: 'Kisah orang-orang di balik dan di sekitar brand' }
   ];
 
   for (const top of topics) {
@@ -515,6 +518,92 @@ async function main() {
   <li><strong>Gunakan Air Dingin:</strong> Suhu air dingin mencegah penyusutan serat katun (shrinkage) dan menjaga kepekatan warna hitam atau putih.</li>
   <li><strong>Jemur Angin (Air Dry):</strong> Hindari pemakaian mesin pengering panas berlebih. Cukup gantung di tempat teduh terhindar dari paparan matahari langsung.</li>
 </ul>`
+    },
+    {
+      date: '15 Agustus 2023',
+      slug: 'menyusuri-arsip-edisi-001',
+      title: 'Menyusuri Arsip: Perjalanan Edisi 001',
+      author: 'RIO COLLECTION Archive',
+      excerpt:
+        'Kilas balik pada desain perdana kami yang mendasari prinsip desain siluet kaku dan material heavyweight pada setiap produk RIO COLLECTION.',
+      category: 'ARCHIVE',
+      imageUrl:
+        'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1200&auto=format&fit=crop&q=80',
+      pullQuote:
+        'Sebuah desain klasik tidak pernah usang, ia hanya menunggu untuk dipelajari kembali.',
+      content: [
+        'Setiap brand memiliki titik awal. Bagi kami, Edisi 001 bukan hanya sekadar koleksi pertama, melainkan manifesto fisik dari apa yang kami yakini tentang pakaian esensial.',
+        'Siluet yang sedikit terlalu besar (oversized), potongan bahu yang menurun (drop shoulder), dan tentu saja, material katun 240gsm yang saat itu jarang ditemui.',
+        'Melihat kembali arsip Edisi 001 mengingatkan kami pada komitmen awal: menciptakan pakaian yang tidak hanya dipakai, tetapi dihidupi.'
+      ],
+      contentHtml: `<h2>Awal Mula Sebuah Prinsip Desain</h2>
+<p>Setiap brand memiliki titik awal. Bagi kami, <strong>Edisi 001</strong> bukan hanya sekadar koleksi pertama, melainkan manifesto fisik dari apa yang kami yakini tentang pakaian esensial.</p>
+<p>Saat merancang Edisi 001, fokus kami adalah pada struktur. Siluet yang sedikit terlalu besar (<em>oversized</em>), potongan bahu yang menurun (<em>drop shoulder</em>), dan tentu saja, material katun <strong>240gsm</strong> yang saat itu jarang ditemui di pasaran lokal.</p>
+
+<blockquote>Sebuah desain klasik tidak pernah usang, ia hanya menunggu untuk dipelajari kembali dan disempurnakan.</blockquote>
+
+<h2>Menganalisis Kembali Siluet 001</h2>
+<p>Melihat kembali arsip Edisi 001 mengingatkan kami pada komitmen awal: menciptakan pakaian yang tidak hanya dipakai, tetapi dihidupi. Berikut elemen kunci dari edisi pertama ini yang terus kami bawa:</p>
+<ul>
+  <li><strong>Ketegasan Kerah:</strong> Penggunaan rib tebal yang menjaga bentuk kerah tetap utuh.</li>
+  <li><strong>Volume Badan:</strong> Rasio lebar dada terhadap panjang badan yang memberikan ilusi bentuk kotak (boxy).</li>
+  <li><strong>Durabilitas:</strong> Pemilihan benang jahit yang lebih kuat untuk menopang berat material katun.</li>
+</ul>
+
+<h2>Sebuah Referensi Abadi</h2>
+<p>Kini, <strong>Edisi 001</strong> bersemayam di ruang arsip kami, tidak lagi diproduksi namun terus menjadi acuan setiap kali kami merancang koleksi baru.</p>`
+    },
+    {
+      date: '10 November 2023',
+      slug: 'visual-campaign-musim-panas',
+      title: 'Visual Campaign: Musim Panas di Kota',
+      author: 'RIO COLLECTION Editorial Team',
+      excerpt:
+        'Eksplorasi gaya dan visual campaign untuk koleksi musim panas yang menangkap esensi kehidupan urban.',
+      category: 'LOOKBOOK',
+      imageUrl:
+        'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
+      pullQuote:
+        'Gaya bukanlah tentang apa yang Anda pakai, melainkan bagaimana Anda menghidupinya.',
+      content: [
+        'Musim panas di kota selalu membawa energi yang berbeda. Panasnya aspal, hiruk pikuk jalanan, dan dinamika kehidupan urban menjadi inspirasi utama lookbook kali ini.',
+        'Kami menangkap momen-momen spontan di sudut-sudut kota, memperlihatkan bagaimana koleksi kami berbaur dengan lanskap beton dan baja.',
+        'Fokus utama tetap pada kenyamanan dan daya tahan, memastikan setiap pakaian siap menemani aktivitas padat dari pagi hingga malam.'
+      ],
+      contentHtml: `<h2>Inspirasi Urban</h2>
+<p>Musim panas di kota selalu membawa energi yang berbeda. Panasnya aspal, hiruk pikuk jalanan, dan dinamika kehidupan urban menjadi inspirasi utama lookbook kali ini.</p>
+<p>Melalui lensa kamera analog, kami mencoba menangkap momen-momen spontan di sudut-sudut kota, memperlihatkan bagaimana koleksi kami berbaur secara natural dengan lanskap beton dan baja.</p>
+
+<blockquote>Gaya bukanlah tentang apa yang Anda pakai, melainkan bagaimana Anda menghidupinya di tengah dinamika kota.</blockquote>
+
+<h2>Kepraktisan Berpadu Estetika</h2>
+<p>Fokus utama <em>campaign</em> ini tetap menonjolkan prinsip utama RIO COLLECTION: <strong>kenyamanan</strong> dan <strong>daya tahan</strong>. Kami ingin memastikan setiap pakaian tidak hanya terlihat bagus di foto, tetapi juga siap menemani aktivitas padat penggunanya dari pagi hingga malam hari.</p>`
+    },
+    {
+      date: '05 Desember 2023',
+      slug: 'bertemu-pengrajin-lokal',
+      title: 'Cerita Komunitas: Bertemu dengan Pengrajin Lokal',
+      author: 'RIO COLLECTION Community',
+      excerpt:
+        'Kisah di balik layar tentang dedikasi dan keahlian para pengrajin lokal yang mewujudkan setiap desain kami.',
+      category: 'COMMUNITY',
+      imageUrl:
+        'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
+      pullQuote:
+        'Dibalik setiap jahitan presisi, terdapat tangan-tangan terampil yang berdedikasi tinggi.',
+      content: [
+        'Kualitas sebuah pakaian tidak hanya ditentukan oleh materialnya, tetapi juga oleh tangan-tangan yang menjahitnya.',
+        'Bulan ini, kami mengunjungi workshop mitra kami di Bandung untuk melihat langsung dedikasi para pengrajin lokal.',
+        'Dari pemotongan pola hingga jahitan akhir, setiap tahap dilakukan dengan ketelitian tingkat tinggi.'
+      ],
+      contentHtml: `<h2>Pahlawan di Balik Layar</h2>
+<p>Kualitas sebuah pakaian tidak hanya ditentukan oleh seberapa bagus materialnya, tetapi juga oleh seberapa terampil tangan-tangan yang merakitnya. Bagi kami, para pengrajin adalah pahlawan tanpa tanda jasa.</p>
+<p>Bulan ini, kami menghabiskan waktu mengunjungi <em>workshop</em> mitra kami di Bandung untuk melihat langsung dan mendokumentasikan dedikasi luar biasa dari para pengrajin lokal.</p>
+
+<blockquote>Dibalik setiap jahitan presisi, terdapat tangan-tangan terampil yang berdedikasi tinggi terhadap profesinya.</blockquote>
+
+<h2>Dedikasi pada Presisi</h2>
+<p>Dari pemotongan pola yang teliti, proses penjahitan kerah yang rumit, hingga tahap inspeksi akhir, setiap langkah dikerjakan dengan standar kualitas yang ketat. Keahlian pengrajin lokal adalah fondasi terpenting yang memungkinkan visi desain kami terwujud.</p>`
     }
   ];
 
@@ -527,6 +616,7 @@ async function main() {
   }
   console.log('✅ Topics & Journals seeded');
 
+  // 8. Product–Journal relationships
   const seededProduct = await prisma.product.findUnique({
     where: { slug: 'heavy-weight-boxy-tee' }
   });
@@ -617,7 +707,7 @@ async function main() {
   }
   console.log('✅ Master Banks & Store Banks seeded');
 
-  // 11. Store Settings
+  // 11. Store Settings (Homepage CMS, Archive CMS, About CMS)
   await prisma.storeSettings.upsert({
     where: { id: 'default' },
     update: {},
@@ -628,16 +718,35 @@ async function main() {
       bankName: 'Bank BCA',
       bankAccountNumber: '1234567890',
       bankAccountOwner: 'RIO COLLECTION',
+      instagramUrl: 'https://instagram.com/riocollection.id',
+      tiktokUrl: 'https://tiktok.com/@riocollection.id',
+      contactEmail: 'hello@riocollection.id',
+
+      // ── Homepage CMS ──
       heroTitle: 'ARCHIVAL ESSENTIALS',
       heroSubtitle:
         'Refined heavyweight cotton silhouettes crafted for modern character and longevity.',
       heroLayout: '2-grid',
+      heroSlides: [
+        {
+          imageUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+          alt: 'Heavy-Weight Boxy Tee — Hitam'
+        },
+        {
+          imageUrl: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
+          alt: 'Graphic Edition 01 — Putih'
+        }
+      ],
       heroLeftImage:
         'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+      heroCenterImage:
+        'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&auto=format&fit=crop&q=80',
       heroRightImage:
         'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
       heroCtaText: 'Jelajahi Koleksi',
       heroCtaLink: '/catalogue',
+      homeFeaturedTitle: 'Rilisan Pilihan',
+      homeViewAllLabel: 'Lihat Semua Koleksi',
       homeManifestoTitle: 'Mendefinisikan Ulang Esensi Kualitas & Estetika.',
       homeManifestoText:
         'Setiap karya pakaian dari RIO COLLECTION lahir dari kombinasi riset bahan katun berbobot tinggi (240-280 GSM), siluet kaku modern, serta detail jahitan presisi. Kami menghadirkan pakaian esensial tahan lama yang berkarakter.',
@@ -645,45 +754,66 @@ async function main() {
         'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
       homeBannerText: 'Temukan rilisan edisi terbatas dan koleksi esensial RIO COLLECTION.',
       homeBannerButton: 'Jelajahi Katalog Lengkap',
+
+      // ── Archive CMS ──
       archiveHeaderSub:
-        'Desain masa lalu dan koleksi arsip rilisan terdahulu yang kami lestarikan.',
+        'Desain masa lalu dan koleksi arsip rilisan terdahulu yang kami lestarikan sebagai jejak perjalanan kreatif brand.',
       archiveQuoteTitle: 'Merekam jejak perjalanan estetika dan eksperimen material kami.',
       archiveQuoteText:
-        'Setiap siluet yang telah habis tidak pernah benar-benar hilang, melainkan menjadi bagian dari sejarah dan fondasi karya kami berikutnya.',
+        'Setiap siluet yang telah habis tidak pernah benar-benar hilang, melainkan menjadi bagian dari sejarah dan fondasi karya kami berikutnya. Arsip adalah bukti bahwa kualitas tidak mengenal waktu.',
+
+      // ── About CMS ──
       aboutHeroImage:
         'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
       aboutHeading: 'Independen. Archival. Uncompromising.',
       aboutParagraph1:
-        'RIO COLLECTION berdiri sebagai studio independen yang berfokus pada eksplorasi pakaian katun berkonstruksi kaku dan bernilai arsip.',
+        'RIO COLLECTION berdiri sebagai studio independen yang berfokus pada eksplorasi pakaian katun berkonstruksi kaku dan bernilai arsip. Kami percaya bahwa sebuah kaos bisa menjadi lebih dari sekadar pakaian—ia adalah pernyataan karakter.',
       aboutParagraph2:
-        'Kami percaya bahwa pakaian esensial tidak harus polos tanpa karakter. Melalui pemilihan kain berkualitas tinggi, potong jahitan yang presisi, serta kuantitas rilisan yang terbatas, setiap produk dirancang untuk tahan lama.',
+        'Kami percaya bahwa pakaian esensial tidak harus polos tanpa karakter. Melalui pemilihan kain berkualitas tinggi, potong jahitan yang presisi, serta kuantitas rilisan yang terbatas, setiap produk dirancang untuk tahan lama dan menjadi bagian dari koleksi arsip pribadi pemakainya.',
       aboutValuesTitle: 'Prinsip & Nilai Kami',
       aboutValues: [
         {
           title: 'Slow & Conscious Design',
           description:
-            'Memilih kualitas bahan dan kerapian konstruksi dibanding produksi cepat masal.'
+            'Memilih kualitas bahan dan kerapian konstruksi dibanding produksi cepat masal. Setiap desain melewati riset material dan uji prototipe sebelum diproduksi.'
         },
         {
           title: 'Archival Cotton Silhouette',
           description:
-            'Mengembangkan katun berbobot 240-280 GSM yang mempertahankan struktur kaku siluet.'
+            'Mengembangkan katun berbobot 240-280 GSM yang mempertahankan struktur kaku siluet. Setiap kaos dirancang agar semakin nyaman seiring pemakaian tanpa kehilangan bentuk.'
         },
         {
           title: 'Limited Batch Quantity',
           description:
-            'Setiap rilisan dibuat dalam kuantitas terbatas untuk menjaga eksklusivitas karya.'
+            'Setiap rilisan dibuat dalam kuantitas terbatas untuk menjaga eksklusivitas karya dan memastikan setiap pembeli mendapatkan produk yang benar-benar istimewa.'
         }
       ],
       aboutQuote:
         'Bukan tentang menciptakan sesuatu yang baru, melainkan menyempurnakan sesuatu yang mendasar.',
       aboutQuoteText: 'RIO COLLECTION Editorial & Design Team',
       aboutStudioImage:
-        'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80'
+        'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&auto=format&fit=crop&q=80',
+
+      // ── WhatsApp Templates ──
+      waTemplatePending:
+        'Halo {name}, terima kasih telah memesan di RIO COLLECTION! 🎉\n\nOrder #{orderNumber} senilai Rp{total} sedang menunggu pembayaran.\n\nSilakan transfer ke rekening berikut:\n{bankDetails}\n\nKonfirmasi pembayaran dengan mengirim bukti transfer.',
+      waTemplatePayment:
+        'Halo {name}, pembayaran untuk Order #{orderNumber} sudah kami terima dan dikonfirmasi ✅\n\nPesanan Anda sedang kami proses untuk pengiriman. Kami akan mengirimkan nomor resi setelah paket dikirim.',
+      waTemplateShipping:
+        'Halo {name}, kabar baik! 📦\n\nOrder #{orderNumber} sudah dikirim via {courier}.\nNomor Resi: {trackingNumber}\n\nSilakan lacak pengiriman Anda. Terima kasih telah berbelanja di RIO COLLECTION!',
+      waTemplateRemind:
+        'Halo {name}, ini pengingat bahwa Order #{orderNumber} senilai Rp{total} masih menunggu pembayaran.\n\nJika sudah transfer, mohon kirimkan bukti pembayaran. Jika ada kendala, jangan ragu menghubungi kami.',
+
+      // ── Shipping Defaults ──
+      enabledCouriers: 'jne,pos,tiki',
+      originCityId: '23',
+      originCityName: 'Bandung',
+      originProvinceName: 'Jawa Barat'
     }
   });
-  console.log('✅ Store Settings seeded');
+  console.log('✅ Store Settings seeded (Homepage, Archive, About CMS)');
 
+  // 12. Platform Finance Settings
   await prisma.platformFinanceSettings.upsert({
     where: { id: 'default' },
     update: {},
@@ -698,6 +828,7 @@ async function main() {
   });
   console.log('✅ Platform Finance Settings seeded');
 
+  // 13. Backfill commission snapshots for legacy orders
   const legacyPaidOrders = await prisma.order.findMany({
     where: {
       status: { in: ['PAID', 'FULFILLED'] },

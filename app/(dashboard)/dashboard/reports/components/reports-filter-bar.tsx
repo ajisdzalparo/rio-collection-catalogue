@@ -96,11 +96,11 @@ export function ReportsFilterBar({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_minmax(260px,1fr)_minmax(220px,0.8fr)_auto]">
-        <div className="space-y-1.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(0,1fr)_auto] items-end gap-3 w-full min-w-0">
+        <div className="space-y-1.5 min-w-0">
           <label className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-            <PackageSearch className="h-3.5 w-3.5 text-muted-foreground" />
-            Produk
+            <PackageSearch className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span>Produk</span>
           </label>
           <MultiSelect
             options={productOptions}
@@ -113,10 +113,10 @@ export function ReportsFilterBar({
           />
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 min-w-0">
           <label className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-            Periode
+            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span>Periode</span>
           </label>
           <DatePicker
             mode="range"
@@ -130,10 +130,10 @@ export function ReportsFilterBar({
           />
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 min-w-0">
           <label className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
-            Status
+            <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span>Status</span>
           </label>
           <MultiSelect
             options={STATUS_OPTIONS}
@@ -147,10 +147,10 @@ export function ReportsFilterBar({
 
         <Button
           onClick={onExportExcel}
-          className="h-10 gap-2 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-700"
+          className="h-10 gap-2 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-700 shrink-0 w-full sm:w-auto"
         >
           <FileSpreadsheet className="h-4 w-4" />
-          Ekspor Excel
+          <span>Ekspor Excel</span>
         </Button>
       </div>
     </div>

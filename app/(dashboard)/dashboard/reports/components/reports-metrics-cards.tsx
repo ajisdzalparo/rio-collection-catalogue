@@ -15,9 +15,9 @@ export function ReportsMetricsCards({
   hasPreviousPeriod
 }: ReportsMetricsCardsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full min-w-0">
       {/* Revenue */}
-      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs">
+      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs min-w-0">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
             Revenue
@@ -38,7 +38,7 @@ export function ReportsMetricsCards({
       </div>
 
       {/* Total HPP */}
-      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs">
+      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs min-w-0">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
             Total HPP
@@ -52,7 +52,7 @@ export function ReportsMetricsCards({
       </div>
 
       {/* Laba Kotor */}
-      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs">
+      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs min-w-0">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
             Laba Kotor
@@ -73,7 +73,7 @@ export function ReportsMetricsCards({
       </div>
 
       {/* Profit Margin */}
-      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs">
+      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs min-w-0">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
             Profit Margin

@@ -73,7 +73,7 @@ function ReportsPageContent() {
   };
 
   return (
-    <VStack gap="lg" className="w-full pb-12">
+    <VStack gap="lg" className="w-full min-w-0 max-w-full pb-12">
       {/* Header and Filter Controls */}
       <ReportsFilterBar
         selectedProducts={selectedProducts}
@@ -87,7 +87,7 @@ function ReportsPageContent() {
         onExportExcel={handleExportExcel}
       />
 
-      <div className="w-full space-y-6">
+      <div className="w-full min-w-0 max-w-full space-y-6">
         {/* Metrics Summary Cards */}
         <ReportsMetricsCards
           currentMetrics={currentMetrics}

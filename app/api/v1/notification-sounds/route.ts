@@ -16,15 +16,14 @@ const allowedMimeTypes = new Set(['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio
 const selectionSchema = z.object({ selectedKey: z.string().min(1).nullable() });
 const deleteSchema = z.object({ key: z.string().min(1) });
 
-async function isAuthenticated() {
-  const token = (await cookies()).get('auth_token')?.value;
-  if (!token) return false;
-  try {
-    JSON.parse(token);
-    return true;
-  } catch {
-    return false;
-  }
+import { parseAuthCookieUser } from '@/lib/auth/roles';
+
+async function isAuthenticated(request?: Request) {
+  const cookieStore = await cookies();
+  const rawCookie = cookieStore.get('auth_token')?.value;
+  const authHeader = request?.headers.get('authorization')?.replace('Bearer ', '');
+  const token = rawCookie || authHeader;
+  return Boolean(parseAuthCookieUser(token));
 }
 
 function unauthorizedResponse() {
@@ -34,8 +33,8 @@ function unauthorizedResponse() {
   );
 }
 
-export async function GET() {
-  if (!(await isAuthenticated())) return unauthorizedResponse();
+export async function GET(request: Request) {
+  if (!(await isAuthenticated(request))) return unauthorizedResponse();
   try {
     return NextResponse.json({
       code: 200,
@@ -52,7 +51,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!(await isAuthenticated())) return unauthorizedResponse();
+  if (!(await isAuthenticated(request))) return unauthorizedResponse();
   try {
     const formData = await request.formData();
     const files = [...formData.getAll('files'), ...formData.getAll('file')].filter(
@@ -99,7 +98,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  if (!(await isAuthenticated())) return unauthorizedResponse();
+  if (!(await isAuthenticated(request))) return unauthorizedResponse();
   const parsed = selectionSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
@@ -120,7 +119,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  if (!(await isAuthenticated())) return unauthorizedResponse();
+  if (!(await isAuthenticated(request))) return unauthorizedResponse();
   const parsed = deleteSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
