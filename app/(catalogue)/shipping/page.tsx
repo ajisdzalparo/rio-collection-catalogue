@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { parseEnabledCourierCodes } from '@/lib/couriers';
 
 export const revalidate = 300;
 
@@ -23,9 +24,8 @@ export default async function ShippingPage() {
 
   const storeName = settings?.storeName || 'RIO COLLECTION';
   const originCity = settings?.originCityName || 'Majalengka';
-  const couriers = (settings?.enabledCouriers || 'jne,pos,tiki,sicepat,jnt')
-    .split(',')
-    .map((c) => c.trim().toUpperCase())
+  const couriers = parseEnabledCourierCodes(settings?.enabledCouriers)
+    .map((code) => code.toUpperCase())
     .join(', ');
 
   return (

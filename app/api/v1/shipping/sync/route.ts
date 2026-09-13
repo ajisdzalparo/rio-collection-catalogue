@@ -2,16 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { INDONESIA_MASTER_LOCATIONS } from '@/lib/indonesia-locations';
+import { parseEnabledCourierCodes } from '@/lib/couriers';
 
 export async function POST() {
   try {
     const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } });
     const originId = process.env.RAJAONGKIR_ORIGIN_CITY_ID || '153';
-    const enabledCouriersStr = settings?.enabledCouriers || 'jne,pos,tiki,sicepat,jnt';
-    const activeCouriers = enabledCouriersStr
-      .split(',')
-      .map((c) => c.trim().toLowerCase())
-      .filter(Boolean);
+    const activeCouriers = parseEnabledCourierCodes(settings?.enabledCouriers);
 
     const expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // 60 days cache
 

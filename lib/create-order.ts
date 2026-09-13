@@ -6,6 +6,7 @@ import { orderSchema } from '@/lib/order-schema';
 import { calculateShippingCost } from '@/lib/rajaongkir';
 import { isOrderableStatus, normalizeProductAvailability } from '@/lib/product-availability';
 import { normalizeEmail, normalizeWhatsapp } from '@/lib/customer-identity';
+import { parseEnabledCourierCodes } from '@/lib/couriers';
 
 export class OrderError extends Error {
   constructor(
@@ -23,9 +24,7 @@ export async function createOrder(input: z.infer<typeof orderSchema> & { custome
     throw new OrderError('Nomor WhatsApp tidak valid. Gunakan format 08xx atau 628xx.');
   const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } });
   const courier = input.shipping.courier.toLowerCase();
-  const allowed = (settings?.enabledCouriers ?? 'jne,pos,tiki,sicepat,jnt')
-    .split(',')
-    .map((value) => value.trim().toLowerCase());
+  const allowed = parseEnabledCourierCodes(settings?.enabledCouriers);
   if (!allowed.includes(courier))
     throw new OrderError('Kurir tidak tersedia. Pilih ulang pengiriman.');
   const rates = await calculateShippingCost({

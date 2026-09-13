@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { DEFAULT_ENABLED_COURIERS } from '@/lib/couriers';
 
 export async function GET() {
   try {
@@ -188,7 +189,7 @@ export async function PUT(request: Request) {
         waTemplatePayment,
         waTemplateShipping,
         waTemplateRemind,
-        enabledCouriers: enabledCouriers || 'jne,pos,tiki,sicepat,jnt',
+        enabledCouriers: enabledCouriers || DEFAULT_ENABLED_COURIERS,
         originCityId: originCityId || '153',
         originCityName: originCityName || 'Kota Bandung',
         originProvinceName: originProvinceName || 'Jawa Barat'

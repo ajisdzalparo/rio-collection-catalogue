@@ -17,6 +17,7 @@ import { SearchableSelect } from '@/components/catalogue/searchable-select';
 import { isOrderableStatus } from '@/lib/product-availability';
 import { withActionLoading } from '@/hooks/use-action-loading';
 import { toast } from 'sonner';
+import { parseEnabledCourierCodes } from '@/lib/couriers';
 
 interface ShippingOption {
   key: string;
@@ -100,11 +101,7 @@ function OrderContent() {
 
   // Active Couriers
   const activeCourierCodes = useMemo(() => {
-    const raw = enabledCouriersSetting ?? 'jne,pos,tiki,sicepat,jnt';
-    return raw
-      .split(',')
-      .map((c) => c.trim().toLowerCase())
-      .filter(Boolean);
+    return parseEnabledCourierCodes(enabledCouriersSetting);
   }, [enabledCouriersSetting]);
 
   const prefilledCustIdRef = useRef<string | null>(null);

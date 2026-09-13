@@ -41,22 +41,10 @@ import { DashboardSearchableSelect } from '@/components/dashboard/dashboard-sear
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
+import { COURIERS, DEFAULT_ENABLED_COURIERS } from '@/lib/couriers';
 
 type SettingsTab =
   'profile' | 'couriers' | 'whatsapp' | 'payments' | 'socials' | 'hero' | 'homepage' | 'pages';
-
-const ALL_COURIERS_LIST = [
-  { code: 'jne', name: 'JNE Express', desc: 'Jalur Nugraha Ekakurir' },
-  { code: 'pos', name: 'POS Indonesia', desc: 'PT POS Indonesia' },
-  { code: 'tiki', name: 'TIKI', desc: 'Titipan Kilat' },
-  { code: 'sicepat', name: 'SiCepat Ekspres', desc: 'SiCepat Ekspres Indonesia' },
-  { code: 'jnt', name: 'J&T Express', desc: 'J&T Express Indonesia' },
-  { code: 'anteraja', name: 'Anteraja', desc: 'PT Tri Adi Bersama' },
-  { code: 'wahana', name: 'Wahana Express', desc: 'Wahana Prestasi Logistik' },
-  { code: 'lion', name: 'Lion Parcel', desc: 'Lion Parcel' },
-  { code: 'ninja', name: 'Ninja Xpress', desc: 'Ninja Logistics' },
-  { code: 'ide', name: 'ID Express', desc: 'ID Express Indonesia' }
-];
 
 export default function StoreSettingsPage() {
   const queryClient = useQueryClient();
@@ -71,7 +59,7 @@ export default function StoreSettingsPage() {
   const [logoUrl, setLogoUrl] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('628123456789');
   const [contactEmail, setContactEmail] = useState('');
-  const [enabledCouriers, setEnabledCouriers] = useState<string>('jne,pos,tiki,sicepat,jnt');
+  const [enabledCouriers, setEnabledCouriers] = useState<string>(DEFAULT_ENABLED_COURIERS);
   const [originProvinceName, setOriginProvinceName] = useState<string>('JAWA BARAT');
   const [originCityId, setOriginCityId] = useState<string>('153');
   const [originCityName, setOriginCityName] = useState<string>('Bandung');
@@ -529,7 +517,7 @@ export default function StoreSettingsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
-                  {ALL_COURIERS_LIST.map((courier) => {
+                  {COURIERS.map((courier) => {
                     const isChecked = enabledCouriers
                       .split(',')
                       .map((c) => c.trim().toLowerCase())
@@ -554,7 +542,7 @@ export default function StoreSettingsPage() {
                               {courier.code.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-[11px] text-muted-foreground">{courier.desc}</p>
+                          <p className="text-[11px] text-muted-foreground">{courier.description}</p>
                         </div>
 
                         <input
