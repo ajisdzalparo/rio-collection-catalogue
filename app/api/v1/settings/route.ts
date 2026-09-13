@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { DEFAULT_ENABLED_COURIERS } from '@/lib/couriers';
+import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { recordActivity } from '@/lib/activity-log';
 
 export async function GET() {
   try {
@@ -38,6 +40,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
+    const actor = await getAuthenticatedUser();
     const body = await request.json();
     const {
       storeName,
@@ -199,6 +202,16 @@ export async function PUT(request: Request) {
     revalidatePath('/', 'layout');
     revalidatePath('/about');
     revalidatePath('/(catalogue)', 'layout');
+    await recordActivity({
+      actor,
+      action: 'SETTINGS_UPDATE',
+      module: 'SETTINGS',
+      description: 'Memperbarui pengaturan toko.',
+      entityType: 'StoreSettings',
+      entityId: 'default',
+      metadata: { changedFields: Object.keys(body) },
+      request
+    });
     return NextResponse.json({ code: 200, status: 'success', data: updatedSettings });
   } catch (error) {
     console.error('Error updating settings:', error);

@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { mapProductRelations } from '@/lib/catalogue-relations';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { recordActivity } from '@/lib/activity-log';
 
 const journalIdsSchema = z.array(z.string().min(1)).max(100);
 const journalSummarySelect = {
@@ -18,6 +20,7 @@ const journalSummarySelect = {
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const actor = await getAuthenticatedUser();
     const body = await request.json();
 
     const existingProduct = await prisma.product.findUnique({
@@ -152,6 +155,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     revalidatePath('/archive');
     revalidatePath(`/products/${updatedProduct.slug}`);
 
+    await recordActivity({
+      actor,
+      action: 'UPDATE',
+      module: 'PRODUCTS',
+      description: `Memperbarui produk ${updatedProduct.name}.`,
+      entityType: 'Product',
+      entityId: updatedProduct.id,
+      metadata: { changedFields: Object.keys(body) },
+      request
+    });
+
     return NextResponse.json({
       code: 200,
       status: 'success',
@@ -172,10 +186,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   return PUT(request, context);
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    await prisma.product.update({
+    const actor = await getAuthenticatedUser();
+    const product = await prisma.product.update({
       where: { id },
       data: {
         deletedAt: new Date()
@@ -183,6 +198,16 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     });
     revalidatePath('/catalogue');
     revalidatePath('/archive');
+    await recordActivity({
+      actor,
+      action: 'DELETE',
+      module: 'PRODUCTS',
+      description: `Menghapus produk ${product.name}.`,
+      entityType: 'Product',
+      entityId: product.id,
+      metadata: { slug: product.slug },
+      request
+    });
     return NextResponse.json({
       code: 200,
       status: 'success',

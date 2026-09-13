@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { VStack, Flex } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import {
   Dialog,
@@ -347,6 +348,7 @@ function MasterDataPageContent() {
       cell: (item) => (
         <Switch
           checked={item.isActive}
+          disabled={masterMutations.isPending}
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.toggleSize({ size: item.size, isActive: checked });
@@ -403,6 +405,7 @@ function MasterDataPageContent() {
       cell: (item) => (
         <Switch
           checked={item.isActive ?? true}
+          disabled={masterMutations.isPending}
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.updateCategory({ id: item.id, isActive: checked });
@@ -472,6 +475,7 @@ function MasterDataPageContent() {
       cell: (item) => (
         <Switch
           checked={item.isActive ?? true}
+          disabled={masterMutations.isPending}
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.updateColor({ id: item.id, isActive: checked });
@@ -531,6 +535,7 @@ function MasterDataPageContent() {
       cell: (item) => (
         <Switch
           checked={item.isActive ?? true}
+          disabled={masterMutations.isPending}
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.updateTopic({ id: item.id, isActive: checked });
@@ -647,6 +652,7 @@ function MasterDataPageContent() {
       cell: (item) => (
         <Switch
           checked={item.isActive ?? true}
+          disabled={masterMutations.isPending}
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.updateBank({ id: item.id, isActive: checked });
@@ -707,6 +713,7 @@ function MasterDataPageContent() {
       cell: (item) => (
         <Switch
           checked={item.isActive}
+          disabled={masterMutations.isPending}
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.updateMaterial({ id: item.id, isActive: checked });
@@ -1050,7 +1057,10 @@ function MasterDataPageContent() {
       )}
 
       {/* Create / Edit Dialog Form */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => !masterMutations.isPending && setIsDialogOpen(open)}
+      >
         <DialogContent className="max-w-md bg-card border-border/40 rounded-2xl">
           <DialogHeader className="border-b border-border/20 pb-4">
             <DialogTitle className="text-sm font-extrabold flex items-center gap-2 uppercase tracking-widest text-muted-foreground/80">
@@ -1162,15 +1172,17 @@ function MasterDataPageContent() {
             <Button
               variant="outline"
               onClick={() => setIsDialogOpen(false)}
+              disabled={masterMutations.isPending}
               className="h-10 rounded-xl text-xs cursor-pointer"
             >
               Batal
             </Button>
             <Button
               onClick={handleSave}
+              disabled={masterMutations.isPending || !itemName.trim()}
               className="h-10 rounded-xl text-xs font-bold cursor-pointer"
             >
-              Simpan
+              {masterMutations.isPending ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1183,6 +1195,7 @@ function MasterDataPageContent() {
         title="Hapus Data Master"
         description={`Apakah Anda yakin ingin menghapus "${deleteTarget?.name}"? Tindakan ini tidak dapat dibatalkan.`}
         onConfirm={confirmDeleteAction}
+        loading={masterMutations.isPending}
       />
     </VStack>
   );
@@ -1190,11 +1203,7 @@ function MasterDataPageContent() {
 
 export default function MasterPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="p-8 text-center text-xs text-muted-foreground">Memuat Master Data...</div>
-      }
-    >
+    <Suspense fallback={<CmsPageSkeleton variant="list" />}>
       <MasterDataPageContent />
     </Suspense>
   );

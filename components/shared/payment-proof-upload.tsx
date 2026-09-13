@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { withActionLoading } from '@/hooks/use-action-loading';
 
 interface PaymentProofUploadProps {
   value: string;
@@ -54,16 +53,14 @@ export function PaymentProofUpload({
     setError('');
     setIsUploading(true);
     try {
-      await withActionLoading(async () => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('purpose', 'payment-proof');
-        const { data: result } = await axios.post<{ data?: { url?: string }; message?: string }>('/api/v1/upload', formData);
-        if (!result.data?.url) {
-          throw new Error(result.message || 'Upload bukti gagal.');
-        }
-        onChange(result.data.url);
-      }, 'Mengunggah berkas bukti...');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('purpose', 'payment-proof');
+      const { data: result } = await axios.post<{ data?: { url?: string }; message?: string }>('/api/v1/upload', formData);
+      if (!result.data?.url) {
+        throw new Error(result.message || 'Upload bukti gagal.');
+      }
+      onChange(result.data.url);
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Upload bukti gagal.');
     } finally {

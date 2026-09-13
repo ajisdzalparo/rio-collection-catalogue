@@ -54,7 +54,10 @@ export default function TestimoniesCmsPage() {
     addTestimony,
     updateTestimony,
     deleteTestimony,
-    isUpdating
+    isLoading,
+    isCreating,
+    isUpdating,
+    isDeleting
   } = useTestimonies();
 
   const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
@@ -125,23 +128,38 @@ export default function TestimoniesCmsPage() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.imageUrl) {
       alert('Silakan upload gambar screenshot testimoni terlebih dahulu.');
       return;
     }
 
-    if (editingItem) {
-      updateTestimony(editingItem.id, formData);
-    } else {
-      addTestimony({
-        ...formData,
-        alt: formData.alt || formData.clientName || 'Bukti Chat WhatsApp'
-      });
+    try {
+      if (editingItem) {
+        await updateTestimony(editingItem.id, formData);
+      } else {
+        await addTestimony({
+          ...formData,
+          alt: formData.alt || formData.clientName || 'Bukti Chat WhatsApp'
+        });
+      }
+      setDialogOpen(false);
+    } catch {
+      toast.error('Gagal menyimpan testimoni.');
     }
-    setDialogOpen(false);
   };
+
+  const handleDeleteTestimony = async (id: string) => {
+    try {
+      await deleteTestimony(id);
+      toast.success('Testimoni berhasil dihapus.');
+    } catch {
+      toast.error('Gagal menghapus testimoni.');
+    }
+  };
+
+  const isSaving = isCreating || isUpdating;
 
   const columns: Column<Testimony>[] = [
     {
@@ -182,7 +200,7 @@ export default function TestimoniesCmsPage() {
       cell: (item: Testimony) => (
         <div className="flex items-center gap-2.5">
           <Switch
-            size="sm"
+            size="lg"
             checked={item.status === 'ACTIVE'}
             disabled={isUpdating}
             onCheckedChange={(checked) => {
@@ -237,6 +255,7 @@ export default function TestimoniesCmsPage() {
             size="icon"
             variant="ghost"
             onClick={() => handleOpenEdit(item)}
+            disabled={isSaving || isDeleting}
             title="Edit"
             className="h-8 w-8 rounded-lg hover:bg-muted cursor-pointer text-muted-foreground hover:text-foreground"
           >
@@ -246,7 +265,8 @@ export default function TestimoniesCmsPage() {
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => deleteTestimony(item.id)}
+            onClick={() => void handleDeleteTestimony(item.id)}
+            disabled={isDeleting || isSaving}
             title="Hapus"
             className="h-8 w-8 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
           >
@@ -312,6 +332,7 @@ export default function TestimoniesCmsPage() {
       <DataTable
         columns={columns}
         data={filteredTestimonies}
+        isLoading={isLoading}
         searchKey="clientName"
         extraSearchKeys={['alt']}
         searchPlaceholder="Cari nama atau keterangan..."
@@ -394,7 +415,7 @@ export default function TestimoniesCmsPage() {
       />
 
       {/* Form Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => !isSaving && setDialogOpen(open)}>
         <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -489,11 +510,20 @@ export default function TestimoniesCmsPage() {
             </div>
 
             <DialogFooter className="pt-4 border-t border-border/40 gap-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+                disabled={isSaving}
+              >
                 Batal
               </Button>
-              <Button type="submit" className="font-bold">
-                {editingItem ? 'Simpan Perubahan' : 'Upload Testimoni'}
+              <Button type="submit" className="font-bold" disabled={isSaving}>
+                {isSaving
+                  ? 'Menyimpan...'
+                  : editingItem
+                    ? 'Simpan Perubahan'
+                    : 'Upload Testimoni'}
               </Button>
             </DialogFooter>
           </form>

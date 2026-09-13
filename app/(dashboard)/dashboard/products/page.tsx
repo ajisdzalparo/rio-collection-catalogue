@@ -23,6 +23,7 @@ import { useProducts } from '@/hooks/use-products';
 import { useMasterStore } from '@/hooks/use-master-data';
 import { VStack, Flex } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { SafeImage, CMSBadge } from '@/components/shared';
 import { formatIDR } from '@/lib/utils';
@@ -587,9 +588,7 @@ function ProductsContent() {
 
 export default function ProductsCmsPage() {
   return (
-    <Suspense
-      fallback={<div className="p-8 text-xs text-muted-foreground">Memuat data produk...</div>}
-    >
+    <Suspense fallback={<CmsPageSkeleton variant="list" />}>
       <ProductsContent />
     </Suspense>
   );

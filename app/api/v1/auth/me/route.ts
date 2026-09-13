@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUser } from '@/lib/auth/authorization';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
-
-    if (!token) {
+    const userData = await getAuthenticatedUser();
+    if (!userData) {
       return NextResponse.json(
         { code: 401, status: 'error', message: 'Belum login' },
         { status: 401 }
       );
     }
 
-    const userData = JSON.parse(token);
     return NextResponse.json({
       code: 200,
       status: 'success',

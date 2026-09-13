@@ -30,6 +30,7 @@ import { Label } from '@/components/ui/label';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { useRbac } from '@/features/users/hooks/use-rbac';
 
 interface Variant {
   id: string;
@@ -60,6 +61,8 @@ const STOCK_MODE_OPTIONS = [
 
 export default function StockManagementPage() {
   const queryClient = useQueryClient();
+  const { hasPermission } = useRbac();
+  const canManageStock = hasPermission('stock.manage');
   // Applied Filters (used to filter the stock table)
   const [appliedCategories, setAppliedCategories] = useState<string[]>([]);
   const [appliedStockModes, setAppliedStockModes] = useState<string[]>([]);
@@ -197,7 +200,7 @@ export default function StockManagementPage() {
   };
 
   const handleSaveStock = () => {
-    if (!editingProduct) return;
+    if (!editingProduct || !canManageStock) return;
     const variantsPayload = Object.entries(variantDrafts).map(([size, item]) => ({
       size,
       stock: item.stock,
@@ -299,8 +302,9 @@ export default function StockManagementPage() {
             onClick={() => handleOpenEdit(product)}
             variant="outline"
             size="icon"
+            disabled={!canManageStock}
             className="h-8 w-8 rounded-lg cursor-pointer"
-            title="Edit Stok"
+            title={canManageStock ? 'Edit Stok' : 'Tidak memiliki akses kelola stok'}
           >
             <Edit className="h-4 w-4" />
           </Button>

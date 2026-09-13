@@ -7,7 +7,6 @@ import { Upload, X, Crop, Image as ImageIcon, Link as LinkIcon, Loader2 } from '
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { ImageCropperModal, AspectRatioOption } from '@/components/shared/image-cropper-modal';
-import { withActionLoading } from '@/hooks/use-action-loading';
 
 export interface ImageUploadProps {
   value?: string;
@@ -57,16 +56,14 @@ export function ImageUpload({
   const uploadFile = async (file: File, fallbackPreviewUrl?: string) => {
     setIsUploading(true);
     try {
-      await withActionLoading(async () => {
-        const formData = new FormData();
-        formData.append('file', file);
-        const { data } = await axios.post('/api/v1/upload', formData);
-        if (data?.data?.url) {
-          onChange(data.data.url);
-          setIsUploading(false);
-          return;
-        }
-      }, 'Mengunggah gambar...');
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await axios.post('/api/v1/upload', formData);
+      if (data?.data?.url) {
+        onChange(data.data.url);
+        setIsUploading(false);
+        return;
+      }
     } catch (error) {
       console.warn('Upload API unavailable, using local cropped data URL:', error);
     }
@@ -394,6 +391,7 @@ export function MultiImageUpload({
   const [currentCropImage, setCurrentCropImage] = useState<string>('');
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [activeEditingIndex, setActiveEditingIndex] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Process next file in queue
   const processNextInQueue = (remainingQueue: File[]) => {
@@ -440,17 +438,18 @@ export function MultiImageUpload({
 
     // Adding new item
     let finalUrl = previewUrl;
+    setIsUploading(true);
     try {
-      await withActionLoading(async () => {
-        const formData = new FormData();
-        formData.append('file', croppedFile);
-        const { data } = await axios.post('/api/v1/upload', formData);
-        if (data?.data?.url) {
-          finalUrl = data.data.url;
-        }
-      }, 'Mengunggah gambar...');
+      const formData = new FormData();
+      formData.append('file', croppedFile);
+      const { data } = await axios.post('/api/v1/upload', formData);
+      if (data?.data?.url) {
+        finalUrl = data.data.url;
+      }
     } catch {
       // fallback to previewUrl
+    } finally {
+      setIsUploading(false);
     }
 
     onChange([...value, finalUrl]);
@@ -518,7 +517,8 @@ export function MultiImageUpload({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center justify-center aspect-square w-full rounded-xl border border-dashed border-border/70 hover:border-foreground/40 bg-muted/10 hover:bg-muted/20 transition-all cursor-pointer"
+            disabled={isUploading}
+            className="flex flex-col items-center justify-center aspect-square w-full rounded-xl border border-dashed border-border/70 hover:border-foreground/40 bg-muted/10 hover:bg-muted/20 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           >
             <input
               ref={fileInputRef}
@@ -528,8 +528,14 @@ export function MultiImageUpload({
               className="hidden"
               onChange={handleFileChange}
             />
-            <ImageIcon className="h-5 w-5 text-muted-foreground mb-1" />
-            <span className="text-[10px] font-bold text-muted-foreground">Tambah Foto</span>
+            {isUploading ? (
+              <Loader2 className="mb-1 h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <ImageIcon className="mb-1 h-5 w-5 text-muted-foreground" />
+            )}
+            <span className="text-[10px] font-bold text-muted-foreground">
+              {isUploading ? 'Mengunggah...' : 'Tambah Foto'}
+            </span>
           </button>
         )}
       </div>

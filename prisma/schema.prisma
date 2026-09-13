@@ -21,12 +21,48 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
-model Role {
+model ActivityLog {
   id          String   @id @default(cuid())
-  name        String   @unique
-  permissions Json
+  actorId     String?
+  actorName   String
+  actorEmail  String
+  actorRole   String
+  action      String
+  module      String
+  entityType  String?
+  entityId    String?
+  description String
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([actorEmail])
+  @@index([action])
+  @@index([module])
+}
+
+model PlatformFinanceSettings {
+  id                String   @id @default("default")
+  serverCostMonthly Int      @default(300000)
+  markupMode        String   @default("NOMINAL")
+  markupValue       Int      @default(0)
+  commissionMode    String   @default("PERCENTAGE")
+  commissionRate    Int      @default(20)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Role {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  description  String?
+  isSystemRole Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  permissions  Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Category {
@@ -58,7 +94,7 @@ model Size {
 
 model MaterialMaster {
   id          String   @id @default(cuid())
-  type        String   // FABRIC, TREATMENT, ORIGIN, CARE
+  type        String // FABRIC, TREATMENT, ORIGIN, CARE
   name        String
   description String?
   isActive    Boolean  @default(true)
@@ -230,6 +266,10 @@ model Order {
   refundProofUrl            String?
   shippingProofUrl          String?
   totalPrice                Int
+  commissionModeSnapshot    String      @default("PERCENTAGE")
+  commissionRateSnapshot    Int         @default(20)
+  commissionBaseAmount      Int         @default(0)
+  commissionAmount          Int         @default(0)
   status                    String      @default("PENDING") // PENDING, PAID, FULFILLED, CANCELLED
   waFollowedUp              Boolean     @default(false)
   items                     OrderItem[]

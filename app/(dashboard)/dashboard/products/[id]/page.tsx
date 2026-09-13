@@ -13,13 +13,13 @@ import {
   ArrowLeft,
   Edit,
   Trash2,
-  Loader2,
   AlertCircle,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 
 interface ProductDetailPageProps {
   params: Promise<{ id: string }>;
@@ -34,12 +34,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-100 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-xs text-muted-foreground font-medium">Memuat detail produk...</p>
-      </div>
-    );
+    return <CmsPageSkeleton variant="detail" />;
   }
 
   const product = products.find((p) => p.id === id);

@@ -31,3 +31,7 @@ export const changePasswordSchema = z
     newPassword: passwordSchema
   })
   .strict();
+
+export const adminResetPasswordSchema = z
+  .object({ newPassword: passwordSchema })
+  .strict();

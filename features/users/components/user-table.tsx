@@ -10,14 +10,29 @@ import { toast } from '@/components/ui/sonner';
 import { UserActions } from './user-actions';
 import { useUpdateUser } from '../hooks/use-update-user';
 import type { User } from '../types/user.types';
+import { isSuperAdminRole } from '@/lib/auth/roles';
+import { useAuth } from '@/hooks/use-auth';
 
 function UserStatusSwitch({ user }: { user: User }) {
   const { mutateAsync: updateUser } = useUpdateUser();
+  const { user: authUser } = useAuth();
   const checked = user.status === 'active';
+  const isSelf = authUser?.id === user.id;
+  const isLocked = isSelf || (isSuperAdminRole(user.role) && !isSuperAdminRole(authUser?.role));
 
   return (
     <Switch
       checked={checked}
+      disabled={isLocked}
+      aria-label={isLocked ? 'Status akun terkunci' : `Ubah status ${user.name}`}
+      title={
+        isSelf
+          ? 'Akun sendiri tidak dapat dinonaktifkan'
+          : isLocked
+            ? 'Status Super Admin hanya dapat diubah oleh Super Admin'
+            : 'Ubah status pengguna'
+      }
+      className={isLocked ? 'opacity-35 grayscale' : undefined}
       onCheckedChange={async (val) => {
         try {
           await updateUser({
@@ -122,6 +137,7 @@ export default function UserTable() {
         searchPlaceholder="Cari pengguna berdasarkan nama atau email..."
         isLoading={isLoading}
         enableSelection
+        isRowSelectable={(user) => !isSuperAdminRole(user.role)}
         emptyTitle="Belum Ada Pengguna / Admin"
         emptyDescription="Klik 'Add User' di atas untuk menambahkan akun pengelola CMS baru."
         bulkActions={(selected, clear) => (

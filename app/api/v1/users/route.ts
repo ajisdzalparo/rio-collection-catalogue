@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { isSuperAdminRole } from '@/lib/auth/roles';
+import { recordActivity } from '@/lib/activity-log';
 
 export async function GET() {
   try {
@@ -22,8 +25,23 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const authenticatedUser = await getAuthenticatedUser();
+    if (!authenticatedUser) {
+      return NextResponse.json(
+        { code: 401, status: 'error', message: 'Sesi login tidak valid.' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { name, email, role, status } = body;
+
+    if (isSuperAdminRole(role) && !isSuperAdminRole(authenticatedUser.role)) {
+      return NextResponse.json(
+        { code: 403, status: 'error', message: 'Hanya Super Admin yang dapat menambahkan role Super Admin.' },
+        { status: 403 }
+      );
+    }
 
     const newUser = await prisma.user.create({
       data: {
@@ -32,6 +50,17 @@ export async function POST(request: Request) {
         role: role || 'Admin',
         status: status || 'active'
       }
+    });
+
+    await recordActivity({
+      actor: authenticatedUser,
+      action: 'CREATE',
+      module: 'USERS',
+      description: `Menambahkan akun ${newUser.name} (${newUser.email}).`,
+      entityType: 'User',
+      entityId: newUser.id,
+      metadata: { role: newUser.role, status: newUser.status },
+      request
     });
 
     return NextResponse.json({

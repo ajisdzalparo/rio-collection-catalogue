@@ -538,7 +538,29 @@ export function useMasterMutations() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['materials'] })
   });
 
+  const isPending = [
+    addCategoryMutation,
+    updateCategoryMutation,
+    deleteCategoryMutation,
+    addColorMutation,
+    updateColorMutation,
+    deleteColorMutation,
+    addTopicMutation,
+    updateTopicMutation,
+    deleteTopicMutation,
+    toggleSizeMutation,
+    addSizeMutation,
+    deleteSizeMutation,
+    addBankMutation,
+    updateBankMutation,
+    deleteBankMutation,
+    addMaterialMutation,
+    updateMaterialMutation,
+    deleteMaterialMutation
+  ].some((mutation) => mutation.isPending);
+
   return {
+    isPending,
     addCategory: addCategoryMutation.mutateAsync,
     updateCategory: updateCategoryMutation.mutateAsync,
     deleteCategory: deleteCategoryMutation.mutateAsync,

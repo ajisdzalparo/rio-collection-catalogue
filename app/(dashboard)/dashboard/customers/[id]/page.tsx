@@ -12,8 +12,7 @@ import {
   ClipboardList,
   Shirt,
   ExternalLink,
-  AlertTriangle,
-  Loader2
+  AlertTriangle
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { useCustomers } from '@/hooks/use-customers';
 import { formatIDR } from '@/lib/utils';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -82,14 +82,7 @@ export default function CustomerDetailPage({ params }: PageProps) {
   }, [customer]);
 
   if (loading) {
-    return (
-      <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground animate-pulse font-medium">
-          Memuat data profil pelanggan...
-        </p>
-      </div>
-    );
+    return <CmsPageSkeleton variant="detail" />;
   }
 
   if (!customer) {

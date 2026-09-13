@@ -10,13 +10,14 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash2, KeyRound } from 'lucide-react';
+import { Lock, MoreHorizontal, Pencil, Trash2, KeyRound } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { UserFormDialog } from './user-form-dialog';
 import { ResetPasswordDialog } from './reset-password-dialog';
 import { useDeleteUser } from '../hooks/use-delete-user';
 import { useRbac } from '../hooks/use-rbac';
 import { useAuth } from '@/hooks/use-auth';
+import { isSuperAdminRole } from '@/lib/auth/roles';
 import type { User } from '../types/user.types';
 
 interface UserActionsProps {
@@ -43,8 +44,16 @@ export function UserActions({ user }: UserActionsProps) {
     !currentRoleName;
 
   const canManage = isAdminOrSuper || hasPermission('users.manage');
-  const canResetPassword = isAdminOrSuper || hasPermission('users.reset_password');
-  const canDelete = isAdminOrSuper || hasPermission('users.delete');
+  const canResetOtherUsers = isAdminOrSuper || hasPermission('users.reset_password');
+  const canResetPassword =
+    canResetOtherUsers &&
+    (!isSuperAdminRole(user.role) || isSuperAdminRole(authUser?.role));
+  const canEdit = canManage && (!isSuperAdminRole(user.role) || isSuperAdminRole(authUser?.role));
+  const canDelete =
+    (isAdminOrSuper || hasPermission('users.delete')) &&
+    (!isSuperAdminRole(user.role) || isSuperAdminRole(authUser?.role)) &&
+    authUser?.id !== user.id;
+  const isLocked = isSuperAdminRole(user.role) && !isSuperAdminRole(authUser?.role);
 
   const handleDelete = async () => {
     try {
@@ -54,6 +63,21 @@ export function UserActions({ user }: UserActionsProps) {
       console.error(err);
     }
   };
+
+  if (isLocked) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        disabled
+        title="Akun Super Admin hanya dapat dikelola oleh Super Admin"
+        aria-label="Akun Super Admin terkunci"
+        className="h-8 w-8 cursor-not-allowed text-muted-foreground"
+      >
+        <Lock className="h-4 w-4" />
+      </Button>
+    );
+  }
 
   return (
     <>
@@ -72,12 +96,12 @@ export function UserActions({ user }: UserActionsProps) {
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-border/20 -mx-1 my-1" />
 
-          {canManage && (
+          {canEdit && (
             <DropdownMenuItem
               className="cursor-pointer gap-2 text-xs font-semibold rounded-xl py-2 px-2.5"
               onClick={() => setShowEditDialog(true)}
             >
-              <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               <span>Edit Pengguna</span>
             </DropdownMenuItem>
           )}

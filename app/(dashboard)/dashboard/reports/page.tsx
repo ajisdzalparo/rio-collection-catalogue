@@ -2,6 +2,8 @@
 
 import React, { Suspense } from 'react';
 import { VStack } from '@/components/ui/layout';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
+import { ErrorState } from '@/components/shared/error-state';
 import type { DateRange } from '@/types/date-picker.types';
 import {
   useReportsData,
@@ -16,6 +18,8 @@ import {
 
 function ReportsPageContent() {
   const {
+    isLoading,
+    error,
     startDate,
     setStartDate,
     endDate,
@@ -35,6 +39,14 @@ function ReportsPageContent() {
     chartDataPoints,
     chartInsights
   } = useReportsData();
+
+  if (isLoading) {
+    return <CmsPageSkeleton variant="report" />;
+  }
+
+  if (error) {
+    return <ErrorState message={error.message || 'Laporan penjualan tidak dapat dimuat.'} />;
+  }
 
   const handleExportExcel = () => {
     exportReportToExcel({
@@ -111,12 +123,7 @@ function ReportsPageContent() {
 export default function ReportsPage() {
   return (
     <Suspense
-      fallback={
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-foreground" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading selling reports...</p>
-        </div>
-      }
+      fallback={<CmsPageSkeleton variant="report" />}
     >
       <ReportsPageContent />
     </Suspense>

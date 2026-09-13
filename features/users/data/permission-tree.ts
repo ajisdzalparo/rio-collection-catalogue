@@ -16,7 +16,7 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   {
     id: 'products',
     menuName: '2. Produk & Katalog CMS',
-    description: 'Akses pengelolaan katalog kaos, varian ukuran, warna, & stok',
+    description: 'Akses pengelolaan katalog kaos, varian ukuran, warna, & detail produk',
     actions: [
       {
         key: 'products.view',
@@ -30,8 +30,8 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
       },
       {
         key: 'products.edit',
-        label: 'Edit Produk & Stok',
-        description: 'Mengubah harga, gambar, deskripsi, & menyesuaikan stok'
+        label: 'Edit Produk',
+        description: 'Mengubah harga, gambar, deskripsi, dan rincian katalog produk'
       },
       {
         key: 'products.delete',
@@ -41,8 +41,25 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
     ]
   },
   {
+    id: 'stock',
+    menuName: '3. Stock Management',
+    description: 'Akses pengelolaan ketersediaan dan kuantitas stok per varian ukuran',
+    actions: [
+      {
+        key: 'stock.view',
+        label: 'Lihat Stok',
+        description: 'Melihat ringkasan dan rincian stok seluruh produk'
+      },
+      {
+        key: 'stock.manage',
+        label: 'Kelola Stok',
+        description: 'Mengubah mode ketersediaan dan kuantitas stok per ukuran'
+      }
+    ]
+  },
+  {
     id: 'orders',
-    menuName: '3. Pesanan & Transaksi',
+    menuName: '4. Pesanan & Transaksi',
     description: 'Akses ke data transaksi pesanan pelanggan & resi pengiriman',
     actions: [
       {
@@ -64,7 +81,7 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   },
   {
     id: 'testimonies',
-    menuName: '4. Bukti Chat & Testimoni',
+    menuName: '5. Bukti Chat & Testimoni',
     description: 'Akses ke galeri screenshot tangkapan layar bukti kepuasan pelanggan',
     actions: [
       {
@@ -81,7 +98,7 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   },
   {
     id: 'journal',
-    menuName: '5. Jurnal & Artikel Blog',
+    menuName: '6. Jurnal & Artikel Blog',
     description: 'Akses ke publikasi konten visual, artikel, & update brand',
     actions: [
       {
@@ -98,7 +115,7 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   },
   {
     id: 'settings',
-    menuName: '6. Pengaturan Toko & Master Data',
+    menuName: '7. Pengaturan Toko & Master Data',
     description: 'Konfigurasi master data, ekspedisi pengiriman, & hero banner',
     actions: [
       {
@@ -115,7 +132,7 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   },
   {
     id: 'reports',
-    menuName: '7. Laporan Keuangan & HPP',
+    menuName: '8. Laporan Keuangan & HPP',
     description: 'Akses rincian margin profit, omzet bulanan, & perhitungan HPP',
     actions: [
       {
@@ -127,7 +144,7 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   },
   {
     id: 'users',
-    menuName: '8. Pengguna & Keamanan (RBAC)',
+    menuName: '9. Pengguna & Keamanan (RBAC)',
     description: 'Akses pengelolaan akun staf, hak akses role, & reset password',
     actions: [
       {
@@ -151,6 +168,18 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
         description: 'Menghapus akun staf dari sistem login dashboard'
       }
     ]
+  },
+  {
+    id: 'activity',
+    menuName: '10. Activity Log',
+    description: 'Riwayat aktivitas penting yang dilakukan pengelola CMS',
+    actions: [
+      {
+        key: 'activity.view',
+        label: 'Lihat Activity Log',
+        description: 'Melihat pelaku, waktu, dan rincian perubahan pada CMS'
+      }
+    ]
   }
 ];
 
@@ -160,6 +189,8 @@ export const DEFAULT_ADMIN_PERMISSIONS: RolePermissions = {
   'products.create': true,
   'products.edit': true,
   'products.delete': true,
+  'stock.view': true,
+  'stock.manage': true,
   'orders.view': true,
   'orders.process': true,
   'orders.export': true,

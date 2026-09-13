@@ -19,6 +19,7 @@ import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { useJournals } from '@/hooks/use-journals';
 import { Flex, VStack } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import {
   Dialog,
@@ -382,14 +383,7 @@ function JournalCmsPageContent() {
 
 export default function JournalCmsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-foreground" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading journal panel...</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<CmsPageSkeleton variant="list" />}>
       <JournalCmsPageContent />
     </Suspense>
   );

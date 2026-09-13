@@ -16,7 +16,6 @@ import {
   Package,
   TrendingUp,
   ShieldAlert,
-  Loader2,
   ExternalLink,
   Eye
 } from 'lucide-react';
@@ -44,6 +43,7 @@ import {
 import { RupiahInput } from '@/components/ui/rupiah-input';
 import { PaymentProofUpload } from '@/components/shared/payment-proof-upload';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { Stepper } from '@/components/ui/stepper';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { useStoreSettingsQuery, useStoreSettingsStore } from '@/hooks/use-store-settings';
@@ -199,14 +199,7 @@ export default function OrderDetailPage({ params }: PageProps) {
   };
 
   if (ordersLoading) {
-    return (
-      <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground animate-pulse font-medium">
-          Memuat rincian pesanan...
-        </p>
-      </div>
-    );
+    return <CmsPageSkeleton variant="detail" />;
   }
 
   if (!order) {

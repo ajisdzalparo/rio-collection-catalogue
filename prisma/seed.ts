@@ -11,14 +11,37 @@ async function main() {
   const roles = [
     {
       name: 'Super Admin',
+      description: 'Akses tertinggi ke seluruh sistem dan finance platform',
+      isSystemRole: true,
       permissions: {
         viewOverview: true,
         manageOrders: true,
         manageProducts: true,
+        'stock.view': true,
+        'stock.manage': true,
         manageJournal: true,
         viewReports: true,
         manageSettings: true,
-        manageUsers: true
+        manageUsers: true,
+        'activity.view': true,
+        'platform.finance.view': true
+      }
+    },
+    {
+      name: 'Owner',
+      description: 'Pemilik toko dengan akses penuh operasional selain finance platform',
+      isSystemRole: true,
+      permissions: {
+        viewOverview: true,
+        manageOrders: true,
+        manageProducts: true,
+        'stock.view': true,
+        'stock.manage': true,
+        manageJournal: true,
+        viewReports: true,
+        manageSettings: true,
+        manageUsers: true,
+        'activity.view': true
       }
     },
     {
@@ -27,6 +50,8 @@ async function main() {
         viewOverview: true,
         manageOrders: true,
         manageProducts: true,
+        'stock.view': true,
+        'stock.manage': true,
         manageJournal: true,
         viewReports: true,
         manageSettings: true,
@@ -39,6 +64,8 @@ async function main() {
         viewOverview: true,
         manageOrders: true,
         manageProducts: true,
+        'stock.view': true,
+        'stock.manage': true,
         manageJournal: true,
         viewReports: true,
         manageSettings: true,
@@ -51,6 +78,8 @@ async function main() {
         viewOverview: true,
         manageOrders: true,
         manageProducts: true,
+        'stock.view': true,
+        'stock.manage': true,
         manageJournal: true,
         viewReports: true,
         manageSettings: false,
@@ -63,6 +92,8 @@ async function main() {
         viewOverview: true,
         manageOrders: true,
         manageProducts: false,
+        'stock.view': false,
+        'stock.manage': false,
         manageJournal: false,
         viewReports: false,
         manageSettings: false,
@@ -75,6 +106,8 @@ async function main() {
         viewOverview: true,
         manageOrders: false,
         manageProducts: true,
+        'stock.view': true,
+        'stock.manage': true,
         manageJournal: true,
         viewReports: false,
         manageSettings: false,
@@ -86,31 +119,43 @@ async function main() {
   for (const role of roles) {
     await prisma.role.upsert({
       where: { name: role.name },
-      update: { permissions: role.permissions },
+      update: {
+        permissions: role.permissions,
+        description: role.description,
+        isSystemRole: role.isSystemRole ?? false,
+        isActive: true
+      },
       create: role
     });
   }
   console.log('✅ Roles seeded');
 
-  // 2. Default Admin User
-  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@riocollection.com').trim().toLowerCase();
-  const adminName = process.env.ADMIN_NAME || 'Admin RIO COLLECTION';
+  // 2. Provision one protected Super Admin and normalize every other CMS user as Owner.
+  const superAdminEmail = (
+    process.env.SUPER_ADMIN_EMAIL || 'ajisdzalparo22@gmail.com'
+  ).trim().toLowerCase();
+  const superAdminName = process.env.SUPER_ADMIN_NAME || 'Ajis Dzalparo';
 
-  await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: {
-      name: adminName,
-      role: 'Super Admin',
-      status: 'active'
-    },
-    create: {
-      name: adminName,
-      email: adminEmail,
-      role: 'Super Admin',
-      status: 'active'
-    }
-  });
-  console.log(`✅ Admin user seeded: ${adminEmail}`);
+  const [, superAdminUser] = await prisma.$transaction([
+    prisma.user.updateMany({
+      where: { email: { not: superAdminEmail } },
+      data: { role: 'Owner' }
+    }),
+    prisma.user.upsert({
+      where: { email: superAdminEmail },
+      update: {
+        role: 'Super Admin',
+        status: 'active'
+      },
+      create: {
+        name: superAdminName,
+        email: superAdminEmail,
+        role: 'Super Admin',
+        status: 'active'
+      }
+    })
+  ]);
+  console.log(`✅ Super Admin seeded: ${superAdminUser.email}; other users normalized as Owner`);
 
   // 3. Master Categories
   const categories = [
@@ -638,6 +683,42 @@ async function main() {
     }
   });
   console.log('✅ Store Settings seeded');
+
+  await prisma.platformFinanceSettings.upsert({
+    where: { id: 'default' },
+    update: {},
+    create: {
+      id: 'default',
+      serverCostMonthly: 300000,
+      markupMode: 'NOMINAL',
+      markupValue: 0,
+      commissionMode: 'PERCENTAGE',
+      commissionRate: 20
+    }
+  });
+  console.log('✅ Platform Finance Settings seeded');
+
+  const legacyPaidOrders = await prisma.order.findMany({
+    where: {
+      status: { in: ['PAID', 'FULFILLED'] },
+      commissionBaseAmount: 0
+    },
+    include: { items: true }
+  });
+
+  for (const order of legacyPaidOrders) {
+    const baseAmount = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        commissionModeSnapshot: 'PERCENTAGE',
+        commissionRateSnapshot: 20,
+        commissionBaseAmount: baseAmount,
+        commissionAmount: Math.round((baseAmount * 20) / 100)
+      }
+    });
+  }
+  console.log(`✅ Backfilled commission snapshots for ${legacyPaidOrders.length} paid orders`);
 
   console.log('🎉 Comprehensive database seeding completed successfully!');
 }

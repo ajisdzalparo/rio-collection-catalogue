@@ -5,6 +5,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { useAuth } from '@/hooks/use-auth';
+import { isSuperAdminRole, normalizeRoleName } from '@/lib/auth/roles';
 import type { RolePermissions, UserRole } from '../types/roles.types';
 import { PERMISSION_TREE } from '../data/permission-tree';
 
@@ -29,6 +31,22 @@ const DEFAULT_ROLES: UserRole[] = [
     isSystemRole: true,
     isActive: true,
     permissions: {
+      'activity.view': true,
+      viewOverview: true,
+      manageOrders: true,
+      manageProducts: true,
+      manageJournal: true,
+      manageSettings: true,
+      viewReports: true
+    }
+  },
+  {
+    name: 'Owner',
+    description: 'Pemilik toko dengan akses penuh operasional tanpa akses finance platform Super Admin',
+    isSystemRole: true,
+    isActive: true,
+    permissions: {
+      'activity.view': true,
       viewOverview: true,
       manageOrders: true,
       manageProducts: true,
@@ -109,12 +127,26 @@ const DEFAULT_ROLES: UserRole[] = [
   }
 ];
 
+const REQUIRED_ROLE_NAMES = ['Super Admin', 'Owner', 'Admin', 'Developer'] as const;
+
+function ensureRequiredRoles(roles: UserRole[]): UserRole[] {
+  const rolesByName = new Map(roles.map((role) => [normalizeRoleName(role.name), role]));
+  const requiredRoles = REQUIRED_ROLE_NAMES.map((roleName) => {
+    return rolesByName.get(normalizeRoleName(roleName)) ||
+      DEFAULT_ROLES.find((role) => normalizeRoleName(role.name) === normalizeRoleName(roleName));
+  }).filter((role): role is UserRole => Boolean(role));
+
+  const requiredRoleKeys = new Set(REQUIRED_ROLE_NAMES.map((roleName) => normalizeRoleName(roleName)));
+  const customRoles = roles.filter((role) => !requiredRoleKeys.has(normalizeRoleName(role.name)));
+  return [...requiredRoles, ...customRoles];
+}
+
 export const useRbacStore = create<RbacState>()(
   persist(
     (set) => ({
       roles: DEFAULT_ROLES,
       activeRoleName: 'Super Admin',
-      setRoles: (roles) => set({ roles }),
+      setRoles: (roles) => set({ roles: ensureRequiredRoles(roles) }),
       setActiveRole: (roleName) => set({ activeRoleName: roleName }),
       updateRolePermissions: (roleName, updatedPerms) =>
         set((state) => ({
@@ -140,40 +172,53 @@ export const useRbacStore = create<RbacState>()(
           };
         }),
       updateRole: (targetRoleName, updated) =>
-        set((state) => ({
-          roles: state.roles.map((r) =>
-            r.name === targetRoleName
-              ? {
-                  ...r,
-                  name: updated.name || r.name,
-                  description:
-                    updated.description !== undefined ? updated.description : r.description,
-                  isActive:
-                    updated.isActive !== undefined ? updated.isActive : (r.isActive ?? true),
-                  permissions: updated.permissions
-                    ? { ...r.permissions, ...updated.permissions }
-                    : r.permissions
-                }
-              : r
-          ),
-          activeRoleName:
-            state.activeRoleName === targetRoleName && updated.name
-              ? updated.name
-              : state.activeRoleName
-        })),
+        set((state) => {
+          if (isSuperAdminRole(targetRoleName)) return state;
+
+          return {
+            roles: state.roles.map((r) =>
+              r.name === targetRoleName
+                ? {
+                    ...r,
+                    name: updated.name || r.name,
+                    description:
+                      updated.description !== undefined ? updated.description : r.description,
+                    isActive:
+                      updated.isActive !== undefined ? updated.isActive : (r.isActive ?? true),
+                    permissions: updated.permissions
+                      ? { ...r.permissions, ...updated.permissions }
+                      : r.permissions
+                  }
+                : r
+            ),
+            activeRoleName:
+              state.activeRoleName === targetRoleName && updated.name
+                ? updated.name
+                : state.activeRoleName
+          };
+        }),
       deleteRole: (roleName) =>
         set((state) => {
-          const lower = roleName.toLowerCase();
-          if (lower === 'admin' || lower === 'super admin' || lower === 'superadmin') return state;
+          const lower = normalizeRoleName(roleName);
+          if (isSuperAdminRole(roleName)) return state;
           const filtered = state.roles.filter((r) => r.name.toLowerCase() !== lower);
           return {
             roles: filtered,
-            activeRoleName: state.activeRoleName.toLowerCase() === lower ? 'Super Admin' : state.activeRoleName
+            activeRoleName: normalizeRoleName(state.activeRoleName) === lower ? 'Super Admin' : state.activeRoleName
           };
         })
     }),
     {
-      name: 'rio-rbac-store'
+      name: 'rio-rbac-store',
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<RbacState>;
+        const persistedRoles = Array.isArray(persisted.roles) ? persisted.roles : currentState.roles;
+        return {
+          ...currentState,
+          ...persisted,
+          roles: ensureRequiredRoles(persistedRoles)
+        };
+      }
     }
   )
 );
@@ -193,17 +238,25 @@ export function useRolesQuery() {
 }
 
 export function useRbac() {
-  const { roles, activeRoleName } = useRbacStore();
-  const currentRole = roles.find((r) => r.name === activeRoleName) || roles[0];
+  const { roles } = useRbacStore();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const authenticatedRoleName = user?.role || '';
+  const currentRoleName = isAuthLoading ? '' : authenticatedRoleName;
+  const currentRole =
+    roles.find((r) => normalizeRoleName(r.name) === normalizeRoleName(currentRoleName)) ||
+    (currentRoleName ? { name: currentRoleName, permissions: {} } : null);
 
   const hasPermission = (permissionKey: keyof RolePermissions): boolean => {
     if (!currentRole) return false;
+    if (permissionKey === 'platform.finance.view') {
+      return isSuperAdminRole(currentRoleName);
+    }
     const synced = syncRolePermissions(currentRole.permissions, currentRole.name);
     return Boolean(synced[permissionKey]);
   };
 
   return {
-    currentRoleName: activeRoleName,
+    currentRoleName,
     permissions: currentRole ? syncRolePermissions(currentRole.permissions, currentRole.name) : {},
     hasPermission
   };
@@ -227,18 +280,17 @@ export function syncRolePermissions(permissions?: RolePermissions, roleName?: st
   const synced: RolePermissions = {};
   
   const normalizedRole = (roleName || '').toLowerCase().trim();
-  if (
-    normalizedRole === 'admin' ||
-    normalizedRole === 'super admin' ||
-    normalizedRole === 'owner' ||
-    normalizedRole === 'developer' ||
-    normalizedRole.includes('admin')
-  ) {
+  const hasGranularPermissions = PERMISSION_TREE.some((menu) =>
+    menu.actions.some((action) => permissions?.[action.key] !== undefined)
+  );
+
+  if (isSuperAdminRole(roleName)) {
     PERMISSION_TREE.forEach((menu) => {
       menu.actions.forEach((act) => {
         synced[act.key] = true;
       });
     });
+    synced['platform.finance.view'] = true;
     synced.viewOverview = true;
     synced.manageOrders = true;
     synced.manageProducts = true;
@@ -246,6 +298,31 @@ export function syncRolePermissions(permissions?: RolePermissions, roleName?: st
     synced.manageSettings = true;
     synced.viewReports = true;
     return synced;
+  }
+
+  // Legacy system roles only stored broad permissions such as `manageProducts`.
+  // Keep their historical full-access fallback until granular permissions exist.
+  // Once a granular key is stored, including `false`, the saved choices are authoritative.
+  if (
+    normalizedRole === 'admin' ||
+    normalizedRole === 'owner' ||
+    normalizedRole === 'developer' ||
+    normalizedRole.includes('admin')
+  ) {
+    if (!hasGranularPermissions) {
+      PERMISSION_TREE.forEach((menu) => {
+        menu.actions.forEach((act) => {
+          synced[act.key] = true;
+        });
+      });
+      synced.viewOverview = true;
+      synced.manageOrders = true;
+      synced.manageProducts = true;
+      synced.manageJournal = true;
+      synced.manageSettings = true;
+      synced.viewReports = true;
+      return synced;
+    }
   }
 
   if (!permissions) return synced;
@@ -272,6 +349,9 @@ export function syncRolePermissions(permissions?: RolePermissions, roleName?: st
   checkAndSync('products.create', productsVal);
   checkAndSync('products.edit', productsVal);
   checkAndSync('products.delete', productsVal);
+
+  checkAndSync('stock.view', Boolean(synced['products.view']) || productsVal);
+  checkAndSync('stock.manage', Boolean(synced['products.edit']) || productsVal);
 
   const journalVal = hasLegacy('manageJournal');
   checkAndSync('journal.view', journalVal);

@@ -20,8 +20,10 @@ import { Label } from '@/components/ui/label';
 import { VStack } from '@/components/ui/layout';
 import { RichTextEditor } from '@/components/shared/rich-text-editor';
 import { ImageUpload } from '@/components/shared/image-upload';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { useJournals } from '@/hooks/use-journals';
 import { useProducts } from '@/hooks/use-products';
+import { useAuth } from '@/hooks/use-auth';
 import {
   Select,
   SelectContent,
@@ -64,6 +66,8 @@ function JournalEditorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const articleId = searchParams.get('id');
+  const { user } = useAuth();
+  const loggedInAuthor = user?.name?.trim() || 'RIO COLLECTION';
 
   const {
     data: articles = [],
@@ -80,7 +84,7 @@ function JournalEditorContent() {
   const [excerpt, setExcerpt] = useState('');
   const [category, setCategory] = useState<JournalCategory>('PROSES KREATIF');
   const [date, setDate] = useState('');
-  const [author, setAuthor] = useState('RIO COLLECTION');
+  const [author, setAuthor] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [contentHtml, setContentHtml] = useState('');
   const [pullQuote, setPullQuote] = useState('');
@@ -151,6 +155,8 @@ function JournalEditorContent() {
     }
   }
 
+  const effectiveAuthor = articleId ? author : loggedInAuthor;
+
   const getSlug = (text: string) =>
     text
       .toLowerCase()
@@ -187,7 +193,7 @@ function JournalEditorContent() {
       excerpt,
       category,
       date,
-      author,
+      author: effectiveAuthor,
       imageUrl,
       content: paragraphs,
       contentHtml,
@@ -212,12 +218,7 @@ function JournalEditorContent() {
   const canSave = title.trim() && excerpt.trim() && contentHtml.trim();
 
   if (isLoading && articleId) {
-    return (
-      <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-foreground" />
-        <p className="text-sm text-muted-foreground animate-pulse">Memuat data artikel...</p>
-      </div>
-    );
+    return <CmsPageSkeleton variant="form" />;
   }
 
   return (
@@ -339,7 +340,11 @@ function JournalEditorContent() {
                 >
                   <User className="h-3.5 w-3.5 text-muted-foreground/70" /> Penulis
                 </Label>
-                <Select value={author} onValueChange={(val) => setAuthor(val || 'RIO COLLECTION')}>
+                <Select
+                  value={effectiveAuthor}
+                  onValueChange={(val) => setAuthor(val || loggedInAuthor)}
+                  disabled={!articleId}
+                >
                   <SelectTrigger
                     id="art-author"
                     className="h-10 rounded-xl bg-muted/20 border-border/55 text-xs"
@@ -347,12 +352,12 @@ function JournalEditorContent() {
                     <SelectValue placeholder="Pilih Penulis" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="RIO COLLECTION">RIO COLLECTION</SelectItem>
+                    <SelectItem value={loggedInAuthor}>{loggedInAuthor}</SelectItem>
                     <SelectItem value="EDITORIAL TEAM">Editorial Team</SelectItem>
                     <SelectItem value="CREATIVE DIRECTION">Creative Direction</SelectItem>
                     <SelectItem value="DESIGN STUDIO">Design Studio</SelectItem>
                     {![
-                      'RIO COLLECTION',
+                      loggedInAuthor,
                       'EDITORIAL TEAM',
                       'CREATIVE DIRECTION',
                       'DESIGN STUDIO'
@@ -360,6 +365,11 @@ function JournalEditorContent() {
                       author && <SelectItem value={author}>{author}</SelectItem>}
                   </SelectContent>
                 </Select>
+                {!articleId && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Otomatis mengikuti akun yang sedang login.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -482,12 +492,7 @@ function JournalEditorContent() {
 export default function JournalEditorPage() {
   return (
     <Suspense
-      fallback={
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-foreground" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading editor...</p>
-        </div>
-      }
+      fallback={<CmsPageSkeleton variant="form" />}
     >
       <JournalEditorContent />
     </Suspense>

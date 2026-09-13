@@ -7,6 +7,8 @@ import {
   BarChart3,
   Settings,
   ShieldAlert,
+  WalletCards,
+  ScrollText,
   type LucideIcon,
   MessageSquare,
   Boxes
@@ -78,6 +80,16 @@ export const navigation: NavigationItem[] = [
     title: 'Laporan Penjualan',
     href: '/dashboard/reports',
     icon: BarChart3
+  },
+  {
+    title: 'Super Admin Finance',
+    href: '/dashboard/super-admin',
+    icon: WalletCards
+  },
+  {
+    title: 'Activity Log',
+    href: '/dashboard/activity-logs',
+    icon: ScrollText
   },
   {
     title: 'Store Settings',

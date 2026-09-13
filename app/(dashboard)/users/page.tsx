@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import {
   UserTable,
@@ -14,11 +14,14 @@ import {
 } from '@/features/users';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
+import { SkeletonTable } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 function UsersPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const activeTab = searchParams.get('tab') || 'users';
 
   const tabInfo: Record<string, { title: string; desc: string }> = {
@@ -36,26 +39,23 @@ function UsersPageContent() {
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
-  const [roleToEdit, setRoleToEdit] = useState<UserRole | null>(null);
   const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
 
-  const { data: mockRoles } = useRolesQuery();
-  const { roles, setRoles, deleteRole } = useRbacStore();
+  const { data: mockRoles, isLoading: rolesLoading } = useRolesQuery();
+  const { setRoles, deleteRole } = useRbacStore();
 
   useEffect(() => {
-    if (mockRoles && mockRoles.length > 0 && roles.length === 0) {
+    if (mockRoles && mockRoles.length > 0) {
       setRoles(mockRoles);
     }
-  }, [mockRoles, roles.length, setRoles]);
+  }, [mockRoles, setRoles]);
 
   const handleOpenAddRole = () => {
-    setRoleToEdit(null);
     setShowRoleDialog(true);
   };
 
   const handleOpenEditRole = (role: UserRole) => {
-    setRoleToEdit(role);
-    setShowRoleDialog(true);
+    router.push(`/users/roles/${encodeURIComponent(role.name)}/edit`);
   };
 
   const confirmDeleteRole = () => {
@@ -98,22 +98,17 @@ function UsersPageContent() {
 
       {/* Tab Panels */}
       {activeTab === 'users' ? (
-        <Suspense
-          fallback={
-            <div className="h-32 flex items-center justify-center">Loading User Table...</div>
-          }
-        >
+        <Suspense fallback={<SkeletonTable rows={6} cols={5} />}>
           <UserTable />
         </Suspense>
       ) : (
-        <RoleTable onEditRole={handleOpenEditRole} />
+        rolesLoading ? <SkeletonTable rows={5} cols={4} /> : <RoleTable onEditRole={handleOpenEditRole} />
       )}
 
       <UserFormDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
       <RoleFormDialog
         open={showRoleDialog}
         onOpenChange={setShowRoleDialog}
-        roleToEdit={roleToEdit}
       />
       <ConfirmModal
         open={Boolean(deleteTargetRole)}
@@ -138,16 +133,7 @@ function UsersPageContent() {
 
 export default function UsersPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-foreground" />
-          <p className="text-sm text-muted-foreground animate-pulse">
-            Loading access control panel...
-          </p>
-        </div>
-      }
-    >
+    <Suspense fallback={<CmsPageSkeleton variant="list" />}>
       <UsersPageContent />
     </Suspense>
   );

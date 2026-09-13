@@ -4,6 +4,8 @@ import { normalizeProductAvailability } from '@/lib/product-availability';
 import { mapProductRelations } from '@/lib/catalogue-relations';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { recordActivity } from '@/lib/activity-log';
 
 const journalIdsSchema = z.array(z.string().min(1)).max(100).default([]);
 const journalSummarySelect = {
@@ -52,6 +54,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const actor = await getAuthenticatedUser();
     const body = await request.json();
     const {
       name,
@@ -140,6 +143,17 @@ export async function POST(request: Request) {
     revalidatePath('/catalogue');
     revalidatePath('/archive');
     revalidatePath(`/products/${newProduct.slug}`);
+
+    await recordActivity({
+      actor,
+      action: 'CREATE',
+      module: 'PRODUCTS',
+      description: `Menambahkan produk ${newProduct.name}.`,
+      entityType: 'Product',
+      entityId: newProduct.id,
+      metadata: { slug: newProduct.slug, status: newProduct.status },
+      request
+    });
 
     return NextResponse.json({
       code: 201,

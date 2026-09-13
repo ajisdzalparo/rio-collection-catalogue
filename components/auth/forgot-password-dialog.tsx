@@ -149,7 +149,7 @@ export function ForgotPasswordDialog({
               <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
               <span>OTP berlaku selama 10 menit dan maksimal lima kali percobaan.</span>
             </div>
-            <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <DialogFooter className="gap-3 pt-2">
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="h-9 rounded-lg text-xs font-semibold">Batal</Button>
               <Button type="submit" disabled={isRequesting} className="h-9 rounded-lg text-xs font-bold gap-1.5">
                 {isRequesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}

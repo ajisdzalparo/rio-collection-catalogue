@@ -57,13 +57,7 @@ export function useAuth() {
   });
 
   return {
-    user: user || {
-      id: 'default-admin',
-      name: 'Ajis',
-      email: 'ajis@riocollection.com',
-      role: 'Super Admin',
-      status: 'active'
-    },
+    user: user || null,
     isAuthenticated: !!user,
     isLoading,
     error,

@@ -27,7 +27,7 @@ export const formatDisplayDate = (dateStr: string): string => {
 };
 
 export function useReportsData() {
-  const { data: orders = [] } = useOrders();
+  const { data: orders = [], isLoading, error } = useOrders();
   const recordedOrders = useMemo(
     () => orders.filter((order) => order.status === 'PAID' || order.status === 'FULFILLED'),
     [orders]
@@ -288,6 +288,8 @@ export function useReportsData() {
 
   return {
     orders,
+    isLoading,
+    error,
     startDate,
     setStartDate,
     endDate,

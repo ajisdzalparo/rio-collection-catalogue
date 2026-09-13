@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { deductStock, restoreStock } from '@/lib/stock';
+import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { recordActivity } from '@/lib/activity-log';
 
 const orderStatuses = [
   'PENDING',
@@ -62,6 +64,7 @@ const allowedStatusTransitions: Record<string, readonly string[]> = {
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const actor = await getAuthenticatedUser();
     const rawBody: unknown = await request.json().catch(() => ({}));
     const parsed = updateOrderSchema.safeParse(rawBody);
     if (!parsed.success) {
@@ -93,6 +96,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const nextCourierName = body.courierName ?? existingOrder.courierName;
       const nextTrackingNumber = body.trackingNumber ?? existingOrder.trackingNumber;
       const nextWaFollowedUp = body.waFollowedUp ?? existingOrder.waFollowedUp;
+      let commissionUpdate: {
+        commissionModeSnapshot?: string;
+        commissionRateSnapshot?: number;
+        commissionBaseAmount?: number;
+        commissionAmount?: number;
+      } = {};
       const resolvedAdjustmentStatuses = [
         'NONE',
         'CUSTOMER_CONFIRMED',
@@ -164,6 +173,33 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         const isNowPaid = paidStatuses.includes(newStatus);
         if (!wasPaid && isNowPaid) {
           await deductStock(existingOrder.items, tx);
+          const financeSettings = await tx.platformFinanceSettings.upsert({
+            where: { id: 'default' },
+            update: {},
+            create: {
+              id: 'default',
+              serverCostMonthly: 300000,
+              markupMode: 'NOMINAL',
+              markupValue: 0,
+              commissionMode: 'PERCENTAGE',
+              commissionRate: 20
+            }
+          });
+          const commissionBaseAmount = existingOrder.items.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+          );
+          const commissionMode = financeSettings.commissionMode === 'NOMINAL' ? 'NOMINAL' : 'PERCENTAGE';
+          const commissionValue = financeSettings.commissionRate;
+          commissionUpdate = {
+            commissionModeSnapshot: commissionMode,
+            commissionRateSnapshot: commissionValue,
+            commissionBaseAmount,
+            commissionAmount:
+              commissionMode === 'NOMINAL'
+                ? commissionValue
+                : Math.round((commissionBaseAmount * commissionValue) / 100)
+          };
         } else if (wasPaid && !isNowPaid) {
           await restoreStock(existingOrder.items, tx);
         }
@@ -195,6 +231,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return tx.order.update({
         where: { id },
         data: {
+          ...commissionUpdate,
           ...(body.status && { status: body.status }),
           ...(body.notes !== undefined && { notes: body.notes }),
           ...(body.adminNotes !== undefined && { adminNotes: body.adminNotes }),
@@ -213,6 +250,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         },
         include: { items: true }
       });
+    });
+
+    await recordActivity({
+      actor,
+      action:
+        body.status !== undefined && body.status !== existingOrder.status
+          ? 'STATUS_CHANGE'
+          : 'UPDATE',
+      module: 'ORDERS',
+      description: `Memperbarui pesanan ${existingOrder.orderNumber}.`,
+      entityType: 'Order',
+      entityId: existingOrder.id,
+      metadata: {
+        beforeStatus: existingOrder.status,
+        afterStatus: updatedOrder.status,
+        changedFields: Object.keys(body)
+      },
+      request
     });
 
     return NextResponse.json({ code: 200, status: 'success', data: updatedOrder });

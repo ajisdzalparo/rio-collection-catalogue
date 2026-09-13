@@ -23,6 +23,7 @@ import type { DateRange, DatePickerPreset } from '@/types/date-picker.types';
 import { subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { formatIDR } from '@/lib/utils';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 
 const INDONESIAN_PRESETS: DatePickerPreset[] = [
   {
@@ -167,12 +168,7 @@ export default function DashboardPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-foreground" />
-        <p className="text-sm text-muted-foreground animate-pulse">Loading dashboard overview...</p>
-      </div>
-    );
+    return <CmsPageSkeleton variant="dashboard" />;
   }
 
   if (error || !stats) {

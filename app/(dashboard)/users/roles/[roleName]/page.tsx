@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useMemo, use } from 'react';
+import React, { useMemo, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
   KeyRound,
   ShieldCheck,
-  Edit,
+    Pencil,
   FolderTree,
   CheckCircle2,
   XCircle,
@@ -19,7 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useRbacStore, syncRolePermissions } from '@/features/users/hooks/use-rbac';
 import { PERMISSION_TREE } from '@/features/users/data/permission-tree';
-import { RoleFormDialog } from '@/features/users/components/role-form-dialog';
+import { isSuperAdminRole } from '@/lib/auth/roles';
 
 interface RoleDetailPageProps {
   params: Promise<{ roleName: string }>;
@@ -31,7 +31,6 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
   const rawRoleName = decodeURIComponent(resolvedParams.roleName || '');
 
   const { roles, updateRole } = useRbacStore();
-  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Match role case-insensitively
   const currentRole = useMemo(() => {
@@ -57,11 +56,10 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
   }, [syncedPerms]);
 
   const isProtectedSystemRole = useMemo(() => {
-    const lower = (currentRole?.name || '').toLowerCase().trim();
-    return lower === 'admin' || lower === 'super admin' || lower === 'superadmin';
+    return isSuperAdminRole(currentRole?.name);
   }, [currentRole]);
 
-  const isFullAccess = activeCount >= totalActionsCount || isProtectedSystemRole;
+  const isFullAccess = activeCount >= totalActionsCount;
 
   if (!currentRole) {
     return (
@@ -114,10 +112,12 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
 
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => setShowEditDialog(true)}
+            onClick={() => router.push(`/users/roles/${encodeURIComponent(currentRole.name)}/edit`)}
+            disabled={isProtectedSystemRole}
             className="gap-1.5 h-9 rounded-lg text-xs font-bold cursor-pointer bg-foreground text-background hover:bg-foreground/90 shadow-xs"
+            title={isProtectedSystemRole ? 'Super Admin selalu full access' : 'Edit Role & Permissions'}
           >
-            <Edit className="h-3.5 w-3.5" />
+            <Pencil className="h-3.5 w-3.5" />
             <span>Edit</span>
           </Button>
         </div>
@@ -299,12 +299,6 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
         </div>
       </div>
 
-      {/* Edit Role Dialog */}
-      <RoleFormDialog
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        roleToEdit={currentRole}
-      />
     </div>
   );
 }

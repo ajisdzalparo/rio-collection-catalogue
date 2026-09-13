@@ -51,6 +51,8 @@ export interface DataTableProps<T> {
   manualSorting?: boolean;
 
   enableSelection?: boolean;
+  /** Determines whether a row can be selected for bulk actions. */
+  isRowSelectable?: (item: T) => boolean;
   onSelectionChange?: (selectedItems: T[]) => void;
   bulkActions?: (selectedItems: T[], clearSelection: () => void) => React.ReactNode;
 
@@ -95,6 +97,7 @@ export function DataTable<T extends object>({
   pageSize = 10,
   pageSizeOptions = [5, 10, 20, 50],
   enableSelection = false,
+  isRowSelectable = () => true,
   onSelectionChange,
   striped = false,
   density = 'comfortable',
@@ -286,26 +289,47 @@ export function DataTable<T extends object>({
   );
 
   const selectedItems = useMemo(() => {
-    return data.filter((item, idx) => selectedIds.has(getItemKey(item, idx)));
-  }, [data, selectedIds, getItemKey]);
+    return data.filter(
+      (item, idx) => isRowSelectable(item) && selectedIds.has(getItemKey(item, idx))
+    );
+  }, [data, selectedIds, getItemKey, isRowSelectable]);
+
+  const selectablePaginatedData = useMemo(
+    () => paginatedData.filter((item) => isRowSelectable(item)),
+    [paginatedData, isRowSelectable]
+  );
 
   const isAllPageSelected =
-    paginatedData.length > 0 &&
-    paginatedData.every((item, idx) => selectedIds.has(getItemKey(item, idx)));
+    selectablePaginatedData.length > 0 &&
+    selectablePaginatedData.every((item) => {
+      const itemIndex = paginatedData.indexOf(item);
+      return selectedIds.has(getItemKey(item, itemIndex));
+    });
 
   const toggleSelectAll = () => {
     const newSelected = new Set(selectedIds);
     if (isAllPageSelected) {
-      paginatedData.forEach((item, idx) => newSelected.delete(getItemKey(item, idx)));
+      selectablePaginatedData.forEach((item) => {
+        const itemIndex = paginatedData.indexOf(item);
+        newSelected.delete(getItemKey(item, itemIndex));
+      });
     } else {
-      paginatedData.forEach((item, idx) => newSelected.add(getItemKey(item, idx)));
+      selectablePaginatedData.forEach((item) => {
+        const itemIndex = paginatedData.indexOf(item);
+        newSelected.add(getItemKey(item, itemIndex));
+      });
     }
     setSelectedIds(newSelected);
-    const updatedSelected = data.filter((item, idx) => newSelected.has(getItemKey(item, idx)));
+    const updatedSelected = data.filter(
+      (item, idx) => isRowSelectable(item) && newSelected.has(getItemKey(item, idx))
+    );
     onSelectionChange?.(updatedSelected);
   };
 
   const toggleSelectRow = (id: string | number) => {
+    const item = data.find((candidate, idx) => getItemKey(candidate, idx) === id);
+    if (!item || !isRowSelectable(item)) return;
+
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -313,7 +337,9 @@ export function DataTable<T extends object>({
       newSelected.add(id);
     }
     setSelectedIds(newSelected);
-    const updatedSelected = data.filter((item, idx) => newSelected.has(getItemKey(item, idx)));
+    const updatedSelected = data.filter(
+      (item, idx) => isRowSelectable(item) && newSelected.has(getItemKey(item, idx))
+    );
     onSelectionChange?.(updatedSelected);
   };
 
@@ -494,7 +520,8 @@ export function DataTable<T extends object>({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelectRow(rowKey)}
-                        className="h-4 w-4 rounded-md border-border/70 text-primary accent-primary cursor-pointer shrink-0"
+                        disabled={!isRowSelectable(row)}
+                        className="h-4 w-4 rounded-md border-border/70 text-primary accent-primary cursor-pointer shrink-0 disabled:cursor-not-allowed disabled:opacity-40"
                         aria-label={`Select item ${globalIndex}`}
                       />
                     )}
@@ -597,7 +624,8 @@ export function DataTable<T extends object>({
                     type="checkbox"
                     checked={isAllPageSelected}
                     onChange={toggleSelectAll}
-                    className="h-4 w-4 rounded-md border-border/70 text-primary accent-primary cursor-pointer focus:ring-1 focus:ring-primary/40"
+                    disabled={selectablePaginatedData.length === 0}
+                    className="h-4 w-4 rounded-md border-border/70 text-primary accent-primary cursor-pointer focus:ring-1 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Select all rows on current page"
                   />
                 </TableHead>
@@ -725,7 +753,8 @@ export function DataTable<T extends object>({
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelectRow(rowKey)}
-                          className="h-4 w-4 rounded-md border-border/70 text-primary accent-primary cursor-pointer focus:ring-1 focus:ring-primary/40"
+                          disabled={!isRowSelectable(row)}
+                          className="h-4 w-4 rounded-md border-border/70 text-primary accent-primary cursor-pointer focus:ring-1 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-40"
                           aria-label={`Select row ${rowKey}`}
                         />
                       </TableCell>

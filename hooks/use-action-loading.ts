@@ -51,39 +51,20 @@ export async function withActionLoading<T>(
 let isAxiosIntercepted = false;
 
 /**
- * Registers global Axios interceptors for mutating HTTP requests (POST, PUT, PATCH, DELETE).
- * Initial GET requests and rate calculations are explicitly ignored.
+ * Registers Axios interceptors for requests that explicitly opt in to the blocking overlay.
+ * Normal CMS mutations use their own button, dialog, or row-level pending state.
  */
 export function setupAxiosLoadingInterceptors() {
   if (isAxiosIntercepted || typeof window === 'undefined') return;
   isAxiosIntercepted = true;
 
-  const mutatingMethods = new Set(['post', 'put', 'patch', 'delete']);
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleRequest = (config: any) => {
-    const method = (config.method || 'get').toLowerCase();
-
-    // Only intercept mutating actions (POST, PUT, PATCH, DELETE)
-    if (mutatingMethods.has(method) && !config.skipLoadingOverlay) {
-      const url = String(config.url || '');
-
-      // Exclude rate check or background cron jobs
-      const isReadOnlyOrCron =
-        url.includes('/shipping/cost') ||
-        url.includes('/api/cron/') ||
-        url.includes('/cron');
-
-      if (!isReadOnlyOrCron) {
-        config.__hasLoadingOverlay = true;
-
-        let actionMsg = 'Menyimpan perubahan...';
-        if (method === 'delete') actionMsg = 'Menghapus data...';
-        else if (method === 'post') actionMsg = 'Menambahkan data...';
-        else if (method === 'put' || method === 'patch') actionMsg = 'Memperbarui data...';
-
-        useActionLoadingStore.getState().startLoading(actionMsg);
-      }
+    if (config.blockingLoadingOverlay === true) {
+      config.__hasLoadingOverlay = true;
+      useActionLoadingStore
+        .getState()
+        .startLoading(config.blockingLoadingMessage || 'Memproses perubahan...');
     }
     return config;
   };

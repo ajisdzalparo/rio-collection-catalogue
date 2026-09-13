@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { useStoreSettingsStore, useStoreSettingsQuery } from '@/hooks/use-store-settings';
 import { ImageUpload } from '@/components/shared/image-upload';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { cn } from '@/lib/utils';
 import { StoreBanksManager } from '@/components/dashboard/store-banks-manager';
 import {
@@ -321,9 +322,7 @@ export default function StoreSettingsPage() {
       {/* Main Tab Content */}
       <div className="space-y-6 w-full pt-1">
         {loadingSettings ? (
-          <div className="py-12 text-center text-xs text-muted-foreground animate-pulse">
-            Memuat data pengaturan toko...
-          </div>
+          <CmsPageSkeleton variant="settings" showHeader={false} className="pb-0" />
         ) : (
           <>
             {/* TAB: Template Followup WA */}

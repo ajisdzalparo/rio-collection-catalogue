@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import axios from 'axios';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { KeyRound, Eye, EyeOff, Sparkles, Copy, Check, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { User } from '../types/user.types';
-import { useUpdateUser } from '../hooks/use-update-user';
+import { useResetUserPassword } from '../hooks/use-reset-user-password';
 
 interface ResetPasswordDialogProps {
   open: boolean;
@@ -32,9 +33,8 @@ export function ResetPasswordDialog({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const { mutateAsync: updateUser } = useUpdateUser();
+  const resetPassword = useResetUserPassword();
+  const isLoading = resetPassword.isPending;
 
   if (!user) return null;
 
@@ -66,8 +66,8 @@ export function ResetPasswordDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newPassword || newPassword.length < 6) {
-      toast.error('Kata sandi baru minimal 6 karakter.');
+    if (!newPassword || newPassword.length < 8) {
+      toast.error('Kata sandi baru minimal 8 karakter.');
       return;
     }
 
@@ -77,26 +77,21 @@ export function ResetPasswordDialog({
     }
 
     try {
-      setIsLoading(true);
-      // Simulate/trigger backend password update payload
-      await updateUser({
+      await resetPassword.mutateAsync({
         id: user.id,
-        payload: {
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          status: user.status
-        }
+        newPassword
       });
       toast.success(`Kata sandi untuk akun "${user.name}" (${user.email}) berhasil diperbarui!`);
       setNewPassword('');
       setConfirmPassword('');
       onOpenChange(false);
     } catch (err: unknown) {
-      const errorMsg = (err as Error)?.message || 'Gagal mereset kata sandi.';
-      toast.error(errorMsg);
-    } finally {
-      setIsLoading(false);
+      const errorMsg = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message
+        : err instanceof Error
+          ? err.message
+          : undefined;
+      toast.error(errorMsg || 'Gagal mereset kata sandi.');
     }
   };
 
@@ -144,7 +139,7 @@ export function ResetPasswordDialog({
             <div className="relative">
               <Input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Minimal 6 karakter"
+                placeholder="Minimal 8 karakter"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="h-10 text-xs pr-20 rounded-xl bg-muted/20 border-border/50"
@@ -198,7 +193,7 @@ export function ResetPasswordDialog({
             </span>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-3 pt-2">
             <Button
               type="button"
               variant="outline"

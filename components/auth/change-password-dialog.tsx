@@ -198,7 +198,7 @@ export function ChangePasswordDialog({
             </span>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-3 pt-2">
             <Button
               type="button"
               variant="outline"

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, KeyRound, Edit, FolderTree } from 'lucide-react';
+import { ShieldCheck, KeyRound, Pencil, FolderTree } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '../types/roles.types';
 import { PERMISSION_TREE } from '../data/permission-tree';
@@ -187,7 +187,7 @@ export function RoleDetailDialog({
               onClick={handleEditClick}
               className="rounded-xl text-xs font-bold gap-1.5"
             >
-              <Edit className="h-3.5 w-3.5" />
+              <Pencil className="h-3.5 w-3.5" />
               <span>Edit Master Role</span>
             </Button>
           )}

@@ -27,10 +27,13 @@ import { useStoreSettingsQuery } from '@/hooks/use-store-settings';
 const NAVIGATION_PERMISSION_MAP: Record<string, string> = {
   'Overview': 'overview.view',
   'Orders': 'orders.view',
+  'Stock Management': 'stock.view',
   'Master Data': 'products.view',
   'Journal': 'journal.view',
   'Testimonials': 'testimonies.view',
   'Laporan Penjualan': 'reports.view',
+  'Super Admin Finance': 'platform.finance.view',
+  'Activity Log': 'activity.view',
   'Store Settings': 'settings.view',
   'User Management': 'settings.view',
   'Customers': 'orders.view'

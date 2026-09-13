@@ -3,9 +3,10 @@
 import React, { use } from 'react';
 import { useProducts } from '@/hooks/use-products';
 import { ProductForm } from '@/components/dashboard/product-form';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>;
@@ -16,12 +17,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   const { data: products = [], isLoading } = useProducts();
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-100 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-xs text-muted-foreground font-medium">Memuat data produk...</p>
-      </div>
-    );
+    return <CmsPageSkeleton variant="form" />;
   }
 
   const product = products.find((p) => p.id === id);

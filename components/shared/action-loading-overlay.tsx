@@ -12,10 +12,8 @@ export function ActionLoadingOverlay() {
 
   const isMutating = useIsMutating({
     predicate: (mutation) => {
-      // Ignore background cron or read-like mutations if any
       const mutationKey = mutation.options.mutationKey;
-      if (Array.isArray(mutationKey) && mutationKey.includes('skip-overlay')) return false;
-      return true;
+      return Array.isArray(mutationKey) && mutationKey.includes('blocking-overlay');
     }
   });
 

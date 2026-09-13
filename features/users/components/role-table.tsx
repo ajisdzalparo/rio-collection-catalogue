@@ -4,11 +4,14 @@ import { DataTable, type Column, CMSBadge } from '@/components/shared';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Edit, Trash2, ShieldCheck, CheckCircle2, Eye, Lock } from 'lucide-react';
+import { Pencil, Trash2, ShieldCheck, CheckCircle2, Eye, Lock } from 'lucide-react';
 import type { UserRole } from '../types/roles.types';
 import { PERMISSION_TREE } from '../data/permission-tree';
 import { useRbacStore, syncRolePermissions } from '../hooks/use-rbac';
+import { useRoleMutations } from '../hooks/use-role-mutations';
 import { toast } from 'sonner';
+import { isSuperAdminRole, normalizeRoleName } from '@/lib/auth/roles';
+import { useAuth } from '@/hooks/use-auth';
 
 interface RoleTableProps {
   onEditRole: (role: UserRole) => void;
@@ -17,7 +20,9 @@ interface RoleTableProps {
 
 export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   const router = useRouter();
-  const { roles, deleteRole, updateRole } = useRbacStore();
+  const { roles } = useRbacStore();
+  const { update, remove } = useRoleMutations();
+  const { user: authUser } = useAuth();
   const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
 
   const totalActionsCount = PERMISSION_TREE.reduce(
@@ -26,8 +31,11 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   );
 
   const isProtectedSystemRole = (name: string) => {
-    const lower = name.toLowerCase().trim();
-    return lower === 'admin' || lower === 'super admin' || lower === 'superadmin';
+    return isSuperAdminRole(name);
+  };
+
+  const isRoleDeleteLocked = (name: string) => {
+    return isProtectedSystemRole(name) || normalizeRoleName(name) === normalizeRoleName(authUser?.role);
   };
 
   const handleViewDetail = (role: UserRole) => {
@@ -39,23 +47,38 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   };
 
   const handleDelete = (roleName: string) => {
-    if (isProtectedSystemRole(roleName)) {
-      toast.error(`Master role "${roleName}" adalah role sistem utama dan tidak dapat dihapus.`);
+    if (isRoleDeleteLocked(roleName)) {
+      toast.error(
+        isProtectedSystemRole(roleName)
+          ? `Master role "${roleName}" adalah role sistem utama dan tidak dapat dihapus.`
+          : 'Role yang sedang digunakan akun Anda tidak dapat dihapus.'
+      );
       return;
     }
     setDeleteTargetRole(roleName);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteTargetRole) {
-      if (isProtectedSystemRole(deleteTargetRole)) {
-        toast.error(`Master role "${deleteTargetRole}" adalah role sistem utama dan tidak dapat dihapus.`);
+      if (isRoleDeleteLocked(deleteTargetRole)) {
+        toast.error(
+          isProtectedSystemRole(deleteTargetRole)
+            ? `Master role "${deleteTargetRole}" adalah role sistem utama dan tidak dapat dihapus.`
+            : 'Role yang sedang digunakan akun Anda tidak dapat dihapus.'
+        );
         setDeleteTargetRole(null);
         return;
       }
-      deleteRole(deleteTargetRole);
-      toast.success(`Master role "${deleteTargetRole}" berhasil dihapus.`);
-      setDeleteTargetRole(null);
+      const target = roles.find((role) => role.name === deleteTargetRole);
+      if (!target?.id) return;
+      try {
+        await remove.mutateAsync(target.id);
+        toast.success(`Master role "${deleteTargetRole}" berhasil dihapus.`);
+        setDeleteTargetRole(null);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Gagal menghapus master role.';
+        toast.error(message);
+      }
     }
   };
 
@@ -91,7 +114,7 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
           });
         });
 
-        const isFullAccess = activeCount >= totalActionsCount || isProtectedSystemRole(role.name);
+        const isFullAccess = activeCount >= totalActionsCount;
 
         return (
           <div className="flex items-center py-1">
@@ -121,8 +144,13 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
           <Switch
             checked={role.isActive ?? true}
             disabled={isProtectedSystemRole(role.name)}
+            title={isProtectedSystemRole(role.name) ? 'Status role Super Admin terkunci' : 'Ubah status role'}
+            className={isProtectedSystemRole(role.name) ? 'opacity-35 grayscale' : undefined}
             onCheckedChange={(checked) => {
-              updateRole(role.name, { isActive: checked });
+              if (!role.id) return;
+              void update.mutateAsync({ id: role.id, payload: { isActive: checked } }).catch(() => {
+                toast.error('Gagal memperbarui status role.');
+              });
             }}
           />
         </div>
@@ -148,20 +176,25 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
             size="sm"
             variant="ghost"
             onClick={() => onEditRole(role)}
+            disabled={isProtectedSystemRole(role.name)}
             className="h-8 px-2 cursor-pointer gap-1.5 text-xs font-semibold hover:bg-muted"
-            title="Edit Role & Permissions"
+            title={isProtectedSystemRole(role.name) ? 'Super Admin selalu full access' : 'Edit Role & Permissions'}
           >
-            <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="hidden sm:inline">Edit</span>
           </Button>
 
-          {isProtectedSystemRole(role.name) ? (
+          {isRoleDeleteLocked(role.name) ? (
             <Button
               size="sm"
               variant="ghost"
               disabled
               className="h-8 w-8 p-0 opacity-40 cursor-not-allowed text-muted-foreground"
-              title={`Role sistem ${role.name} tidak dapat dihapus`}
+              title={
+                isProtectedSystemRole(role.name)
+                  ? `Role sistem ${role.name} tidak dapat dihapus`
+                  : 'Role yang sedang digunakan akun Anda tidak dapat dihapus'
+              }
             >
               <Lock className="h-3.5 w-3.5" />
             </Button>

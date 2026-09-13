@@ -19,8 +19,10 @@ import { Loader2 } from 'lucide-react';
 import { userSchema, type UserFormValues } from '../schemas/schema';
 import { useCreateUserMutation } from '../api/create-user';
 import { useUpdateUser } from '../hooks/use-update-user';
-import { useRbacStore } from '../hooks/use-rbac';
+import { useRbac, useRbacStore } from '../hooks/use-rbac';
 import type { User } from '../types/user.types';
+import { isSuperAdminRole } from '@/lib/auth/roles';
+import { useAuth } from '@/hooks/use-auth';
 
 interface UserFormDialogProps {
   open: boolean;
@@ -32,9 +34,19 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
   const isEditing = !!user;
   const createUserMutation = useCreateUserMutation();
   const updateUserMutation = useUpdateUser();
+  const { user: authUser } = useAuth();
+  const isSuperAdminTarget = isEditing && isSuperAdminRole(user?.role);
+  const isProtectedSuperAdminTarget = isSuperAdminTarget && !isSuperAdminRole(authUser?.role);
+  const isSelfTarget = isEditing && authUser?.id === user?.id;
   const roles = useRbacStore((state) => state.roles);
+  const { currentRoleName } = useRbac();
+  const canAssignSuperAdmin = isSuperAdminRole(currentRoleName);
   const roleOptions = roles
-    .filter((role) => role.isActive !== false)
+    .filter(
+      (role) =>
+        role.isActive !== false &&
+        (!isSuperAdminRole(role.name) || canAssignSuperAdmin || (isEditing && isSuperAdminRole(user?.role)))
+    )
     .map((role) => ({ label: role.name, value: role.name }));
   const hasLegacyRole = !!user?.role && !roleOptions.some((option) => option.value === user.role);
   if (hasLegacyRole && user?.role) {
@@ -132,7 +144,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
                 value={field.value}
                 onValueChange={field.onChange}
                 options={roleOptions}
-                disabled={isLoading || roleOptions.length === 0}
+                disabled={isLoading || roleOptions.length === 0 || isSuperAdminTarget}
                 error={errors.role?.message}
               />
             )}
@@ -181,6 +193,15 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
                     <Switch
                       id="user-status-switch"
                       checked={isActive}
+                      disabled={isLoading || isProtectedSuperAdminTarget || isSelfTarget}
+                      title={
+                        isSelfTarget
+                          ? 'Akun sendiri tidak dapat dinonaktifkan'
+                          : isProtectedSuperAdminTarget
+                            ? 'Status Super Admin hanya dapat diubah oleh Super Admin'
+                            : 'Ubah status pengguna'
+                      }
+                      className={isProtectedSuperAdminTarget || isSelfTarget ? 'opacity-35 grayscale' : undefined}
                       onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'inactive')}
                     />
                   </div>
@@ -189,7 +210,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
             }}
           />
 
-          <DialogFooter className="pt-4 gap-2 sm:gap-0">
+          <DialogFooter className="pt-4 gap-3">
             <Button
               type="button"
               variant="outline"

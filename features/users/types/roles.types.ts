@@ -8,6 +8,10 @@ export interface RolePermissions {
   'products.edit'?: boolean;
   'products.delete'?: boolean;
 
+  // Stock management
+  'stock.view'?: boolean;
+  'stock.manage'?: boolean;
+
   // Orders
   'orders.view'?: boolean;
   'orders.process'?: boolean;
@@ -27,6 +31,12 @@ export interface RolePermissions {
 
   // Reports
   'reports.view'?: boolean;
+
+  // Platform finance — Super Admin only
+  'platform.finance.view'?: boolean;
+
+  // Activity log — Owner and Super Admin only
+  'activity.view'?: boolean;
 
   // Users & Security RBAC
   'users.view'?: boolean;

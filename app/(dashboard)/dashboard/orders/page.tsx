@@ -25,6 +25,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
+import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import {
   Dialog,
@@ -575,14 +576,7 @@ function OrdersPageContent() {
 
 export default function OrdersPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center space-y-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-foreground" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading orders data...</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<CmsPageSkeleton variant="list" />}>
       <OrdersPageContent />
     </Suspense>
   );

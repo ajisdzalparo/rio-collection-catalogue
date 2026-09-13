@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { recordActivity } from '@/lib/activity-log';
 
 export async function POST(request: Request) {
   try {
@@ -20,13 +21,14 @@ export async function POST(request: Request) {
       where: { email: cleanEmail }
     });
 
-    // If user not found, create admin for seamless onboarding/demo
+    // New accounts start as operational Admin users. Super Admin is reserved
+    // for the explicitly provisioned platform owner account.
     if (!user) {
       user = await prisma.user.create({
         data: {
           name: cleanEmail.split('@')[0] || 'Admin',
           email: cleanEmail,
-          role: 'Super Admin',
+          role: 'Admin',
           status: 'active'
         }
       });
@@ -46,6 +48,16 @@ export async function POST(request: Request) {
       role: user.role,
       status: user.status
     };
+
+    await recordActivity({
+      actor: userData,
+      action: 'LOGIN',
+      module: 'AUTH',
+      description: 'Masuk ke dashboard CMS.',
+      entityType: 'User',
+      entityId: user.id,
+      request
+    });
 
     const response = NextResponse.json({
       code: 200,
