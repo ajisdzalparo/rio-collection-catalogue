@@ -5,10 +5,9 @@ import { notFound } from 'next/navigation';
 import { getJournals, getJournalBySlug, getProducts } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 
-// The catalogue layout reads request-time data via connection(). Keeping this
-// route dynamic prevents a production DYNAMIC_SERVER_USAGE error when a slug is
-// rendered on demand.
 export const dynamic = 'force-dynamic';
+
+const DEFAULT_COVER_IMAGE = '/ms-icon-310x310.png';
 
 interface JournalDetailProps {
   params: Promise<{ slug: string }>;
@@ -19,10 +18,10 @@ export async function generateMetadata({ params }: JournalDetailProps): Promise<
   const article = await getJournalBySlug(slug);
   if (!article) return { title: 'Article Not Found' };
 
-  const seoTitle = article.seoTitle?.trim() || article.title;
-  const seoDescription = article.seoDescription?.trim() || article.excerpt;
-  const ogImage = article.ogImageUrl?.trim() || article.imageUrl;
-  const parsedDate = Date.parse(article.date);
+  const seoTitle = article.seoTitle?.trim() || article.title || 'Artikel Blog';
+  const seoDescription = article.seoDescription?.trim() || article.excerpt || '';
+  const ogImage = article.ogImageUrl?.trim() || article.imageUrl || DEFAULT_COVER_IMAGE;
+  const parsedDate = article.date ? Date.parse(article.date) : NaN;
 
   return {
     title: seoTitle,
@@ -69,11 +68,11 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
 
   const relatedProduct = article.relatedProductSlug
     ? products.find((p) => p.slug === article.relatedProductSlug)
-    : null;
+    : article.relatedProducts?.[0] || null;
 
-  const relatedArticles = allJournals.filter((a) => a.id !== article.id).slice(0, 2);
-  const seoDescription = article.seoDescription?.trim() || article.excerpt;
-  const ogImage = article.ogImageUrl?.trim() || article.imageUrl;
+  const relatedArticles = (allJournals || []).filter((a) => a.id !== article.id).slice(0, 2);
+  const seoDescription = article.seoDescription?.trim() || article.excerpt || '';
+  const ogImage = article.ogImageUrl?.trim() || article.imageUrl || DEFAULT_COVER_IMAGE;
   const siteUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -83,12 +82,15 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
     image: ogImage ? [ogImage] : undefined,
     author: {
       '@type': 'Person',
-      name: article.author
+      name: article.author || 'RIO COLLECTION'
     },
     datePublished: article.date,
-    articleSection: article.category,
+    articleSection: article.category || 'Editorial',
     url: `${siteUrl}/journal/${article.slug}`
   };
+
+  const articleImage = article.imageUrl?.trim() || DEFAULT_COVER_IMAGE;
+  const rawContent = Array.isArray(article.content) ? article.content : [];
 
   return (
     <>
@@ -118,49 +120,57 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
 
         {/* Category & Date */}
         <div className="flex items-center gap-4 mb-2">
-          <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) bg-(--cat-surface-container-low) px-2 py-1">
-            {article.category}
-          </span>
-          <span className="font-hanken text-[12px] text-(--cat-on-surface-variant)">
-            {article.date}
-          </span>
+          {article.category && (
+            <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) bg-(--cat-surface-container-low) px-2 py-1">
+              {article.category}
+            </span>
+          )}
+          {article.date && (
+            <span className="font-hanken text-[12px] text-(--cat-on-surface-variant)">
+              {article.date}
+            </span>
+          )}
         </div>
 
         {/* Title */}
         <h1 className="font-eb-garamond text-[32px] md:text-[48px] font-normal leading-tight text-(--cat-on-surface) max-w-3xl">
           {article.title}
         </h1>
-        <p className="mt-2 font-hanken text-[14px] text-(--cat-on-surface-variant)">
-          Oleh {article.author}
-        </p>
+        {article.author && (
+          <p className="mt-2 font-hanken text-[14px] text-(--cat-on-surface-variant)">
+            Oleh {article.author}
+          </p>
+        )}
       </section>
 
       {/* Hero Image */}
-      <section className="mx-auto max-w-350 px-4 md:px-16 py-8">
-        <div className="relative aspect-video md:aspect-[2.2/1] overflow-hidden bg-(--cat-surface-container-low)">
-          <Image
-            src={article.imageUrl}
-            alt={article.title}
-            fill
-            sizes="100vw"
-            className="object-cover"
-            priority
-          />
-        </div>
-      </section>
+      {articleImage && (
+        <section className="mx-auto max-w-350 px-4 md:px-16 py-8">
+          <div className="relative aspect-video md:aspect-[2.2/1] overflow-hidden bg-(--cat-surface-container-low)">
+            <Image
+              src={articleImage}
+              alt={article.title || 'Cover blog'}
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority
+            />
+          </div>
+        </section>
+      )}
 
       {/* Article Content */}
       <article className="mx-auto min-w-0 max-w-3xl overflow-hidden px-4 pb-16 md:px-8 md:pb-24">
         {article.contentHtml ? (
           <div
-            className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-(--cat-on-surface-variant) [&_p]:mt-6 [&_p]:break-words [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-(--cat-on-surface) [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h2]:break-words [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-(--cat-on-surface) [&_h3]:mt-10 [&_h3]:mb-3 [&_h3]:break-words [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-10 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-(--cat-stone) [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-(--cat-on-surface) [&_hr]:my-12 [&_hr]:border-(--cat-stone) [&_img]:h-auto [&_img]:w-full [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/30 [&_img]:my-8 [&_img]:shadow-sm [&_figure]:my-8 [&_figure]:max-w-full [&_figure]:text-center [&_figcaption]:text-xs [&_figcaption]:text-muted-foreground [&_figcaption]:mt-2 [&_figcaption]:italic [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono [&_pre]:max-w-full [&_pre]:p-4 [&_pre]:rounded-2xl [&_pre]:bg-muted [&_pre]:overflow-x-auto [&_pre]:my-6 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_a]:transition-opacity [&_a:hover]:opacity-80"
+            className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-(--cat-on-surface-variant) [&_p]:mt-6 [&_p]:wrap-break-word [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-(--cat-on-surface) [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h2]:wrap-break-word [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-(--cat-on-surface) [&_h3]:mt-10 [&_h3]:mb-3 [&_h3]:wrap-break-word [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-10 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-(--cat-stone) [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-(--cat-on-surface) [&_hr]:my-12 [&_hr]:border-(--cat-stone) [&_img]:h-auto [&_img]:w-full [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/30 [&_img]:my-8 [&_img]:shadow-sm [&_figure]:my-8 [&_figure]:max-w-full [&_figure]:text-center [&_figcaption]:text-xs [&_figcaption]:text-muted-foreground [&_figcaption]:mt-2 [&_figcaption]:italic [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono [&_pre]:max-w-full [&_pre]:p-4 [&_pre]:rounded-2xl [&_pre]:bg-muted [&_pre]:overflow-x-auto [&_pre]:my-6 [&_a]:wrap-break-word [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_a]:transition-opacity [&_a:hover]:opacity-80"
             // contentHtml is already sanitized at write time (journal-schema.ts)
             dangerouslySetInnerHTML={{ __html: article.contentHtml }}
           />
         ) : (
           <>
             {/* First two paragraphs */}
-            {article.content.slice(0, 2).map((paragraph, i) => (
+            {rawContent.slice(0, 2).map((paragraph, i) => (
               <p
                 key={i}
                 className="mt-6 first:mt-0 font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
@@ -179,7 +189,7 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
             )}
 
             {/* Remaining paragraphs */}
-            {article.content.slice(2).map((paragraph, i) => (
+            {rawContent.slice(2).map((paragraph, i) => (
               <p
                 key={i + 2}
                 className="mt-6 font-hanken text-[16px] md:text-[17px] leading-[1.8] text-(--cat-on-surface-variant)"
@@ -191,20 +201,22 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
         )}
 
         {/* Inline image */}
-        <div className="my-10 md:my-14 relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
-          <Image
-            src={article.imageUrl}
-            alt={`${article.title} — detail`}
-            fill
-            sizes="768px"
-            className="object-cover"
-          />
-          <div className="absolute bottom-0 left-0 right-0 bg-(--cat-surface)/80 px-4 py-2">
-            <p className="font-hanken text-[10px] uppercase tracking-widest text-(--cat-on-surface-variant) text-center">
-              Detail — {article.title}
-            </p>
+        {articleImage && (
+          <div className="my-10 md:my-14 relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
+            <Image
+              src={articleImage}
+              alt={`${article.title} — detail`}
+              fill
+              sizes="768px"
+              className="object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-(--cat-surface)/80 px-4 py-2">
+              <p className="font-hanken text-[10px] uppercase tracking-widest text-(--cat-on-surface-variant) text-center">
+                Detail — {article.title}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </article>
 
       {/* Related Content */}
@@ -220,8 +232,8 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
                 <Link href={`/products/${relatedProduct.slug}`} className="group block">
                   <div className="relative aspect-4/5 overflow-hidden bg-(--cat-surface-container-low)">
                     <Image
-                      src={relatedProduct.imageUrl}
-                      alt={relatedProduct.name}
+                      src={relatedProduct.imageUrl || DEFAULT_COVER_IMAGE}
+                      alt={relatedProduct.name || 'Produk terkait'}
                       fill
                       sizes="33vw"
                       className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
@@ -234,14 +246,24 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
                       </p>
                       <p className="text-[12px] text-(--cat-on-surface-variant) capitalize">
                         {relatedProduct.color} /{' '}
-                        {relatedProduct.materialsAndCare?.fabric
-                          ?.match(/\d+gsm/i)?.[0]
-                          ?.toUpperCase() ||
-                          (relatedProduct.category === 'heavy-weight'
+                        {typeof relatedProduct.materialsAndCare === 'object' &&
+                        relatedProduct.materialsAndCare !== null &&
+                        'fabric' in relatedProduct.materialsAndCare &&
+                        typeof (relatedProduct.materialsAndCare as { fabric?: string }).fabric ===
+                          'string'
+                          ? (relatedProduct.materialsAndCare as { fabric: string }).fabric
+                              .match(/\d+gsm/i)?.[0]
+                              ?.toUpperCase() ||
+                            (relatedProduct.category === 'heavy-weight'
+                              ? '240GSM'
+                              : relatedProduct.category === 'graphic-edition'
+                                ? '180GSM'
+                                : '200GSM')
+                          : relatedProduct.category === 'heavy-weight'
                             ? '240GSM'
                             : relatedProduct.category === 'graphic-edition'
                               ? '180GSM'
-                              : '200GSM')}
+                              : '200GSM'}
                       </p>
                     </div>
                     <p className="font-hanken text-[15px] font-medium text-(--cat-on-surface) tabular-nums">
@@ -253,39 +275,45 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
             )}
 
             {/* Related Articles */}
-            <div className={relatedProduct ? 'md:col-span-8' : 'md:col-span-12'}>
-              <h3 className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-6">
-                Artikel Terkait
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
-                {relatedArticles.map((related) => (
-                  <Link key={related.id} href={`/journal/${related.slug}`} className="group block">
-                    <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
-                      <Image
-                        src={related.imageUrl}
-                        alt={related.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
-                      />
-                    </div>
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-                          {related.category}
-                        </span>
-                        <span className="font-hanken text-[11px] text-(--cat-on-surface-variant)">
-                          {related.date}
-                        </span>
+            {relatedArticles.length > 0 && (
+              <div className={relatedProduct ? 'md:col-span-8' : 'md:col-span-12'}>
+                <h3 className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-6">
+                  Artikel Terkait
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+                  {relatedArticles.map((related) => (
+                    <Link
+                      key={related.id}
+                      href={`/journal/${related.slug}`}
+                      className="group block"
+                    >
+                      <div className="relative aspect-4/3 overflow-hidden bg-(--cat-surface-container-low)">
+                        <Image
+                          src={related.imageUrl || DEFAULT_COVER_IMAGE}
+                          alt={related.title || 'Artikel terkait'}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                        />
                       </div>
-                      <h4 className="font-eb-garamond text-[18px] md:text-[20px] font-normal leading-snug text-(--cat-on-surface)">
-                        {related.title}
-                      </h4>
-                    </div>
-                  </Link>
-                ))}
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
+                            {related.category}
+                          </span>
+                          <span className="font-hanken text-[11px] text-(--cat-on-surface-variant)">
+                            {related.date}
+                          </span>
+                        </div>
+                        <h4 className="font-eb-garamond text-[18px] md:text-[20px] font-normal leading-snug text-(--cat-on-surface)">
+                          {related.title}
+                        </h4>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
