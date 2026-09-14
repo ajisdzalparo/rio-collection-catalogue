@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import {
   Activity,
   Download,
@@ -15,20 +14,10 @@ import { toast } from 'sonner';
 import { endOfMonth, format as formatDateFns, startOfMonth } from 'date-fns';
 import PageHeader from '@/components/layout/page-header';
 import { ErrorState } from '@/components/shared';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Grid, VStack } from '@/components/ui/layout';
 import { Input } from '@/components/ui/input';
-import { Pagination } from '@/components/ui/pagination';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
 import { formatIDR } from '@/lib/utils';
 import type { DateRange } from '@/types/date-picker.types';
 import { isSuperAdminRole } from '@/lib/auth/roles';
@@ -39,6 +28,7 @@ import type { PlatformFinanceTransaction } from '../types';
 import { PlatformFinanceFilters, type FinanceStatusFilter } from './platform-finance-filters';
 import { PlatformFinanceSettingsForm } from './platform-finance-settings';
 import { PlatformFinanceSkeleton } from './platform-finance-skeleton';
+import { PlatformFinanceTransactionTable } from './platform-finance-transaction-table';
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -82,8 +72,6 @@ export function PlatformFinancePage() {
   }));
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FinanceStatusFilter>('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const canViewFinance = isSuperAdminRole(user?.role);
   const period = useMemo(
@@ -109,17 +97,9 @@ export function PlatformFinancePage() {
     });
   }, [data?.transactions, debouncedSearchQuery, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const paginatedTransactions = useMemo(() => {
-    const startIndex = (safeCurrentPage - 1) * pageSize;
-    return filteredTransactions.slice(startIndex, startIndex + pageSize);
-  }, [filteredTransactions, pageSize, safeCurrentPage]);
-
   const resetFilters = () => {
     setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
     setStatusFilter('ALL');
-    setCurrentPage(1);
   };
 
   if (isAuthLoading) {
@@ -222,7 +202,6 @@ export function PlatformFinancePage() {
               value={searchQuery}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
-                setCurrentPage(1);
               }}
               aria-label="Cari transaksi berdasarkan nomor order atau pelanggan"
               placeholder="Cari nomor order atau nama pelanggan..."
@@ -236,73 +215,13 @@ export function PlatformFinancePage() {
             onApply={(filters) => {
               setDateRange(filters.dateRange);
               setStatusFilter(filters.statusFilter);
-              setCurrentPage(1);
             }}
             onReset={resetFilters}
           />
         </div>
-        <CardContent className="p-0">
-          <div className="px-4 py-3">
-            <Table className="min-w-[900px] table-fixed">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[16%]">Order</TableHead>
-                  <TableHead className="w-[12%]">Tanggal</TableHead>
-                  <TableHead className="w-[18%]">Pelanggan</TableHead>
-                  <TableHead className="w-[14%] text-right">Subtotal</TableHead>
-                  <TableHead className="w-[10%] text-right">Mode</TableHead>
-                  <TableHead className="w-[10%] text-right">Nilai</TableHead>
-                  <TableHead className="w-[12%] text-right">Komisi</TableHead>
-                  <TableHead className="w-[8%] whitespace-nowrap text-right">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>
-                      <Link
-                        href={`/dashboard/orders/${transaction.id}`}
-                        className="font-mono text-xs font-bold text-primary hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                      >
-                        {transaction.orderNumber}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(transaction.createdAt)}</TableCell>
-                    <TableCell>{transaction.customerName}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatIDR(transaction.baseAmount)}</TableCell>
-                    <TableCell className="text-right text-[11px] font-semibold text-muted-foreground">
-                      {transaction.commissionMode === 'PERCENTAGE' ? 'Persentase' : 'Nominal'}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
-                      {transaction.commissionMode === 'PERCENTAGE'
-                        ? `${transaction.commissionValue}%`
-                        : formatIDR(transaction.commissionValue)}
-                    </TableCell>
-                    <TableCell className="text-right font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatIDR(transaction.commissionAmount)}</TableCell>
-                    <TableCell className="text-right"><Badge variant="secondary" className="bg-emerald-500/10 text-[10px] text-emerald-600 dark:text-emerald-400">{transaction.status}</Badge></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {filteredTransactions.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">Tidak ada transaksi yang cocok dengan filter saat ini.</p>}
-          </div>
+        <CardContent className="p-3 sm:p-4">
+          <PlatformFinanceTransactionTable transactions={filteredTransactions} />
         </CardContent>
-        {filteredTransactions.length > 0 && (
-          <div className="border-t border-border/30 px-4 py-2">
-            <Pagination
-              currentPage={safeCurrentPage}
-              totalPages={totalPages}
-              totalEntries={filteredTransactions.length}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={(newPageSize) => {
-                setPageSize(newPageSize);
-                setCurrentPage(1);
-              }}
-              pageSizeOptions={[5, 10, 20, 50]}
-            />
-          </div>
-        )}
       </Card>
     </VStack>
   );

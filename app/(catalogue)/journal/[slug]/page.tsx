@@ -5,19 +5,10 @@ import { notFound } from 'next/navigation';
 import { getJournals, getJournalBySlug, getProducts } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 
-export const revalidate = 60;
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  try {
-    const journals = await getJournals();
-    return journals.map((article) => ({
-      slug: article.slug
-    }));
-  } catch {
-    return [];
-  }
-}
+// The catalogue layout reads request-time data via connection(). Keeping this
+// route dynamic prevents a production DYNAMIC_SERVER_USAGE error when a slug is
+// rendered on demand.
+export const dynamic = 'force-dynamic';
 
 interface JournalDetailProps {
   params: Promise<{ slug: string }>;
@@ -120,7 +111,9 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
             Blog
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-(--cat-on-surface) font-semibold">{article.title}</span>
+          <span className="font-semibold text-(--cat-on-surface) line-clamp-1">
+            {article.title}
+          </span>
         </nav>
 
         {/* Category & Date */}
@@ -157,10 +150,10 @@ export default async function JournalDetailPage({ params }: JournalDetailProps) 
       </section>
 
       {/* Article Content */}
-      <article className="mx-auto max-w-3xl px-4 md:px-8 pb-16 md:pb-24">
+      <article className="mx-auto min-w-0 max-w-3xl overflow-hidden px-4 pb-16 md:px-8 md:pb-24">
         {article.contentHtml ? (
           <div
-            className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-(--cat-on-surface-variant) [&_p]:mt-6 [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-(--cat-on-surface) [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-(--cat-on-surface) [&_h3]:mt-10 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-10 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-(--cat-stone) [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-(--cat-on-surface) [&_hr]:my-12 [&_hr]:border-(--cat-stone) [&_img]:w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/30 [&_img]:my-8 [&_img]:shadow-sm [&_figure]:my-8 [&_figure]:text-center [&_figcaption]:text-xs [&_figcaption]:text-muted-foreground [&_figcaption]:mt-2 [&_figcaption]:italic [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono [&_pre]:p-4 [&_pre]:rounded-2xl [&_pre]:bg-muted [&_pre]:overflow-x-auto [&_pre]:my-6 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_a]:transition-opacity [&_a:hover]:opacity-80"
+            className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-(--cat-on-surface-variant) [&_p]:mt-6 [&_p]:break-words [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-(--cat-on-surface) [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h2]:break-words [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-(--cat-on-surface) [&_h3]:mt-10 [&_h3]:mb-3 [&_h3]:break-words [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-10 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-(--cat-stone) [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-(--cat-on-surface) [&_hr]:my-12 [&_hr]:border-(--cat-stone) [&_img]:h-auto [&_img]:w-full [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/30 [&_img]:my-8 [&_img]:shadow-sm [&_figure]:my-8 [&_figure]:max-w-full [&_figure]:text-center [&_figcaption]:text-xs [&_figcaption]:text-muted-foreground [&_figcaption]:mt-2 [&_figcaption]:italic [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono [&_pre]:max-w-full [&_pre]:p-4 [&_pre]:rounded-2xl [&_pre]:bg-muted [&_pre]:overflow-x-auto [&_pre]:my-6 [&_a]:break-words [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_a]:transition-opacity [&_a:hover]:opacity-80"
             // contentHtml is already sanitized at write time (journal-schema.ts)
             dangerouslySetInnerHTML={{ __html: article.contentHtml }}
           />

@@ -28,14 +28,16 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border/40 pb-4 bg-transparent transition-all">
-        <div className="flex items-center gap-3">
+      <header className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border/40 bg-transparent pb-3 transition-all sm:h-12 sm:gap-4 sm:pb-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <SidebarTrigger className="-ml-1 rounded-xl hover:bg-muted/80" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <AppBreadcrumb />
+          <Separator orientation="vertical" className="mr-2 hidden h-4 md:block" />
+          <div className="min-w-0 overflow-hidden">
+            <AppBreadcrumb />
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           <ThemeToggle />
           <OrderNotifications />
 

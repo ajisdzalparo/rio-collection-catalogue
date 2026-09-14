@@ -13,29 +13,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useDebounce } from '@/hooks/use-debounce';
 import { ActivityLogFilterDrawer } from './activity-log-filters';
 import { ActivityLogSkeleton } from './activity-log-skeleton';
+import {
+  ActivityLogCard,
+  activityActionStyles,
+  formatActivityTimestamp
+} from './activity-log-card';
 import { useActivityLogs } from '../hooks/use-activity-logs';
 import type { ActivityLogFilters } from '../types';
-
-const actionStyles: Record<string, string> = {
-  CREATE: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  UPDATE: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  DELETE: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
-  PASSWORD_RESET: 'bg-orange-500/10 text-orange-700 dark:text-orange-400',
-  STATUS_CHANGE: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  SETTINGS_UPDATE: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-  LOGIN: 'bg-slate-500/10 text-slate-600 dark:text-slate-300'
-};
-
-function formatTimestamp(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Asia/Jakarta'
-  }).format(new Date(value));
-}
 
 export function ActivityLogPage() {
   const [search, setSearch] = useState('');
@@ -112,7 +96,18 @@ export function ActivityLogPage() {
         </div>
 
         <CardContent className="p-0">
-          <div className="overflow-x-auto px-4 py-3">
+          <div className="space-y-3 p-3 sm:p-4 md:hidden">
+            {items.map((item) => (
+              <ActivityLogCard key={item.id} item={item} isFetching={isFetching} />
+            ))}
+            {items.length === 0 && (
+              <div className="rounded-xl border border-border/70 bg-card/80 px-4 py-10 text-center text-sm text-muted-foreground">
+                Belum ada aktivitas yang cocok dengan filter.
+              </div>
+            )}
+          </div>
+
+          <div className="hidden overflow-x-auto px-4 py-3 md:block">
             <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
@@ -128,14 +123,14 @@ export function ActivityLogPage() {
                 {items.map((item) => (
                   <TableRow key={item.id} className={isFetching ? 'opacity-60' : undefined}>
                     <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {formatTimestamp(item.createdAt)}
+                      {formatActivityTimestamp(item.createdAt)}
                     </TableCell>
                     <TableCell>
                       <p className="text-xs font-bold">{item.actorName}</p>
                       <p className="text-[11px] text-muted-foreground">{item.actorEmail}</p>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={actionStyles[item.action]}>
+                      <Badge variant="secondary" className={activityActionStyles[item.action]}>
                         {item.action.replace('_', ' ')}
                       </Badge>
                     </TableCell>

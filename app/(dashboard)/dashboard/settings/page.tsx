@@ -321,13 +321,13 @@ export default function StoreSettingsPage() {
   ] as const;
 
   return (
-    <VStack gap="lg" className="pb-12 w-full">
+    <VStack gap="lg" className="w-full min-w-0 pb-12">
       {/* Header */}
       <VStack gap="xs">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-foreground sm:text-3xl">
           Store Settings & CMS
         </h1>
-        <p className="text-sm text-muted-foreground pt-1">
+        <p className="pt-1 text-sm leading-relaxed text-muted-foreground">
           Kelola profil toko, rekening pembayaran, media sosial, dan konfigurasi konten publik
           secara rapi.
         </p>
@@ -386,7 +386,7 @@ export default function StoreSettingsPage() {
       </div>
 
       {/* Main Tab Content */}
-      <div className="space-y-6 w-full pt-1">
+      <div className="w-full min-w-0 space-y-6 pt-1">
         {loadingSettings ? (
           <CmsPageSkeleton variant="settings" showHeader={false} className="pb-0" />
         ) : (
@@ -403,7 +403,7 @@ export default function StoreSettingsPage() {
 
             {/* TAB 1: Profil Toko & Kontak */}
             {activeTab === 'profile' && (
-              <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
+              <div className="space-y-5 rounded-xl border border-border/40 bg-card p-4 shadow-2xs sm:rounded-2xl sm:p-6">
                 <div className="border-b border-border/20 pb-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
                     <ShoppingBag className="h-4 w-4 text-primary" />
@@ -474,14 +474,14 @@ export default function StoreSettingsPage() {
 
             {/* TAB: Ekspedisi & Kurir Pengiriman */}
             {activeTab === 'couriers' && (
-              <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
-                <div className="border-b border-border/20 pb-3 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-primary" />
+              <div className="space-y-5 rounded-xl border border-border/40 bg-card p-4 shadow-2xs sm:rounded-2xl sm:p-6">
+                <div className="flex flex-col items-stretch gap-3 border-b border-border/20 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <h3 className="flex items-start gap-2 text-xs font-bold uppercase leading-relaxed tracking-wider text-muted-foreground/80">
+                      <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                       Aktifkan Opsi Ekspedisi / Kurir Pengiriman
                     </h3>
-                    <p className="text-xs text-muted-foreground pt-1">
+                    <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
                       Pilih kurir yang ingin diaktifkan di toko Anda. Seluruh data ongkir tersimpan
                       permanen di Database PostgreSQL toko Anda untuk menjamin respons 0ms tanpa
                       batasan rate-limit.
@@ -507,7 +507,7 @@ export default function StoreSettingsPage() {
                         setIsSyncingDb(false);
                       }
                     }}
-                    className="h-9 px-3 text-xs font-semibold rounded-xl border-border/60 hover:bg-muted gap-2 shrink-0"
+                    className="h-9 w-full shrink-0 gap-2 rounded-xl border-border/60 px-3 text-xs font-semibold hover:bg-muted sm:w-auto"
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isSyncingDb ? 'animate-spin' : ''}`} />
                     {isSyncingDb ? 'Menyingkronkan...' : 'Sync Database Ongkir'}
@@ -515,15 +515,15 @@ export default function StoreSettingsPage() {
                 </div>
 
                 {/* Store Origin Location Card */}
-                <div className="bg-muted/40 border border-border/30 rounded-xl p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <span className="text-xs font-bold text-foreground">
+                <div className="space-y-4 rounded-xl border border-border/30 bg-muted/40 p-3 sm:p-4">
+                  <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-2">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <span className="text-xs font-bold leading-relaxed text-foreground">
                         Lokasi Asal Pengiriman Toko (Origin)
                       </span>
                     </div>
-                    <span className="text-[11px] font-mono font-medium px-2.5 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                    <span className="w-full break-words rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1.5 text-left font-mono text-[11px] font-medium leading-relaxed text-primary sm:w-auto sm:text-right">
                       ID Kota Asal: {originCityId} ({originCityName}, {originProvinceName})
                     </span>
                   </div>
@@ -581,7 +581,7 @@ export default function StoreSettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+                <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2 lg:grid-cols-3">
                   {COURIERS.map((courier) => {
                     const isChecked = enabledCouriers
                       .split(',')
@@ -589,17 +589,16 @@ export default function StoreSettingsPage() {
                       .includes(courier.code);
 
                     return (
-                      <div
+                      <label
                         key={courier.code}
-                        onClick={() => toggleCourier(courier.code)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 select-none ${
+                        className={`flex cursor-pointer select-none items-center justify-between gap-3 rounded-xl border p-3.5 transition-all sm:rounded-2xl sm:p-4 ${
                           isChecked
                             ? 'bg-primary/5 border-primary/40 shadow-xs'
                             : 'bg-muted/30 border-border/40 opacity-65 hover:opacity-100'
                         }`}
                       >
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="font-bold text-xs text-foreground uppercase tracking-wide">
                               {courier.name}
                             </span>
@@ -607,16 +606,19 @@ export default function StoreSettingsPage() {
                               {courier.code.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-[11px] text-muted-foreground">{courier.description}</p>
+                          <p className="text-[11px] leading-relaxed text-muted-foreground">
+                            {courier.description}
+                          </p>
                         </div>
 
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => {}}
+                          onChange={() => toggleCourier(courier.code)}
+                          aria-label={`${isChecked ? 'Nonaktifkan' : 'Aktifkan'} kurir ${courier.name}`}
                           className="h-4 w-4 rounded-md text-primary border-border focus:ring-primary cursor-pointer shrink-0"
                         />
-                      </div>
+                      </label>
                     );
                   })}
                 </div>
@@ -628,7 +630,7 @@ export default function StoreSettingsPage() {
 
             {/* TAB 3: Media Sosial */}
             {activeTab === 'socials' && (
-              <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
+              <div className="space-y-5 rounded-xl border border-border/40 bg-card p-4 shadow-2xs sm:rounded-2xl sm:p-6">
                 <div className="border-b border-border/20 pb-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
                     <Share2 className="h-4 w-4 text-primary" />
@@ -712,7 +714,7 @@ export default function StoreSettingsPage() {
 
             {/* TAB 4: Hero Banner CMS */}
             {activeTab === 'hero' && (
-              <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
+              <div className="space-y-5 rounded-xl border border-border/40 bg-card p-4 shadow-2xs sm:rounded-2xl sm:p-6">
                 <div className="border-b border-border/20 pb-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
                     <LayoutTemplate className="h-4 w-4 text-primary" />
@@ -734,7 +736,7 @@ export default function StoreSettingsPage() {
 
             {/* Legacy layout editor retained in source only for backwards-compatible state fields. */}
             {false && activeTab === 'hero' && (
-              <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
+              <div className="space-y-5 rounded-xl border border-border/40 bg-card p-4 shadow-2xs sm:rounded-2xl sm:p-6">
                 <div className="border-b border-border/20 pb-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
                     <LayoutTemplate className="h-4 w-4 text-primary" />
@@ -1013,7 +1015,7 @@ export default function StoreSettingsPage() {
 
             {/* TAB 5: Homepage CMS */}
             {activeTab === 'homepage' && (
-              <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-5 shadow-2xs">
+              <div className="space-y-5 rounded-xl border border-border/40 bg-card p-4 shadow-2xs sm:rounded-2xl sm:p-6">
                 <div className="border-b border-border/20 pb-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
                     <Home className="h-4 w-4 text-primary" />
@@ -1098,7 +1100,7 @@ export default function StoreSettingsPage() {
             {activeTab === 'pages' && (
               <div className="space-y-6">
                 {/* Archive Section */}
-                <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-4 shadow-2xs">
+                <div className="space-y-4 rounded-xl border border-border/40 bg-card p-4 shadow-2xs sm:rounded-2xl sm:p-6">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 border-b border-border/20 pb-3">
                     Konten Halaman Archive (CMS)
                   </h3>
@@ -1137,7 +1139,7 @@ export default function StoreSettingsPage() {
                 </div>
 
                 {/* About Section */}
-                <div className="bg-card border border-border/40 rounded-2xl p-6 space-y-4 shadow-2xs">
+                <div className="space-y-4 rounded-xl border border-border/40 bg-card p-4 shadow-2xs sm:rounded-2xl sm:p-6">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 border-b border-border/20 pb-3">
                     Konten Halaman About Us (CMS)
                   </h3>
@@ -1194,14 +1196,14 @@ export default function StoreSettingsPage() {
 
                   {/* Brand Values */}
                   <div className="space-y-3 pt-2 border-t border-border/20">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col items-stretch gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                       <Label className="text-xs font-bold text-foreground">
                         Nilai-Nilai Brand (Values)
                       </Label>
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-8 px-3 rounded-lg text-xs"
+                        className="h-8 w-full rounded-lg px-3 text-xs min-[420px]:w-auto"
                         onClick={() =>
                           setAboutValues((v) => [...v, { title: '', description: '' }])
                         }
@@ -1252,7 +1254,7 @@ export default function StoreSettingsPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          className="h-9 rounded-lg text-xs text-destructive border-destructive/30 self-center mt-4"
+                          className="h-9 w-full self-center rounded-lg border-destructive/30 text-xs text-destructive sm:mt-4 sm:w-auto"
                           onClick={() => setAboutValues((prev) => prev.filter((_, i) => i !== idx))}
                         >
                           Hapus
