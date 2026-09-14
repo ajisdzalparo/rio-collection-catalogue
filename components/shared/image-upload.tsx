@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Upload, X, Crop, Image as ImageIcon, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import { ImageCropperModal, AspectRatioOption } from '@/components/shared/image-cropper-modal';
 
 export interface ImageUploadProps {
@@ -95,7 +96,7 @@ export function ImageUpload({
   // When a user selects a file from disk, open the cropper first
   const handleFilePicked = (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('File harus berupa gambar (JPEG, PNG, WEBP, dll.)');
+      toast.error('File harus berupa gambar (JPEG, PNG, WEBP, dll.)');
       return;
     }
 

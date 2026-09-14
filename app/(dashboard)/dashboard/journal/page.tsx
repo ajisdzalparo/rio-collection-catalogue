@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { Flex, VStack } from '@/components/ui/layout';
@@ -25,10 +26,13 @@ function JournalCmsPageContent() {
 
   const confirmDeleteArticle = async () => {
     if (!deleteTargetArticle) return;
+    const articleTitle = deleteTargetArticle.title;
     try {
       await deleteJournal(deleteTargetArticle.id);
+      toast.success(`Artikel "${articleTitle}" berhasil dihapus.`);
     } catch (error) {
       console.error('Failed to delete article:', error);
+      toast.error('Gagal menghapus artikel blog.');
     } finally {
       setDeleteTargetArticle(null);
     }

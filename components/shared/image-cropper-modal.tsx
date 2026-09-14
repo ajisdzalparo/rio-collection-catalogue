@@ -13,6 +13,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export type AspectRatioOption = '1:1' | '3:4' | '4:5' | '16:9' | '9:16' | 'free' | number;
@@ -366,7 +367,7 @@ function ImageCropperModalContent({
         finishCrop(dataUrl);
       } catch (fallbackErr) {
         console.error('All canvas export methods failed:', fallbackErr);
-        alert('Gagal mengekspor hasil crop gambar.');
+        toast.error('Gagal mengekspor hasil crop gambar.');
       }
     }
   };

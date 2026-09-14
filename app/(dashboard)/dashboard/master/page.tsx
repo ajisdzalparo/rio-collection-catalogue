@@ -221,9 +221,11 @@ function MasterDataPageContent() {
             description: itemDesc
           });
           updateCategory(editingItem.id, itemName, itemDesc);
+          toast.success(`Kategori "${itemName}" berhasil diperbarui`);
         } else if (editingItem.type === 'col') {
           await masterMutations.updateColor({ id: editingItem.id, name: itemName, hex: itemHex });
           updateColor(editingItem.id, itemName, itemHex);
+          toast.success(`Warna "${itemName}" berhasil diperbarui`);
         } else if (editingItem.type === 'top') {
           await masterMutations.updateTopic({
             id: editingItem.id,
@@ -231,8 +233,10 @@ function MasterDataPageContent() {
             description: itemDesc
           });
           updateTopic(editingItem.id, itemName, itemDesc);
+          toast.success(`Topik "${itemName}" berhasil diperbarui`);
         } else if (editingItem.type === 'ed') {
           updateEdition(editingItem.id, itemName, itemDesc);
+          toast.success(`Edisi "${itemName}" berhasil diperbarui`);
         } else if (editingItem.type === 'bank') {
           await masterMutations.updateBank({
             id: editingItem.id,
@@ -254,14 +258,18 @@ function MasterDataPageContent() {
         if (activeTab === 'categories') {
           await masterMutations.addCategory({ name: itemName, description: itemDesc });
           addCategory(itemName, itemDesc);
+          toast.success(`Kategori "${itemName}" berhasil ditambahkan`);
         } else if (activeTab === 'colors') {
           await masterMutations.addColor({ name: itemName, hex: itemHex });
           addColor(itemName, itemHex);
+          toast.success(`Warna "${itemName}" berhasil ditambahkan`);
         } else if (activeTab === 'topics') {
           await masterMutations.addTopic({ name: itemName, description: itemDesc });
           addTopic(itemName, itemDesc);
+          toast.success(`Topik "${itemName}" berhasil ditambahkan`);
         } else if (activeTab === 'editions') {
           addEdition(itemName, itemDesc);
+          toast.success(`Edisi "${itemName}" berhasil ditambahkan`);
         } else if (activeTab === 'sizes') {
           const upperSize = itemName.trim().toUpperCase();
           if (upperSize) {

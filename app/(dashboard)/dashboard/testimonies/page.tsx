@@ -131,18 +131,20 @@ export default function TestimoniesCmsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.imageUrl) {
-      alert('Silakan upload gambar screenshot testimoni terlebih dahulu.');
+      toast.error('Silakan upload gambar screenshot testimoni terlebih dahulu.');
       return;
     }
 
     try {
       if (editingItem) {
         await updateTestimony(editingItem.id, formData);
+        toast.success('Testimoni berhasil diperbarui.');
       } else {
         await addTestimony({
           ...formData,
           alt: formData.alt || formData.clientName || 'Bukti Chat WhatsApp'
         });
+        toast.success('Testimoni berhasil ditambahkan.');
       }
       setDialogOpen(false);
     } catch {

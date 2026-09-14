@@ -15,6 +15,7 @@ import {
   SearchCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -214,12 +215,15 @@ function JournalEditorContent() {
     try {
       if (articleId) {
         await updateJournal(payload);
+        toast.success(`Artikel blog "${payload.title}" berhasil diperbarui.`);
       } else {
         await createJournal(payload);
+        toast.success(`Artikel blog "${payload.title}" berhasil diterbitkan.`);
       }
       router.push('/dashboard/journal');
     } catch (err) {
       console.error('Failed to save article:', err);
+      toast.error('Gagal menyimpan artikel blog.');
     }
   };
 
