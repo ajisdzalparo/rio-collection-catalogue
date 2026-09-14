@@ -142,7 +142,7 @@ function JournalEditorContent() {
         setAuthor(existing.author);
         setImageUrl(existing.imageUrl);
         setPullQuote(existing.pullQuote || '');
-        setRelatedProductSlug(existing.relatedProductSlug || '');
+        setRelatedProductSlug(existing.relatedProductSlug || existing.relatedProducts?.[0]?.slug || '');
         setSeoTitle(existing.seoTitle || '');
         setSeoDescription(existing.seoDescription || '');
         setOgImageUrl(existing.ogImageUrl || '');

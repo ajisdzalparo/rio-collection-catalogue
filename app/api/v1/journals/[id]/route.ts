@@ -19,17 +19,37 @@ export async function PUT(
     const actor = await getAuthenticatedUser();
     const parsed = journalSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ message: 'Data artikel blog tidak valid', details: parsed.error.flatten() }, { status: 400 });
-    const updatedJournal = await prisma.journal.update({
-      where: { id },
-      data: parsed.data,
-      include: {
-        productLinks: {
-          where: { product: { deletedAt: null } },
-          include: { product: { select: productSummarySelect } }
+
+    const { relatedProductSlug, ...journalData } = parsed.data;
+    let linkedProductId: string | undefined;
+    if (relatedProductSlug) {
+      const linkedProduct = await prisma.product.findUnique({
+        where: { slug: relatedProductSlug, deletedAt: null },
+        select: { id: true }
+      });
+      linkedProductId = linkedProduct?.id;
+    }
+
+    const updatedJournal = await prisma.$transaction(async (tx) => {
+      await tx.productJournal.deleteMany({ where: { journalId: id } });
+      return tx.journal.update({
+        where: { id },
+        data: {
+          ...journalData,
+          ...(linkedProductId
+            ? { productLinks: { create: { productId: linkedProductId } } }
+            : {})
+        },
+        include: {
+          productLinks: {
+            where: { product: { deletedAt: null } },
+            include: { product: { select: productSummarySelect } }
+          }
         }
-      }
+      });
     });
     revalidatePath('/journal', 'layout');
+    revalidatePath('/catalogue', 'layout');
 
     await recordActivity({
       actor,

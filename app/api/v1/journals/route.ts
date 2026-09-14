@@ -50,14 +50,34 @@ export async function POST(request: Request) {
 
     const parsed = journalSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ message: 'Data artikel blog tidak valid', details: parsed.error.flatten() }, { status: 400 });
+
+    const { relatedProductSlug, ...journalData } = parsed.data;
+    let linkedProductId: string | undefined;
+    if (relatedProductSlug) {
+      const linkedProduct = await prisma.product.findUnique({
+        where: { slug: relatedProductSlug, deletedAt: null },
+        select: { id: true }
+      });
+      linkedProductId = linkedProduct?.id;
+    }
+
     const journal = await prisma.journal.create({
       data: {
-        ...parsed.data,
-        author: user.name.trim()
+        ...journalData,
+        author: user.name.trim(),
+        ...(linkedProductId
+          ? { productLinks: { create: { productId: linkedProductId } } }
+          : {})
       },
-      include: { productLinks: { include: { product: { select: productSummarySelect } } } }
+      include: {
+        productLinks: {
+          where: { product: { deletedAt: null } },
+          include: { product: { select: productSummarySelect } }
+        }
+      }
     });
     revalidatePath('/journal', 'layout');
+    revalidatePath('/catalogue', 'layout');
 
     await recordActivity({
       actor: user,

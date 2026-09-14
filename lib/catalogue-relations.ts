@@ -19,8 +19,13 @@ export function mapProductRelations(product: ProductWithJournalLinks): Product {
 
 export function mapJournalRelations(journal: JournalWithProductLinks): JournalArticle {
   const { productLinks = [], ...data } = journal;
+  const validProducts = productLinks
+    .map((link) => link.product)
+    .filter((p): p is ProductSummary => Boolean(p));
+
   return {
     ...data,
-    relatedProducts: productLinks.map((link) => link.product)
+    relatedProductSlug: validProducts[0]?.slug,
+    relatedProducts: validProducts
   };
 }
