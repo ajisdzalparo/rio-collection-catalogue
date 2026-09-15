@@ -28,8 +28,9 @@ interface AccountingRow {
 }
 
 const DEFAULT_HPP = 180000;
-const CURRENCY_FORMAT = '"Rp" #,##0;[Red]("Rp" #,##0);-';
+const CURRENCY_FORMAT = '"Rp" #,##0;[Red]("Rp" #,##0);"-"';
 const NUMBER_FORMAT = '#,##0';
+const PERCENT_FORMAT = '0.0%';
 
 function safeExcelText(value: string) {
   const normalized = value.trim() || '-';
@@ -101,62 +102,257 @@ export async function exportReportToExcel({
 
   try {
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'RIO Collection';
+    workbook.creator = 'RIO Collection Official';
     workbook.created = new Date();
     workbook.calcProperties.fullCalcOnLoad = true;
 
-    const worksheet = workbook.addWorksheet('Transaksi', {
-      views: [{ state: 'frozen', ySplit: 5, showGridLines: true }]
+    // Totals calculation
+    const totalOrderCount = new Set(rows.map((r) => r.orderNumber)).size;
+    const totalQuantity = rows.reduce((sum, r) => sum + r.quantity, 0);
+    const totalSales = rows.reduce((sum, r) => sum + r.sales, 0);
+    const totalCogs = rows.reduce((sum, r) => sum + r.cogs, 0);
+    const totalGrossProfit = rows.reduce((sum, r) => sum + r.grossProfit, 0);
+    const totalShippingFee = rows.reduce((sum, r) => sum + r.shippingFee, 0);
+    const totalReceived = rows.reduce((sum, r) => sum + r.received, 0);
+    const grossMarginRate = totalSales > 0 ? totalGrossProfit / totalSales : 0;
+
+    const BORDER_THIN: Partial<ExcelJS.Borders> = {
+      top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+    };
+
+    const HEADER_FILL: ExcelJS.Fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF0F172A' } // Slate 900
+    };
+
+    const ACCENT_HEADER_FILL: ExcelJS.Fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1E293B' } // Slate 800
+    };
+
+    // ==========================================
+    // SHEET 1: RINGKASAN EKSEKUTIF (SUMMARY)
+    // ==========================================
+    const summarySheet = workbook.addWorksheet('Ringkasan Bisnis', {
+      views: [{ showGridLines: true }]
     });
 
-    worksheet.columns = [
+    summarySheet.columns = [
+      { key: 'c1', width: 4 },
+      { key: 'c2', width: 28 },
+      { key: 'c3', width: 14 },
+      { key: 'c4', width: 18 },
+      { key: 'c5', width: 18 },
+      { key: 'c6', width: 18 },
+      { key: 'c7', width: 14 },
+      { key: 'c8', width: 16 },
+      { key: 'c9', width: 18 }
+    ];
+
+    // Header Title
+    summarySheet.mergeCells('B2:I2');
+    const titleCell = summarySheet.getCell('B2');
+    titleCell.value = 'RIO COLLECTION — LAPORAN KINERJA BISNIS & PENJUALAN';
+    titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF0F172A' } };
+
+    // Metadata Strip
+    summarySheet.getCell('B4').value = 'Periode Laporan:';
+    summarySheet.getCell('B4').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF64748B' } };
+    summarySheet.getCell('C4').value = `${startDate} s.d. ${endDate}`;
+    summarySheet.getCell('C4').font = { name: 'Arial', size: 9, bold: true };
+
+    summarySheet.getCell('E4').value = 'Tanggal Dibuat:';
+    summarySheet.getCell('E4').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF64748B' } };
+    summarySheet.getCell('F4').value = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    summarySheet.getCell('F4').font = { name: 'Arial', size: 9, bold: true };
+
+    summarySheet.getCell('B5').value = 'Filter Produk:';
+    summarySheet.getCell('B5').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF64748B' } };
+    summarySheet.getCell('C5').value = selectedProducts.length === 0 ? 'Semua Produk' : selectedProducts.join(', ');
+    summarySheet.getCell('C5').font = { name: 'Arial', size: 9 };
+
+    summarySheet.getCell('E5').value = 'Status Pesanan:';
+    summarySheet.getCell('E5').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF64748B' } };
+    summarySheet.getCell('F5').value = selectedStatuses.length === 0 ? 'Lunas & Dikirim' : selectedStatuses.map(getStatusLabel).join(', ');
+    summarySheet.getCell('F5').font = { name: 'Arial', size: 9 };
+
+    // KPI Summary Section (Card-style grid)
+    summarySheet.mergeCells('B7:I7');
+    const kpiTitle = summarySheet.getCell('B7');
+    kpiTitle.value = 'RINGKASAN EKSEKUTIF (KEY PERFORMANCE INDICATORS)';
+    kpiTitle.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF475569' } };
+
+    const kpiHeaders = ['Total Pesanan', 'Qty Terjual', 'Penjualan Produk', 'Total HPP (Modal)', 'Laba Kotor', 'Margin Laba', 'Total Ongkir', 'Total Kas Masuk'];
+    const kpiValues = [
+      totalOrderCount,
+      totalQuantity,
+      totalSales,
+      totalCogs,
+      totalGrossProfit,
+      grossMarginRate,
+      totalShippingFee,
+      totalReceived
+    ];
+
+    const kpiRow1 = summarySheet.getRow(8);
+    const kpiRow2 = summarySheet.getRow(9);
+    kpiRow1.height = 20;
+    kpiRow2.height = 24;
+
+    kpiHeaders.forEach((header, idx) => {
+      const colLetter = String.fromCharCode(66 + idx); // B, C, D, E, F, G, H, I
+      const hCell = summarySheet.getCell(`${colLetter}8`);
+      hCell.value = header;
+      hCell.font = { name: 'Arial', size: 8, bold: true, color: { argb: 'FFFFFFFF' } };
+      hCell.fill = HEADER_FILL;
+      hCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+      const vCell = summarySheet.getCell(`${colLetter}9`);
+      vCell.value = kpiValues[idx];
+      vCell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FF0F172A' } };
+      vCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      vCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+      vCell.border = BORDER_THIN;
+
+      if (idx === 0 || idx === 1) vCell.numFmt = NUMBER_FORMAT;
+      else if (idx === 5) vCell.numFmt = PERCENT_FORMAT;
+      else vCell.numFmt = CURRENCY_FORMAT;
+    });
+
+    // Product Breakdown Table
+    summarySheet.mergeCells('B11:I11');
+    const prodBreakdownTitle = summarySheet.getCell('B11');
+    prodBreakdownTitle.value = 'PERFORMA PENJUALAN PER PRODUK';
+    prodBreakdownTitle.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF475569' } };
+
+    const prodHeaders = ['No.', 'Nama Produk', 'Qty', 'Total Omset', 'Total HPP', 'Laba Kotor', 'Margin', 'Kontribusi'];
+    const prodHeaderRow = summarySheet.getRow(12);
+    prodHeaderRow.height = 22;
+    prodHeaders.forEach((hdr, idx) => {
+      const colLetter = String.fromCharCode(66 + idx);
+      const cell = summarySheet.getCell(`${colLetter}12`);
+      cell.value = hdr;
+      cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = ACCENT_HEADER_FILL;
+      cell.alignment = { horizontal: idx === 1 ? 'left' : 'center', vertical: 'middle' };
+    });
+
+    const productMap = new Map<string, { qty: number; sales: number; cogs: number; grossProfit: number }>();
+    rows.forEach((r) => {
+      const current = productMap.get(r.product) || { qty: 0, sales: 0, cogs: 0, grossProfit: 0 };
+      current.qty += r.quantity;
+      current.sales += r.sales;
+      current.cogs += r.cogs;
+      current.grossProfit += r.grossProfit;
+      productMap.set(r.product, current);
+    });
+
+    let currentProdRow = 13;
+    let prodIndex = 1;
+    productMap.forEach((val, prodName) => {
+      const pRow = summarySheet.getRow(currentProdRow);
+      pRow.height = 20;
+      pRow.font = { name: 'Arial', size: 9 };
+
+      const contribution = totalSales > 0 ? val.sales / totalSales : 0;
+      const margin = val.sales > 0 ? val.grossProfit / val.sales : 0;
+
+      pRow.getCell(2).value = prodIndex++;
+      pRow.getCell(2).alignment = { horizontal: 'center' };
+      pRow.getCell(3).value = prodName;
+      pRow.getCell(4).value = val.qty;
+      pRow.getCell(4).numFmt = NUMBER_FORMAT;
+      pRow.getCell(4).alignment = { horizontal: 'right' };
+      pRow.getCell(5).value = val.sales;
+      pRow.getCell(5).numFmt = CURRENCY_FORMAT;
+      pRow.getCell(6).value = val.cogs;
+      pRow.getCell(6).numFmt = CURRENCY_FORMAT;
+      pRow.getCell(7).value = val.grossProfit;
+      pRow.getCell(7).numFmt = CURRENCY_FORMAT;
+      pRow.getCell(8).value = margin;
+      pRow.getCell(8).numFmt = PERCENT_FORMAT;
+      pRow.getCell(8).alignment = { horizontal: 'right' };
+      pRow.getCell(9).value = contribution;
+      pRow.getCell(9).numFmt = PERCENT_FORMAT;
+      pRow.getCell(9).alignment = { horizontal: 'right' };
+
+      for (let c = 2; c <= 9; c++) {
+        pRow.getCell(c).border = BORDER_THIN;
+      }
+      currentProdRow++;
+    });
+
+    // Product Breakdown Total Row
+    const prodTotalRow = summarySheet.getRow(currentProdRow);
+    prodTotalRow.height = 22;
+    prodTotalRow.font = { name: 'Arial', size: 9, bold: true };
+    summarySheet.mergeCells(`B${currentProdRow}:C${currentProdRow}`);
+    prodTotalRow.getCell(2).value = 'TOTAL PERFORMA';
+    prodTotalRow.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
+    prodTotalRow.getCell(4).value = totalQuantity;
+    prodTotalRow.getCell(4).numFmt = NUMBER_FORMAT;
+    prodTotalRow.getCell(5).value = totalSales;
+    prodTotalRow.getCell(5).numFmt = CURRENCY_FORMAT;
+    prodTotalRow.getCell(6).value = totalCogs;
+    prodTotalRow.getCell(6).numFmt = CURRENCY_FORMAT;
+    prodTotalRow.getCell(7).value = totalGrossProfit;
+    prodTotalRow.getCell(7).numFmt = CURRENCY_FORMAT;
+    prodTotalRow.getCell(8).value = grossMarginRate;
+    prodTotalRow.getCell(8).numFmt = PERCENT_FORMAT;
+    prodTotalRow.getCell(9).value = 1.0;
+    prodTotalRow.getCell(9).numFmt = PERCENT_FORMAT;
+
+    for (let c = 2; c <= 9; c++) {
+      prodTotalRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+      prodTotalRow.getCell(c).border = { top: { style: 'thin' }, bottom: { style: 'double' } };
+    }
+
+    if (usesDefaultHpp) {
+      const noteRow = currentProdRow + 2;
+      summarySheet.getCell(`B${noteRow}`).value = `*Catatan: Terdapat produk dengan HPP kosong yang menggunakan default estimasi Rp ${DEFAULT_HPP.toLocaleString('id-ID')}.`;
+      summarySheet.getCell(`B${noteRow}`).font = { name: 'Arial', size: 8, italic: true, color: { argb: 'FF94A3B8' } };
+    }
+
+    // ==========================================
+    // SHEET 2: DATA TRANSAKSI DETAIL (RAW TABLE)
+    // ==========================================
+    const detailSheet = workbook.addWorksheet('Data Transaksi', {
+      views: [{ state: 'frozen', ySplit: 4, showGridLines: true }]
+    });
+
+    detailSheet.columns = [
       { key: 'date', width: 14 },
-      { key: 'orderNumber', width: 23 },
+      { key: 'orderNumber', width: 24 },
       { key: 'status', width: 12 },
       { key: 'customer', width: 24 },
-      { key: 'product', width: 32 },
+      { key: 'product', width: 34 },
       { key: 'size', width: 10 },
       { key: 'quantity', width: 10 },
       { key: 'unitPrice', width: 16 },
       { key: 'sales', width: 18 },
       { key: 'cogs', width: 18 },
-      { key: 'grossProfit', width: 19 },
+      { key: 'grossProfit', width: 18 },
       { key: 'shippingFee', width: 15 },
       { key: 'received', width: 18 }
     ];
 
-    worksheet.mergeCells('A1:M1');
-    worksheet.getCell('A1').value = 'Laporan Penjualan';
-    worksheet.getCell('A1').font = { name: 'Arial', size: 14, bold: true };
-    worksheet.getCell('A2').value = 'Periode';
-    worksheet.getCell('B2').value = `${startDate} s.d. ${endDate}`;
-    worksheet.getCell('D2').value = 'Produk';
-    worksheet.getCell('E2').value = selectedProducts.length === 0
-      ? 'Semua produk'
-      : safeExcelText(selectedProducts.join(', '));
-    worksheet.getCell('G2').value = 'Jumlah order';
-    worksheet.getCell('H2').value = new Set(rows.map((row) => row.orderNumber)).size;
-    worksheet.getCell('H2').numFmt = NUMBER_FORMAT;
-    worksheet.getCell('J2').value = 'Status';
-    worksheet.getCell('K2').value = selectedStatuses.length === 0
-      ? 'Lunas, Dikirim'
-      : selectedStatuses.map(getStatusLabel).join(', ');
+    // Quick Stats Info Strip on Top of Data Sheet
+    detailSheet.mergeCells('A1:M1');
+    const detailTitle = detailSheet.getCell('A1');
+    detailTitle.value = `DATA DETAIL TRANSAKSI PENJUALAN (${startDate} s.d. ${endDate})`;
+    detailTitle.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF0F172A' } };
 
-    const notes = [
-      'Hanya order Lunas dan Dikirim yang dicatat.',
-      'HPP mengikuti master produk saat laporan diekspor.'
-    ];
-    notes.push(
-      selectedProducts.length === 0
-        ? 'Ongkir dicatat satu kali per pesanan.'
-        : 'Ongkir tidak dialokasikan saat laporan difilter per produk.'
-    );
-    if (usesDefaultHpp) notes.push(`HPP kosong memakai nilai default Rp ${DEFAULT_HPP.toLocaleString('id-ID')}.`);
-    worksheet.mergeCells('A3:M3');
-    worksheet.getCell('A3').value = notes.join(' ');
-    worksheet.getCell('A3').font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF6B7280' } };
+    detailSheet.mergeCells('A2:M2');
+    const detailSubtitle = detailSheet.getCell('A2');
+    detailSubtitle.value = `Total: ${totalOrderCount} Pesanan | ${totalQuantity} Pcs Produk | Omset: Rp ${totalSales.toLocaleString('id-ID')} | Laba Kotor: Rp ${totalGrossProfit.toLocaleString('id-ID')} (Tabel ini murni data tanpa baris total di bawah, aman untuk di-Sort A-Z & Filter)`;
+    detailSubtitle.font = { name: 'Arial', size: 8.5, italic: true, color: { argb: 'FF475569' } };
 
-    const headers = [
+    const transactionHeaders = [
       'Tanggal',
       'No. Pesanan',
       'Status',
@@ -171,50 +367,46 @@ export async function exportReportToExcel({
       'Ongkir',
       'Total Masuk'
     ];
-    const headerRow = worksheet.getRow(5);
-    headerRow.values = headers;
-    headerRow.height = 24;
-    headerRow.eachCell((cell) => {
-      cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF374151' } };
+
+    const tHeaderRow = detailSheet.getRow(4);
+    tHeaderRow.values = transactionHeaders;
+    tHeaderRow.height = 26;
+    tHeaderRow.eachCell((cell) => {
+      cell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = HEADER_FILL;
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = BORDER_THIN;
     });
 
+    // Populate Clean Data Rows (Without trailing total row)
     rows.forEach((row) => {
-      const dataRow = worksheet.addRow(row);
+      const dataRow = detailSheet.addRow(row);
       dataRow.height = 20;
-      dataRow.font = { name: 'Arial', size: 10 };
+      dataRow.font = { name: 'Arial', size: 9 };
       dataRow.getCell(1).numFmt = 'dd mmm yyyy';
+      dataRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+      dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle' };
+      dataRow.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
+      dataRow.getCell(4).alignment = { horizontal: 'left', vertical: 'middle' };
+      dataRow.getCell(5).alignment = { horizontal: 'left', vertical: 'middle' };
+      dataRow.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
       dataRow.getCell(7).numFmt = NUMBER_FORMAT;
+      dataRow.getCell(7).alignment = { horizontal: 'right', vertical: 'middle' };
+
       for (let column = 8; column <= 13; column++) {
         dataRow.getCell(column).numFmt = CURRENCY_FORMAT;
-      }
-      for (let column = 7; column <= 13; column++) {
         dataRow.getCell(column).alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+
+      for (let column = 1; column <= 13; column++) {
+        dataRow.getCell(column).border = BORDER_THIN;
       }
     });
 
-    const firstDataRow = 6;
-    const lastDataRow = firstDataRow + rows.length - 1;
-    const totalRowNumber = lastDataRow + 1;
-    const totalRow = worksheet.getRow(totalRowNumber);
-    totalRow.values = [
-      'TOTAL', '', '', '', '', '',
-      { formula: `SUM(G${firstDataRow}:G${lastDataRow})`, result: rows.reduce((sum, row) => sum + row.quantity, 0) },
-      '',
-      { formula: `SUM(I${firstDataRow}:I${lastDataRow})`, result: rows.reduce((sum, row) => sum + row.sales, 0) },
-      { formula: `SUM(J${firstDataRow}:J${lastDataRow})`, result: rows.reduce((sum, row) => sum + row.cogs, 0) },
-      { formula: `SUM(K${firstDataRow}:K${lastDataRow})`, result: rows.reduce((sum, row) => sum + row.grossProfit, 0) },
-      { formula: `SUM(L${firstDataRow}:L${lastDataRow})`, result: rows.reduce((sum, row) => sum + row.shippingFee, 0) },
-      { formula: `SUM(M${firstDataRow}:M${lastDataRow})`, result: rows.reduce((sum, row) => sum + row.received, 0) }
-    ];
-    totalRow.font = { name: 'Arial', size: 10, bold: true };
-    totalRow.border = { top: { style: 'double', color: { argb: 'FF374151' } } };
-    totalRow.getCell(7).numFmt = NUMBER_FORMAT;
-    for (let column = 9; column <= 13; column++) totalRow.getCell(column).numFmt = CURRENCY_FORMAT;
+    const lastDataRowNumber = 4 + rows.length;
+    detailSheet.autoFilter = { from: 'A4', to: `M${lastDataRowNumber}` };
 
-    worksheet.autoFilter = { from: 'A5', to: `M${lastDataRow}` };
-
+    // Generate Excel file buffer
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -222,7 +414,7 @@ export async function exportReportToExcel({
     const productLabel = selectedProducts.length === 0
       ? 'Semua_Produk'
       : selectedProducts.join('-').replace(/[^a-zA-Z0-9.-]/g, '_').slice(0, 60);
-    const fileName = `Laporan_Penjualan_${startDate}_${endDate}_${productLabel}.xlsx`;
+    const fileName = `Laporan_Eksekutif_Penjualan_${startDate}_${endDate}_${productLabel}.xlsx`;
     const url = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -232,7 +424,7 @@ export async function exportReportToExcel({
     anchor.remove();
     window.URL.revokeObjectURL(url);
 
-    toast.success('Laporan Excel sederhana berhasil diunduh.');
+    toast.success('Laporan Excel profesional berhasil diunduh.');
   } catch (error) {
     console.error('Failed to generate Excel report:', error);
     toast.error('Gagal mengekspor laporan Excel. Silakan coba kembali.');
