@@ -65,25 +65,25 @@ function SelectValue({ className, children, placeholder, ...props }: SelectPrimi
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
-      className={cn('flex flex-1 text-left', className)}
+      className={cn('flex flex-1 text-left truncate min-w-0', className)}
       placeholder={placeholder}
       {...props}
     >
       {(selectedValue: unknown) => {
+        let content: React.ReactNode = placeholder;
         if (typeof children === 'function') {
-          return children(selectedValue);
-        }
-        if (children) {
-          return children;
-        }
-        if (selectedValue !== undefined && selectedValue !== null && selectedValue !== '') {
+          content = children(selectedValue);
+        } else if (children) {
+          content = children;
+        } else if (selectedValue !== undefined && selectedValue !== null && selectedValue !== '') {
           const key = String(selectedValue);
           if (ctx?.labels[key] !== undefined && ctx.labels[key] !== null) {
-            return ctx.labels[key];
+            content = ctx.labels[key];
+          } else {
+            content = selectedValue as React.ReactNode;
           }
-          return selectedValue as React.ReactNode;
         }
-        return placeholder;
+        return <span className="truncate block w-full text-left">{content}</span>;
       }}
     </SelectPrimitive.Value>
   );
@@ -102,14 +102,14 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        'flex h-10 w-full items-center justify-between gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2 text-xs font-semibold text-foreground transition-all outline-none select-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive data-placeholder:text-muted-foreground/70 shadow-2xs cursor-pointer',
+        'flex h-10 w-full items-center justify-between gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2 text-xs font-semibold text-foreground transition-all outline-none select-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive data-placeholder:text-muted-foreground/70 shadow-2xs cursor-pointer overflow-hidden min-w-0',
         className
       )}
       {...props}
     >
       {children}
       <SelectPrimitive.Icon
-        render={<ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />}
+        render={<ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground shrink-0" />}
       />
     </SelectPrimitive.Trigger>
   );
@@ -194,7 +194,7 @@ function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Prop
       )}
       {...props}
     >
-      <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 whitespace-nowrap">
+      <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 truncate whitespace-nowrap">
         {children}
       </SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator
