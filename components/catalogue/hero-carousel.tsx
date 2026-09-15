@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CountdownTimer } from '@/components/catalogue/countdown-timer';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ interface HeroCarouselProps {
 }
 
 export function HeroCarousel({ slides, comingSoonProduct }: HeroCarouselProps) {
+  const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -138,7 +140,11 @@ export function HeroCarousel({ slides, comingSoonProduct }: HeroCarouselProps) {
 
               {comingSoonProduct?.releaseDate && (
                 <div className="mt-5 flex justify-center">
-                  <CountdownTimer targetDate={comingSoonProduct.releaseDate} variant="hero" />
+                  <CountdownTimer
+                    targetDate={comingSoonProduct.releaseDate}
+                    variant="hero"
+                    onEnded={() => router.refresh()}
+                  />
                 </div>
               )}
 

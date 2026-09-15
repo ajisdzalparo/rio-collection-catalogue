@@ -1,9 +1,14 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn, formatPrice } from '@/lib/utils';
 import { StatusBadge } from '@/components/catalogue/status-badge';
 import { CountdownTimer } from '@/components/catalogue/countdown-timer';
-import type { Product } from '@/types/catalogue.types';
+import type { Product, ProductStatus } from '@/types/catalogue.types';
 import { SafeImage } from '@/components/shared';
+import { isComingSoonActive } from '@/lib/product-availability';
 
 interface ProductCardProps {
   product: Product;
@@ -12,10 +17,19 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, className, priority = false }: ProductCardProps) {
-  const isSoldOut = product.status === 'SOLD_OUT';
-  const isDiscontinued = product.status === 'DISCONTINUED';
-  const isComingSoon = product.status === 'COMING_SOON';
+  const router = useRouter();
+  const initialComingSoon = isComingSoonActive(product.status, product.releaseDate);
+  const [isComingSoon, setIsComingSoon] = useState(initialComingSoon);
+
+  const effectiveStatus: ProductStatus =
+    product.status === 'COMING_SOON' && !isComingSoon
+      ? 'AVAILABLE'
+      : product.status;
+
+  const isSoldOut = effectiveStatus === 'SOLD_OUT';
+  const isDiscontinued = effectiveStatus === 'DISCONTINUED';
   const isUnavailable = isSoldOut || isDiscontinued;
+
   const colorList = product.colors?.length
     ? product.colors
     : product.color
@@ -26,6 +40,11 @@ export function ProductCard({ product, className, priority = false }: ProductCar
     : product.colorHex
       ? [product.colorHex]
       : [];
+
+  const handleCountdownEnded = () => {
+    setIsComingSoon(false);
+    router.refresh();
+  };
 
   return (
     <Link
@@ -64,13 +83,17 @@ export function ProductCard({ product, className, priority = false }: ProductCar
         )}
         {/* Coming Soon overlay */}
         {isComingSoon && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-black/10">
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-black/10 transition-opacity duration-300">
             <span className="bg-(--cat-surface)/90 backdrop-blur-[2px] px-3.5 py-1.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) shadow-xs">
               Segera Hadir
             </span>
             {product.releaseDate && (
               <div className="mt-2">
-                <CountdownTimer targetDate={product.releaseDate} variant="compact" />
+                <CountdownTimer
+                  targetDate={product.releaseDate}
+                  variant="compact"
+                  onEnded={handleCountdownEnded}
+                />
               </div>
             )}
           </div>
@@ -104,7 +127,7 @@ export function ProductCard({ product, className, priority = false }: ProductCar
             {formatPrice(product.price)}
           </p>
           <div className="mt-0.5">
-            <StatusBadge status={product.status} />
+            <StatusBadge status={effectiveStatus} />
           </div>
         </div>
       </div>

@@ -11,8 +11,10 @@ import { SizeGuideModal } from '@/components/catalogue/size-guide-modal';
 import { StarRating } from '@/components/catalogue/star-rating';
 import { ProductReviews } from '@/components/catalogue/product-reviews';
 import { CountdownTimer } from '@/components/catalogue/countdown-timer';
+import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/cart-store';
-import type { Product } from '@/types/catalogue.types';
+import type { Product, ProductStatus } from '@/types/catalogue.types';
+import { isComingSoonActive } from '@/lib/product-availability';
 import { toast } from 'sonner';
 
 interface ProductDetailContentProps {
@@ -20,6 +22,15 @@ interface ProductDetailContentProps {
 }
 
 export function ProductDetailContent({ product }: ProductDetailContentProps) {
+  const router = useRouter();
+  const initialComingSoon = isComingSoonActive(product.status, product.releaseDate);
+  const [isComingSoon, setIsComingSoon] = useState(initialComingSoon);
+
+  const effectiveStatus: ProductStatus =
+    product.status === 'COMING_SOON' && !isComingSoon
+      ? 'AVAILABLE'
+      : product.status;
+
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -70,7 +81,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
   const selectedColorName = colorsList[selectedColorIndex] || product.color;
   const isUnlimitedStock =
-    product.stockMode === 'ALWAYS_AVAILABLE' || product.status === 'PRE_ORDER';
+    product.stockMode === 'ALWAYS_AVAILABLE' || effectiveStatus === 'PRE_ORDER';
   const isQuantityBased = !isUnlimitedStock;
   const productVariants = Array.isArray(product.variants) ? product.variants : [];
   const selectedVariant = productVariants.find((variant) => variant.size === selectedSize);
@@ -85,7 +96,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
     product.orderLimitMode === 'ONCE_PER_USER' ? 1 : isQuantityBased ? availableStock : undefined;
   const isAtQuantityLimit = quantityLimit !== undefined && quantity >= quantityLimit;
   const canOrder =
-    (product.status === 'AVAILABLE' || product.status === 'PRE_ORDER') &&
+    (effectiveStatus === 'AVAILABLE' || effectiveStatus === 'PRE_ORDER') &&
     (selectedVariant ? isUnlimitedStock || selectedVariant.inStock === true : false) &&
     (!isQuantityBased || availableStock >= quantity);
   const totalStock = isQuantityBased
@@ -261,7 +272,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-(--cat-charcoal)" />
-                <StatusBadge status={product.status} className="text-[12px]" />
+                <StatusBadge status={effectiveStatus} className="text-[12px]" />
               </div>
               {product.orderLimitMode === 'ONCE_PER_USER' && (
                 <span className="px-2.5 py-0.5 bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-[11px] font-hanken font-medium">
@@ -276,9 +287,17 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             </div>
 
             {/* Coming Soon Countdown Box */}
-            {product.status === 'COMING_SOON' && product.releaseDate && (
+            {isComingSoon && product.releaseDate && (
               <div className="mt-6">
-                <CountdownTimer targetDate={product.releaseDate} variant="detail" />
+                <CountdownTimer
+                  targetDate={product.releaseDate}
+                  variant="detail"
+                  onEnded={() => {
+                    setIsComingSoon(false);
+                    router.refresh();
+                    toast.success('Rilisan telah dibuka! Produk kini dapat dipesan.');
+                  }}
+                />
               </div>
             )}
 
