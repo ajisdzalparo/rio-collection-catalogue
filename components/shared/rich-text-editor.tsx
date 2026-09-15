@@ -43,6 +43,8 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import { uploadFileWithPresign } from '@/lib/presigned-upload';
 
 // Sanitize HTML strictly against XSS attacks
 export const sanitizeArticleHtml = (html: string): string => {
@@ -240,48 +242,40 @@ export function RichTextEditor({
     const file = e.target.files?.[0];
     if (!file || !editor) return;
 
+    if (!file.type.startsWith('image/')) {
+      toast.error('File harus berupa gambar (JPEG, PNG, WEBP, dll.)');
+      return;
+    }
+
     setIsUploading(true);
+    const toastId = toast.loading('Mengunggah gambar via Presigned URL...');
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('purpose', 'journal-image');
+      const publicUrl = await uploadFileWithPresign(file, { purpose: 'journal-image' });
 
-      const { data: json } = await axios.post('/api/v1/upload', formData);
+      editor
+        .chain()
+        .focus()
+        .setImage({ src: publicUrl, alt: file.name.replace(/\.[^/.]+$/, '') })
+        .run();
 
-      if (json.code === 200 && json.data?.url) {
-        editor
-          .chain()
-          .focus()
-          .setImage({ src: json.data.url, alt: file.name.replace(/\.[^/.]+$/, '') })
-          .run();
-        setIsImageModalOpen(false);
-      } else {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            editor
-              .chain()
-              .focus()
-              .setImage({
-                src: String(event.target.result),
-                alt: file.name.replace(/\.[^/.]+$/, '')
-              })
-              .run();
-            setIsImageModalOpen(false);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    } catch {
+      setIsImageModalOpen(false);
+      toast.success('Gambar artikel berhasil diunggah', { id: toastId });
+    } catch (err) {
+      console.error('Presigned direct upload error:', err);
+      // Fallback to base64 so user doesn't lose content
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
           editor
             .chain()
             .focus()
-            .setImage({ src: String(event.target.result), alt: file.name.replace(/\.[^/.]+$/, '') })
+            .setImage({
+              src: String(event.target.result),
+              alt: file.name.replace(/\.[^/.]+$/, '')
+            })
             .run();
           setIsImageModalOpen(false);
+          toast.info('Gambar disisipkan secara lokal (Storage offline)', { id: toastId });
         }
       };
       reader.readAsDataURL(file);

@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const minioEndpoint = process.env.MINIO_ENDPOINT || 'http://localhost:9000';
 const minioAccessKey = process.env.MINIO_ACCESS_KEY || 'minioadmin';
@@ -19,8 +20,41 @@ export const s3Client = new S3Client({
   forcePathStyle: process.env.MINIO_FORCE_PATH_STYLE !== 'false'
 });
 
+export interface PresignedUploadResult {
+  uploadUrl: string;
+  publicUrl: string;
+  key: string;
+}
+
 /**
- * Uploads a file buffer to MinIO bucket and returns its public URL.
+ * Generates a presigned PUT URL for direct browser-to-S3/MinIO uploads.
+ */
+export async function getPresignedUploadUrl(
+  fileName: string,
+  mimeType: string,
+  expiresInSeconds: number = 600
+): Promise<PresignedUploadResult> {
+  const cleanFileName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+  const objectKey = `${IMAGE_PREFIX}${cleanFileName}`;
+
+  const command = new PutObjectCommand({
+    Bucket: minioBucketName,
+    Key: objectKey,
+    ContentType: mimeType
+  });
+
+  const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
+  const publicUrl = `${minioPublicUrl}/${objectKey}`;
+
+  return {
+    uploadUrl,
+    publicUrl,
+    key: objectKey
+  };
+}
+
+/**
+ * Uploads a file buffer directly to MinIO bucket and returns its public URL.
  */
 export async function uploadToMinio(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<string> {
   const cleanFileName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;

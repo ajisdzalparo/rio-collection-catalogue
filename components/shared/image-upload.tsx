@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import axios from 'axios';
 import Image from 'next/image';
 import { Upload, X, Crop, Image as ImageIcon, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { uploadFileWithPresign } from '@/lib/presigned-upload';
 import { ImageCropperModal, AspectRatioOption } from '@/components/shared/image-cropper-modal';
 
 export interface ImageUploadProps {
@@ -57,16 +57,12 @@ export function ImageUpload({
   const uploadFile = async (file: File, fallbackPreviewUrl?: string) => {
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { data } = await axios.post('/api/v1/upload', formData);
-      if (data?.data?.url) {
-        onChange(data.data.url);
-        setIsUploading(false);
-        return;
-      }
+      const publicUrl = await uploadFileWithPresign(file, { purpose: 'product-image' });
+      onChange(publicUrl);
+      setIsUploading(false);
+      return;
     } catch (error) {
-      console.warn('Upload API unavailable, using local cropped data URL:', error);
+      console.warn('Presigned upload failed, checking fallback preview:', error);
     }
 
     // If previewUrl is already a permanent base64 data URL, use it directly
@@ -441,12 +437,7 @@ export function MultiImageUpload({
     let finalUrl = previewUrl;
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', croppedFile);
-      const { data } = await axios.post('/api/v1/upload', formData);
-      if (data?.data?.url) {
-        finalUrl = data.data.url;
-      }
+      finalUrl = await uploadFileWithPresign(croppedFile, { purpose: 'product-image' });
     } catch {
       // fallback to previewUrl
     } finally {
