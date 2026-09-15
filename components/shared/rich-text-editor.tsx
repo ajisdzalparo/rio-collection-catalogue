@@ -75,6 +75,8 @@ export function RichTextEditor({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isInternalUpdate = useRef(false);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -107,6 +109,7 @@ export function RichTextEditor({
     onUpdate: ({ editor }) => {
       const rawHtml = editor.getHTML();
       const sanitized = sanitizeArticleHtml(rawHtml);
+      isInternalUpdate.current = true;
       if (onChange) {
         onChange(sanitized === '<p></p>' ? '' : sanitized);
       }
@@ -114,7 +117,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'focus:outline-none p-5 sm:p-8 leading-relaxed text-foreground min-h-[440px]',
+          'focus:outline-none p-5 sm:p-8 leading-relaxed text-foreground min-h-[440px] select-text',
           'font-hanken text-[16px] md:text-[17px] leading-[1.85]',
           '[&_p]:mt-5 [&_p]:leading-[1.85] [&_p]:text-foreground/90 [&_p:first-child]:mt-0',
           '[&_h2]:font-eb-garamond [&_h2]:text-[26px] md:[&_h2]:text-[32px] [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:tracking-tight',
@@ -136,6 +139,10 @@ export function RichTextEditor({
 
   // Sync external value changes if necessary
   useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
     if (editor && value !== undefined) {
       const sanitizedValue = sanitizeArticleHtml(value);
       if (editor.getHTML() !== sanitizedValue && !(value === '' && editor.isEmpty)) {
@@ -586,7 +593,11 @@ export function RichTextEditor({
         <div
           className={cn('grow overflow-y-auto cursor-text', isSerif ? 'font-serif' : 'font-sans')}
           style={{ minHeight }}
-          onClick={() => editor.chain().focus().run()}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              editor.chain().focus().run();
+            }
+          }}
         >
           <EditorContent editor={editor} />
         </div>
