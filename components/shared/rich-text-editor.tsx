@@ -6,7 +6,6 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
-import DOMPurify from 'isomorphic-dompurify';
 import {
   Bold,
   Italic,
@@ -44,52 +43,8 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { uploadFileWithPresign } from '@/lib/presigned-upload';
-
-// Sanitize HTML strictly against XSS attacks
-export const sanitizeArticleHtml = (html: string): string => {
-  if (!html) return '';
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      'p',
-      'h2',
-      'h3',
-      'h4',
-      'blockquote',
-      'ul',
-      'ol',
-      'li',
-      'strong',
-      'em',
-      's',
-      'u',
-      'a',
-      'img',
-      'figure',
-      'figcaption',
-      'hr',
-      'br',
-      'code',
-      'pre',
-      'span',
-      'div'
-    ],
-    ALLOWED_ATTR: [
-      'href',
-      'target',
-      'rel',
-      'src',
-      'alt',
-      'title',
-      'class',
-      'style',
-      'width',
-      'height',
-      'contenteditable'
-    ],
-    ALLOW_DATA_ATTR: false,
-    ADD_ATTR: ['target']
-  });
-};
+import { sanitizeArticleHtml } from '@/lib/sanitize-html';
+export { sanitizeArticleHtml };
 
 interface RichTextEditorProps {
   value?: string;
@@ -225,11 +180,11 @@ export function RichTextEditor({
   // Insert Image Handler
   const handleInsertImage = useCallback(() => {
     if (!editor || !imageUrl.trim()) return;
-    const sanitizedSrc = DOMPurify.sanitize(imageUrl.trim());
+    const cleanUrl = imageUrl.trim();
     editor
       .chain()
       .focus()
-      .setImage({ src: sanitizedSrc, alt: imageAlt.trim() || 'Gambar Artikel' })
+      .setImage({ src: cleanUrl, alt: imageAlt.trim() || 'Gambar Artikel' })
       .run();
     setIsImageModalOpen(false);
     setImageUrl('');

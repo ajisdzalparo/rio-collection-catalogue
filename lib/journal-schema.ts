@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import DOMPurify from 'isomorphic-dompurify';
+import { sanitizeArticleHtml } from '@/lib/sanitize-html';
 
 export const journalSchema = z.object({
   title: z.string().trim().min(1).max(300),
@@ -10,7 +10,7 @@ export const journalSchema = z.object({
   imageUrl: z.string().min(1),
   excerpt: z.string().max(10000),
   content: z.array(z.string()),
-  contentHtml: z.string().max(2000000).optional().transform((html) => html ? DOMPurify.sanitize(html) : null),
+  contentHtml: z.string().max(2000000).optional().transform((html) => html ? sanitizeArticleHtml(html) : null),
   pullQuote: z.string().max(10000).nullish().transform((value) => value || null),
   relatedProductSlug: z.string().max(300).nullish().transform((value) => value || null),
   seoTitle: z.string().trim().max(70).nullish().transform((value) => value || null),
