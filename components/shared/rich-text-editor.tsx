@@ -117,7 +117,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'focus:outline-none p-5 sm:p-8 leading-relaxed text-foreground min-h-[440px] select-text',
+          'focus:outline-none p-5 sm:p-8 leading-relaxed text-foreground min-h-[440px] select-text selection:bg-primary selection:text-primary-foreground',
           'font-hanken text-[16px] md:text-[17px] leading-[1.85]',
           '[&_p]:mt-5 [&_p]:leading-[1.85] [&_p]:text-foreground/90 [&_p:first-child]:mt-0',
           '[&_h2]:font-eb-garamond [&_h2]:text-[26px] md:[&_h2]:text-[32px] [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:tracking-tight',
@@ -133,6 +133,60 @@ export function RichTextEditor({
           '[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium',
           '[&_img]:rounded-xl [&_img]:border [&_img]:border-border/40 [&_img]:my-6 [&_img]:shadow-sm [&_img]:max-w-full [&_img]:h-auto'
         )
+      },
+      handlePaste: (_view, event) => {
+        const items = Array.from(event.clipboardData?.items || []);
+        const imageItem = items.find((item) => item.type.startsWith('image/'));
+        if (imageItem) {
+          const file = imageItem.getAsFile();
+          if (file) {
+            event.preventDefault();
+            const toastId = toast.loading('Menyisipkan gambar dari clipboard...');
+            uploadFileWithPresign(file, { purpose: 'journal-image' })
+              .then((publicUrl) => {
+                editor?.chain().focus().setImage({ src: publicUrl, alt: 'Gambar Clipboard' }).run();
+                toast.success('Gambar berhasil disisipkan', { id: toastId });
+              })
+              .catch(() => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  if (e.target?.result) {
+                    editor?.chain().focus().setImage({ src: String(e.target.result), alt: 'Gambar Clipboard' }).run();
+                    toast.info('Gambar disisipkan secara lokal', { id: toastId });
+                  }
+                };
+                reader.readAsDataURL(file);
+              });
+            return true;
+          }
+        }
+        return false;
+      },
+      handleDrop: (_view, event, _slice, moved) => {
+        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+          const file = event.dataTransfer.files[0];
+          if (file.type.startsWith('image/')) {
+            event.preventDefault();
+            const toastId = toast.loading('Mengunggah gambar...');
+            uploadFileWithPresign(file, { purpose: 'journal-image' })
+              .then((publicUrl) => {
+                editor?.chain().focus().setImage({ src: publicUrl, alt: file.name.replace(/\.[^/.]+$/, '') }).run();
+                toast.success('Gambar berhasil disisipkan', { id: toastId });
+              })
+              .catch(() => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  if (e.target?.result) {
+                    editor?.chain().focus().setImage({ src: String(e.target.result), alt: file.name.replace(/\.[^/.]+$/, '') }).run();
+                    toast.info('Gambar disisipkan secara lokal', { id: toastId });
+                  }
+                };
+                reader.readAsDataURL(file);
+              });
+            return true;
+          }
+        }
+        return false;
       }
     }
   });
@@ -583,7 +637,7 @@ export function RichTextEditor({
               </div>
             ) : (
               <div
-                className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-foreground/90 [&_p]:mt-6 [&_p]:wrap-break-word [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-foreground [&_h3]:mt-8 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-8 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/70 [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-foreground [&_hr]:my-10 [&_hr]:border-border/60 [&_img]:h-auto [&_img]:w-full [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/40 [&_img]:my-8 [&_img]:shadow-sm [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono"
+                className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-foreground/90 select-text selection:bg-primary selection:text-primary-foreground [&_p]:mt-6 [&_p]:wrap-break-word [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-foreground [&_h3]:mt-8 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-8 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/70 [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-foreground [&_hr]:my-10 [&_hr]:border-border/60 [&_img]:h-auto [&_img]:w-full [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/40 [&_img]:my-8 [&_img]:shadow-sm [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono"
                 dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(editor.getHTML()) }}
               />
             )}
