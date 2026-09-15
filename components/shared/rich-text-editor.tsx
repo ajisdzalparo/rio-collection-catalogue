@@ -41,9 +41,8 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { uploadFileWithPresign } from '@/lib/presigned-upload';
 import { sanitizeArticleHtml } from '@/lib/sanitize-html';
+import { toast } from 'sonner';
 export { sanitizeArticleHtml };
 
 interface RichTextEditorProps {
@@ -143,20 +142,12 @@ export function RichTextEditor({
             event.preventDefault();
             const toastId = toast.loading('Menyisipkan gambar dari clipboard...');
             const reader = new FileReader();
-            reader.onload = async (e) => {
+            reader.onload = (e) => {
               const dataUrl = String(e.target?.result || '');
               if (!dataUrl) return;
 
-              try {
-                const publicUrl = await uploadFileWithPresign(file, { purpose: 'journal-image' });
-                const isMixed = typeof window !== 'undefined' && window.location.protocol === 'https:' && publicUrl.startsWith('http:');
-                const finalSrc = isMixed ? dataUrl : publicUrl;
-                editor?.chain().focus().setImage({ src: finalSrc, alt: 'Gambar Clipboard' }).run();
-                toast.success('Gambar berhasil disisipkan', { id: toastId });
-              } catch {
-                editor?.chain().focus().setImage({ src: dataUrl, alt: 'Gambar Clipboard' }).run();
-                toast.success('Gambar berhasil disisipkan', { id: toastId });
-              }
+              editor?.chain().focus().setImage({ src: dataUrl, alt: 'Gambar Clipboard' }).run();
+              toast.success('Gambar berhasil disisipkan', { id: toastId });
             };
             reader.readAsDataURL(file);
             return true;
@@ -169,22 +160,14 @@ export function RichTextEditor({
           const file = event.dataTransfer.files[0];
           if (file.type.startsWith('image/')) {
             event.preventDefault();
-            const toastId = toast.loading('Mengunggah gambar...');
+            const toastId = toast.loading('Menyisipkan gambar...');
             const reader = new FileReader();
-            reader.onload = async (e) => {
+            reader.onload = (e) => {
               const dataUrl = String(e.target?.result || '');
               if (!dataUrl) return;
 
-              try {
-                const publicUrl = await uploadFileWithPresign(file, { purpose: 'journal-image' });
-                const isMixed = typeof window !== 'undefined' && window.location.protocol === 'https:' && publicUrl.startsWith('http:');
-                const finalSrc = isMixed ? dataUrl : publicUrl;
-                editor?.chain().focus().setImage({ src: finalSrc, alt: file.name.replace(/\.[^/.]+$/, '') }).run();
-                toast.success('Gambar berhasil disisipkan', { id: toastId });
-              } catch {
-                editor?.chain().focus().setImage({ src: dataUrl, alt: file.name.replace(/\.[^/.]+$/, '') }).run();
-                toast.success('Gambar berhasil disisipkan', { id: toastId });
-              }
+              editor?.chain().focus().setImage({ src: dataUrl, alt: file.name.replace(/\.[^/.]+$/, '') }).run();
+              toast.success('Gambar berhasil disisipkan', { id: toastId });
             };
             reader.readAsDataURL(file);
             return true;
@@ -257,7 +240,7 @@ export function RichTextEditor({
   }, [editor, imageUrl, imageAlt]);
 
   // Image Upload Handler
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !editor) return;
 
@@ -267,44 +250,34 @@ export function RichTextEditor({
     }
 
     setIsUploading(true);
-    const toastId = toast.loading('Mengunggah gambar...');
+    const toastId = toast.loading('Menyisipkan gambar...');
 
     const reader = new FileReader();
-    reader.onload = async (event) => {
+    reader.onload = (event) => {
       const dataUrl = String(event.target?.result || '');
+      setIsUploading(false);
+      setIsImageModalOpen(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
       if (!dataUrl) {
-        setIsUploading(false);
+        toast.error('Gagal membaca file gambar', { id: toastId });
         return;
       }
 
-      try {
-        const publicUrl = await uploadFileWithPresign(file, { purpose: 'journal-image' });
-        const isMixed = typeof window !== 'undefined' && window.location.protocol === 'https:' && publicUrl.startsWith('http:');
-        const finalSrc = isMixed ? dataUrl : publicUrl;
+      editor
+        .chain()
+        .focus()
+        .setImage({ src: dataUrl, alt: file.name.replace(/\.[^/.]+$/, '') })
+        .run();
 
-        editor
-          .chain()
-          .focus()
-          .setImage({ src: finalSrc, alt: file.name.replace(/\.[^/.]+$/, '') })
-          .run();
-
-        setIsImageModalOpen(false);
-        toast.success('Gambar artikel berhasil disisipkan', { id: toastId });
-      } catch (err) {
-        console.warn('Direct upload failed, using embedded base64:', err);
-        editor
-          .chain()
-          .focus()
-          .setImage({ src: dataUrl, alt: file.name.replace(/\.[^/.]+$/, '') })
-          .run();
-
-        setIsImageModalOpen(false);
-        toast.success('Gambar artikel berhasil disisipkan', { id: toastId });
-      } finally {
-        setIsUploading(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      }
+      toast.success('Gambar artikel berhasil disisipkan', { id: toastId });
     };
+
+    reader.onerror = () => {
+      setIsUploading(false);
+      toast.error('Gagal memproses gambar', { id: toastId });
+    };
+
     reader.readAsDataURL(file);
   };
 
