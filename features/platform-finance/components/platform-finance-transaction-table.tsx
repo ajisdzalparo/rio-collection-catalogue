@@ -58,7 +58,7 @@ export function PlatformFinanceTransactionTable({
       {
         header: 'Mode',
         accessorKey: 'commissionMode',
-        className: 'text-right',
+        className: 'text-center',
         cell: (transaction) => (
           <span className="text-[11px] font-semibold text-muted-foreground">
             {transaction.commissionMode === 'PERCENTAGE' ? 'Persentase' : 'Nominal'}
@@ -90,7 +90,7 @@ export function PlatformFinanceTransactionTable({
       {
         header: 'Status',
         accessorKey: 'status',
-        className: 'text-right',
+        className: 'text-center',
         cell: (transaction) => (
           <Badge
             variant="secondary"

@@ -22,6 +22,7 @@ export interface Column<T> {
   accessorKey?: keyof T;
   cell?: (item: T, index: number) => React.ReactNode;
   className?: string;
+  align?: 'left' | 'center' | 'right';
   sortable?: boolean;
 }
 
@@ -644,7 +645,24 @@ export function DataTable<T extends object>({
                 const isSortable = Boolean(
                   enableSorting && col.sortable !== false && col.accessorKey && !isActionColumn
                 );
-                const isCurrentSorted = col.accessorKey && activeSortKey === col.accessorKey;
+                const isRightAligned =
+                  col.align === 'right' ||
+                  (typeof col.className === 'string' &&
+                    (col.className.includes('text-right') || col.className.includes('justify-end')));
+                const isCenterAligned =
+                  col.align === 'center' ||
+                  (typeof col.className === 'string' &&
+                    (col.className.includes('text-center') || col.className.includes('justify-center')));
+
+                const alignmentClass = isRightAligned
+                  ? 'justify-end text-right'
+                  : isCenterAligned
+                    ? 'justify-center text-center'
+                    : 'justify-start text-left';
+
+                const isCurrentSorted = Boolean(
+                  col.accessorKey && activeSortKey === col.accessorKey && activeSortDirection
+                );
 
                 return (
                   <TableHead
@@ -657,7 +675,7 @@ export function DataTable<T extends object>({
                     )}
                     onClick={() => handleSort(col.accessorKey, isSortable)}
                   >
-                    <div className="flex items-center gap-1.5">
+                    <div className={cn('flex items-center gap-1.5 w-full', alignmentClass)}>
                       <span>{col.header}</span>
                       {isSortable && (
                         <span className="shrink-0 text-muted-foreground">
