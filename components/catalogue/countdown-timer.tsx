@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useSyncExternalStore } from 'react';
-import { Clock, Sparkles } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TimeLeft {
@@ -82,16 +82,53 @@ export function CountdownTimer({
     );
   }
 
+  // ═══ Countdown Ended State ═══
   if (timeLeft.isEnded) {
+    if (variant === 'compact') {
+      return null;
+    }
+
+    if (variant === 'inline') {
+      return (
+        <span className={cn('font-mono text-[12px] text-(--cat-on-surface-variant)', className)}>
+          Telah Dirilis
+        </span>
+      );
+    }
+
+    if (variant === 'hero') {
+      return (
+        <div
+          className={cn(
+            'inline-flex items-center gap-2 border-y border-white/20 bg-black/50 px-3.5 py-1.5 text-white backdrop-blur-sm',
+            className
+          )}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="font-hanken text-[11px] font-medium uppercase tracking-widest text-white/90">
+            Telah Dirilis
+          </span>
+        </div>
+      );
+    }
+
+    // Default & Detail Variant
     return (
       <div
         className={cn(
-          'inline-flex items-center gap-1.5 font-hanken text-[11px] font-semibold text-emerald-600 dark:text-emerald-400',
+          'p-3.5 bg-(--cat-surface-container-low) border border-(--cat-stone) flex items-center justify-between',
           className
         )}
       >
-        <Sparkles className="h-3.5 w-3.5" />
-        <span>Telah Rilis Sekarang</span>
+        <div className="flex items-center gap-2.5">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="font-hanken text-[11px] uppercase tracking-widest font-semibold text-(--cat-on-surface)">
+            Koleksi Telah Dirilis
+          </span>
+        </div>
+        <span className="text-[11px] font-mono text-(--cat-on-surface-variant)">
+          Tersedia
+        </span>
       </div>
     );
   }
