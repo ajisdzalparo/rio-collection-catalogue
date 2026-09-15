@@ -48,7 +48,7 @@ export function useTestimonies() {
       const previousTestimonies = queryClient.getQueryData<Testimony[]>(['testimonies']);
 
       queryClient.setQueryData<Testimony[]>(['testimonies'], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return [];
         return old.map((item) => (item.id === id ? { ...item, ...updates } : item));
       });
 

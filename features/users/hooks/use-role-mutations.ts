@@ -31,7 +31,7 @@ export function useRoleMutations() {
       const previousRoles = queryClient.getQueryData<UserRole[]>(['roles']);
 
       queryClient.setQueryData<UserRole[]>(['roles'], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return old;
         return old.map((role) =>
           role.id === id
             ? {

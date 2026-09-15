@@ -412,7 +412,7 @@ export function useMasterMutations() {
       const previousCategories = queryClient.getQueryData<CategoryItem[]>(['categories']);
 
       queryClient.setQueryData<CategoryItem[]>(['categories'], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return [];
         return old.map((cat) => (cat.id === id ? { ...cat, ...updates } : cat));
       });
 
@@ -452,7 +452,7 @@ export function useMasterMutations() {
       const previousColors = queryClient.getQueryData<ColorItem[]>(['colors']);
 
       queryClient.setQueryData<ColorItem[]>(['colors'], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return [];
         return old.map((col) => (col.id === id ? { ...col, ...updates } : col));
       });
 
@@ -492,7 +492,7 @@ export function useMasterMutations() {
       const previousTopics = queryClient.getQueryData<TopicItem[]>(['topics']);
 
       queryClient.setQueryData<TopicItem[]>(['topics'], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return [];
         return old.map((top) => (top.id === id ? { ...top, ...updates } : top));
       });
 
@@ -524,7 +524,7 @@ export function useMasterMutations() {
       const previousSizes = queryClient.getQueryData<SizeItem[]>(['sizes']);
 
       queryClient.setQueryData<SizeItem[]>(['sizes'], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return [];
         return old.map((s) => (s.size === size ? { ...s, isActive } : s));
       });
 
@@ -572,7 +572,7 @@ export function useMasterMutations() {
       const previousBanks = queryClient.getQueryData<BankItem[]>(['banks']);
 
       queryClient.setQueryData<BankItem[]>(['banks'], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return [];
         return old.map((b) => (b.id === id ? { ...b, ...updates } : b));
       });
 
@@ -612,7 +612,7 @@ export function useMasterMutations() {
       const previousMaterials = queryClient.getQueryData<MaterialItem[]>(['materials']);
 
       queryClient.setQueryData<MaterialItem[]>(['materials'], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return [];
         return old.map((m) => (m.id === id ? { ...m, ...updates } : m));
       });
 

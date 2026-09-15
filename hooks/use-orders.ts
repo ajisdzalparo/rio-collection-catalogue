@@ -156,7 +156,7 @@ export function useOrders() {
     },
     onSuccess: () => {
       queryClient.setQueryData<Order[]>(['orders'], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return [];
         const now = Date.now();
         return old.map((order) => {
           const createdTime = new Date(order.createdAt).getTime();

@@ -64,7 +64,7 @@ export function useStoreBankMutations() {
       const previousStoreBanks = queryClient.getQueryData<StoreBankItem[]>(['store-banks', false]);
 
       queryClient.setQueryData<StoreBankItem[]>(['store-banks', false], (old) => {
-        if (!old) return [];
+        if (!Array.isArray(old)) return [];
         return old.map((item) => (item.id === id ? { ...item, ...payload } : item));
       });
 

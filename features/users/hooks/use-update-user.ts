@@ -7,6 +7,7 @@ import { userKeys } from '../keys';
 import { toast } from 'sonner';
 import type { UserFormValues } from '../schemas/schema';
 
+import type { ApiListResponse } from '@/types/api.type';
 import type { User } from '../types/user.types';
 
 export function useUpdateUser() {
@@ -17,11 +18,23 @@ export function useUpdateUser() {
       updateUser(id, payload),
     onMutate: async ({ id, payload }) => {
       await queryClient.cancelQueries({ queryKey: userKeys.all });
-      const previousUsers = queryClient.getQueryData<User[]>(userKeys.lists());
+      const previousUsers = queryClient.getQueryData<ApiListResponse<User> | User[]>(userKeys.lists());
 
-      queryClient.setQueryData<User[]>(userKeys.lists(), (old) => {
-        if (!old) return [];
-        return old.map((u) => (u.id === id ? { ...u, ...payload } : u));
+      queryClient.setQueryData<ApiListResponse<User> | User[]>(userKeys.lists(), (old) => {
+        if (!old) return old;
+
+        if (typeof old === 'object' && 'data' in old && Array.isArray(old.data)) {
+          return {
+            ...old,
+            data: old.data.map((u) => (u.id === id ? { ...u, ...payload } : u))
+          };
+        }
+
+        if (Array.isArray(old)) {
+          return old.map((u) => (u.id === id ? { ...u, ...payload } : u));
+        }
+
+        return old;
       });
 
       return { previousUsers };
