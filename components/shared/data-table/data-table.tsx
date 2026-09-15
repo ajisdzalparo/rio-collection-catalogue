@@ -194,15 +194,22 @@ export function DataTable<T extends object>({
     });
   }, [data, searchKey, extraSearchKeys, searchQuery, isSearchVisible]);
 
-  const dataSignature = data
-    .map((item) => {
+  const getItemKey = React.useCallback(
+    (item: T, idx: number): string | number => {
+      if (getRowId) return getRowId(item, idx);
       const record = item as Record<string, unknown>;
-      if (record && record.id !== undefined && record.id !== null) return String(record.id);
-      if (record && record.name !== undefined && record.name !== null) return String(record.name);
-      if (record && record.key !== undefined && record.key !== null) return String(record.key);
-      return '';
-    })
-    .join('|');
+      if (record && record.id !== undefined && record.id !== null)
+        return record.id as string | number;
+      if (record && record.name !== undefined && record.name !== null)
+        return record.name as string | number;
+      if (record && record.key !== undefined && record.key !== null)
+        return record.key as string | number;
+      return `row-${idx}`;
+    },
+    [getRowId]
+  );
+
+  const dataSignature = data.map((item, idx) => String(getItemKey(item, idx))).join('|');
   const [lastDataSignature, setLastDataSignature] = useState(dataSignature);
   if (dataSignature !== lastDataSignature) {
     setLastDataSignature(dataSignature);
@@ -221,6 +228,12 @@ export function DataTable<T extends object>({
       if (aVal === bVal) return 0;
       if (aVal === null || aVal === undefined) return 1;
       if (bVal === null || bVal === undefined) return -1;
+
+      if (aVal instanceof Date && bVal instanceof Date) {
+        return activeSortDirection === 'asc'
+          ? aVal.getTime() - bVal.getTime()
+          : bVal.getTime() - aVal.getTime();
+      }
 
       if (typeof aVal === 'string' && typeof bVal === 'string') {
         const comp = aVal.localeCompare(bVal);
@@ -252,8 +265,8 @@ export function DataTable<T extends object>({
     setCurrentPage(totalPages);
   }
 
-  const handleSort = (key?: keyof T, sortable?: boolean) => {
-    if (!key || !sortable) return;
+  const handleSort = (key?: keyof T, isSortable?: boolean) => {
+    if (!key || isSortable === false) return;
 
     let nextDirection: 'asc' | 'desc' | null = 'asc';
 
@@ -272,21 +285,6 @@ export function DataTable<T extends object>({
 
     onSortChange?.(nextKey, nextDirection);
   };
-
-  const getItemKey = React.useCallback(
-    (item: T, idx: number): string | number => {
-      if (getRowId) return getRowId(item, idx);
-      const record = item as Record<string, unknown>;
-      if (record && record.id !== undefined && record.id !== null)
-        return record.id as string | number;
-      if (record && record.name !== undefined && record.name !== null)
-        return record.name as string | number;
-      if (record && record.key !== undefined && record.key !== null)
-        return record.key as string | number;
-      return `row-${idx}`;
-    },
-    [getRowId]
-  );
 
   const selectedItems = useMemo(() => {
     return data.filter(
@@ -657,7 +655,7 @@ export function DataTable<T extends object>({
                       isSortable &&
                         'cursor-pointer select-none hover:text-foreground transition-colors'
                     )}
-                    onClick={() => handleSort(col.accessorKey, col.sortable)}
+                    onClick={() => handleSort(col.accessorKey, isSortable)}
                   >
                     <div className="flex items-center gap-1.5">
                       <span>{col.header}</span>
