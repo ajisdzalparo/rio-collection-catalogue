@@ -27,7 +27,11 @@ import {
   Type,
   Loader2,
   Eye,
-  Pencil
+  Pencil,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -44,6 +48,44 @@ import {
 import { sanitizeArticleHtml } from '@/lib/sanitize-html';
 import { toast } from 'sonner';
 export { sanitizeArticleHtml };
+
+// Extended TipTap Image with configurable width & alignment
+const CustomImage = Image.extend({
+  name: 'image',
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: '100%',
+        parseHTML: (element) => element.getAttribute('width') || element.style.width || '100%',
+        renderHTML: (attributes) => {
+          const widthVal = attributes.width || '100%';
+          return {
+            width: widthVal,
+            style: `width: ${widthVal}; max-width: 100%; height: auto;`
+          };
+        }
+      },
+      alignment: {
+        default: 'center',
+        parseHTML: (element) => element.getAttribute('data-alignment') || 'center',
+        renderHTML: (attributes) => {
+          const alignment = attributes.alignment || 'center';
+          const alignClass =
+            alignment === 'left'
+              ? 'mr-auto block'
+              : alignment === 'right'
+              ? 'ml-auto block'
+              : 'mx-auto block';
+          return {
+            'data-alignment': alignment,
+            class: `rounded-2xl border border-border/40 shadow-sm my-6 max-w-full h-auto ${alignClass}`
+          };
+        }
+      }
+    };
+  }
+});
 
 interface RichTextEditorProps {
   value?: string;
@@ -71,6 +113,8 @@ export function RichTextEditor({
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [imageAlt, setImageAlt] = useState('');
+  const [imageWidth, setImageWidth] = useState<'100%' | '75%' | '50%' | '25%'>('100%');
+  const [imageAlignment, setImageAlignment] = useState<'left' | 'center' | 'right'>('center');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,12 +137,8 @@ export function RichTextEditor({
           rel: 'noopener noreferrer'
         }
       }),
-      Image.configure({
-        inline: false,
-        HTMLAttributes: {
-          class:
-            'rounded-2xl border border-border/40 shadow-sm mx-auto my-6 max-w-full h-auto block'
-        }
+      CustomImage.configure({
+        inline: false
       }),
       Placeholder.configure({
         placeholder
@@ -233,11 +273,14 @@ export function RichTextEditor({
       .chain()
       .focus()
       .setImage({ src: cleanUrl, alt: imageAlt.trim() || 'Gambar Artikel' })
+      .updateAttributes('image', { width: imageWidth, alignment: imageAlignment })
       .run();
     setIsImageModalOpen(false);
     setImageUrl('');
     setImageAlt('');
-  }, [editor, imageUrl, imageAlt]);
+    setImageWidth('100%');
+    setImageAlignment('center');
+  }, [editor, imageUrl, imageAlt, imageWidth, imageAlignment]);
 
   // Image Upload Handler
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -268,6 +311,7 @@ export function RichTextEditor({
         .chain()
         .focus()
         .setImage({ src: dataUrl, alt: file.name.replace(/\.[^/.]+$/, '') })
+        .updateAttributes('image', { width: imageWidth, alignment: imageAlignment })
         .run();
 
       toast.success('Gambar artikel berhasil disisipkan', { id: toastId });
@@ -593,6 +637,95 @@ export function RichTextEditor({
         </div>
       </div>
 
+      {/* Selected Image Floating Control Bar */}
+      {editor.isActive('image') && (
+        <div className="w-full bg-primary/5 border-b border-border/30 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs transition-all">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-bold text-foreground text-[11px] flex items-center gap-1.5">
+              <ImageIcon className="h-3.5 w-3.5 text-primary" />
+              Atur Gambar:
+            </span>
+
+            {/* Width selection buttons */}
+            <div className="flex items-center gap-1 bg-background/90 p-0.5 rounded-lg border border-border/40">
+              {(['25%', '50%', '75%', '100%'] as const).map((w) => {
+                const currentWidth = editor.getAttributes('image').width || '100%';
+                const isSelected = currentWidth === w;
+                return (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() =>
+                      editor.chain().focus().updateAttributes('image', { width: w }).run()
+                    }
+                    className={cn(
+                      'px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer',
+                      isSelected
+                        ? 'bg-primary text-primary-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                    title={`Ubah ukuran ke ${w}`}
+                  >
+                    {w}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Alignment selection buttons */}
+            <div className="flex items-center gap-1 bg-background/90 p-0.5 rounded-lg border border-border/40">
+              {(
+                [
+                  { id: 'left', label: 'Kiri', icon: AlignLeft },
+                  { id: 'center', label: 'Tengah', icon: AlignCenter },
+                  { id: 'right', label: 'Kanan', icon: AlignRight }
+                ] as const
+              ).map((align) => {
+                const Icon = align.icon;
+                const currentAlign = editor.getAttributes('image').alignment || 'center';
+                const isSelected = currentAlign === align.id;
+                return (
+                  <button
+                    key={align.id}
+                    type="button"
+                    onClick={() =>
+                      editor
+                        .chain()
+                        .focus()
+                        .updateAttributes('image', { alignment: align.id })
+                        .run()
+                    }
+                    className={cn(
+                      'flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer',
+                      isSelected
+                        ? 'bg-primary text-primary-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                    title={`Rata ${align.label}`}
+                  >
+                    <Icon className="h-3 w-3" />
+                    <span>{align.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Delete Image button */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().deleteSelection().run()}
+            className="h-6 px-2 text-destructive hover:bg-destructive/10 text-[11px] font-semibold gap-1 cursor-pointer"
+            title="Hapus Gambar Terpilih"
+          >
+            <Trash2 className="h-3 w-3" />
+            <span>Hapus</span>
+          </Button>
+        </div>
+      )}
+
       {/* Editor / Live Preview Main Container */}
       {activeView === 'preview' ? (
         <div
@@ -618,7 +751,7 @@ export function RichTextEditor({
               </div>
             ) : (
               <div
-                className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-foreground/90 select-text selection:bg-primary selection:text-primary-foreground [&_p]:mt-6 [&_p]:wrap-break-word [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-foreground [&_h3]:mt-8 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-8 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/70 [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-foreground [&_hr]:my-10 [&_hr]:border-border/60 [&_img]:h-auto [&_img]:w-full [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/40 [&_img]:my-8 [&_img]:shadow-sm [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono"
+                className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-foreground/90 select-text selection:bg-primary selection:text-primary-foreground [&_p]:mt-6 [&_p]:wrap-break-word [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-foreground [&_h3]:mt-8 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-8 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/70 [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-foreground [&_hr]:my-10 [&_hr]:border-border/60 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/40 [&_img]:my-8 [&_img]:shadow-sm [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono"
                 dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(editor.getHTML()) }}
               />
             )}
@@ -696,7 +829,7 @@ export function RichTextEditor({
           <DialogHeader>
             <DialogTitle>Sisipkan Gambar Artikel</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Unggah file gambar dari komputer atau tempelkan URL gambar.
+              Unggah file gambar dari komputer atau tempelkan URL gambar dengan pilihan ukuran dan posisi.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -757,6 +890,57 @@ export function RichTextEditor({
                 placeholder="Misal: Foto suasana produksi studio"
                 className="h-10 rounded-xl text-xs"
               />
+            </div>
+
+            {/* Image Size & Alignment Options */}
+            <div className="grid grid-cols-2 gap-3 pt-1 border-t border-border/40">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold">Ukuran Gambar</Label>
+                <div className="grid grid-cols-4 gap-1">
+                  {(['25%', '50%', '75%', '100%'] as const).map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      onClick={() => setImageWidth(w)}
+                      className={cn(
+                        'py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer',
+                        imageWidth === w
+                          ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                          : 'bg-muted/30 border-border/40 text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold">Posisi / Perataan</Label>
+                <div className="grid grid-cols-3 gap-1">
+                  {(
+                    [
+                      { id: 'left', label: 'Kiri' },
+                      { id: 'center', label: 'Tengah' },
+                      { id: 'right', label: 'Kanan' }
+                    ] as const
+                  ).map((align) => (
+                    <button
+                      key={align.id}
+                      type="button"
+                      onClick={() => setImageAlignment(align.id)}
+                      className={cn(
+                        'py-1 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer',
+                        imageAlignment === align.id
+                          ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                          : 'bg-muted/30 border-border/40 text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {align.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">

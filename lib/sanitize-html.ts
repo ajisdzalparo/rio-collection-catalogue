@@ -43,9 +43,10 @@ export const sanitizeArticleHtml = (html: string): string => {
       'width',
       'height',
       'loading',
-      'contenteditable'
+      'contenteditable',
+      'data-alignment'
     ],
-    ALLOW_DATA_ATTR: false,
+    ALLOW_DATA_ATTR: true,
     ADD_ATTR: ['target'],
     ALLOWED_URI_REGEXP:
       /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$)|data:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml);base64,|blob:)/i
