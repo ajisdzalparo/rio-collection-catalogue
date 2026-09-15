@@ -142,21 +142,23 @@ export function RichTextEditor({
           if (file) {
             event.preventDefault();
             const toastId = toast.loading('Menyisipkan gambar dari clipboard...');
-            uploadFileWithPresign(file, { purpose: 'journal-image' })
-              .then((publicUrl) => {
-                editor?.chain().focus().setImage({ src: publicUrl, alt: 'Gambar Clipboard' }).run();
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+              const dataUrl = String(e.target?.result || '');
+              if (!dataUrl) return;
+
+              try {
+                const publicUrl = await uploadFileWithPresign(file, { purpose: 'journal-image' });
+                const isMixed = typeof window !== 'undefined' && window.location.protocol === 'https:' && publicUrl.startsWith('http:');
+                const finalSrc = isMixed ? dataUrl : publicUrl;
+                editor?.chain().focus().setImage({ src: finalSrc, alt: 'Gambar Clipboard' }).run();
                 toast.success('Gambar berhasil disisipkan', { id: toastId });
-              })
-              .catch(() => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  if (e.target?.result) {
-                    editor?.chain().focus().setImage({ src: String(e.target.result), alt: 'Gambar Clipboard' }).run();
-                    toast.info('Gambar disisipkan secara lokal', { id: toastId });
-                  }
-                };
-                reader.readAsDataURL(file);
-              });
+              } catch {
+                editor?.chain().focus().setImage({ src: dataUrl, alt: 'Gambar Clipboard' }).run();
+                toast.success('Gambar berhasil disisipkan', { id: toastId });
+              }
+            };
+            reader.readAsDataURL(file);
             return true;
           }
         }
@@ -168,21 +170,23 @@ export function RichTextEditor({
           if (file.type.startsWith('image/')) {
             event.preventDefault();
             const toastId = toast.loading('Mengunggah gambar...');
-            uploadFileWithPresign(file, { purpose: 'journal-image' })
-              .then((publicUrl) => {
-                editor?.chain().focus().setImage({ src: publicUrl, alt: file.name.replace(/\.[^/.]+$/, '') }).run();
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+              const dataUrl = String(e.target?.result || '');
+              if (!dataUrl) return;
+
+              try {
+                const publicUrl = await uploadFileWithPresign(file, { purpose: 'journal-image' });
+                const isMixed = typeof window !== 'undefined' && window.location.protocol === 'https:' && publicUrl.startsWith('http:');
+                const finalSrc = isMixed ? dataUrl : publicUrl;
+                editor?.chain().focus().setImage({ src: finalSrc, alt: file.name.replace(/\.[^/.]+$/, '') }).run();
                 toast.success('Gambar berhasil disisipkan', { id: toastId });
-              })
-              .catch(() => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  if (e.target?.result) {
-                    editor?.chain().focus().setImage({ src: String(e.target.result), alt: file.name.replace(/\.[^/.]+$/, '') }).run();
-                    toast.info('Gambar disisipkan secara lokal', { id: toastId });
-                  }
-                };
-                reader.readAsDataURL(file);
-              });
+              } catch {
+                editor?.chain().focus().setImage({ src: dataUrl, alt: file.name.replace(/\.[^/.]+$/, '') }).run();
+                toast.success('Gambar berhasil disisipkan', { id: toastId });
+              }
+            };
+            reader.readAsDataURL(file);
             return true;
           }
         }
@@ -263,41 +267,45 @@ export function RichTextEditor({
     }
 
     setIsUploading(true);
-    const toastId = toast.loading('Mengunggah gambar via Presigned URL...');
-    try {
-      const publicUrl = await uploadFileWithPresign(file, { purpose: 'journal-image' });
+    const toastId = toast.loading('Mengunggah gambar...');
 
-      editor
-        .chain()
-        .focus()
-        .setImage({ src: publicUrl, alt: file.name.replace(/\.[^/.]+$/, '') })
-        .run();
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = String(event.target?.result || '');
+      if (!dataUrl) {
+        setIsUploading(false);
+        return;
+      }
 
-      setIsImageModalOpen(false);
-      toast.success('Gambar artikel berhasil diunggah', { id: toastId });
-    } catch (err) {
-      console.error('Presigned direct upload error:', err);
-      // Fallback to base64 so user doesn't lose content
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          editor
-            .chain()
-            .focus()
-            .setImage({
-              src: String(event.target.result),
-              alt: file.name.replace(/\.[^/.]+$/, '')
-            })
-            .run();
-          setIsImageModalOpen(false);
-          toast.info('Gambar disisipkan secara lokal (Storage offline)', { id: toastId });
-        }
-      };
-      reader.readAsDataURL(file);
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+      try {
+        const publicUrl = await uploadFileWithPresign(file, { purpose: 'journal-image' });
+        const isMixed = typeof window !== 'undefined' && window.location.protocol === 'https:' && publicUrl.startsWith('http:');
+        const finalSrc = isMixed ? dataUrl : publicUrl;
+
+        editor
+          .chain()
+          .focus()
+          .setImage({ src: finalSrc, alt: file.name.replace(/\.[^/.]+$/, '') })
+          .run();
+
+        setIsImageModalOpen(false);
+        toast.success('Gambar artikel berhasil disisipkan', { id: toastId });
+      } catch (err) {
+        console.warn('Direct upload failed, using embedded base64:', err);
+        editor
+          .chain()
+          .focus()
+          .setImage({ src: dataUrl, alt: file.name.replace(/\.[^/.]+$/, '') })
+          .run();
+
+        setIsImageModalOpen(false);
+        toast.success('Gambar artikel berhasil disisipkan', { id: toastId });
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   if (!editor) {
