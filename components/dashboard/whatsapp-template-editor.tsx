@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import {
   MessageSquare,
-  Sparkles,
+  Save,
+  Code2,
   RotateCcw,
   CheckCircle2,
   Copy,
@@ -148,7 +149,7 @@ export function WhatsAppTemplateEditor({
             disabled={isSaving}
             className="h-9 px-4 rounded-xl text-xs font-bold gap-1.5 shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
           >
-            <Sparkles className="h-3.5 w-3.5" />
+            <Save className="h-3.5 w-3.5" />
             <span>{isSaving ? 'Menyimpan...' : 'Simpan'}</span>
           </Button>
         )}
@@ -214,7 +215,7 @@ export function WhatsAppTemplateEditor({
           <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between text-[11px]">
               <span className="font-bold text-foreground flex items-center gap-1">
-                <Sparkles className="h-3 w-3 text-amber-500" />
+                <Code2 className="h-3.5 w-3.5 text-emerald-500" />
                 Klik Variabel Dinamis untuk Menambahkan:
               </span>
               <span className="text-muted-foreground text-[10px]">Otomatis diganti data order</span>
