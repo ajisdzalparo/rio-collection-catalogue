@@ -49,7 +49,7 @@ import { sanitizeArticleHtml } from '@/lib/sanitize-html';
 import { toast } from 'sonner';
 export { sanitizeArticleHtml };
 
-// Extended TipTap Image with configurable width & alignment
+// Extended TipTap Image with configurable width & alignment and base64 support
 const CustomImage = Image.extend({
   name: 'image',
   addAttributes() {
@@ -138,6 +138,7 @@ export function RichTextEditor({
         }
       }),
       CustomImage.configure({
+        allowBase64: true,
         inline: false
       }),
       Placeholder.configure({
