@@ -27,7 +27,9 @@ import {
   Redo,
   RemoveFormatting,
   Type,
-  Loader2
+  Loader2,
+  Eye,
+  Pencil
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -104,6 +106,7 @@ export function RichTextEditor({
   minHeight = '420px'
 }: RichTextEditorProps) {
   const [isSerif, setIsSerif] = useState(false);
+  const [activeView, setActiveView] = useState<'edit' | 'preview'>('edit');
 
   // Link Modal State
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -155,16 +158,21 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose dark:prose-invert max-w-none focus:outline-none p-5 sm:p-7 leading-relaxed font-sans text-sm sm:text-base text-foreground',
-          'prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground',
-          'prose-h2:text-xl sm:prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4',
-          'prose-h3:text-lg sm:prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3',
-          'prose-p:my-4 prose-p:leading-relaxed',
-          'prose-blockquote:border-l-2 prose-blockquote:border-foreground/40 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6',
-          'prose-ul:list-disc prose-ul:pl-6 prose-ul:my-4',
-          'prose-ol:list-decimal prose-ol:pl-6 prose-ol:my-4',
-          'prose-hr:my-8 prose-hr:border-border/40',
-          'prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:bg-muted prose-code:text-xs prose-code:font-mono'
+          'focus:outline-none p-5 sm:p-8 leading-relaxed text-foreground min-h-[440px]',
+          'font-hanken text-[16px] md:text-[17px] leading-[1.85]',
+          '[&_p]:mt-5 [&_p]:leading-[1.85] [&_p]:text-foreground/90 [&_p:first-child]:mt-0',
+          '[&_h2]:font-eb-garamond [&_h2]:text-[26px] md:[&_h2]:text-[32px] [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:tracking-tight',
+          '[&_h3]:font-eb-garamond [&_h3]:text-[20px] md:[&_h3]:text-[24px] [&_h3]:font-bold [&_h3]:text-foreground [&_h3]:mt-6 [&_h3]:mb-2',
+          '[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-5 [&_ul_li]:mt-1.5',
+          '[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-5 [&_ol_li]:mt-1.5',
+          '[&_blockquote]:my-6 [&_blockquote]:py-3 [&_blockquote]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/70 [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[20px] md:[&_blockquote]:text-[22px] [&_blockquote]:text-foreground',
+          '[&_hr]:my-8 [&_hr]:border-border/60',
+          '[&_strong]:font-bold [&_strong]:text-foreground',
+          '[&_em]:italic',
+          '[&_s]:line-through',
+          '[&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono',
+          '[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium',
+          '[&_img]:rounded-xl [&_img]:border [&_img]:border-border/40 [&_img]:my-6 [&_img]:shadow-sm [&_img]:max-w-full [&_img]:h-auto'
         )
       }
     }
@@ -535,14 +543,48 @@ export function RichTextEditor({
         </div>
 
         {/* Right Tools */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          {/* Edit / Live Preview Mode Switcher */}
+          <div className="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/40">
+            <button
+              type="button"
+              onClick={() => setActiveView('edit')}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors',
+                activeView === 'edit'
+                  ? 'bg-background text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+              title="Mode Editor Teks"
+            >
+              <Pencil className="h-3 w-3" />
+              <span>Edit</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView('preview')}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors',
+                activeView === 'preview'
+                  ? 'bg-background text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+              title="Preview Tampilan Akhir Katalog"
+            >
+              <Eye className="h-3 w-3" />
+              <span>Preview</span>
+            </button>
+          </div>
+
+          <div className="h-4 w-px bg-border/40 mx-0.5" />
+
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => setIsSerif(!isSerif)}
-            className="h-8 px-2.5 rounded-lg text-xs font-semibold gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
-            title="Ganti Jenis Font Preview"
+            className="h-8 px-2 rounded-lg text-xs font-semibold gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+            title="Ganti Font"
           >
             <Type className="h-3.5 w-3.5" />
             <span>{isSerif ? 'Serif' : 'Sans'}</span>
@@ -561,14 +603,46 @@ export function RichTextEditor({
         </div>
       </div>
 
-      {/* Editor Main Content Container */}
-      <div
-        className={cn('grow overflow-y-auto cursor-text', isSerif ? 'font-serif' : 'font-sans')}
-        style={{ minHeight }}
-        onClick={() => editor.chain().focus().run()}
-      >
-        <EditorContent editor={editor} />
-      </div>
+      {/* Editor / Live Preview Main Container */}
+      {activeView === 'preview' ? (
+        <div
+          className={cn(
+            'grow overflow-y-auto p-6 sm:p-10 bg-background/50',
+            isSerif ? 'font-serif' : 'font-sans'
+          )}
+          style={{ minHeight }}
+        >
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="border-b border-border/40 pb-3 flex items-center justify-between">
+              <span className="text-xs font-mono font-medium text-muted-foreground uppercase tracking-wider">
+                Live Output Preview (Tampilan Publik)
+              </span>
+              <span className="text-[11px] font-mono text-muted-foreground">
+                {wordCount} kata • {charCount} karakter
+              </span>
+            </div>
+
+            {editor.isEmpty ? (
+              <div className="text-center py-16 text-muted-foreground text-xs italic">
+                Belum ada konten artikel. Tulis di tab Edit untuk melihat preview di sini.
+              </div>
+            ) : (
+              <div
+                className="font-hanken text-[16px] md:text-[18px] leading-[1.85] text-foreground/90 [&_p]:mt-6 [&_p]:wrap-break-word [&_p:first-child]:mt-0 [&_h2]:font-eb-garamond [&_h2]:text-[28px] [&_h2]:md:text-[36px] [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:tracking-tight [&_h3]:font-eb-garamond [&_h3]:text-[22px] [&_h3]:md:text-[28px] [&_h3]:font-bold [&_h3]:text-foreground [&_h3]:mt-8 [&_h3]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-6 [&_ul_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-6 [&_ol_li]:mt-2 [&_blockquote]:my-8 [&_blockquote]:py-4 [&_blockquote]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/70 [&_blockquote]:italic [&_blockquote]:font-eb-garamond [&_blockquote]:text-[22px] [&_blockquote]:text-foreground [&_hr]:my-10 [&_hr]:border-border/60 [&_img]:h-auto [&_img]:w-full [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:border [&_img]:border-border/40 [&_img]:my-8 [&_img]:shadow-sm [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a]:font-medium [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted [&_code]:text-xs [&_code]:font-mono"
+                dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(editor.getHTML()) }}
+              />
+            )}
+          </div>
+        </div>
+      ) : (
+        <div
+          className={cn('grow overflow-y-auto cursor-text', isSerif ? 'font-serif' : 'font-sans')}
+          style={{ minHeight }}
+          onClick={() => editor.chain().focus().run()}
+        >
+          <EditorContent editor={editor} />
+        </div>
+      )}
 
       {/* Footer Word & Character Counter */}
       <div className="border-t border-border/30 bg-muted/20 px-4 py-2 flex items-center justify-between text-[11px] font-mono text-muted-foreground select-none">

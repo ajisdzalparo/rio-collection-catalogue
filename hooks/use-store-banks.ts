@@ -59,7 +59,23 @@ export function useStoreBankMutations() {
       const { data } = await axios.put(`/api/v1/store-banks/${id}`, payload);
       return data.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['store-banks'] })
+    onMutate: async ({ id, ...payload }) => {
+      await queryClient.cancelQueries({ queryKey: ['store-banks'] });
+      const previousStoreBanks = queryClient.getQueryData<StoreBankItem[]>(['store-banks', false]);
+
+      queryClient.setQueryData<StoreBankItem[]>(['store-banks', false], (old) => {
+        if (!old) return [];
+        return old.map((item) => (item.id === id ? { ...item, ...payload } : item));
+      });
+
+      return { previousStoreBanks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousStoreBanks) {
+        queryClient.setQueryData(['store-banks', false], context.previousStoreBanks);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['store-banks'] })
   });
 
   const deleteStoreBankMutation = useMutation({

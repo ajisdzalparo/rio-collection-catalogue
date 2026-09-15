@@ -26,7 +26,33 @@ export function useRoleMutations() {
       const { data } = await axios.patch(`/api/v1/roles/${id}`, payload);
       return data.data as UserRole;
     },
-    onSuccess: invalidate
+    onMutate: async ({ id, payload }) => {
+      await queryClient.cancelQueries({ queryKey: ['roles'] });
+      const previousRoles = queryClient.getQueryData<UserRole[]>(['roles']);
+
+      queryClient.setQueryData<UserRole[]>(['roles'], (old) => {
+        if (!old) return [];
+        return old.map((role) =>
+          role.id === id
+            ? {
+                ...role,
+                ...(payload.name !== undefined && { name: payload.name }),
+                ...(payload.description !== undefined && { description: payload.description || undefined }),
+                ...(payload.permissions !== undefined && { permissions: payload.permissions }),
+                ...(payload.isActive !== undefined && { isActive: payload.isActive })
+              }
+            : role
+        );
+      });
+
+      return { previousRoles };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousRoles) {
+        queryClient.setQueryData(['roles'], context.previousRoles);
+      }
+    },
+    onSettled: invalidate
   });
   const remove = useMutation({
     mutationFn: async (id: string) => axios.delete(`/api/v1/roles/${id}`),

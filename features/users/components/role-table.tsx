@@ -171,7 +171,7 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
             onCheckedChange={(checked) => {
               if (!role.id) return;
               void update.mutateAsync({ id: role.id, payload: { isActive: checked } }).catch(() => {
-                toast.error('Gagal memperbarui status role.');
+                toast.error('Gagal memperbarui status role. Mengembalikan ke status semula.');
               });
             }}
           />

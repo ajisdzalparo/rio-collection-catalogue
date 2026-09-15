@@ -407,7 +407,23 @@ export function useMasterMutations() {
       const { data } = await axios.put(`/api/v1/categories/${id}`, { name, description, isActive });
       return data.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] })
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['categories'] });
+      const previousCategories = queryClient.getQueryData<CategoryItem[]>(['categories']);
+
+      queryClient.setQueryData<CategoryItem[]>(['categories'], (old) => {
+        if (!old) return [];
+        return old.map((cat) => (cat.id === id ? { ...cat, ...updates } : cat));
+      });
+
+      return { previousCategories };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousCategories) {
+        queryClient.setQueryData(['categories'], context.previousCategories);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['categories'] })
   });
 
   const deleteCategoryMutation = useMutation({
@@ -431,7 +447,23 @@ export function useMasterMutations() {
       const { data } = await axios.put(`/api/v1/colors/${id}`, { name, hex, isActive });
       return data.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['colors'] })
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['colors'] });
+      const previousColors = queryClient.getQueryData<ColorItem[]>(['colors']);
+
+      queryClient.setQueryData<ColorItem[]>(['colors'], (old) => {
+        if (!old) return [];
+        return old.map((col) => (col.id === id ? { ...col, ...updates } : col));
+      });
+
+      return { previousColors };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousColors) {
+        queryClient.setQueryData(['colors'], context.previousColors);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['colors'] })
   });
 
   const deleteColorMutation = useMutation({
@@ -455,7 +487,23 @@ export function useMasterMutations() {
       const { data } = await axios.put(`/api/v1/topics/${id}`, { name, description, isActive });
       return data.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] })
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['topics'] });
+      const previousTopics = queryClient.getQueryData<TopicItem[]>(['topics']);
+
+      queryClient.setQueryData<TopicItem[]>(['topics'], (old) => {
+        if (!old) return [];
+        return old.map((top) => (top.id === id ? { ...top, ...updates } : top));
+      });
+
+      return { previousTopics };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTopics) {
+        queryClient.setQueryData(['topics'], context.previousTopics);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['topics'] })
   });
 
   const deleteTopicMutation = useMutation({
@@ -471,7 +519,23 @@ export function useMasterMutations() {
       const { data } = await axios.put(`/api/v1/sizes/${size}`, { isActive });
       return data.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sizes'] })
+    onMutate: async ({ size, isActive }) => {
+      await queryClient.cancelQueries({ queryKey: ['sizes'] });
+      const previousSizes = queryClient.getQueryData<SizeItem[]>(['sizes']);
+
+      queryClient.setQueryData<SizeItem[]>(['sizes'], (old) => {
+        if (!old) return [];
+        return old.map((s) => (s.size === size ? { ...s, isActive } : s));
+      });
+
+      return { previousSizes };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousSizes) {
+        queryClient.setQueryData(['sizes'], context.previousSizes);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['sizes'] })
   });
 
   const addSizeMutation = useMutation({
@@ -503,7 +567,23 @@ export function useMasterMutations() {
       const { data } = await axios.put(`/api/v1/banks/${id}`, { name, code, logoUrl, isActive });
       return data.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['banks'] })
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['banks'] });
+      const previousBanks = queryClient.getQueryData<BankItem[]>(['banks']);
+
+      queryClient.setQueryData<BankItem[]>(['banks'], (old) => {
+        if (!old) return [];
+        return old.map((b) => (b.id === id ? { ...b, ...updates } : b));
+      });
+
+      return { previousBanks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousBanks) {
+        queryClient.setQueryData(['banks'], context.previousBanks);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['banks'] })
   });
 
   const deleteBankMutation = useMutation({
@@ -527,7 +607,23 @@ export function useMasterMutations() {
       const { data } = await axios.put('/api/v1/materials', { id, name, description, isActive });
       return data.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['materials'] })
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['materials'] });
+      const previousMaterials = queryClient.getQueryData<MaterialItem[]>(['materials']);
+
+      queryClient.setQueryData<MaterialItem[]>(['materials'], (old) => {
+        if (!old) return [];
+        return old.map((m) => (m.id === id ? { ...m, ...updates } : m));
+      });
+
+      return { previousMaterials };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousMaterials) {
+        queryClient.setQueryData(['materials'], context.previousMaterials);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['materials'] })
   });
 
   const deleteMaterialMutation = useMutation({

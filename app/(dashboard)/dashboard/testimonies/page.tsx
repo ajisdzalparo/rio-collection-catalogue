@@ -204,10 +204,9 @@ export default function TestimoniesCmsPage() {
           <Switch
             size="lg"
             checked={item.status === 'ACTIVE'}
-            disabled={isUpdating}
             onCheckedChange={(checked) => {
               void updateTestimony(item.id, { status: checked ? 'ACTIVE' : 'HIDDEN' }).catch(() => {
-                toast.error('Gagal memperbarui status testimoni.');
+                toast.error('Gagal memperbarui status testimoni. Mengembalikan ke status sebelumnya.');
               });
             }}
             aria-label={`${item.status === 'ACTIVE' ? 'Sembunyikan' : 'Tampilkan'} testimoni ${item.clientName || item.alt}`}

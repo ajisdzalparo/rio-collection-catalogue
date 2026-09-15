@@ -43,7 +43,23 @@ export function useTestimonies() {
       const { data } = await axios.patch(`/api/v1/testimonies/${id}`, updates);
       return data.data;
     },
-    onSuccess: () => {
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['testimonies'] });
+      const previousTestimonies = queryClient.getQueryData<Testimony[]>(['testimonies']);
+
+      queryClient.setQueryData<Testimony[]>(['testimonies'], (old) => {
+        if (!old) return [];
+        return old.map((item) => (item.id === id ? { ...item, ...updates } : item));
+      });
+
+      return { previousTestimonies };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTestimonies) {
+        queryClient.setQueryData(['testimonies'], context.previousTestimonies);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['testimonies'] });
     }
   });
