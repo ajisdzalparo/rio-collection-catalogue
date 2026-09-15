@@ -1,17 +1,15 @@
-import { Skeleton } from '@/components/ui/skeleton';
-
-export default function Loading() {
+export default function RootLoading() {
   return (
-    <div className="min-h-screen space-y-8 bg-background p-6 sm:p-10" role="status" aria-label="Memuat halaman">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-10 w-28 rounded-xl" />
-      </div>
-      <Skeleton className="h-64 w-full rounded-xl" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Skeleton className="h-36 rounded-xl" />
-        <Skeleton className="h-36 rounded-xl" />
-        <Skeleton className="h-36 rounded-xl" />
+    <div
+      className="min-h-screen flex items-center justify-center bg-background"
+      role="status"
+      aria-label="Memuat..."
+    >
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-6 w-6 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+        <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+          RIO COLLECTION
+        </span>
       </div>
     </div>
   );

@@ -2,12 +2,21 @@
 
 import * as React from 'react';
 import { addDays } from 'date-fns';
-import { CalendarDays, Clock3, RotateCcw } from 'lucide-react';
+import { CalendarDays, Clock3, RotateCcw, Timer, Layers } from 'lucide-react';
 import { CountdownTimer } from '@/components/catalogue/countdown-timer';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { TimePicker } from '@/components/ui/time-picker';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import type { StockMode } from '@/types/catalogue.types';
 
 const WIB_TIME_ZONE = 'Asia/Jakarta';
 const DEFAULT_RELEASE_TIME = '19:00';
@@ -15,6 +24,8 @@ const DEFAULT_RELEASE_TIME = '19:00';
 interface ReleaseScheduleFieldProps {
   value: string | null;
   onChange: (value: string | null) => void;
+  stockMode?: StockMode;
+  onStockModeChange?: (mode: StockMode) => void;
 }
 
 interface ScheduleParts {
@@ -71,7 +82,12 @@ function formatReleaseDate(value: string) {
   }).format(new Date(value));
 }
 
-export function ReleaseScheduleField({ value, onChange }: ReleaseScheduleFieldProps) {
+export function ReleaseScheduleField({
+  value,
+  onChange,
+  stockMode = 'QUANTITY',
+  onStockModeChange
+}: ReleaseScheduleFieldProps) {
   const [initialValue] = React.useState<ScheduleParts | null>(() =>
     value ? getWibParts(value) : null
   );
@@ -104,39 +120,49 @@ export function ReleaseScheduleField({ value, onChange }: ReleaseScheduleFieldPr
   };
 
   return (
-    <section className="relative rounded-2xl border border-primary/15 bg-linear-to-br from-primary/6 via-card to-card p-4 shadow-xs sm:p-5">
-      <div className="mb-4 border-b border-border/50 pb-4">
-        <div>
-          <h4 className="text-sm font-extrabold tracking-tight text-foreground">Jadwal Rilis Drop</h4>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
-            Countdown publik aktif otomatis sesuai waktu Indonesia Barat.
+    <section className="relative rounded-2xl border border-primary/20 bg-muted/10 p-5 shadow-xs space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-3.5">
+        <div className="space-y-0.5">
+          <h4 className="text-xs font-extrabold uppercase tracking-wider text-foreground flex items-center gap-2">
+            <Timer className="h-4 w-4 text-primary" />
+            <span>Pengaturan Jadwal & Mode Rilis Drop</span>
+          </h4>
+          <p className="text-[11px] text-muted-foreground">
+            Countdown publik akan otomatis aktif di halaman katalog produk sesuai waktu Indonesia Barat (WIB).
           </p>
         </div>
+        <Badge variant="outline" className="w-fit text-[10px] font-bold border-primary/30 text-primary uppercase">
+          Coming Soon
+        </Badge>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Date & Time Inputs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="release-date" className="flex items-center gap-1.5 text-xs font-bold text-foreground">
             <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-            Tanggal Peluncuran
+            <span>Tanggal Peluncuran</span>
+            <span className="text-red-500">*</span>
           </Label>
           <DatePicker
             id="release-date"
             ariaLabel="Pilih tanggal peluncuran"
             value={selectedDate}
             onChange={updateDate}
-            format="dd/MM/yyyy"
-            placeholder="Pilih tanggal"
+            format="dd MMM yyyy"
+            placeholder="Pilih tanggal rilis"
             minDate={getWibToday()}
             isClearable={false}
-            className="[&>button]:h-11 [&>button]:rounded-xl [&>button]:bg-background/80"
+            className="[&>button]:h-10 [&>button]:rounded-xl [&>button]:bg-background"
           />
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="release-time" className="flex items-center gap-1.5 text-xs font-bold text-foreground">
             <Clock3 className="h-3.5 w-3.5 text-muted-foreground" />
-            Jam Rilis (WIB)
+            <span>Jam Rilis (WIB)</span>
+            <span className="text-red-500">*</span>
           </Label>
           <TimePicker
             id="release-time"
@@ -146,37 +172,95 @@ export function ReleaseScheduleField({ value, onChange }: ReleaseScheduleFieldPr
             minuteStep={5}
             timezoneLabel="WIB"
             align="right"
-            className="[&>button]:h-11 [&>button]:rounded-xl [&>button]:bg-background/80"
+            className="[&>button]:h-10 [&>button]:rounded-xl [&>button]:bg-background"
           />
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="mr-1 text-[11px] font-medium text-muted-foreground">Preset cepat</span>
-        <Button type="button" variant="outline" size="sm" onClick={() => applyPreset(1, '19:00')} className="h-8 rounded-lg bg-background/60 px-3 text-[11px]">
+      {/* Quick Presets */}
+      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/20">
+        <span className="text-[11px] font-bold text-muted-foreground mr-1">Preset Cepat:</span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => applyPreset(1, '19:00')}
+          className="h-7 rounded-lg bg-background px-2.5 text-[11px] font-medium cursor-pointer"
+        >
           Besok, 19:00
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => applyPreset(3, '19:00')} className="h-8 rounded-lg bg-background/60 px-3 text-[11px]">
-          +3 hari
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => applyPreset(3, '19:00')}
+          className="h-7 rounded-lg bg-background px-2.5 text-[11px] font-medium cursor-pointer"
+        >
+          +3 Hari, 19:00
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => applyPreset(7, '20:00')} className="h-8 rounded-lg bg-background/60 px-3 text-[11px]">
-          +7 hari, 20:00
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => applyPreset(7, '20:00')}
+          className="h-7 rounded-lg bg-background px-2.5 text-[11px] font-medium cursor-pointer"
+        >
+          +7 Hari, 20:00
         </Button>
         {value && (
-          <Button type="button" variant="outline" size="sm" onClick={resetSchedule} className="ml-auto h-8 gap-1.5 rounded-lg border-destructive/30 px-3 text-[11px] text-destructive hover:bg-destructive/10 hover:text-destructive">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={resetSchedule}
+            className="ml-auto h-7 gap-1 rounded-lg border-destructive/30 px-2.5 text-[11px] text-destructive hover:bg-destructive/10 cursor-pointer"
+          >
             <RotateCcw className="h-3 w-3" />
-            Reset
+            <span>Reset</span>
           </Button>
         )}
       </div>
 
+      {/* Mode Setelah Rilis (if callback provided) */}
+      {onStockModeChange && (
+        <div className="space-y-1.5 pt-2 border-t border-border/20">
+          <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>Mode Stok Setelah Rilis Selesai</span>
+          </Label>
+          <Select value={stockMode} onValueChange={(val) => onStockModeChange(val as StockMode)}>
+            <SelectTrigger className="h-10 rounded-xl bg-background text-xs font-bold">
+              <SelectValue placeholder="Pilih mode stok setelah rilis" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="QUANTITY">Limited / Stok Terbatas (Sesuai Manajemen Stok)</SelectItem>
+              <SelectItem value="ALWAYS_AVAILABLE">Selalu Tersedia (Unlimited / Continuous)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            {stockMode === 'QUANTITY'
+              ? 'Ketika waktu countdown habis, produk otomatis berstatus Available dan stok per ukuran diambil dari Manajemen Stok.'
+              : 'Ketika waktu countdown habis, produk otomatis berstatus Available dengan stok tak terbatas.'}
+          </p>
+        </div>
+      )}
+
+      {/* Live Scheduled Status & Countdown Preview */}
       {value && (
-        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border/60 bg-background/75 p-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Rilis dijadwalkan</p>
-            <p className="mt-0.5 text-xs font-bold capitalize text-foreground">{formatReleaseDate(value)} WIB</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/90 p-3.5 shadow-2xs">
+          <div className="space-y-0.5 min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Jadwal Rilis Terpilih
+            </p>
+            <p className="text-xs font-bold text-foreground capitalize">
+              {formatReleaseDate(value)} WIB
+            </p>
           </div>
-          <CountdownTimer targetDate={value} variant="compact" className="shrink-0 rounded-lg border-border bg-card text-foreground" />
+          <CountdownTimer
+            targetDate={value}
+            variant="compact"
+            className="shrink-0 rounded-lg border-border/60 bg-card text-foreground"
+          />
         </div>
       )}
     </section>

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Shirt, Sparkles, Layers, Tag } from 'lucide-react';
+import { ArrowLeft, Save, Shirt, Layers, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,12 @@ import { ReleaseScheduleField } from '@/components/dashboard/release-schedule-fi
 import { useProducts } from '@/hooks/use-products';
 import { useJournals } from '@/hooks/use-journals';
 import { useMasterStore, useSizesQuery, useMaterialsQuery } from '@/hooks/use-master-data';
-import type { Product, ProductMutationInput, ProductStatus, StockMode } from '@/types/catalogue.types';
+import type {
+  Product,
+  ProductMutationInput,
+  ProductStatus,
+  StockMode
+} from '@/types/catalogue.types';
 
 interface ProductFormProps {
   initialProduct?: Product;
@@ -58,7 +63,9 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
   const [category, setCategory] = useState(initialProduct?.category || '');
   const [status, setStatus] = useState<ProductStatus>(initialProduct?.status || 'AVAILABLE');
 
-  const [releaseDate, setReleaseDate] = useState<string | null>(initialProduct?.releaseDate ?? null);
+  const [releaseDate, setReleaseDate] = useState<string | null>(
+    initialProduct?.releaseDate ?? null
+  );
   const [stockMode, setStockMode] = useState<StockMode>(initialProduct?.stockMode || 'QUANTITY');
   const orderLimitMode = initialProduct?.orderLimitMode || 'UNLIMITED';
   const [edition, setEdition] = useState(initialProduct?.edition || 'Edition 001');
@@ -366,26 +373,12 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
             </div>
 
             {status === 'COMING_SOON' && (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <ReleaseScheduleField value={releaseDate} onChange={setReleaseDate} />
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Mode Setelah Rilis</Label>
-                  <Select value={stockMode} onValueChange={(value) => setStockMode(value as StockMode)}>
-                    <SelectTrigger className="h-10 rounded-xl">
-                      <SelectValue placeholder="Pilih mode stok" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="QUANTITY">Limited / Stok Terbatas</SelectItem>
-                      <SelectItem value="ALWAYS_AVAILABLE">Selalu Tersedia</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground">
-                    {stockMode === 'QUANTITY'
-                      ? 'Jumlah per ukuran diambil dari Manajemen Stok saat produk dirilis.'
-                      : 'Produk otomatis tersedia tanpa batas stok saat dirilis.'}
-                  </p>
-                </div>
-              </div>
+              <ReleaseScheduleField
+                value={releaseDate}
+                onChange={setReleaseDate}
+                stockMode={stockMode}
+                onStockModeChange={setStockMode}
+              />
             )}
 
             {/* Description */}
@@ -410,7 +403,9 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                   label: j.title,
                   description: `${j.category} · ${j.date}`
                 }))}
-                placeholder={loadingJournals ? 'Memuat artikel blog...' : 'Pilih artikel blog terkait'}
+                placeholder={
+                  loadingJournals ? 'Memuat artikel blog...' : 'Pilih artikel blog terkait'
+                }
                 searchPlaceholder="Cari artikel blog..."
                 maxCount={2}
                 disabled={loadingJournals}
@@ -421,7 +416,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
           {/* Section 2: Materials & Care Specifications */}
           <div className="rounded-2xl border border-border/40 bg-card p-6 shadow-xs space-y-4">
             <h3 className="text-sm font-extrabold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
+              <Layers className="h-4 w-4 text-primary" />
               <span>Spesifikasi Bahan & Perawatan (Materials & Care)</span>
             </h3>
             <p className="text-xs text-muted-foreground">
