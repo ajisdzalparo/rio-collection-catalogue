@@ -13,11 +13,9 @@ import {
   type UserRole
 } from '@/features/users';
 import { Button } from '@/components/ui/button';
-import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
-import { toast } from 'sonner';
 
 function UsersPageContent() {
   const searchParams = useSearchParams();
@@ -39,10 +37,9 @@ function UsersPageContent() {
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
-  const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
 
   const { data: mockRoles, isLoading: rolesLoading } = useRolesQuery();
-  const { setRoles, deleteRole } = useRbacStore();
+  const { setRoles } = useRbacStore();
 
   useEffect(() => {
     if (mockRoles && mockRoles.length > 0) {
@@ -58,25 +55,9 @@ function UsersPageContent() {
     router.push(`/users/roles/${encodeURIComponent(role.name)}/edit`);
   };
 
-  const confirmDeleteRole = () => {
-    if (deleteTargetRole) {
-      if (deleteTargetRole.toLowerCase() === 'admin') {
-        toast.error('Master role Admin adalah role sistem utama dan tidak dapat dihapus.');
-        setDeleteTargetRole(null);
-        return;
-      }
-      deleteRole(deleteTargetRole);
-      toast.success(`Master role "${deleteTargetRole}" berhasil dihapus.`);
-      setDeleteTargetRole(null);
-    }
-  };
-
   return (
     <div className="space-y-6 pb-12">
-      <PageHeader
-        title={currentHeader.title}
-        description={currentHeader.desc}
-      >
+      <PageHeader title={currentHeader.title} description={currentHeader.desc}>
         {activeTab === 'users' ? (
           <Button
             onClick={() => setShowCreateDialog(true)}
@@ -101,35 +82,17 @@ function UsersPageContent() {
         <Suspense fallback={<SkeletonTable rows={6} cols={5} />}>
           <UserTable />
         </Suspense>
+      ) : rolesLoading ? (
+        <SkeletonTable rows={5} cols={4} />
       ) : (
-        rolesLoading ? <SkeletonTable rows={5} cols={4} /> : <RoleTable onEditRole={handleOpenEditRole} />
+        <RoleTable onEditRole={handleOpenEditRole} />
       )}
 
       <UserFormDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
-      <RoleFormDialog
-        open={showRoleDialog}
-        onOpenChange={setShowRoleDialog}
-      />
-      <ConfirmModal
-        open={Boolean(deleteTargetRole)}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTargetRole(null);
-        }}
-        title="Konfirmasi Hapus Role"
-        description={
-          deleteTargetRole
-            ? `Apakah Anda yakin ingin menghapus master role "${deleteTargetRole}"?`
-            : ''
-        }
-        confirmText="Hapus Role"
-        cancelText="Batal"
-        variant="destructive"
-        onConfirm={confirmDeleteRole}
-      />
+      <RoleFormDialog open={showRoleDialog} onOpenChange={setShowRoleDialog} />
     </div>
   );
 }
-
 
 export default function UsersPage() {
   return (

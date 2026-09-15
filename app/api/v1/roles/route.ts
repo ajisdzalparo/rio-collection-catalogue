@@ -25,7 +25,7 @@ function addRoleCompatibilityFields<T extends { name: string }>(role: T) {
       : role.name === 'Super Admin'
         ? 'Akses tertinggi ke seluruh sistem dan finance platform'
         : undefined,
-    isSystemRole: isSuperAdminRole(role.name) || role.name === 'Owner',
+    isSystemRole: isSuperAdminRole(role.name),
     isActive: true
   };
 }

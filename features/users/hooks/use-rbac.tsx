@@ -43,7 +43,7 @@ const DEFAULT_ROLES: UserRole[] = [
   {
     name: 'Owner',
     description: 'Pemilik toko dengan akses penuh operasional tanpa akses finance platform Super Admin',
-    isSystemRole: true,
+    isSystemRole: false,
     isActive: true,
     permissions: {
       'activity.view': true,
@@ -58,7 +58,7 @@ const DEFAULT_ROLES: UserRole[] = [
   {
     name: 'Admin',
     description: 'Akses penuh ke seluruh sistem dan operasional manajemen',
-    isSystemRole: true,
+    isSystemRole: false,
     isActive: true,
     permissions: {
       viewOverview: true,
@@ -127,7 +127,7 @@ const DEFAULT_ROLES: UserRole[] = [
   }
 ];
 
-const REQUIRED_ROLE_NAMES = ['Super Admin', 'Owner', 'Admin', 'Developer'] as const;
+const REQUIRED_ROLE_NAMES = ['Super Admin'] as const;
 
 function ensureRequiredRoles(roles: UserRole[]): UserRole[] {
   const rolesByName = new Map(roles.map((role) => [normalizeRoleName(role.name), role]));

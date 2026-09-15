@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import { DataTable, type Column, CMSBadge } from '@/components/shared';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ interface RoleTableProps {
 
 export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   const router = useRouter();
-  const { roles } = useRbacStore();
+  const { roles, deleteRole } = useRbacStore();
   const { update, remove } = useRoleMutations();
   const { user: authUser } = useAuth();
   const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
@@ -59,26 +60,47 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   };
 
   const confirmDelete = async () => {
-    if (deleteTargetRole) {
-      if (isRoleDeleteLocked(deleteTargetRole)) {
-        toast.error(
-          isProtectedSystemRole(deleteTargetRole)
-            ? `Master role "${deleteTargetRole}" adalah role sistem utama dan tidak dapat dihapus.`
-            : 'Role yang sedang digunakan akun Anda tidak dapat dihapus.'
-        );
-        setDeleteTargetRole(null);
-        return;
-      }
-      const target = roles.find((role) => role.name === deleteTargetRole);
-      if (!target?.id) return;
+    if (!deleteTargetRole) return;
+
+    if (isRoleDeleteLocked(deleteTargetRole)) {
+      toast.error(
+        isProtectedSystemRole(deleteTargetRole)
+          ? `Master role "${deleteTargetRole}" adalah role sistem utama dan tidak dapat dihapus.`
+          : 'Role yang sedang digunakan akun Anda tidak dapat dihapus.'
+      );
+      setDeleteTargetRole(null);
+      return;
+    }
+
+    const target = roles.find((role) => role.name === deleteTargetRole);
+    if (!target) {
+      setDeleteTargetRole(null);
+      return;
+    }
+
+    if (target.id) {
       try {
         await remove.mutateAsync(target.id);
+        deleteRole(deleteTargetRole);
         toast.success(`Master role "${deleteTargetRole}" berhasil dihapus.`);
         setDeleteTargetRole(null);
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Gagal menghapus master role.';
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          deleteRole(deleteTargetRole);
+          toast.info(`Master role "${deleteTargetRole}" telah dibersihkan dari daftar.`);
+          setDeleteTargetRole(null);
+          return;
+        }
+
+        const message =
+          (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) ||
+          (error instanceof Error ? error.message : 'Gagal menghapus master role.');
         toast.error(message);
       }
+    } else {
+      deleteRole(deleteTargetRole);
+      toast.success(`Master role "${deleteTargetRole}" berhasil dihapus.`);
+      setDeleteTargetRole(null);
     }
   };
 
@@ -226,8 +248,9 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
       <ConfirmModal
         open={Boolean(deleteTargetRole)}
         onOpenChange={(open) => {
-          if (!open) setDeleteTargetRole(null);
+          if (!open && !remove.isPending) setDeleteTargetRole(null);
         }}
+        isLoading={remove.isPending}
         title="Konfirmasi Hapus Master Role"
         description={
           deleteTargetRole
