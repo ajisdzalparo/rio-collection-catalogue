@@ -28,6 +28,7 @@ import {
   useSizesQuery,
   useMaterialsQuery
 } from '@/hooks/use-master-data';
+import { sortSizes } from '@/lib/size-sorter';
 import type {
   Product,
   ProductMutationInput,
@@ -114,9 +115,10 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
     }
 
     const slug = getSlug(name);
+    const sortedActiveSizes = sortSizes(activeSizes, (s) => s.size);
     const variants = isEditing
       ? initialProduct.variants
-      : activeSizes.map((s) => ({
+      : sortedActiveSizes.map((s) => ({
           size: s.size,
           inStock: stockMode === 'ALWAYS_AVAILABLE',
           stock: stockMode === 'ALWAYS_AVAILABLE' ? 999 : 0
@@ -140,6 +142,14 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
       }
     }
 
+    const primaryColorHex =
+      colors.find((c) => c.name.toLowerCase() === (colorsSelected[0] || '').toLowerCase())?.hex ||
+      colorHex;
+    const allColorHexes = colorsSelected.map(
+      (cName) =>
+        colors.find((c) => c.name.toLowerCase() === cName.toLowerCase())?.hex || colorHex
+    );
+
     const payload: ProductMutationInput = {
       id: initialProduct?.id || `prod-${Date.now()}`,
       name,
@@ -147,9 +157,9 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
       price,
       hpp,
       color: colorsSelected[0] || 'Black',
-      colorHex,
+      colorHex: primaryColorHex,
       colors: colorsSelected.length ? colorsSelected : ['Black'],
-      colorHexes: [colorHex],
+      colorHexes: allColorHexes.length ? allColorHexes : [primaryColorHex],
       category: category || (categories[0]?.name ?? 'Boxy Tee'),
       status: finalStatus,
       releaseDate,

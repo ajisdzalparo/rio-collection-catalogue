@@ -22,19 +22,13 @@ export function ProductCard({ product, className, priority = false }: ProductCar
   const [isComingSoon, setIsComingSoon] = useState(initialComingSoon);
 
   const effectiveStatus: ProductStatus =
-    product.status === 'COMING_SOON' && !isComingSoon
-      ? 'AVAILABLE'
-      : product.status;
+    product.status === 'COMING_SOON' && !isComingSoon ? 'AVAILABLE' : product.status;
 
   const isSoldOut = effectiveStatus === 'SOLD_OUT';
   const isDiscontinued = effectiveStatus === 'DISCONTINUED';
   const isUnavailable = isSoldOut || isDiscontinued;
 
-  const colorList = product.colors?.length
-    ? product.colors
-    : product.color
-      ? [product.color]
-      : [];
+  const colorList = product.colors?.length ? product.colors : product.color ? [product.color] : [];
   const hexList = product.colorHexes?.length
     ? product.colorHexes
     : product.colorHex
@@ -49,42 +43,55 @@ export function ProductCard({ product, className, priority = false }: ProductCar
   return (
     <Link
       href={`/products/${product.slug}`}
-      className={cn('group block', className)}
+      className={cn(
+        'group border border-(--cat-stone) rounded-lg bg-(--cat-surface) overflow-hidden hover:border-(--cat-charcoal)/60 hover:shadow-xs transition-all duration-200 flex flex-col justify-between h-full',
+        className
+      )}
       aria-label={`View ${product.name} — ${formatPrice(product.price)}`}
     >
-      {/* Image Container — 4:5 ratio, 0px corners */}
-      <div className="relative aspect-4/5 overflow-hidden bg-(--cat-surface-container-low)">
+      {/* Full Bleed Image Container — 0 padding, full width */}
+      <div className="relative aspect-4/5 w-full overflow-hidden bg-(--cat-surface-container-low)">
         <SafeImage
           src={product.imageUrl}
           alt={`${product.name} — ${product.color}`}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className={cn(
-            'object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]',
-            isUnavailable && 'opacity-70'
+            'object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]',
+            isUnavailable && 'opacity-65'
           )}
           priority={priority}
         />
-        {/* SOLD OUT overlay */}
+
+        {/* Top-Left Status Badge (e.g. STOK HABIS / PRE-ORDER / SEGERA HADIR) */}
         {isSoldOut && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="bg-(--cat-surface)/80 backdrop-blur-[2px] px-4 py-2 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant)">
-              Sold Out (Akan Restock)
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <span className="bg-black text-white px-2 py-0.5 font-hanken text-[9px] font-bold uppercase tracking-wider shadow-xs">
+              Stok Habis
             </span>
           </div>
         )}
-        {/* DISCONTINUED overlay */}
+
         {isDiscontinued && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="bg-(--cat-surface)/80 backdrop-blur-[2px] px-4 py-2 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground opacity-80">
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <span className="bg-stone-700 text-white px-2 py-0.5 font-hanken text-[9px] font-bold uppercase tracking-wider shadow-xs">
               Discontinued
             </span>
           </div>
         )}
-        {/* Coming Soon overlay */}
+
+        {effectiveStatus === 'PRE_ORDER' && !isSoldOut && (
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <span className="bg-amber-600 text-white px-2 py-0.5 font-hanken text-[9px] font-bold uppercase tracking-wider shadow-xs">
+              Pre-Order
+            </span>
+          </div>
+        )}
+
+        {/* Coming Soon overlay with countdown */}
         {isComingSoon && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-black/10 transition-opacity duration-300">
-            <span className="bg-(--cat-surface)/90 backdrop-blur-[2px] px-3.5 py-1.5 font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) shadow-xs">
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-black/20 backdrop-blur-[1px]">
+            <span className="bg-(--cat-surface) px-3 py-1 font-hanken text-[10px] font-bold uppercase tracking-wider text-(--cat-on-surface) shadow-xs">
               Segera Hadir
             </span>
             {product.releaseDate && (
@@ -100,35 +107,37 @@ export function ProductCard({ product, className, priority = false }: ProductCar
         )}
       </div>
 
-      {/* Metadata — below image */}
-      <div className="mt-3 flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="font-hanken text-[15px] font-medium leading-5 text-(--cat-on-surface) truncate">
+      {/* Metadata — Centered with comfortable padding */}
+      <div className="p-3.5 sm:p-4 flex flex-col items-center text-center flex-1 justify-between">
+        <div className="space-y-1">
+          <h3 className="font-hanken text-[13px] sm:text-[14px] font-medium text-(--cat-on-surface) line-clamp-2 leading-snug group-hover:text-black dark:group-hover:text-white transition-colors">
             {product.name}
           </h3>
-          <p className="mt-0.5 font-hanken text-[12px] font-normal text-(--cat-on-surface-variant) uppercase tracking-wide">
-            {colorList.join(' / ')}
+
+          {colorList.length > 0 && (
+            <p className="font-hanken text-[11px] sm:text-[12px] font-normal text-(--cat-on-surface-variant) uppercase tracking-wide">
+              {colorList.join(' / ')}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-2 pt-1">
+          <p className="font-hanken text-[13px] sm:text-[14px] font-semibold text-(--cat-on-surface) tabular-nums">
+            {formatPrice(product.price)}
           </p>
+
           {hexList.length > 1 && (
-            <div className="mt-1.5 flex items-center gap-1">
+            <div className="mt-1.5 flex items-center justify-center gap-1">
               {hexList.map((hex, idx) => (
                 <span
                   key={`${hex}-${idx}`}
-                  className="h-3 w-3 rounded-full border border-(--cat-stone)"
+                  className="h-2.5 w-2.5 rounded-full border border-(--cat-stone)"
                   style={{ backgroundColor: hex }}
                   title={colorList[idx]}
                 />
               ))}
             </div>
           )}
-        </div>
-        <div className="shrink-0 text-right">
-          <p className="font-hanken text-[15px] font-medium text-(--cat-on-surface) tabular-nums">
-            {formatPrice(product.price)}
-          </p>
-          <div className="mt-0.5">
-            <StatusBadge status={effectiveStatus} />
-          </div>
         </div>
       </div>
     </Link>

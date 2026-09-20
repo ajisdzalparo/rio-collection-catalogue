@@ -28,9 +28,10 @@ import {
 } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
-
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { useRbac } from '@/features/users/hooks/use-rbac';
+import { useSizesQuery } from '@/hooks/use-master-data';
+import { sortSizes } from '@/lib/size-sorter';
 
 interface Variant {
   id: string;
@@ -77,6 +78,21 @@ export default function StockManagementPage() {
     Record<string, { stock: number; inStock: boolean }>
   >({});
   const [stockModeDraft, setStockModeDraft] = useState<'QUANTITY' | 'ALWAYS_AVAILABLE'>('QUANTITY');
+
+  // Master Sizes from DB
+  const { data: masterSizes = [] } = useSizesQuery();
+  const activeMasterSizes = useMemo(() => {
+    return masterSizes.filter((s) => s.isActive && !s.deletedAt);
+  }, [masterSizes]);
+
+  const sortedActiveSizes = useMemo(() => {
+    return sortSizes(activeMasterSizes, (s) => s.size);
+  }, [activeMasterSizes]);
+
+  const activeSizeNames = useMemo(
+    () => new Set(activeMasterSizes.map((s) => s.size)),
+    [activeMasterSizes]
+  );
 
   // Fetch products
   const { data: products = [], isLoading } = useQuery<StockProduct[]>({
@@ -192,20 +208,35 @@ export default function StockManagementPage() {
   const handleOpenEdit = (product: StockProduct) => {
     setEditingProduct(product);
     setStockModeDraft(product.stockMode);
+
+    const existingMap = new Map(product.variants.map((v) => [v.size, v]));
     const drafts: Record<string, { stock: number; inStock: boolean }> = {};
-    product.variants.forEach((v) => {
-      drafts[v.size] = { stock: v.stock, inStock: v.inStock };
+
+    activeMasterSizes.forEach((ms) => {
+      const existing = existingMap.get(ms.size);
+      if (existing) {
+        drafts[ms.size] = { stock: existing.stock, inStock: existing.inStock };
+      } else {
+        drafts[ms.size] = { stock: 0, inStock: false };
+      }
     });
+
     setVariantDrafts(drafts);
   };
 
   const handleSaveStock = () => {
     if (!editingProduct || !canManageStock) return;
-    const variantsPayload = Object.entries(variantDrafts).map(([size, item]) => ({
-      size,
-      stock: item.stock,
-      inStock: item.inStock
-    }));
+    const variantsPayload = sortSizes(
+      Object.entries(variantDrafts)
+        .filter(([size]) => activeSizeNames.has(size))
+        .map(([size, item]) => ({
+          size,
+          stock: item.stock,
+          inStock: item.inStock
+        })),
+      (v) => v.size
+    );
+
     updateStockMutation.mutate({
       productId: editingProduct.id,
       stockMode: stockModeDraft,
@@ -257,13 +288,24 @@ export default function StockManagementPage() {
       className: 'min-w-[260px]',
       cell: (product) => {
         const isAlwaysAvailable = product.stockMode === 'ALWAYS_AVAILABLE';
+        const displayedVariants = sortSizes(
+          (product.variants || []).filter((v) => activeSizeNames.has(v.size)),
+          (v) => v.size
+        );
+
+        if (displayedVariants.length === 0) {
+          return (
+            <span className="text-xs text-muted-foreground/60 italic">Tidak ada varian aktif</span>
+          );
+        }
+
         return (
           <div className="flex flex-wrap gap-1.5">
-            {product.variants.map((v) => {
+            {displayedVariants.map((v) => {
               const isAvailable = isAlwaysAvailable || (v.inStock && v.stock > 0);
               return (
                 <div
-                  key={v.id}
+                  key={v.id || v.size}
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] ${
                     isAvailable
                       ? 'border-border/40 bg-muted/20 text-foreground'
@@ -486,98 +528,110 @@ export default function StockManagementPage() {
               {/* Variant Stock Editors */}
               {stockModeDraft === 'QUANTITY' && (
                 <div className="space-y-2.5">
-                  <Label className="text-xs font-semibold text-muted-foreground">
-                    Kuantitas Stok Per Ukuran
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-muted-foreground">
+                      Kuantitas Stok Per Ukuran
+                    </Label>
+                    <span className="text-[11px] text-muted-foreground">
+                      {sortedActiveSizes.length} ukuran aktif di Master
+                    </span>
+                  </div>
 
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {editingProduct.variants.map((variant) => {
-                      const current = variantDrafts[variant.size] || {
-                        stock: variant.stock,
-                        inStock: variant.inStock
-                      };
+                  {sortedActiveSizes.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
+                      Belum ada ukuran aktif di Master Ukuran. Silakan aktifkan ukuran terlebih dahulu di menu Master Data.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                      {sortedActiveSizes.map((masterSize) => {
+                        const sizeName = masterSize.size;
+                        const current = variantDrafts[sizeName] || {
+                          stock: 0,
+                          inStock: false
+                        };
 
-                      return (
-                        <div
-                          key={variant.size}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-border/40 bg-card p-2.5"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="px-2 py-0.5 rounded border border-border/40 font-mono text-xs font-bold uppercase bg-muted/30 text-foreground">
-                              {variant.size}
-                            </span>
+                        return (
+                          <div
+                            key={sizeName}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-border/40 bg-card p-2.5"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="px-2 py-0.5 rounded border border-border/40 font-mono text-xs font-bold uppercase bg-muted/30 text-foreground">
+                                {sizeName}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <Switch
+                                  checked={current.inStock}
+                                  onCheckedChange={(checked) =>
+                                    setVariantDrafts((prev) => ({
+                                      ...prev,
+                                      [sizeName]: { ...current, inStock: checked }
+                                    }))
+                                  }
+                                />
+                                <span className="text-[11px] text-muted-foreground">
+                                  {current.inStock ? 'Aktif' : 'Non-aktif'}
+                                </span>
+                              </div>
+                            </div>
+
                             <div className="flex items-center gap-1.5">
-                              <Switch
-                                checked={current.inStock}
-                                onCheckedChange={(checked) =>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={current.stock <= 0}
+                                onClick={() =>
                                   setVariantDrafts((prev) => ({
                                     ...prev,
-                                    [variant.size]: { ...current, inStock: checked }
+                                    [sizeName]: {
+                                      ...current,
+                                      stock: Math.max(0, current.stock - 1)
+                                    }
                                   }))
                                 }
+                                className="h-7 w-7 p-0 rounded cursor-pointer font-bold text-xs"
+                              >
+                                -
+                              </Button>
+
+                              <Input
+                                type="number"
+                                min={0}
+                                value={current.stock}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value, 10);
+                                  setVariantDrafts((prev) => ({
+                                    ...prev,
+                                    [sizeName]: {
+                                      ...current,
+                                      stock: isNaN(val) ? 0 : Math.max(0, val)
+                                    }
+                                  }));
+                                }}
+                                className="w-16 h-7 text-center font-bold text-xs rounded"
                               />
-                              <span className="text-[11px] text-muted-foreground">
-                                {current.inStock ? 'Aktif' : 'Non-aktif'}
-                              </span>
+
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setVariantDrafts((prev) => ({
+                                    ...prev,
+                                    [sizeName]: { ...current, stock: current.stock + 1 }
+                                  }))
+                                }
+                                className="h-7 w-7 p-0 rounded cursor-pointer font-bold text-xs"
+                              >
+                                +
+                              </Button>
                             </div>
                           </div>
-
-                          <div className="flex items-center gap-1.5">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disabled={current.stock <= 0}
-                              onClick={() =>
-                                setVariantDrafts((prev) => ({
-                                  ...prev,
-                                  [variant.size]: {
-                                    ...current,
-                                    stock: Math.max(0, current.stock - 1)
-                                  }
-                                }))
-                              }
-                              className="h-7 w-7 p-0 rounded cursor-pointer font-bold text-xs"
-                            >
-                              -
-                            </Button>
-
-                            <Input
-                              type="number"
-                              min={0}
-                              value={current.stock}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value, 10);
-                                setVariantDrafts((prev) => ({
-                                  ...prev,
-                                  [variant.size]: {
-                                    ...current,
-                                    stock: isNaN(val) ? 0 : Math.max(0, val)
-                                  }
-                                }));
-                              }}
-                              className="w-16 h-7 text-center font-bold text-xs rounded"
-                            />
-
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                setVariantDrafts((prev) => ({
-                                  ...prev,
-                                  [variant.size]: { ...current, stock: current.stock + 1 }
-                                }))
-                              }
-                              className="h-7 w-7 p-0 rounded cursor-pointer font-bold text-xs"
-                            >
-                              +
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

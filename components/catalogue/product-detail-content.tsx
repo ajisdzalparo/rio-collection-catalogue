@@ -4,7 +4,16 @@ import { useState, useMemo } from 'react';
 import { useProductReviews } from '@/hooks/use-product-reviews';
 import { SafeImage } from '@/components/shared';
 import Link from 'next/link';
-import { ArrowRight, ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag } from 'lucide-react';
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Minus,
+  Plus,
+  ShoppingBag
+} from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import { StatusBadge } from '@/components/catalogue/status-badge';
 import { SizeGuideModal } from '@/components/catalogue/size-guide-modal';
@@ -15,6 +24,8 @@ import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/cart-store';
 import type { Product, ProductStatus } from '@/types/catalogue.types';
 import { isComingSoonActive } from '@/lib/product-availability';
+import { useColorsQuery } from '@/hooks/use-master-data';
+import { sortSizes } from '@/lib/size-sorter';
 import { toast } from 'sonner';
 
 interface ProductDetailContentProps {
@@ -27,31 +38,91 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const [isComingSoon, setIsComingSoon] = useState(initialComingSoon);
 
   const effectiveStatus: ProductStatus =
-    product.status === 'COMING_SOON' && !isComingSoon
-      ? 'AVAILABLE'
-      : product.status;
+    product.status === 'COMING_SOON' && !isComingSoon ? 'AVAILABLE' : product.status;
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
   const { addItem, items } = useCartStore();
   const { averageRating, totalReviews } = useProductReviews(product.slug);
+  const { data: masterColors = [] } = useColorsQuery();
 
-  const ratingData = useMemo(() => ({
-    averageRating,
-    totalReviews
-  }), [averageRating, totalReviews]);
-
-  const colorsList = useMemo(
-    () => (product.colors?.length ? product.colors : [product.color].filter(Boolean)),
-    [product.colors, product.color]
+  const isLongDescription = useMemo(
+    () => (product.description || '').length > 160,
+    [product.description]
   );
 
-  const hexesList = useMemo(
-    () => (product.colorHexes?.length ? product.colorHexes : [product.colorHex].filter(Boolean)),
-    [product.colorHexes, product.colorHex]
+  const ratingData = useMemo(
+    () => ({
+      averageRating,
+      totalReviews
+    }),
+    [averageRating, totalReviews]
   );
+
+  // Extract separate individual colors (handling arrays, comma or slash delimited strings like "Navy / Red")
+  const colorsList = useMemo(() => {
+    const list: string[] = [];
+    if (product.colors?.length) {
+      product.colors.forEach((c) => {
+        if (c.includes('/')) {
+          list.push(
+            ...c
+              .split('/')
+              .map((s) => s.trim())
+              .filter(Boolean)
+          );
+        } else if (c.includes(',')) {
+          list.push(
+            ...c
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean)
+          );
+        } else if (c.trim()) {
+          list.push(c.trim());
+        }
+      });
+    } else if (product.color?.trim()) {
+      if (product.color.includes('/')) {
+        list.push(
+          ...product.color
+            .split('/')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        );
+      } else if (product.color.includes(',')) {
+        list.push(
+          ...product.color
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        );
+      } else {
+        list.push(product.color.trim());
+      }
+    }
+
+    const unique = Array.from(new Set(list));
+    return unique.length > 0 ? unique : ['Black'];
+  }, [product.colors, product.color]);
+
+  // Resolve hex & object for each color directly from Master Data & DB
+  const colorItems = useMemo(() => {
+    return colorsList.map((colorName, idx) => {
+      const key = colorName.toLowerCase();
+      const masterMatch = masterColors.find((mc) => mc.name.toLowerCase() === key);
+      const productHex = product.colorHexes?.[idx] || (idx === 0 ? product.colorHex : undefined);
+      const hex = masterMatch?.hex || productHex || '#1A1A1A';
+
+      return {
+        name: colorName,
+        hex
+      };
+    });
+  }, [colorsList, masterColors, product.colorHexes, product.colorHex]);
 
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
 
@@ -83,7 +154,10 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
   const isUnlimitedStock =
     product.stockMode === 'ALWAYS_AVAILABLE' || effectiveStatus === 'PRE_ORDER';
   const isQuantityBased = !isUnlimitedStock;
-  const productVariants = Array.isArray(product.variants) ? product.variants : [];
+  const productVariants = useMemo(() => {
+    const raw = Array.isArray(product.variants) ? product.variants : [];
+    return sortSizes(raw, (v) => v.size);
+  }, [product.variants]);
   const selectedVariant = productVariants.find((variant) => variant.size === selectedSize);
   const selectedStock =
     selectedVariant?.stock === undefined ? undefined : Math.max(0, selectedVariant.stock);
@@ -264,9 +338,33 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             </p>
 
             {/* Description */}
-            <p className="mt-4 font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant) max-w-md">
-              {product.description}
-            </p>
+            <div className="mt-4 max-w-xl">
+              <p
+                className={cn(
+                  'font-hanken text-[15px] leading-relaxed text-(--cat-on-surface-variant) whitespace-pre-line transition-all duration-200',
+                  !isDescExpanded && isLongDescription && 'line-clamp-4'
+                )}
+              >
+                {product.description}
+              </p>
+              {isLongDescription && (
+                <button
+                  type="button"
+                  onClick={() => setIsDescExpanded((prev) => !prev)}
+                  className="mt-2 inline-flex items-center gap-1 font-hanken text-[13px] font-semibold text-(--cat-on-surface) hover:text-(--cat-primary) underline underline-offset-2 cursor-pointer transition-colors"
+                >
+                  {isDescExpanded ? (
+                    <>
+                      Lihat lebih sedikit <ChevronUp size={14} />
+                    </>
+                  ) : (
+                    <>
+                      Lihat selengkapnya <ChevronDown size={14} />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
 
             {/* Status & Limit Badge */}
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -303,27 +401,25 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
 
             {/* Color Selector */}
             <div className="mt-6">
-              <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-2">
+              <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-2.5">
                 Color / Warna:{' '}
                 <span className="font-normal text-(--cat-on-surface-variant) capitalize ml-1">
-                  {colorsList[selectedColorIndex] || product.color}
+                  {colorItems[selectedColorIndex]?.name || selectedColorName}
                 </span>
               </p>
               <div className="flex items-center gap-2.5">
-                {hexesList.map((hex, idx) => {
+                {colorItems.map((item, idx) => {
                   const isSelected = selectedColorIndex === idx;
-                  const colorName = colorsList[idx] || product.color;
                   const isLightColor =
-                    hex.toLowerCase() === '#ffffff' ||
-                    hex.toLowerCase() === '#fff' ||
-                    hex.toLowerCase() === '#fafafa' ||
-                    hex.toLowerCase() === '#f5f5f5' ||
-                    hex.toLowerCase() === '#f0f0f0' ||
-                    hex.toLowerCase() === '#ffffff00';
+                    item.hex.toLowerCase() === '#ffffff' ||
+                    item.hex.toLowerCase() === '#fff' ||
+                    item.hex.toLowerCase() === '#fafafa' ||
+                    item.hex.toLowerCase() === '#f5f5f5' ||
+                    item.hex.toLowerCase() === '#f0f0f0';
 
                   return (
                     <button
-                      key={`${hex}-${idx}`}
+                      key={`${item.name}-${idx}`}
                       type="button"
                       onClick={() => setSelectedColorIndex(idx)}
                       className={cn(
@@ -332,12 +428,12 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                           ? 'border-stone-400 dark:border-stone-500'
                           : 'border-stone-300 dark:border-stone-700',
                         isSelected
-                          ? 'ring-2 ring-foreground border-foreground scale-105 opacity-100 shadow-xs'
-                          : 'opacity-80 hover:opacity-100'
+                          ? 'ring-2 ring-(--cat-charcoal) border-(--cat-charcoal) scale-105 opacity-100 shadow-xs'
+                          : 'opacity-85 hover:opacity-100 hover:scale-102'
                       )}
-                      style={{ backgroundColor: hex }}
-                      title={colorName}
-                      aria-label={`Pilih warna ${colorName}`}
+                      style={{ backgroundColor: item.hex }}
+                      title={`Warna: ${item.name}`}
+                      aria-label={`Pilih warna ${item.name}`}
                     >
                       {isSelected && (
                         <div
@@ -350,9 +446,6 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                     </button>
                   );
                 })}
-                <span className="ml-1 font-hanken text-[13px] text-(--cat-on-surface-variant)">
-                  {colorsList.join(' / ')}
-                </span>
               </div>
             </div>
 
