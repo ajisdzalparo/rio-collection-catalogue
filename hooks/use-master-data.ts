@@ -53,20 +53,11 @@ export interface MaterialItem {
   createdAt?: string;
 }
 
-export interface EditionItem {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  releaseYear?: string;
-}
-
 interface MasterDataState {
   categories: CategoryItem[];
   colors: ColorItem[];
   sizes: SizeItem[];
   topics: TopicItem[];
-  editions: EditionItem[];
   banks: BankItem[];
   materials: MaterialItem[];
 
@@ -75,7 +66,6 @@ interface MasterDataState {
   setColors: (colors: ColorItem[]) => void;
   setSizes: (sizes: SizeItem[]) => void;
   setTopics: (topics: TopicItem[]) => void;
-  setEditions: (editions: EditionItem[]) => void;
   setBanks: (banks: BankItem[]) => void;
   setMaterials: (materials: MaterialItem[]) => void;
 
@@ -99,11 +89,6 @@ interface MasterDataState {
   updateTopic: (id: string, name?: string, description?: string, isActive?: boolean) => void;
   deleteTopic: (id: string) => void;
 
-  // Editions CRUD
-  addEdition: (name: string, description?: string, releaseYear?: string) => void;
-  updateEdition: (id: string, name: string, description?: string, releaseYear?: string) => void;
-  deleteEdition: (id: string) => void;
-
   // Banks CRUD
   addBank: (name: string, code?: string, logoUrl?: string) => void;
   updateBank: (
@@ -121,7 +106,6 @@ export const useMasterStore = create<MasterDataState>()((set) => ({
   colors: [],
   sizes: [],
   topics: [],
-  editions: [],
   banks: [],
   materials: [],
 
@@ -129,7 +113,6 @@ export const useMasterStore = create<MasterDataState>()((set) => ({
   setColors: (colors) => set({ colors }),
   setSizes: (sizes) => set({ sizes }),
   setTopics: (topics) => set({ topics }),
-  setEditions: (editions) => set({ editions }),
   setBanks: (banks) => set({ banks }),
   setMaterials: (materials) => set({ materials }),
 
@@ -231,40 +214,6 @@ export const useMasterStore = create<MasterDataState>()((set) => ({
       topics: state.topics.filter((t) => t.id !== id)
     })),
 
-  addEdition: (name, description, releaseYear) =>
-    set((state) => ({
-      editions: [
-        ...state.editions,
-        {
-          id: `ed-${Date.now()}`,
-          name,
-          slug: name.toLowerCase().replace(/\s+/g, '-'),
-          description,
-          releaseYear
-        }
-      ]
-    })),
-
-  updateEdition: (id, name, description, releaseYear) =>
-    set((state) => ({
-      editions: state.editions.map((e) =>
-        e.id === id
-          ? {
-              ...e,
-              name,
-              slug: name.toLowerCase().replace(/\s+/g, '-'),
-              description,
-              releaseYear
-            }
-          : e
-      )
-    })),
-
-  deleteEdition: (id) =>
-    set((state) => ({
-      editions: state.editions.filter((e) => e.id !== id)
-    })),
-
   addBank: (name, code, logoUrl) =>
     set((state) => ({
       banks: [...state.banks, { id: `bank-${Date.now()}`, name, code, logoUrl, isActive: true }]
@@ -338,19 +287,6 @@ export function useTopicsQuery() {
       const { data } = await axios.get('/api/v1/topics');
       if (data.code === 200 && data.data) {
         return data.data as TopicItem[];
-      }
-      return Array.isArray(data) ? data : [];
-    }
-  });
-}
-
-export function useEditionsQuery() {
-  return useQuery({
-    queryKey: ['editions'],
-    queryFn: async () => {
-      const { data } = await axios.get('/api/v1/categories');
-      if (data.code === 200 && data.data) {
-        return data.data as EditionItem[];
       }
       return Array.isArray(data) ? data : [];
     }

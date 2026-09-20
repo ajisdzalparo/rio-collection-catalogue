@@ -22,7 +22,7 @@ import { ImageUpload, MultiImageUpload } from '@/components/shared/image-upload'
 import { ReleaseScheduleField } from '@/components/dashboard/release-schedule-field';
 import { useProducts } from '@/hooks/use-products';
 import { useJournals } from '@/hooks/use-journals';
-import { useMasterStore, useSizesQuery, useMaterialsQuery } from '@/hooks/use-master-data';
+import { useCategoriesQuery, useColorsQuery, useSizesQuery, useMaterialsQuery } from '@/hooks/use-master-data';
 import type {
   Product,
   ProductMutationInput,
@@ -41,11 +41,11 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
   const isSaving = isCreating || isUpdating;
   const { data: journals = [], isLoading: loadingJournals } = useJournals();
 
-  // Master Data
-  const { categories, colors, sizes: storedSizes, editions } = useMasterStore();
-  const { data: queriedSizes } = useSizesQuery();
+  // Master Data from DB
+  const { data: categories = [] } = useCategoriesQuery();
+  const { data: colors = [] } = useColorsQuery();
+  const { data: sizes = [] } = useSizesQuery();
   const { data: masterMaterials = [] } = useMaterialsQuery();
-  const sizes = queriedSizes ?? storedSizes;
   const activeSizes = sizes.filter((s) => s.isActive);
 
   // Form State
@@ -298,19 +298,12 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground">Edisi / Drop Kaos</Label>
-                <Select value={edition} onValueChange={(val) => val && setEdition(val)}>
-                  <SelectTrigger className="h-10 rounded-xl">
-                    <SelectValue placeholder="Pilih Edisi / Drop" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {editions.map((ed) => (
-                      <SelectItem key={ed.id} value={ed.name}>
-                        {ed.name}
-                      </SelectItem>
-                    ))}
-                    {!editions.length && <SelectItem value="Edition 001">Edition 001</SelectItem>}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value={edition}
+                  onChange={(e) => setEdition(e.target.value)}
+                  placeholder="Misal: Edition 001, Drop 02, dsb."
+                  className="h-10 rounded-xl text-xs"
+                />
               </div>
 
               <div className="space-y-1.5">

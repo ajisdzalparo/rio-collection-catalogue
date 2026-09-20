@@ -48,7 +48,6 @@ export const navigation: NavigationItem[] = [
       { title: 'Warna', href: '/dashboard/master?tab=colors' },
       { title: 'Ukuran', href: '/dashboard/master?tab=sizes' },
       { title: 'Bahan & Perawatan', href: '/dashboard/master?tab=materials' },
-      { title: 'Edisi / Drop Kaos', href: '/dashboard/master?tab=editions' },
       { title: 'Topik Blog', href: '/dashboard/master?tab=topics' },
       { title: 'Master Bank', href: '/dashboard/master?tab=banks' }
     ]
