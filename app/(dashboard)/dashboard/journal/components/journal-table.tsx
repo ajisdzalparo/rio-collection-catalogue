@@ -15,6 +15,7 @@ import {
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { formatSafeDate } from '@/lib/utils';
 import type { JournalArticle } from '@/types/catalogue.types';
+import { useTopicsQuery } from '@/hooks/use-master-data';
 import { JournalMobileCard } from './journal-mobile-card';
 
 interface JournalTableProps {
@@ -26,15 +27,6 @@ interface JournalTableProps {
   onDelete: (article: JournalArticle) => void;
 }
 
-const categoryOptions = [
-  ['ALL', 'Semua Topik'],
-  ['PROSES KREATIF', 'Proses Kreatif'],
-  ['CULTURE', 'Culture'],
-  ['PROCESS', 'Process'],
-  ['DESIGN', 'Design'],
-  ['MATERIAL STUDY', 'Material Study']
-] as const;
-
 export function JournalTable({
   articles,
   isLoading,
@@ -44,6 +36,26 @@ export function JournalTable({
   onDelete
 }: JournalTableProps) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const { data: masterTopics = [] } = useTopicsQuery();
+
+  const categoryOptions = useMemo(() => {
+    const dynamic = masterTopics
+      .filter((t) => t.isActive !== false)
+      .map((t) => [t.name, t.name] as [string, string]);
+
+    return [
+      ['ALL', 'Semua Topik'] as [string, string],
+      ...(dynamic.length > 0
+        ? dynamic
+        : [
+            ['PROSES KREATIF', 'Proses Kreatif'],
+            ['CULTURE', 'Culture'],
+            ['PROCESS', 'Process'],
+            ['DESIGN', 'Design'],
+            ['MATERIAL STUDY', 'Material Study']
+          ])
+    ];
+  }, [masterTopics]);
   const filteredArticles = useMemo(
     () =>
       articles.filter(

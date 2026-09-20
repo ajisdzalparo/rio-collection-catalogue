@@ -26,6 +26,7 @@ import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { useJournals } from '@/hooks/use-journals';
 import { useProducts } from '@/hooks/use-products';
 import { useAuth } from '@/hooks/use-auth';
+import { useTopicsQuery } from '@/hooks/use-master-data';
 import {
   Select,
   SelectContent,
@@ -80,6 +81,12 @@ function JournalEditorContent() {
     isUpdating
   } = useJournals();
   const { data: products = [] } = useProducts();
+  const { data: masterTopics = [] } = useTopicsQuery();
+
+  const activeTopics = React.useMemo(() => {
+    const list = masterTopics.filter((t) => t.isActive !== false);
+    return list.length > 0 ? list : masterTopics;
+  }, [masterTopics]);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -339,11 +346,21 @@ function JournalEditorContent() {
                     <SelectValue placeholder="Pilih Kategori" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PROSES KREATIF">Proses Kreatif</SelectItem>
-                    <SelectItem value="CULTURE">Culture</SelectItem>
-                    <SelectItem value="PROCESS">Process</SelectItem>
-                    <SelectItem value="DESIGN">Design</SelectItem>
-                    <SelectItem value="MATERIAL STUDY">Material Study</SelectItem>
+                    {activeTopics.length > 0 ? (
+                      activeTopics.map((top) => (
+                        <SelectItem key={top.id || top.name} value={top.name}>
+                          {top.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="PROSES KREATIF">Proses Kreatif</SelectItem>
+                        <SelectItem value="CULTURE">Culture</SelectItem>
+                        <SelectItem value="PROCESS">Process</SelectItem>
+                        <SelectItem value="DESIGN">Design</SelectItem>
+                        <SelectItem value="MATERIAL STUDY">Material Study</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
