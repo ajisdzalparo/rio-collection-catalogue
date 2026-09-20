@@ -339,7 +339,6 @@ function ImageCropperModalContent({
         const croppedFile = new File([u8arr], fileName, { type: mime });
         onCropComplete(croppedFile, blobOrDataUrl);
       }
-      onClose();
     };
 
     // Export as WebP/JPEG blob with fallback (0.82 quality gives ~80-150KB files with near lossless visual fidelity)

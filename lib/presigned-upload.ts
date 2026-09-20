@@ -6,54 +6,34 @@ export interface PresignUploadOptions {
 }
 
 /**
- * Uploads a file directly to S3/MinIO via a presigned PUT URL.
- * Falls back to legacy /api/v1/upload if presigned fails.
+ * Uploads a file via /api/v1/upload to MinIO/S3.
  */
 export async function uploadFileWithPresign(
   file: File,
   options: PresignUploadOptions = {}
 ): Promise<string> {
-  const { purpose = 'journal-image', onProgress } = options;
+  const { purpose = 'product-image', onProgress } = options;
 
-  try {
-    // 1. Request Presigned URL from Next.js server
-    const { data: res } = await axios.post('/api/v1/upload/presign', {
-      fileName: file.name,
-      fileType: file.type || 'image/jpeg',
-      purpose
-    });
-
-    if (res?.data?.uploadUrl && res?.data?.publicUrl) {
-      const { uploadUrl, publicUrl } = res.data;
-
-      // 2. Direct PUT to S3 / MinIO storage
-      await axios.put(uploadUrl, file, {
-        headers: {
-          'Content-Type': file.type || 'image/jpeg'
-        },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total && onProgress) {
-            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            onProgress(percent);
-          }
-        }
-      });
-
-      return publicUrl;
-    }
-  } catch (presignErr) {
-    console.warn('Presigned upload failed, falling back to server buffer upload:', presignErr);
-  }
-
-  // Fallback to server buffer upload route
   const formData = new FormData();
   formData.append('file', file);
   formData.append('purpose', purpose);
 
-  const { data: serverRes } = await axios.post('/api/v1/upload', formData);
+  const { data: serverRes } = await axios.post('/api/v1/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    timeout: 30000,
+    onUploadProgress: (progressEvent) => {
+      if (progressEvent.total && onProgress) {
+        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(percent);
+      }
+    }
+  });
+
   if (serverRes?.data?.url) {
     return serverRes.data.url;
   }
 
-  throw new Error('Gagal mengunggah gambar');
+  throw new Error(serverRes?.message || 'Gagal mengunggah gambar');
 }

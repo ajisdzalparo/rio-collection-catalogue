@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Upload, X, Crop, Image as ImageIcon, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -53,40 +53,21 @@ export function ImageUpload({
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [rawImageForCrop, setRawImageForCrop] = useState<string>('');
 
-  // Upload cropped file to API or fallback to data URL
-  const uploadFile = async (file: File, fallbackPreviewUrl?: string) => {
+  // Upload cropped file to API
+  const uploadFile = async (file: File, previewUrl: string) => {
     setIsUploading(true);
+    // Show instant preview while uploading to backend
+    onChange(previewUrl);
+
     try {
       const publicUrl = await uploadFileWithPresign(file, { purpose: 'product-image' });
       onChange(publicUrl);
-      setIsUploading(false);
-      return;
     } catch (error) {
-      console.warn('Presigned upload failed, checking fallback preview:', error);
+      console.warn('Upload failed, keeping preview data URL:', error);
+      toast.warning('Gambar disimpan secara lokal (preview).');
+    } finally {
+      setIsUploading(false);
     }
-
-    // If previewUrl is already a permanent base64 data URL, use it directly
-    if (fallbackPreviewUrl && !fallbackPreviewUrl.startsWith('blob:')) {
-      onChange(fallbackPreviewUrl);
-      setIsUploading(false);
-      return;
-    }
-
-    // Otherwise convert the cropped File to a permanent base64 data URL
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        onChange(e.target.result as string);
-      }
-      setIsUploading(false);
-    };
-    reader.onerror = () => {
-      if (fallbackPreviewUrl) {
-        onChange(fallbackPreviewUrl);
-      }
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
   };
 
   // When a user selects a file from disk, open the cropper first
@@ -107,6 +88,7 @@ export function ImageUpload({
   };
 
   const handleCropComplete = (croppedFile: File, previewUrl: string) => {
+    setIsCropperOpen(false);
     uploadFile(croppedFile, previewUrl);
   };
 
@@ -185,7 +167,7 @@ export function ImageUpload({
           {isUploading && (
             <div className="absolute inset-0 z-30 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="text-xs font-semibold">Mengunggah foto terpotong...</span>
+              <span className="text-xs font-semibold">Mengunggah foto...</span>
             </div>
           )}
 
@@ -195,7 +177,6 @@ export function ImageUpload({
             src={value}
             alt="Uploaded preview"
             unoptimized
-            onError={() => onChange('')}
             className="h-full w-full object-cover transition-transform duration-350 group-hover:scale-102"
           />
 
@@ -359,7 +340,10 @@ export function ImageUpload({
       <ImageCropperModal
         isOpen={isCropperOpen}
         imageSrc={rawImageForCrop}
-        onClose={() => setIsCropperOpen(false)}
+        onClose={() => {
+          setIsCropperOpen(false);
+          setRawImageForCrop('');
+        }}
         onCropComplete={handleCropComplete}
         defaultAspectRatio={aspectRatio}
         title={`Crop Foto (${typeof aspectRatio === 'string' ? aspectRatio : 'Sesuai Container'})`}
@@ -384,25 +368,26 @@ export function MultiImageUpload({
   aspectRatio = '1:1'
 }: MultiImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [fileQueue, setFileQueue] = useState<File[]>([]);
+  const queueRef = useRef<File[]>([]);
   const [currentCropImage, setCurrentCropImage] = useState<string>('');
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [activeEditingIndex, setActiveEditingIndex] = useState<number | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadingCount, setUploadingCount] = useState(0);
 
   const valueRef = useRef(value);
-  valueRef.current = value;
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
-  // Process next file in queue
-  const processNextInQueue = (remainingQueue: File[]) => {
-    if (remainingQueue.length === 0) {
+  // Process next item from queueRef
+  const processNextQueueItem = () => {
+    if (queueRef.current.length === 0) {
       setIsCropperOpen(false);
       setCurrentCropImage('');
-      setFileQueue([]);
       return;
     }
 
-    const nextFile = remainingQueue[0];
+    const nextFile = queueRef.current[0];
     const reader = new FileReader();
     reader.onload = (e) => {
       if (e.target?.result) {
@@ -420,8 +405,11 @@ export function MultiImageUpload({
       const selectedFiles = Array.from(e.target.files).slice(0, availableSlots);
 
       if (selectedFiles.length > 0) {
-        setFileQueue(selectedFiles);
-        processNextInQueue(selectedFiles);
+        const wasEmpty = queueRef.current.length === 0 && !isCropperOpen;
+        queueRef.current = [...queueRef.current, ...selectedFiles];
+        if (wasEmpty) {
+          processNextQueueItem();
+        }
       }
     }
     e.target.value = '';
@@ -430,34 +418,78 @@ export function MultiImageUpload({
   const handleCropComplete = async (croppedFile: File, previewUrl: string) => {
     if (activeEditingIndex !== null) {
       // Re-cropping an existing item
-      const updated = [...valueRef.current];
-      updated[activeEditingIndex] = previewUrl;
-      valueRef.current = updated;
-      onChange(updated);
+      const idx = activeEditingIndex;
       setActiveEditingIndex(null);
       setIsCropperOpen(false);
+      setCurrentCropImage('');
+
+      // Show immediate preview
+      const updated = [...valueRef.current];
+      updated[idx] = previewUrl;
+      valueRef.current = updated;
+      onChange(updated);
+
+      setUploadingCount((c) => c + 1);
+      try {
+        const publicUrl = await uploadFileWithPresign(croppedFile, { purpose: 'product-image' });
+        const refreshed = [...valueRef.current];
+        const matchIdx = refreshed.indexOf(previewUrl);
+        if (matchIdx !== -1) {
+          refreshed[matchIdx] = publicUrl;
+        } else {
+          refreshed[idx] = publicUrl;
+        }
+        valueRef.current = refreshed;
+        onChange(refreshed);
+      } catch (err) {
+        console.warn('Re-crop upload failed, keeping preview:', err);
+      } finally {
+        setUploadingCount((c) => Math.max(0, c - 1));
+      }
       return;
     }
 
-    // Adding new item
-    let finalUrl = previewUrl;
-    setIsUploading(true);
-    try {
-      finalUrl = await uploadFileWithPresign(croppedFile, { purpose: 'product-image' });
-    } catch {
-      // fallback to previewUrl if presign upload fails
-    } finally {
-      setIsUploading(false);
+    // Adding new item from queue
+    // Remove current file from queue
+    queueRef.current.shift();
+
+    // Add immediate preview to state
+    const currentList = [...valueRef.current, previewUrl];
+    valueRef.current = currentList;
+    onChange(currentList);
+
+    // Continue to next image in queue immediately if any
+    if (queueRef.current.length > 0) {
+      processNextQueueItem();
+    } else {
+      setIsCropperOpen(false);
+      setCurrentCropImage('');
     }
 
-    const nextValue = [...valueRef.current, finalUrl];
-    valueRef.current = nextValue;
-    onChange(nextValue);
+    // Upload in background to MinIO/S3
+    setUploadingCount((c) => c + 1);
+    try {
+      const publicUrl = await uploadFileWithPresign(croppedFile, { purpose: 'product-image' });
+      const refreshed = [...valueRef.current];
+      const matchIdx = refreshed.indexOf(previewUrl);
+      if (matchIdx !== -1) {
+        refreshed[matchIdx] = publicUrl;
+        valueRef.current = refreshed;
+        onChange(refreshed);
+      }
+    } catch (uploadErr) {
+      console.warn('Multi-image upload failed, keeping preview:', uploadErr);
+    } finally {
+      setUploadingCount((c) => Math.max(0, c - 1));
+    }
+  };
 
-    // Check if more files in queue
-    const remaining = fileQueue.slice(1);
-    setFileQueue(remaining);
-    processNextInQueue(remaining);
+  const handleModalClose = () => {
+    // User cancelled modal
+    setIsCropperOpen(false);
+    setActiveEditingIndex(null);
+    setCurrentCropImage('');
+    queueRef.current = [];
   };
 
   const removeImage = (indexToRemove: number) => {
@@ -472,9 +504,11 @@ export function MultiImageUpload({
     setIsCropperOpen(true);
   };
 
+  const isUploading = uploadingCount > 0;
+
   return (
     <div className="space-y-3">
-      {/* Hidden input placed safely at root level (not nested inside button) */}
+      {/* Hidden input placed safely at root level */}
       <input
         ref={fileInputRef}
         type="file"
@@ -501,7 +535,6 @@ export function MultiImageUpload({
               alt={`Gallery preview ${idx}`}
               className="object-cover transition-transform duration-200 group-hover:scale-103"
               unoptimized
-              onError={() => removeImage(idx)}
             />
 
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
@@ -529,8 +562,7 @@ export function MultiImageUpload({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="flex flex-col items-center justify-center aspect-square w-full rounded-xl border border-dashed border-border/70 hover:border-foreground/40 bg-muted/10 hover:bg-muted/20 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex flex-col items-center justify-center aspect-square w-full rounded-xl border border-dashed border-border/70 hover:border-foreground/40 bg-muted/10 hover:bg-muted/20 transition-all cursor-pointer"
           >
             {isUploading ? (
               <Loader2 className="mb-1 h-5 w-5 animate-spin text-muted-foreground" />
@@ -555,12 +587,7 @@ export function MultiImageUpload({
       <ImageCropperModal
         isOpen={isCropperOpen}
         imageSrc={currentCropImage}
-        onClose={() => {
-          setIsCropperOpen(false);
-          setActiveEditingIndex(null);
-          setFileQueue([]);
-          setCurrentCropImage('');
-        }}
+        onClose={handleModalClose}
         onCropComplete={handleCropComplete}
         defaultAspectRatio={aspectRatio}
         title="Crop Foto Galeri Detail"
