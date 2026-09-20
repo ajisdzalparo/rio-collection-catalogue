@@ -21,14 +21,20 @@ interface AccountingRow {
   size: string;
   quantity: number;
   unitPrice: number;
+  grossSales: number;
+  discount: number;
+  referralCode: string;
+  referralPartner: string;
   sales: number;
   cogs: number;
   grossProfit: number;
+  referralReward: number;
+  netProfit: number;
   shippingFee: number;
   received: number;
 }
 
-const DEFAULT_HPP = 180000;
+const DEFAULT_HPP = 0;
 const CURRENCY_FORMAT = '"Rp" #,##0;[Red]("Rp" #,##0);"-"';
 const NUMBER_FORMAT = '#,##0';
 const PERCENT_FORMAT = '0.0%';
@@ -51,6 +57,11 @@ function buildAccountingRows(
 
   orders.forEach((order) => {
     const revenues = netItemRevenues(order.items, order.discountAmount ?? 0);
+    const totalGrossOrder = order.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
     const items = order.items.map((item, index) => ({ item, index })).filter(
       ({ item }) => selectedProducts.length === 0 || selectedProducts.includes(item.name)
     );
@@ -58,8 +69,16 @@ function buildAccountingRows(
     items.forEach(({ item, index }, itemIndex) => {
       const unitHpp = item.cogs ?? DEFAULT_HPP;
       if (item.cogs === undefined) usesDefaultHpp = true;
+      const grossItem = item.price * item.quantity;
       const sales = revenues[index];
+      const discount = Math.max(0, grossItem - sales);
       const cogs = unitHpp * item.quantity;
+      const grossProfit = sales - cogs;
+
+      const itemRatio = totalGrossOrder > 0 ? grossItem / totalGrossOrder : 0;
+      const referralReward = Math.round((order.referralRewardAmount ?? 0) * itemRatio);
+      const netProfit = grossProfit - referralReward;
+
       const shippingFee = selectedProducts.length === 0 && itemIndex === 0
         ? order.shippingFee ?? 0
         : 0;
@@ -73,9 +92,15 @@ function buildAccountingRows(
         size: safeExcelText(item.size),
         quantity: item.quantity,
         unitPrice: item.price,
+        grossSales: grossItem,
+        discount,
+        referralCode: safeExcelText(order.referralCodeSnapshot || '-'),
+        referralPartner: safeExcelText(order.referralPartnerSnapshot || '-'),
         sales,
         cogs,
-        grossProfit: sales - cogs,
+        grossProfit,
+        referralReward,
+        netProfit,
         shippingFee,
         received: sales + shippingFee
       });
@@ -111,12 +136,16 @@ export async function exportReportToExcel({
     // Totals calculation
     const totalOrderCount = new Set(rows.map((r) => r.orderNumber)).size;
     const totalQuantity = rows.reduce((sum, r) => sum + r.quantity, 0);
+    const totalGrossSales = rows.reduce((sum, r) => sum + r.grossSales, 0);
+    const totalDiscount = rows.reduce((sum, r) => sum + r.discount, 0);
     const totalSales = rows.reduce((sum, r) => sum + r.sales, 0);
     const totalCogs = rows.reduce((sum, r) => sum + r.cogs, 0);
     const totalGrossProfit = rows.reduce((sum, r) => sum + r.grossProfit, 0);
+    const totalReferralReward = rows.reduce((sum, r) => sum + r.referralReward, 0);
+    const totalNetProfit = rows.reduce((sum, r) => sum + r.netProfit, 0);
     const totalShippingFee = rows.reduce((sum, r) => sum + r.shippingFee, 0);
     const totalReceived = rows.reduce((sum, r) => sum + r.received, 0);
-    const grossMarginRate = totalSales > 0 ? totalGrossProfit / totalSales : 0;
+    const netMarginRate = totalSales > 0 ? totalNetProfit / totalSales : 0;
 
     const BORDER_THIN: Partial<ExcelJS.Borders> = {
       top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
@@ -151,15 +180,16 @@ export async function exportReportToExcel({
       { key: 'c4', width: 18 },
       { key: 'c5', width: 18 },
       { key: 'c6', width: 18 },
-      { key: 'c7', width: 14 },
-      { key: 'c8', width: 16 },
-      { key: 'c9', width: 18 }
+      { key: 'c7', width: 18 },
+      { key: 'c8', width: 18 },
+      { key: 'c9', width: 18 },
+      { key: 'c10', width: 18 }
     ];
 
     // Header Title
-    summarySheet.mergeCells('B2:I2');
+    summarySheet.mergeCells('B2:J2');
     const titleCell = summarySheet.getCell('B2');
-    titleCell.value = 'RIO COLLECTION — LAPORAN KINERJA BISNIS & PENJUALAN';
+    titleCell.value = 'RIO COLLECTION — LAPORAN KINERJA BISNIS, PENJUALAN & REFERRAL';
     titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF0F172A' } };
 
     // Metadata Strip
@@ -184,21 +214,32 @@ export async function exportReportToExcel({
     summarySheet.getCell('F5').font = { name: 'Arial', size: 9 };
 
     // KPI Summary Section (Card-style grid)
-    summarySheet.mergeCells('B7:I7');
+    summarySheet.mergeCells('B7:J7');
     const kpiTitle = summarySheet.getCell('B7');
-    kpiTitle.value = 'RINGKASAN EKSEKUTIF (KEY PERFORMANCE INDICATORS)';
+    kpiTitle.value = 'RINGKASAN EKSEKUTIF & REKONSILIASI KEUANGAN';
     kpiTitle.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF475569' } };
 
-    const kpiHeaders = ['Total Pesanan', 'Qty Terjual', 'Penjualan Produk', 'Total HPP (Modal)', 'Laba Kotor', 'Margin Laba', 'Total Ongkir', 'Total Kas Masuk'];
+    const kpiHeaders = [
+      'Total Pesanan',
+      'Qty Terjual',
+      'Penjualan Kotor',
+      'Diskon Customer',
+      'Penjualan Bersih',
+      'Total HPP',
+      'Komisi Referral',
+      'Laba Bersih Akhir',
+      'Margin Bersih'
+    ];
     const kpiValues = [
       totalOrderCount,
       totalQuantity,
+      totalGrossSales,
+      totalDiscount,
       totalSales,
       totalCogs,
-      totalGrossProfit,
-      grossMarginRate,
-      totalShippingFee,
-      totalReceived
+      totalReferralReward,
+      totalNetProfit,
+      netMarginRate
     ];
 
     const kpiRow1 = summarySheet.getRow(8);
@@ -207,7 +248,7 @@ export async function exportReportToExcel({
     kpiRow2.height = 24;
 
     kpiHeaders.forEach((header, idx) => {
-      const colLetter = String.fromCharCode(66 + idx); // B, C, D, E, F, G, H, I
+      const colLetter = String.fromCharCode(66 + idx); // B, C, D, E, F, G, H, I, J
       const hCell = summarySheet.getCell(`${colLetter}8`);
       hCell.value = header;
       hCell.font = { name: 'Arial', size: 8, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -216,23 +257,23 @@ export async function exportReportToExcel({
 
       const vCell = summarySheet.getCell(`${colLetter}9`);
       vCell.value = kpiValues[idx];
-      vCell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FF0F172A' } };
+      vCell.font = { name: 'Arial', size: 10.5, bold: true, color: { argb: 'FF0F172A' } };
       vCell.alignment = { horizontal: 'center', vertical: 'middle' };
       vCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
       vCell.border = BORDER_THIN;
 
       if (idx === 0 || idx === 1) vCell.numFmt = NUMBER_FORMAT;
-      else if (idx === 5) vCell.numFmt = PERCENT_FORMAT;
+      else if (idx === 8) vCell.numFmt = PERCENT_FORMAT;
       else vCell.numFmt = CURRENCY_FORMAT;
     });
 
     // Product Breakdown Table
-    summarySheet.mergeCells('B11:I11');
+    summarySheet.mergeCells('B11:J11');
     const prodBreakdownTitle = summarySheet.getCell('B11');
     prodBreakdownTitle.value = 'PERFORMA PENJUALAN PER PRODUK';
     prodBreakdownTitle.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF475569' } };
 
-    const prodHeaders = ['No.', 'Nama Produk', 'Qty', 'Total Omset', 'Total HPP', 'Laba Kotor', 'Margin', 'Kontribusi'];
+    const prodHeaders = ['No.', 'Nama Produk', 'Qty', 'Penjualan Bersih', 'Total HPP', 'Laba Kotor', 'Komisi Referral', 'Laba Bersih', 'Margin'];
     const prodHeaderRow = summarySheet.getRow(12);
     prodHeaderRow.height = 22;
     prodHeaders.forEach((hdr, idx) => {
@@ -244,13 +285,15 @@ export async function exportReportToExcel({
       cell.alignment = { horizontal: idx === 1 ? 'left' : 'center', vertical: 'middle' };
     });
 
-    const productMap = new Map<string, { qty: number; sales: number; cogs: number; grossProfit: number }>();
+    const productMap = new Map<string, { qty: number; sales: number; cogs: number; grossProfit: number; referralReward: number; netProfit: number }>();
     rows.forEach((r) => {
-      const current = productMap.get(r.product) || { qty: 0, sales: 0, cogs: 0, grossProfit: 0 };
+      const current = productMap.get(r.product) || { qty: 0, sales: 0, cogs: 0, grossProfit: 0, referralReward: 0, netProfit: 0 };
       current.qty += r.quantity;
       current.sales += r.sales;
       current.cogs += r.cogs;
       current.grossProfit += r.grossProfit;
+      current.referralReward += r.referralReward;
+      current.netProfit += r.netProfit;
       productMap.set(r.product, current);
     });
 
@@ -261,8 +304,7 @@ export async function exportReportToExcel({
       pRow.height = 20;
       pRow.font = { name: 'Arial', size: 9 };
 
-      const contribution = totalSales > 0 ? val.sales / totalSales : 0;
-      const margin = val.sales > 0 ? val.grossProfit / val.sales : 0;
+      const margin = val.sales > 0 ? val.netProfit / val.sales : 0;
 
       pRow.getCell(2).value = prodIndex++;
       pRow.getCell(2).alignment = { horizontal: 'center' };
@@ -276,14 +318,15 @@ export async function exportReportToExcel({
       pRow.getCell(6).numFmt = CURRENCY_FORMAT;
       pRow.getCell(7).value = val.grossProfit;
       pRow.getCell(7).numFmt = CURRENCY_FORMAT;
-      pRow.getCell(8).value = margin;
-      pRow.getCell(8).numFmt = PERCENT_FORMAT;
-      pRow.getCell(8).alignment = { horizontal: 'right' };
-      pRow.getCell(9).value = contribution;
-      pRow.getCell(9).numFmt = PERCENT_FORMAT;
-      pRow.getCell(9).alignment = { horizontal: 'right' };
+      pRow.getCell(8).value = val.referralReward;
+      pRow.getCell(8).numFmt = CURRENCY_FORMAT;
+      pRow.getCell(9).value = val.netProfit;
+      pRow.getCell(9).numFmt = CURRENCY_FORMAT;
+      pRow.getCell(10).value = margin;
+      pRow.getCell(10).numFmt = PERCENT_FORMAT;
+      pRow.getCell(10).alignment = { horizontal: 'right' };
 
-      for (let c = 2; c <= 9; c++) {
+      for (let c = 2; c <= 10; c++) {
         pRow.getCell(c).border = BORDER_THIN;
       }
       currentProdRow++;
@@ -304,20 +347,16 @@ export async function exportReportToExcel({
     prodTotalRow.getCell(6).numFmt = CURRENCY_FORMAT;
     prodTotalRow.getCell(7).value = totalGrossProfit;
     prodTotalRow.getCell(7).numFmt = CURRENCY_FORMAT;
-    prodTotalRow.getCell(8).value = grossMarginRate;
-    prodTotalRow.getCell(8).numFmt = PERCENT_FORMAT;
-    prodTotalRow.getCell(9).value = 1.0;
-    prodTotalRow.getCell(9).numFmt = PERCENT_FORMAT;
+    prodTotalRow.getCell(8).value = totalReferralReward;
+    prodTotalRow.getCell(8).numFmt = CURRENCY_FORMAT;
+    prodTotalRow.getCell(9).value = totalNetProfit;
+    prodTotalRow.getCell(9).numFmt = CURRENCY_FORMAT;
+    prodTotalRow.getCell(10).value = netMarginRate;
+    prodTotalRow.getCell(10).numFmt = PERCENT_FORMAT;
 
-    for (let c = 2; c <= 9; c++) {
+    for (let c = 2; c <= 10; c++) {
       prodTotalRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
       prodTotalRow.getCell(c).border = { top: { style: 'thin' }, bottom: { style: 'double' } };
-    }
-
-    if (usesDefaultHpp) {
-      const noteRow = currentProdRow + 2;
-      summarySheet.getCell(`B${noteRow}`).value = `*Catatan: Terdapat produk dengan HPP kosong yang menggunakan default estimasi Rp ${DEFAULT_HPP.toLocaleString('id-ID')}.`;
-      summarySheet.getCell(`B${noteRow}`).font = { name: 'Arial', size: 8, italic: true, color: { argb: 'FF94A3B8' } };
     }
 
     // ==========================================
@@ -329,29 +368,34 @@ export async function exportReportToExcel({
 
     detailSheet.columns = [
       { key: 'date', width: 14 },
-      { key: 'orderNumber', width: 24 },
+      { key: 'orderNumber', width: 22 },
       { key: 'status', width: 12 },
-      { key: 'customer', width: 24 },
-      { key: 'product', width: 34 },
+      { key: 'customer', width: 22 },
+      { key: 'product', width: 30 },
       { key: 'size', width: 10 },
       { key: 'quantity', width: 10 },
-      { key: 'unitPrice', width: 22 },
+      { key: 'unitPrice', width: 16 },
+      { key: 'grossSales', width: 18 },
+      { key: 'discount', width: 16 },
+      { key: 'referralCode', width: 16 },
+      { key: 'referralPartner', width: 18 },
       { key: 'sales', width: 18 },
       { key: 'cogs', width: 18 },
       { key: 'grossProfit', width: 18 },
+      { key: 'referralReward', width: 18 },
+      { key: 'netProfit', width: 18 },
       { key: 'shippingFee', width: 15 },
       { key: 'received', width: 18 }
     ];
 
-    // Quick Stats Info Strip on Top of Data Sheet
-    detailSheet.mergeCells('A1:M1');
+    detailSheet.mergeCells('A1:S1');
     const detailTitle = detailSheet.getCell('A1');
-    detailTitle.value = `DATA DETAIL TRANSAKSI PENJUALAN (${startDate} s.d. ${endDate})`;
+    detailTitle.value = `DATA DETAIL TRANSAKSI PENJUALAN & REFERRAL (${startDate} s.d. ${endDate})`;
     detailTitle.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF0F172A' } };
 
-    detailSheet.mergeCells('A2:M2');
+    detailSheet.mergeCells('A2:S2');
     const detailSubtitle = detailSheet.getCell('A2');
-    detailSubtitle.value = `Total: ${totalOrderCount} Pesanan | ${totalQuantity} Pcs Produk | Omset: Rp ${totalSales.toLocaleString('id-ID')} | Laba Kotor: Rp ${totalGrossProfit.toLocaleString('id-ID')} (Tabel ini murni data tanpa baris total di bawah, aman untuk di-Sort A-Z & Filter)`;
+    detailSubtitle.value = `Total: ${totalOrderCount} Pesanan | Omset Bersih: Rp ${totalSales.toLocaleString('id-ID')} | Komisi Referral: Rp ${totalReferralReward.toLocaleString('id-ID')} | Laba Bersih: Rp ${totalNetProfit.toLocaleString('id-ID')}`;
     detailSubtitle.font = { name: 'Arial', size: 8.5, italic: true, color: { argb: 'FF475569' } };
 
     const transactionHeaders = [
@@ -362,12 +406,18 @@ export async function exportReportToExcel({
       'Produk',
       'Ukuran',
       'Qty',
-      'Harga Sebelum Diskon',
-      'Penjualan Produk',
+      'Harga Satuan',
+      'Penjualan Kotor',
+      'Diskon Referral',
+      'Kode Referral',
+      'Partner Referral',
+      'Penjualan Bersih',
       'HPP',
       'Laba Kotor',
+      'Komisi Referral',
+      'Laba Bersih Akhir',
       'Ongkir',
-      'Total Masuk'
+      'Total Kas Masuk'
     ];
 
     const tHeaderRow = detailSheet.getRow(4);
@@ -380,7 +430,6 @@ export async function exportReportToExcel({
       cell.border = BORDER_THIN;
     });
 
-    // Populate Clean Data Rows (Without trailing total row)
     rows.forEach((row) => {
       const dataRow = detailSheet.addRow(row);
       dataRow.height = 20;
@@ -395,20 +444,25 @@ export async function exportReportToExcel({
       dataRow.getCell(7).numFmt = NUMBER_FORMAT;
       dataRow.getCell(7).alignment = { horizontal: 'right', vertical: 'middle' };
 
-      for (let column = 8; column <= 13; column++) {
+      dataRow.getCell(8).numFmt = CURRENCY_FORMAT;
+      dataRow.getCell(9).numFmt = CURRENCY_FORMAT;
+      dataRow.getCell(10).numFmt = CURRENCY_FORMAT;
+      dataRow.getCell(11).alignment = { horizontal: 'center', vertical: 'middle' };
+      dataRow.getCell(12).alignment = { horizontal: 'left', vertical: 'middle' };
+
+      for (let column = 13; column <= 19; column++) {
         dataRow.getCell(column).numFmt = CURRENCY_FORMAT;
         dataRow.getCell(column).alignment = { horizontal: 'right', vertical: 'middle' };
       }
 
-      for (let column = 1; column <= 13; column++) {
+      for (let column = 1; column <= 19; column++) {
         dataRow.getCell(column).border = BORDER_THIN;
       }
     });
 
     const lastDataRowNumber = 4 + rows.length;
-    detailSheet.autoFilter = { from: 'A4', to: `M${lastDataRowNumber}` };
+    detailSheet.autoFilter = { from: 'A4', to: `S${lastDataRowNumber}` };
 
-    // Generate Excel file buffer
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -416,7 +470,7 @@ export async function exportReportToExcel({
     const productLabel = selectedProducts.length === 0
       ? 'Semua_Produk'
       : selectedProducts.join('-').replace(/[^a-zA-Z0-9.-]/g, '_').slice(0, 60);
-    const fileName = `Laporan_Eksekutif_Penjualan_${startDate}_${endDate}_${productLabel}.xlsx`;
+    const fileName = `Laporan_Keuangan_Penjualan_${startDate}_${endDate}_${productLabel}.xlsx`;
     const url = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -426,7 +480,7 @@ export async function exportReportToExcel({
     anchor.remove();
     window.URL.revokeObjectURL(url);
 
-    toast.success('Laporan Excel profesional berhasil diunduh.');
+    toast.success('Laporan Excel keuangan & referral berhasil diunduh.');
   } catch (error) {
     console.error('Failed to generate Excel report:', error);
     toast.error('Gagal mengekspor laporan Excel. Silakan coba kembali.');

@@ -1,5 +1,14 @@
 import React from 'react';
-import { TrendingUp, Coins, Receipt, Percent } from 'lucide-react';
+import {
+  TrendingUp,
+  Coins,
+  Receipt,
+  Percent,
+  Tag,
+  HandCoins,
+  ShieldCheck,
+  ShoppingBag
+} from 'lucide-react';
 import { formatIDR } from '@/lib/utils';
 import type { ReportMetrics, ReportGrowth } from './types';
 
@@ -15,75 +24,121 @@ export function ReportsMetricsCards({
   hasPreviousPeriod
 }: ReportsMetricsCardsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full min-w-0">
-      {/* Revenue */}
-      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs min-w-0">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            Revenue
-          </span>
-          <Receipt className="h-4 w-4 text-blue-500" />
+    <div className="space-y-3">
+      {/* Top 4 Primary Financial Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 w-full min-w-0">
+        {/* Penjualan Bersih (Net Revenue) */}
+        <div className="bg-card border border-border/60 rounded-xl p-4.5 space-y-1.5 shadow-2xs min-w-0">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Penjualan Bersih (Net)
+            </span>
+            <Receipt className="h-4 w-4 text-blue-500" />
+          </div>
+          <h3 className="text-xl font-extrabold text-foreground tabular-nums">
+            {formatIDR(currentMetrics.revenue)}
+          </h3>
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>{currentMetrics.totalQty} unit produk terjual</span>
+            {hasPreviousPeriod && (
+              <span
+                className={`font-bold ${growth.revenue >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+              >
+                {growth.revenue >= 0 ? '+' : ''}
+                {growth.revenue.toFixed(1)}%
+              </span>
+            )}
+          </div>
         </div>
-        <h3 className="text-xl font-black text-foreground tabular-nums">
-          {formatIDR(currentMetrics.revenue)}
-        </h3>
-        {hasPreviousPeriod && (
-          <p
-            className={`text-[10px] font-bold ${growth.revenue >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
-          >
-            {growth.revenue >= 0 ? '+' : ''}
-            {growth.revenue.toFixed(1)}% vs periode lalu
-          </p>
-        )}
+
+        {/* Total HPP Modal */}
+        <div className="bg-card border border-border/60 rounded-xl p-4.5 space-y-1.5 shadow-2xs min-w-0">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Total HPP (Modal)
+            </span>
+            <Coins className="h-4 w-4 text-amber-500" />
+          </div>
+          <h3 className="text-xl font-extrabold text-foreground tabular-nums">
+            {formatIDR(currentMetrics.totalHpp)}
+          </h3>
+          <p className="text-[11px] text-muted-foreground">Total modal produksi fisik.</p>
+        </div>
+
+        {/* Laba Bersih Toko (Net Profit Setelah Komisi) */}
+        <div className="bg-card border border-border/60 rounded-xl p-4.5 space-y-1.5 shadow-2xs min-w-0">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+              Laba Bersih Akhir
+            </span>
+            <TrendingUp className="h-4 w-4 text-emerald-500" />
+          </div>
+          <h3 className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+            {formatIDR(currentMetrics.profitAfterReferral)}
+          </h3>
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>Laba kotor: {formatIDR(currentMetrics.netProfit)}</span>
+            {hasPreviousPeriod && (
+              <span
+                className={`font-bold ${growth.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+              >
+                {growth.profit >= 0 ? '+' : ''}
+                {growth.profit.toFixed(1)}%
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Profit Margin */}
+        <div className="bg-card border border-border/60 rounded-xl p-4.5 space-y-1.5 shadow-2xs min-w-0">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Profit Margin
+            </span>
+            <Percent className="h-4 w-4 text-purple-500" />
+          </div>
+          <h3 className="text-xl font-extrabold text-foreground tabular-nums">
+            {currentMetrics.profitMargin.toFixed(1)}%
+          </h3>
+          <p className="text-[11px] text-muted-foreground">Rasio efisiensi laba atas omzet bersih.</p>
+        </div>
       </div>
 
-      {/* Total HPP */}
-      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs min-w-0">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            Total HPP
-          </span>
-          <Coins className="h-4 w-4 text-amber-500" />
+      {/* Secondary Referral & Discount Balance Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-border/50 bg-muted/20 p-3 text-xs">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background border border-border/60 text-muted-foreground">
+            <ShoppingBag className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Penjualan Kotor (Gross)</p>
+            <p className="text-xs font-bold text-foreground">{formatIDR(currentMetrics.grossSales)}</p>
+          </div>
         </div>
-        <h3 className="text-xl font-black text-foreground tabular-nums">
-          {formatIDR(currentMetrics.totalHpp)}
-        </h3>
-        <p className="text-[10px] text-muted-foreground">Akumulasi modal produksi.</p>
-      </div>
 
-      {/* Laba Kotor */}
-      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs min-w-0">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            Laba Kotor
-          </span>
-          <TrendingUp className="h-4 w-4 text-emerald-500" />
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
+            <Tag className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Diskon Customer (Referral)</p>
+            <p className="text-xs font-bold text-rose-600 dark:text-rose-400">
+              -{formatIDR(currentMetrics.customerDiscount)}
+            </p>
+          </div>
         </div>
-        <h3 className="text-xl font-black text-foreground tabular-nums">
-          {formatIDR(currentMetrics.netProfit)}
-        </h3>
-        {hasPreviousPeriod && (
-          <p
-            className={`text-[10px] font-bold ${growth.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
-          >
-            {growth.profit >= 0 ? '+' : ''}
-            {growth.profit.toFixed(1)}% vs periode lalu
-          </p>
-        )}
-      </div>
 
-      {/* Profit Margin */}
-      <div className="bg-card border border-border/40 rounded-xl p-5 space-y-2 shadow-2xs min-w-0">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            Profit Margin
-          </span>
-          <Percent className="h-4 w-4 text-purple-500" />
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+            <HandCoins className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Komisi Partner Referral</p>
+            <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+              {formatIDR(currentMetrics.cashReward)}
+            </p>
+          </div>
         </div>
-        <h3 className="text-xl font-black text-foreground tabular-nums">
-          {currentMetrics.profitMargin.toFixed(1)}%
-        </h3>
-        <p className="text-[10px] text-muted-foreground">Rasio efisiensi margin.</p>
       </div>
     </div>
   );
