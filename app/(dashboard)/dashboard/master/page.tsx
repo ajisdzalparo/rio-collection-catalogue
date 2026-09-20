@@ -147,74 +147,85 @@ function MasterDataPageContent() {
   const handleSave = async () => {
     if (!itemName.trim()) return;
 
+    const name = itemName.trim();
+    const desc = itemDesc;
+    const hex = itemHex;
+    const code = itemCode;
+    const logoUrl = itemLogoUrl;
+    const matType = materialType;
+    const currentEdit = editingItem;
+    const tab = activeTab;
+
+    // Close dialog immediately for instant, snappy UX
+    setIsDialogOpen(false);
+
     try {
-      if (editingItem) {
-        if (editingItem.type === 'cat') {
+      if (currentEdit) {
+        if (currentEdit.type === 'cat') {
           await masterMutations.updateCategory({
-            id: editingItem.id,
-            name: itemName,
-            description: itemDesc
+            id: currentEdit.id,
+            name,
+            description: desc
           });
-          toast.success(`Kategori "${itemName}" berhasil diperbarui`);
-        } else if (editingItem.type === 'col') {
-          await masterMutations.updateColor({ id: editingItem.id, name: itemName, hex: itemHex });
-          toast.success(`Warna "${itemName}" berhasil diperbarui`);
-        } else if (editingItem.type === 'top') {
+          toast.success(`Kategori "${name}" berhasil diperbarui`);
+        } else if (currentEdit.type === 'col') {
+          await masterMutations.updateColor({ id: currentEdit.id, name, hex });
+          toast.success(`Warna "${name}" berhasil diperbarui`);
+        } else if (currentEdit.type === 'top') {
           await masterMutations.updateTopic({
-            id: editingItem.id,
-            name: itemName,
-            description: itemDesc
+            id: currentEdit.id,
+            name,
+            description: desc
           });
-          toast.success(`Topik "${itemName}" berhasil diperbarui`);
-        } else if (editingItem.type === 'bank') {
+          toast.success(`Topik "${name}" berhasil diperbarui`);
+        } else if (currentEdit.type === 'bank') {
           await masterMutations.updateBank({
-            id: editingItem.id,
-            name: itemName,
-            code: itemCode,
-            logoUrl: itemLogoUrl
+            id: currentEdit.id,
+            name,
+            code,
+            logoUrl
           });
           toast.success('Master bank berhasil diperbarui');
-        } else if (editingItem.type === 'material') {
+        } else if (currentEdit.type === 'material') {
           await masterMutations.updateMaterial({
-            id: editingItem.id,
-            name: itemName,
-            description: itemDesc
+            id: currentEdit.id,
+            name,
+            description: desc
           });
           toast.success('Master material berhasil diperbarui');
         }
       } else {
-        if (activeTab === 'categories') {
-          await masterMutations.addCategory({ name: itemName, description: itemDesc });
-          toast.success(`Kategori "${itemName}" berhasil ditambahkan`);
-        } else if (activeTab === 'colors') {
-          await masterMutations.addColor({ name: itemName, hex: itemHex });
-          toast.success(`Warna "${itemName}" berhasil ditambahkan`);
-        } else if (activeTab === 'topics') {
-          await masterMutations.addTopic({ name: itemName, description: itemDesc });
-          toast.success(`Topik "${itemName}" berhasil ditambahkan`);
-        } else if (activeTab === 'sizes') {
-          const upperSize = itemName.trim().toUpperCase();
+        if (tab === 'categories') {
+          await masterMutations.addCategory({ name, description: desc });
+          toast.success(`Kategori "${name}" berhasil ditambahkan`);
+        } else if (tab === 'colors') {
+          await masterMutations.addColor({ name, hex });
+          toast.success(`Warna "${name}" berhasil ditambahkan`);
+        } else if (tab === 'topics') {
+          await masterMutations.addTopic({ name, description: desc });
+          toast.success(`Topik "${name}" berhasil ditambahkan`);
+        } else if (tab === 'sizes') {
+          const upperSize = name.toUpperCase();
           if (upperSize) {
             await masterMutations.addSize({ size: upperSize });
             toast.success(`Ukuran "${upperSize}" berhasil ditambahkan`);
           }
-        } else if (activeTab === 'banks') {
+        } else if (tab === 'banks') {
           await masterMutations.addBank({
-            name: itemName,
-            code: itemCode || itemName.toUpperCase(),
-            logoUrl: itemLogoUrl
+            name,
+            code: code || name.toUpperCase(),
+            logoUrl
           });
           toast.success('Master bank baru berhasil ditambahkan');
-        } else if (activeTab === 'materials') {
+        } else if (tab === 'materials') {
           await masterMutations.addMaterial({
-            type: materialType,
-            name: itemName,
-            description: itemDesc
+            type: matType,
+            name,
+            description: desc
           });
           toast.success('Opsi material baru berhasil ditambahkan');
         }
       }
-      setIsDialogOpen(false);
     } catch (error) {
       console.error('Failed to save master item:', error);
       toast.error('Gagal menyimpan data master');
@@ -238,6 +249,7 @@ function MasterDataPageContent() {
   const confirmDeleteAction = async () => {
     if (!deleteTarget) return;
     const { type, id, name } = deleteTarget;
+    setDeleteTarget(null);
     try {
       if (type === 'cat') {
         await masterMutations.deleteCategory(id);
@@ -256,8 +268,6 @@ function MasterDataPageContent() {
     } catch (error) {
       console.error('Failed to delete master item:', error);
       toast.error('Gagal menghapus data');
-    } finally {
-      setDeleteTarget(null);
     }
   };
 

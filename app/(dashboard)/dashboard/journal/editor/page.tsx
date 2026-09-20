@@ -150,12 +150,12 @@ function JournalEditorContent() {
         setAuthor(existing.author);
         setImageUrl(existing.imageUrl);
         setPullQuote(existing.pullQuote || '');
-        setRelatedProductSlug(existing.relatedProductSlug || existing.relatedProducts?.[0]?.slug || '');
+        setRelatedProductSlug(
+          existing.relatedProductSlug || existing.relatedProducts?.[0]?.slug || ''
+        );
         setSeoTitle(existing.seoTitle || '');
         setSeoDescription(existing.seoDescription || '');
         setOgImageUrl(existing.ogImageUrl || '');
-
-        // Use contentHtml if available, fallback to joining content paragraphs
         if (existing.contentHtml) {
           setContentHtml(existing.contentHtml);
         } else if (existing.content?.length) {
@@ -170,7 +170,7 @@ function JournalEditorContent() {
     }
   }
 
-  const effectiveAuthor = articleId ? author : loggedInAuthor;
+  const effectiveAuthor = author || loggedInAuthor;
 
   const getSlug = (text: string) =>
     text
@@ -346,21 +346,12 @@ function JournalEditorContent() {
                     <SelectValue placeholder="Pilih Kategori" />
                   </SelectTrigger>
                   <SelectContent>
-                    {activeTopics.length > 0 ? (
+                    {activeTopics.length > 0 &&
                       activeTopics.map((top) => (
                         <SelectItem key={top.id || top.name} value={top.name}>
                           {top.name}
                         </SelectItem>
-                      ))
-                    ) : (
-                      <>
-                        <SelectItem value="PROSES KREATIF">Proses Kreatif</SelectItem>
-                        <SelectItem value="CULTURE">Culture</SelectItem>
-                        <SelectItem value="PROCESS">Process</SelectItem>
-                        <SelectItem value="DESIGN">Design</SelectItem>
-                        <SelectItem value="MATERIAL STUDY">Material Study</SelectItem>
-                      </>
-                    )}
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -374,7 +365,6 @@ function JournalEditorContent() {
                 <Select
                   value={effectiveAuthor}
                   onValueChange={(val) => setAuthor(val || loggedInAuthor)}
-                  disabled
                 >
                   <SelectTrigger
                     id="art-author"
@@ -383,29 +373,26 @@ function JournalEditorContent() {
                     <SelectValue placeholder="Pilih Penulis" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={loggedInAuthor}>{loggedInAuthor}</SelectItem>
+                    <SelectItem value={loggedInAuthor}>{loggedInAuthor} (Akun Anda)</SelectItem>
                     <SelectItem value="EDITORIAL TEAM">Editorial Team</SelectItem>
                     <SelectItem value="CREATIVE DIRECTION">Creative Direction</SelectItem>
                     <SelectItem value="DESIGN STUDIO">Design Studio</SelectItem>
+                    <SelectItem value="RIO COLLECTION">RIO COLLECTION</SelectItem>
                     {![
                       loggedInAuthor,
                       'EDITORIAL TEAM',
                       'CREATIVE DIRECTION',
-                      'DESIGN STUDIO'
-                    ].includes(author) &&
-                      author && <SelectItem value={author}>{author}</SelectItem>}
+                      'DESIGN STUDIO',
+                      'RIO COLLECTION'
+                    ].includes(effectiveAuthor) &&
+                      effectiveAuthor && (
+                        <SelectItem value={effectiveAuthor}>{effectiveAuthor}</SelectItem>
+                      )}
                   </SelectContent>
                 </Select>
-                {!articleId && (
-                  <p className="text-[10px] text-muted-foreground">
-                    Otomatis mengikuti akun yang sedang login.
-                  </p>
-                )}
-                {articleId && (
-                  <p className="text-[10px] text-muted-foreground">
-                    Penulis artikel terkunci dan tidak dapat diubah dari editor.
-                  </p>
-                )}
+                <p className="text-[10px] text-muted-foreground">
+                  Default nama akun yang sedang login, atau pilih persona editorial brand.
+                </p>
               </div>
             </div>
 
@@ -508,11 +495,14 @@ function JournalEditorContent() {
               SEO Blog
             </h3>
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Kosongkan jika ingin memakai fallback otomatis dari judul, ringkasan, dan cover artikel.
+              Kosongkan jika ingin memakai fallback otomatis dari judul, ringkasan, dan cover
+              artikel.
             </p>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <Label htmlFor="seo-title" className="text-xs font-bold text-foreground">Meta Title</Label>
+                <Label htmlFor="seo-title" className="text-xs font-bold text-foreground">
+                  Meta Title
+                </Label>
                 <span className="text-[10px] text-muted-foreground">{seoTitle.length}/70</span>
               </div>
               <Input
@@ -525,8 +515,12 @@ function JournalEditorContent() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <Label htmlFor="seo-description" className="text-xs font-bold text-foreground">Meta Description</Label>
-                <span className="text-[10px] text-muted-foreground">{seoDescription.length}/160</span>
+                <Label htmlFor="seo-description" className="text-xs font-bold text-foreground">
+                  Meta Description
+                </Label>
+                <span className="text-[10px] text-muted-foreground">
+                  {seoDescription.length}/160
+                </span>
               </div>
               <Textarea
                 id="seo-description"
@@ -574,9 +568,7 @@ function JournalEditorContent() {
 
 export default function JournalEditorPage() {
   return (
-    <Suspense
-      fallback={<CmsPageSkeleton variant="form" />}
-    >
+    <Suspense fallback={<CmsPageSkeleton variant="form" />}>
       <JournalEditorContent />
     </Suspense>
   );
