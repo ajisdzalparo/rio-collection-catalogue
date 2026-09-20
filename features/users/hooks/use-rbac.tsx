@@ -14,7 +14,7 @@ export function useRolesQuery() {
     queryKey: ['roles'],
     queryFn: async () => {
       const { data } = await axios.get('/api/v1/roles');
-      return data.code === 200 && Array.isArray(data.data) ? data.data as UserRole[] : [];
+      return data.code === 200 && Array.isArray(data.data) ? (data.data as UserRole[]) : [];
     }
   });
 }
@@ -30,7 +30,7 @@ export function useRbac() {
     return permissions[permissionKey] === true;
   };
 
-  return { currentRoleName, permissions, hasPermission };
+  return { currentRoleName, permissions, hasPermission, isLoading };
 }
 
 interface RbacGateProps {

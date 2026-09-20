@@ -26,18 +26,18 @@ import { useStoreSettingsQuery } from '@/hooks/use-store-settings';
 import { useReferralAccess } from '@/features/referrals/hooks/use-referral-access';
 
 const NAVIGATION_PERMISSION_MAP: Record<string, string> = {
-  'Overview': 'overview.view',
-  'Orders': 'orders.view',
+  Overview: 'overview.view',
+  Orders: 'orders.view',
   'Stock Management': 'stock.view',
   'Master Data': 'products.view',
-  'Blog': 'journal.view',
-  'Testimonials': 'testimonies.view',
+  Blog: 'journal.view',
+  Testimonials: 'testimonies.view',
   'Laporan Penjualan': 'reports.view',
   'Super Admin Finance': 'platform.finance.view',
   'Activity Log': 'activity.view',
   'Store Settings': 'settings.view',
   'User Management': 'settings.view',
-  'Customers': 'orders.view'
+  Customers: 'orders.view'
 };
 
 interface SidebarBrandMarkProps {
@@ -80,7 +80,7 @@ function SidebarBrandMark({ logoUrl, storeName }: SidebarBrandMarkProps) {
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { hasPermission } = useRbac();
+  const { hasPermission, isLoading } = useRbac();
   const { data: referralAccess } = useReferralAccess();
   const { data: storeSettings } = useStoreSettingsQuery();
   const storeName = storeSettings?.storeName || 'RIO COLLECTION';
@@ -124,114 +124,122 @@ export default function AppSidebar() {
         <SidebarGroup className="p-0">
           <SidebarGroupContent className="mt-1">
             <SidebarMenu className="space-y-1">
-              {navigation.map((item) => {
-                if (item.title === 'Referral' && !referralAccess?.canView) return null;
-                const permKey = NAVIGATION_PERMISSION_MAP[item.title];
-                if (permKey && !hasPermission(permKey as keyof RolePermissions)) {
-                  return null;
-                }
+              {isLoading ? (
+                <div className="space-y-2 p-1">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="h-9 w-full rounded-xl bg-muted/40 animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                navigation.map((item) => {
+                  if (item.title === 'Referral' && !referralAccess?.canView) return null;
+                  const permKey = NAVIGATION_PERMISSION_MAP[item.title];
+                  if (permKey && !hasPermission(permKey as keyof RolePermissions)) {
+                    return null;
+                  }
 
-                const Icon = item.icon;
-                const hasSubMenu = Boolean(item.subMenu && item.subMenu.length > 0);
-                const isSubActive =
-                  hasSubMenu &&
-                  item.subMenu?.some(
-                    (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
-                  );
-                const isActive =
-                  !hasSubMenu &&
-                  (pathname === item.href ||
-                    (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`)));
-                const isOpen = openSubMenus[item.title] ?? isSubActive;
+                  const Icon = item.icon;
+                  const hasSubMenu = Boolean(item.subMenu && item.subMenu.length > 0);
+                  const isSubActive =
+                    hasSubMenu &&
+                    item.subMenu?.some(
+                      (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
+                    );
+                  const isActive =
+                    !hasSubMenu &&
+                    (pathname === item.href ||
+                      (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`)));
+                  const isOpen = openSubMenus[item.title] ?? isSubActive;
 
-                if (hasSubMenu) {
+                  if (hasSubMenu) {
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          isActive={isActive || Boolean(isSubActive)}
+                          tooltip={item.title}
+                          onClick={() => toggleSubMenu(item.title)}
+                          className={`h-10 rounded-2xl px-3.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center transition-all duration-200 cursor-pointer ${
+                            isSubActive
+                              ? 'bg-card text-foreground font-bold shadow-2xs border border-border/40'
+                              : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground font-medium'
+                          }`}
+                        >
+                          {Icon && <Icon className="h-4 w-4 shrink-0" />}
+                          <span className="text-sm flex-1 text-left group-data-[collapsible=icon]:hidden">
+                            {item.title}
+                          </span>
+                          <motion.div
+                            animate={{ rotate: isOpen ? 180 : 0 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                            className="group-data-[collapsible=icon]:hidden shrink-0 flex items-center"
+                          >
+                            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                          </motion.div>
+                        </SidebarMenuButton>
+
+                        <AnimatePresence initial={false}>
+                          {isOpen && item.subMenu && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{
+                                height: { type: 'spring', stiffness: 350, damping: 30 },
+                                opacity: { duration: 0.2 }
+                              }}
+                              className="overflow-hidden group-data-[collapsible=icon]:hidden"
+                            >
+                              <SidebarMenuSub className="my-1 space-y-0.5 border-l border-border/50 pl-3">
+                                {item.subMenu.map((subItem) => {
+                                  const isSubItemActive =
+                                    pathname === subItem.href ||
+                                    pathname.startsWith(`${subItem.href}/`);
+
+                                  return (
+                                    <SidebarMenuSubItem key={`${subItem.title}-${subItem.href}`}>
+                                      <SidebarMenuSubButton
+                                        isActive={isSubItemActive}
+                                        render={<Link href={subItem.href} />}
+                                        className={`h-8.5 rounded-xl px-3 text-xs transition-all duration-200 ${
+                                          isSubItemActive
+                                            ? 'bg-primary/10 text-primary font-bold shadow-2xs'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium'
+                                        }`}
+                                      >
+                                        <span>{subItem.title}</span>
+                                      </SidebarMenuSubButton>
+                                    </SidebarMenuSubItem>
+                                  );
+                                })}
+                              </SidebarMenuSub>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </SidebarMenuItem>
+                    );
+                  }
+
                   return (
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
-                        isActive={isActive || Boolean(isSubActive)}
+                        isActive={isActive}
                         tooltip={item.title}
-                        onClick={() => toggleSubMenu(item.title)}
-                        className={`h-10 rounded-2xl px-3.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center transition-all duration-200 cursor-pointer ${
-                          isSubActive
+                        render={<Link href={item.href} />}
+                        className={`h-10 rounded-2xl px-3.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center transition-all duration-200 ${
+                          isActive
                             ? 'bg-card text-foreground font-bold shadow-2xs border border-border/40'
                             : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground font-medium'
                         }`}
                       >
                         {Icon && <Icon className="h-4 w-4 shrink-0" />}
-                        <span className="text-sm flex-1 text-left group-data-[collapsible=icon]:hidden">
+                        <span className="text-sm group-data-[collapsible=icon]:hidden">
                           {item.title}
                         </span>
-                        <motion.div
-                          animate={{ rotate: isOpen ? 180 : 0 }}
-                          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-                          className="group-data-[collapsible=icon]:hidden shrink-0 flex items-center"
-                        >
-                          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                        </motion.div>
                       </SidebarMenuButton>
-
-                      <AnimatePresence initial={false}>
-                        {isOpen && item.subMenu && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{
-                              height: { type: 'spring', stiffness: 350, damping: 30 },
-                              opacity: { duration: 0.2 }
-                            }}
-                            className="overflow-hidden group-data-[collapsible=icon]:hidden"
-                          >
-                            <SidebarMenuSub className="my-1 space-y-0.5 border-l border-border/50 pl-3">
-                              {item.subMenu.map((subItem) => {
-                                const isSubItemActive =
-                                  pathname === subItem.href ||
-                                  pathname.startsWith(`${subItem.href}/`);
-
-                                return (
-                                  <SidebarMenuSubItem key={`${subItem.title}-${subItem.href}`}>
-                                    <SidebarMenuSubButton
-                                      isActive={isSubItemActive}
-                                      render={<Link href={subItem.href} />}
-                                      className={`h-8.5 rounded-xl px-3 text-xs transition-all duration-200 ${
-                                        isSubItemActive
-                                          ? 'bg-primary/10 text-primary font-bold shadow-2xs'
-                                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium'
-                                      }`}
-                                    >
-                                      <span>{subItem.title}</span>
-                                    </SidebarMenuSubButton>
-                                  </SidebarMenuSubItem>
-                                );
-                              })}
-                            </SidebarMenuSub>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </SidebarMenuItem>
                   );
-                }
-
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      tooltip={item.title}
-                      render={<Link href={item.href} />}
-                      className={`h-10 rounded-2xl px-3.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center transition-all duration-200 ${
-                        isActive
-                          ? 'bg-card text-foreground font-bold shadow-2xs border border-border/40'
-                          : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground font-medium'
-                      }`}
-                    >
-                      {Icon && <Icon className="h-4 w-4 shrink-0" />}
-                      <span className="text-sm group-data-[collapsible=icon]:hidden">
-                        {item.title}
-                      </span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+                })
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
