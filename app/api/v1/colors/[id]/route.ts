@@ -40,6 +40,17 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const existing = await prisma.color.findUnique({
+      where: { id }
+    });
+
+    if (!existing || existing.deletedAt) {
+      return NextResponse.json(
+        { code: 404, status: 'error', message: 'Color not found or already deleted' },
+        { status: 404 }
+      );
+    }
+
     await prisma.color.update({
       where: { id },
       data: { deletedAt: new Date() }

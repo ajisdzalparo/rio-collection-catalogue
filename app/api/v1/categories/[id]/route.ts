@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await request.json();
     const { name, description, isActive } = body;
 
-    const updateData: Partial<{ name: string; slug: string; description: string | null; isActive: boolean }> = {};
+    const updateData: Partial<{
+      name: string;
+      slug: string;
+      description: string | null;
+      isActive: boolean;
+    }> = {};
     if (name !== undefined) {
       updateData.name = name;
       updateData.slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -41,16 +43,25 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const existing = await prisma.category.findUnique({
+      where: { id }
+    });
+
+    if (!existing || existing.deletedAt) {
+      return NextResponse.json(
+        { code: 404, status: 'error', message: 'Category not found or already deleted' },
+        { status: 404 }
+      );
+    }
+
     await prisma.category.update({
       where: { id },
       data: { deletedAt: new Date() }
     });
+
     return NextResponse.json({
       code: 200,
       status: 'success',

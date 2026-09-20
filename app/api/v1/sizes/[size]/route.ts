@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ size: string }> }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ size: string }> }) {
   try {
     const { size } = await params;
     const body = await request.json();
@@ -29,12 +26,20 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ size: string }> }
-) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ size: string }> }) {
   try {
     const { size } = await params;
+    const existing = await prisma.size.findUnique({
+      where: { size }
+    });
+
+    if (!existing || existing.deletedAt) {
+      return NextResponse.json(
+        { code: 404, status: 'error', message: 'Size not found or already deleted' },
+        { status: 404 }
+      );
+    }
+
     await prisma.size.update({
       where: { size },
       data: { deletedAt: new Date() }
