@@ -74,6 +74,7 @@ export async function POST(request: Request) {
       maxPurchaseLimit,
       status,
       releaseDate,
+      preOrderEstimate,
       imageUrl,
       images,
       description,
@@ -122,6 +123,12 @@ export async function POST(request: Request) {
         maxPurchaseLimit: maxPurchaseLimit !== undefined ? Number(maxPurchaseLimit) : 1,
         status: normalizedStatus,
         releaseDate: releaseValidation.date,
+        preOrderEstimate:
+          preOrderEstimate === undefined
+            ? null
+            : preOrderEstimate
+              ? String(preOrderEstimate).trim()
+              : null,
         imageUrl:
           imageUrl ||
           'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',

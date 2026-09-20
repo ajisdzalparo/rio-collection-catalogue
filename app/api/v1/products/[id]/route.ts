@@ -130,6 +130,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         if (status !== undefined || releaseDate !== undefined) {
           dataToUpdate.releaseDate = releaseValidation.date;
         }
+        if (preOrderEstimate !== undefined) {
+          dataToUpdate.preOrderEstimate = preOrderEstimate ? String(preOrderEstimate).trim() : null;
+        }
         if (imageUrl !== undefined) dataToUpdate.imageUrl = imageUrl;
         if (images !== undefined) dataToUpdate.images = images;
         if (imageDetails !== undefined) dataToUpdate.imageDetails = imageDetails;

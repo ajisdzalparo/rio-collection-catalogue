@@ -36,6 +36,7 @@ export interface Product {
   colorHexes?: string[];
   status: ProductStatus;
   releaseDate?: string | null;
+  preOrderEstimate?: string | null;
   category: string;
   imageUrl: string;
   images: string[];

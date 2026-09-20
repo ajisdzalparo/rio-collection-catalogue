@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Shirt, Layers, Tag } from 'lucide-react';
+import { ArrowLeft, Save, Shirt, Layers, Tag, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -71,6 +71,9 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
 
   const [releaseDate, setReleaseDate] = useState<string | null>(
     initialProduct?.releaseDate ?? null
+  );
+  const [preOrderEstimate, setPreOrderEstimate] = useState(
+    initialProduct?.preOrderEstimate || ''
   );
   const [stockMode, setStockMode] = useState<StockMode>(initialProduct?.stockMode || 'QUANTITY');
   const orderLimitMode = initialProduct?.orderLimitMode || 'UNLIMITED';
@@ -163,6 +166,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
       category: category || (categories[0]?.name ?? 'Boxy Tee'),
       status: finalStatus,
       releaseDate,
+      preOrderEstimate: finalStatus === 'PRE_ORDER' ? preOrderEstimate.trim() || null : null,
       stockMode,
       orderLimitMode,
       maxPurchaseLimit: orderLimitMode === 'ONCE_PER_USER' ? 1 : null,
@@ -387,6 +391,29 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                 stockMode={stockMode}
                 onStockModeChange={setStockMode}
               />
+            )}
+
+            {status === 'PRE_ORDER' && (
+              <div className="space-y-1.5 p-4 bg-amber-500/5 border border-amber-500/25 rounded-2xl animate-in fade-in duration-200">
+                <Label
+                  htmlFor="pre-order-estimate"
+                  className="text-xs font-bold text-foreground flex items-center gap-1.5"
+                >
+                  <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  Estimasi Waktu Pre-Order (Produksi & Pengiriman)
+                </Label>
+                <Input
+                  id="pre-order-estimate"
+                  type="text"
+                  value={preOrderEstimate}
+                  onChange={(e) => setPreOrderEstimate(e.target.value)}
+                  placeholder="Misal: 7–14 hari kerja, 5–7 hari kerja, 2–3 minggu..."
+                  className="h-10 rounded-xl text-xs bg-background border-border/50 focus-visible:border-amber-500"
+                />
+                <p className="text-[11px] text-muted-foreground leading-normal">
+                  Kosongkan jika ingin memakai estimasi default (<strong>7–14 hari kerja</strong>). Teks ini akan otomatis tampil pada box informasi detail produk publik.
+                </p>
+              </div>
             )}
 
             {/* Description */}

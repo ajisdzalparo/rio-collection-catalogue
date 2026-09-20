@@ -117,6 +117,7 @@ model Product {
   stockMode        String           @default("QUANTITY") // QUANTITY, ALWAYS_AVAILABLE
   status           String           @default("AVAILABLE") // AVAILABLE, SOLD_OUT, COMING_SOON
   releaseDate      DateTime?
+  preOrderEstimate String?
   orderLimitMode   String           @default("UNLIMITED") // UNLIMITED, ONCE_PER_USER
   maxPurchaseLimit Int?             @default(1)
   imageUrl         String
