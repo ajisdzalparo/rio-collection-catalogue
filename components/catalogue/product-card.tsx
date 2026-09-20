@@ -28,11 +28,6 @@ export function ProductCard({ product, className, priority = false }: ProductCar
   const isUnavailable = isSoldOut || isDiscontinued;
 
   const colorList = product.colors?.length ? product.colors : product.color ? [product.color] : [];
-  const hexList = product.colorHexes?.length
-    ? product.colorHexes
-    : product.colorHex
-      ? [product.colorHex]
-      : [];
 
   const handleCountdownEnded = () => {
     setIsComingSoon(false);
@@ -124,19 +119,6 @@ export function ProductCard({ product, className, priority = false }: ProductCar
           <p className="font-hanken text-[13px] sm:text-[14px] font-semibold text-(--cat-on-surface) tabular-nums">
             {formatPrice(product.price)}
           </p>
-
-          {hexList.length > 1 && (
-            <div className="mt-1.5 flex items-center justify-center gap-1">
-              {hexList.map((hex, idx) => (
-                <span
-                  key={`${hex}-${idx}`}
-                  className="h-2.5 w-2.5 rounded-full border border-(--cat-stone)"
-                  style={{ backgroundColor: hex }}
-                  title={colorList[idx]}
-                />
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </Link>
