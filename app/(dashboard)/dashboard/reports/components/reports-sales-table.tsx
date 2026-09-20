@@ -8,7 +8,7 @@ import { OrderStatusBadge } from '@/components/shared/order-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { formatIDR } from '@/lib/utils';
 import type { Order } from '@/hooks/use-orders';
-import { netItemRevenues } from '@/lib/referral';
+import { netItemRevenues, allocateAmountByWeights } from '@/lib/referral';
 
 interface ReportsSalesTableProps {
   currentOrders: Order[];
@@ -41,11 +41,10 @@ export function ReportsSalesTable({ currentOrders, selectedProducts }: ReportsSa
   const rows = useMemo<ReportTableRow[]>(
     () =>
       currentOrders.flatMap((order) => {
-        const revenues = netItemRevenues(order.items, order.discountAmount ?? 0);
-        const totalGrossOrder = order.items.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
-        );
+        const itemGross = order.items.map((it) => it.price * it.quantity);
+        const itemDiscounts = allocateAmountByWeights(itemGross, order.discountAmount ?? 0);
+        const itemRevenues = itemGross.map((g, idx) => g - itemDiscounts[idx]);
+        const itemRewards = allocateAmountByWeights(itemGross, order.referralRewardAmount ?? 0);
 
         return order.items
           .map((item, index) => ({ item, index }))
@@ -53,15 +52,12 @@ export function ReportsSalesTable({ currentOrders, selectedProducts }: ReportsSa
             ({ item }) => selectedProducts.length === 0 || selectedProducts.includes(item.name)
           )
           .map(({ item, index }) => {
-            const grossItem = item.price * item.quantity;
-            const sales = revenues[index];
-            const discount = Math.max(0, grossItem - sales);
+            const grossItem = itemGross[index];
+            const discount = itemDiscounts[index];
+            const sales = itemRevenues[index];
             const cogs = (item.cogs ?? 0) * item.quantity;
             const grossProfit = sales - cogs;
-
-            // Alokasikan komisi cash proporsional terhadap nilai kotor item dalam order
-            const itemRatio = totalGrossOrder > 0 ? grossItem / totalGrossOrder : 0;
-            const referralReward = Math.round((order.referralRewardAmount ?? 0) * itemRatio);
+            const referralReward = itemRewards[index];
             const netProfit = grossProfit - referralReward;
 
             return {

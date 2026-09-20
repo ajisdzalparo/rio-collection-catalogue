@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 import type { Order } from '@/hooks/use-orders';
 import type { ReportStatus } from './types';
-import { netItemRevenues } from '@/lib/referral';
+import { netItemRevenues, allocateAmountByWeights } from '@/lib/referral';
 
 interface ExportExcelParams {
   currentOrders: Order[];
@@ -56,11 +56,10 @@ function buildAccountingRows(
   let usesDefaultHpp = false;
 
   orders.forEach((order) => {
-    const revenues = netItemRevenues(order.items, order.discountAmount ?? 0);
-    const totalGrossOrder = order.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
+    const itemGross = order.items.map((it) => it.price * it.quantity);
+    const itemDiscounts = allocateAmountByWeights(itemGross, order.discountAmount ?? 0);
+    const itemRevenues = itemGross.map((g, idx) => g - itemDiscounts[idx]);
+    const itemRewards = allocateAmountByWeights(itemGross, order.referralRewardAmount ?? 0);
 
     const items = order.items.map((item, index) => ({ item, index })).filter(
       ({ item }) => selectedProducts.length === 0 || selectedProducts.includes(item.name)
@@ -69,14 +68,12 @@ function buildAccountingRows(
     items.forEach(({ item, index }, itemIndex) => {
       const unitHpp = item.cogs ?? DEFAULT_HPP;
       if (item.cogs === undefined) usesDefaultHpp = true;
-      const grossItem = item.price * item.quantity;
-      const sales = revenues[index];
-      const discount = Math.max(0, grossItem - sales);
+      const grossItem = itemGross[index];
+      const discount = itemDiscounts[index];
+      const sales = itemRevenues[index];
       const cogs = unitHpp * item.quantity;
       const grossProfit = sales - cogs;
-
-      const itemRatio = totalGrossOrder > 0 ? grossItem / totalGrossOrder : 0;
-      const referralReward = Math.round((order.referralRewardAmount ?? 0) * itemRatio);
+      const referralReward = itemRewards[index];
       const netProfit = grossProfit - referralReward;
 
       const shippingFee = selectedProducts.length === 0 && itemIndex === 0

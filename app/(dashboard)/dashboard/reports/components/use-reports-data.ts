@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useOrders } from '@/hooks/use-orders';
 import type { Order } from '@/hooks/use-orders';
-import { netItemRevenues } from '@/lib/referral';
+import { netItemRevenues, allocateAmountByWeights } from '@/lib/referral';
 import type {
   ReportMetrics,
   ReportGrowth,
@@ -131,17 +131,24 @@ export function useReportsData() {
       let totalQty = 0;
 
       orderList.forEach((o) => {
-        const revenues = netItemRevenues(o.items, o.discountAmount ?? 0);
-        customerDiscount += o.discountAmount ?? 0;
-        cashReward += o.referralRewardAmount ?? 0;
+        const itemGross = o.items.map((it) => it.price * it.quantity);
+        const itemDiscounts = allocateAmountByWeights(itemGross, o.discountAmount ?? 0);
+        const itemRevenues = itemGross.map((g, idx) => g - itemDiscounts[idx]);
+        const itemRewards = allocateAmountByWeights(itemGross, o.referralRewardAmount ?? 0);
 
         o.items.forEach((item, index) => {
           if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
 
-          const rev = revenues[index];
+          const gross = itemGross[index];
+          const disc = itemDiscounts[index];
+          const rev = itemRevenues[index];
+          const rew = itemRewards[index];
           const hpp = (item.cogs ?? 0) * item.quantity;
-          grossSales += item.price * item.quantity;
+
+          grossSales += gross;
+          customerDiscount += disc;
           revenue += rev;
+          cashReward += rew;
           totalHpp += hpp;
           totalQty += item.quantity;
         });
@@ -150,7 +157,7 @@ export function useReportsData() {
       const netProfit = revenue - totalHpp;
       const shirtRewardCost = 0;
       const profitAfterReferral = netProfit - cashReward - shirtRewardCost;
-      const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+      const profitMargin = revenue > 0 ? (profitAfterReferral / revenue) * 100 : 0;
 
       return {
         grossSales,
@@ -201,7 +208,7 @@ export function useReportsData() {
 
         const key = item.name;
         const rev = revenues[index];
-        const hpp = (item.cogs ?? 180000) * item.quantity;
+        const hpp = (item.cogs ?? 0) * item.quantity;
         const profit = rev - hpp;
 
         const current = map.get(key) || { name: item.name, totalQty: 0, revenue: 0, profit: 0 };
@@ -254,7 +261,7 @@ export function useReportsData() {
           o.items.forEach((item, index) => {
             if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
             const rev = revenues[index];
-            const hpp = (item.cogs ?? 180000) * item.quantity;
+            const hpp = (item.cogs ?? 0) * item.quantity;
             dailyRevenue += rev;
             dailyProfit += rev - hpp;
           });
