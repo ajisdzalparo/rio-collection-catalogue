@@ -51,9 +51,8 @@ function getStatusLabel(status: Order['status']) {
 function buildAccountingRows(
   orders: Order[],
   selectedProducts: string[]
-): { rows: AccountingRow[]; usesDefaultHpp: boolean } {
+): AccountingRow[] {
   const rows: AccountingRow[] = [];
-  let usesDefaultHpp = false;
 
   orders.forEach((order) => {
     const itemGross = order.items.map((it) => it.price * it.quantity);
@@ -67,7 +66,6 @@ function buildAccountingRows(
 
     items.forEach(({ item, index }, itemIndex) => {
       const unitHpp = item.cogs ?? DEFAULT_HPP;
-      if (item.cogs === undefined) usesDefaultHpp = true;
       const grossItem = itemGross[index];
       const discount = itemDiscounts[index];
       const sales = itemRevenues[index];
@@ -104,7 +102,7 @@ function buildAccountingRows(
     });
   });
 
-  return { rows, usesDefaultHpp };
+  return rows;
 }
 
 export async function exportReportToExcel({
@@ -117,7 +115,7 @@ export async function exportReportToExcel({
   const paidOrders = currentOrders.filter(
     (order) => order.status === 'PAID' || order.status === 'FULFILLED'
   );
-  const { rows, usesDefaultHpp } = buildAccountingRows(paidOrders, selectedProducts);
+  const rows = buildAccountingRows(paidOrders, selectedProducts);
 
   if (rows.length === 0) {
     toast.error('Tidak ada penjualan lunas pada periode dan produk yang dipilih.');
