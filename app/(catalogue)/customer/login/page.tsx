@@ -63,7 +63,10 @@ export default function CustomerLoginPage() {
 
     setDevOtpHint(null);
     try {
-      const data = await sendOtpMutation.mutateAsync({ email: email.trim() });
+      const data = await sendOtpMutation.mutateAsync({
+        email: email.trim(),
+        mode: authMode
+      });
       toast.success('Kode OTP telah dikirim ke email Anda.');
       if (data.isDevMode && data.message) {
         setDevOtpHint(data.message);

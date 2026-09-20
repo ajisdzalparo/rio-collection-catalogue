@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { requestOtp, OtpError } from '@/lib/otp';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { email } = body;
+    const { email, mode } = body;
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
@@ -33,7 +34,38 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await requestOtp({ email, type: 'LOGIN' });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check customer existence if mode is specified
+    if (mode === 'LOGIN' || mode === 'REGISTER') {
+      const existingCustomer = await prisma.customer.findUnique({
+        where: { email: normalizedEmail }
+      });
+
+      if (mode === 'LOGIN' && !existingCustomer) {
+        return NextResponse.json(
+          {
+            code: 404,
+            status: 'error',
+            message: 'Email belum terdaftar. Silakan pilih tab "Daftar Baru" terlebih dahulu.'
+          },
+          { status: 404 }
+        );
+      }
+
+      if (mode === 'REGISTER' && existingCustomer) {
+        return NextResponse.json(
+          {
+            code: 409,
+            status: 'error',
+            message: 'Email sudah terdaftar. Silakan pilih tab "Masuk" untuk login.'
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    const result = await requestOtp({ email: normalizedEmail, type: 'LOGIN' });
     return NextResponse.json({
       code: 200,
       status: 'success',

@@ -200,11 +200,12 @@ export function useUpdateCustomerWhatsapp() {
 }
 
 export function useSendCustomerOtp() {
-  return useMutation<SendOtpResponse, Error, { email: string }>({
-    mutationFn: async ({ email }) => {
+  return useMutation<SendOtpResponse, Error, { email: string; mode?: 'LOGIN' | 'REGISTER' }>({
+    mutationFn: async ({ email, mode }) => {
       try {
         const { data } = await axios.post('/api/v1/customer/auth/send-otp', {
-          email: email.trim()
+          email: email.trim(),
+          mode
         });
         if (data.status !== 'success') {
           throw new Error(data.message || 'Gagal mengirim OTP.');
