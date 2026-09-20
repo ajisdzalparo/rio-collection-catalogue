@@ -48,10 +48,7 @@ function getStatusLabel(status: Order['status']) {
   return status === 'FULFILLED' ? 'Dikirim' : 'Lunas';
 }
 
-function buildAccountingRows(
-  orders: Order[],
-  selectedProducts: string[]
-): AccountingRow[] {
+function buildAccountingRows(orders: Order[], selectedProducts: string[]): AccountingRow[] {
   const rows: AccountingRow[] = [];
 
   orders.forEach((order) => {
@@ -60,9 +57,9 @@ function buildAccountingRows(
     const itemRevenues = itemGross.map((g, idx) => g - itemDiscounts[idx]);
     const itemRewards = allocateAmountByWeights(itemGross, order.referralRewardAmount ?? 0);
 
-    const items = order.items.map((item, index) => ({ item, index })).filter(
-      ({ item }) => selectedProducts.length === 0 || selectedProducts.includes(item.name)
-    );
+    const items = order.items
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => selectedProducts.length === 0 || selectedProducts.includes(item.name));
 
     items.forEach(({ item, index }, itemIndex) => {
       const unitHpp = item.cogs ?? DEFAULT_HPP;
@@ -74,9 +71,8 @@ function buildAccountingRows(
       const referralReward = itemRewards[index];
       const netProfit = grossProfit - referralReward;
 
-      const shippingFee = selectedProducts.length === 0 && itemIndex === 0
-        ? order.shippingFee ?? 0
-        : 0;
+      const shippingFee =
+        selectedProducts.length === 0 && itemIndex === 0 ? (order.shippingFee ?? 0) : 0;
 
       rows.push({
         orderNumber: safeExcelText(order.orderNumber),
@@ -138,8 +134,6 @@ export async function exportReportToExcel({
     const totalGrossProfit = rows.reduce((sum, r) => sum + r.grossProfit, 0);
     const totalReferralReward = rows.reduce((sum, r) => sum + r.referralReward, 0);
     const totalNetProfit = rows.reduce((sum, r) => sum + r.netProfit, 0);
-    const totalShippingFee = rows.reduce((sum, r) => sum + r.shippingFee, 0);
-    const totalReceived = rows.reduce((sum, r) => sum + r.received, 0);
     const netMarginRate = totalSales > 0 ? totalNetProfit / totalSales : 0;
 
     const BORDER_THIN: Partial<ExcelJS.Borders> = {
@@ -189,23 +183,51 @@ export async function exportReportToExcel({
 
     // Metadata Strip
     summarySheet.getCell('B4').value = 'Periode Laporan:';
-    summarySheet.getCell('B4').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF64748B' } };
+    summarySheet.getCell('B4').font = {
+      name: 'Arial',
+      size: 9,
+      bold: true,
+      color: { argb: 'FF64748B' }
+    };
     summarySheet.getCell('C4').value = `${startDate} s.d. ${endDate}`;
     summarySheet.getCell('C4').font = { name: 'Arial', size: 9, bold: true };
 
     summarySheet.getCell('E4').value = 'Tanggal Dibuat:';
-    summarySheet.getCell('E4').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF64748B' } };
-    summarySheet.getCell('F4').value = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    summarySheet.getCell('E4').font = {
+      name: 'Arial',
+      size: 9,
+      bold: true,
+      color: { argb: 'FF64748B' }
+    };
+    summarySheet.getCell('F4').value = new Date().toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
     summarySheet.getCell('F4').font = { name: 'Arial', size: 9, bold: true };
 
     summarySheet.getCell('B5').value = 'Filter Produk:';
-    summarySheet.getCell('B5').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF64748B' } };
-    summarySheet.getCell('C5').value = selectedProducts.length === 0 ? 'Semua Produk' : selectedProducts.join(', ');
+    summarySheet.getCell('B5').font = {
+      name: 'Arial',
+      size: 9,
+      bold: true,
+      color: { argb: 'FF64748B' }
+    };
+    summarySheet.getCell('C5').value =
+      selectedProducts.length === 0 ? 'Semua Produk' : selectedProducts.join(', ');
     summarySheet.getCell('C5').font = { name: 'Arial', size: 9 };
 
     summarySheet.getCell('E5').value = 'Status Pesanan:';
-    summarySheet.getCell('E5').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF64748B' } };
-    summarySheet.getCell('F5').value = selectedStatuses.length === 0 ? 'Lunas & Dikirim' : selectedStatuses.map(getStatusLabel).join(', ');
+    summarySheet.getCell('E5').font = {
+      name: 'Arial',
+      size: 9,
+      bold: true,
+      color: { argb: 'FF64748B' }
+    };
+    summarySheet.getCell('F5').value =
+      selectedStatuses.length === 0
+        ? 'Lunas & Dikirim'
+        : selectedStatuses.map(getStatusLabel).join(', ');
     summarySheet.getCell('F5').font = { name: 'Arial', size: 9 };
 
     // KPI Summary Section (Card-style grid)
@@ -268,7 +290,17 @@ export async function exportReportToExcel({
     prodBreakdownTitle.value = 'PERFORMA PENJUALAN PER PRODUK';
     prodBreakdownTitle.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF475569' } };
 
-    const prodHeaders = ['No.', 'Nama Produk', 'Qty', 'Penjualan Bersih', 'Total HPP', 'Laba Kotor', 'Komisi Referral', 'Laba Bersih', 'Margin'];
+    const prodHeaders = [
+      'No.',
+      'Nama Produk',
+      'Qty',
+      'Penjualan Bersih',
+      'Total HPP',
+      'Laba Kotor',
+      'Komisi Referral',
+      'Laba Bersih',
+      'Margin'
+    ];
     const prodHeaderRow = summarySheet.getRow(12);
     prodHeaderRow.height = 22;
     prodHeaders.forEach((hdr, idx) => {
@@ -280,9 +312,26 @@ export async function exportReportToExcel({
       cell.alignment = { horizontal: idx === 1 ? 'left' : 'center', vertical: 'middle' };
     });
 
-    const productMap = new Map<string, { qty: number; sales: number; cogs: number; grossProfit: number; referralReward: number; netProfit: number }>();
+    const productMap = new Map<
+      string,
+      {
+        qty: number;
+        sales: number;
+        cogs: number;
+        grossProfit: number;
+        referralReward: number;
+        netProfit: number;
+      }
+    >();
     rows.forEach((r) => {
-      const current = productMap.get(r.product) || { qty: 0, sales: 0, cogs: 0, grossProfit: 0, referralReward: 0, netProfit: 0 };
+      const current = productMap.get(r.product) || {
+        qty: 0,
+        sales: 0,
+        cogs: 0,
+        grossProfit: 0,
+        referralReward: 0,
+        netProfit: 0
+      };
       current.qty += r.quantity;
       current.sales += r.sales;
       current.cogs += r.cogs;
@@ -350,7 +399,11 @@ export async function exportReportToExcel({
     prodTotalRow.getCell(10).numFmt = PERCENT_FORMAT;
 
     for (let c = 2; c <= 10; c++) {
-      prodTotalRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+      prodTotalRow.getCell(c).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF1F5F9' }
+      };
       prodTotalRow.getCell(c).border = { top: { style: 'thin' }, bottom: { style: 'double' } };
     }
 
@@ -462,9 +515,13 @@ export async function exportReportToExcel({
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    const productLabel = selectedProducts.length === 0
-      ? 'Semua_Produk'
-      : selectedProducts.join('-').replace(/[^a-zA-Z0-9.-]/g, '_').slice(0, 60);
+    const productLabel =
+      selectedProducts.length === 0
+        ? 'Semua_Produk'
+        : selectedProducts
+            .join('-')
+            .replace(/[^a-zA-Z0-9.-]/g, '_')
+            .slice(0, 60);
     const fileName = `Laporan_Keuangan_Penjualan_${startDate}_${endDate}_${productLabel}.xlsx`;
     const url = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');
