@@ -57,21 +57,30 @@ export async function createOrder(input: z.infer<typeof orderSchema> & { custome
       });
       const items = input.items.map((item) => {
         const raw = products.find((product) => product.id === item.productId);
-        if (!raw) throw new OrderError('Produk tidak ditemukan. Silakan periksa kembali keranjang Anda.');
+        if (!raw)
+          throw new OrderError('Produk tidak ditemukan. Silakan periksa kembali keranjang Anda.');
         const product = normalizeProductAvailability(raw);
         if (!isOrderableStatus(product.status))
-          throw new OrderError(`Mohon maaf, produk "${product.name}" saat ini sedang tidak tersedia.`);
+          throw new OrderError(
+            `Mohon maaf, produk "${product.name}" saat ini sedang tidak tersedia.`
+          );
         const variant = product.variants.find((value) => value.size === item.size);
         if (!variant?.inStock)
-          throw new OrderError(`Mohon maaf, ukuran ${item.size} untuk produk "${product.name}" saat ini tidak tersedia.`);
+          throw new OrderError(
+            `Mohon maaf, ukuran ${item.size} untuk produk "${product.name}" saat ini tidak tersedia.`
+          );
         if (raw.stockMode === 'QUANTITY') {
           const rawVariant = raw.variants.find((v) => v.size === item.size);
           const availableStock = rawVariant?.stock ?? 0;
           if (!rawVariant || availableStock < item.quantity) {
             if (availableStock <= 0) {
-              throw new OrderError(`Mohon maaf, stok untuk produk "${product.name}" (Ukuran ${item.size}) saat ini sedang habis.`);
+              throw new OrderError(
+                `Mohon maaf, stok untuk produk "${product.name}" (Ukuran ${item.size}) saat ini sedang habis.`
+              );
             }
-            throw new OrderError(`Mohon maaf, stok untuk produk "${product.name}" (Ukuran ${item.size}) tersisa ${availableStock} pcs.`);
+            throw new OrderError(
+              `Mohon maaf, stok untuk produk "${product.name}" (Ukuran ${item.size}) tersisa ${availableStock} pcs.`
+            );
           }
         }
         const colors = product.colors.length ? product.colors : [product.color];
@@ -98,11 +107,7 @@ export async function createOrder(input: z.infer<typeof orderSchema> & { custome
           }
           const priorOrder = await tx.order.findFirst({
             where: {
-              OR: [
-                { customerId: input.customerId },
-                { email },
-                { whatsapp }
-              ],
+              OR: [{ customerId: input.customerId }, { email }, { whatsapp }],
               status: { not: 'CANCELLED' },
               items: { some: { productId: item.productId } }
             }
@@ -137,14 +142,17 @@ export async function createOrder(input: z.infer<typeof orderSchema> & { custome
             orderItemsToDeduct,
             referralCode.discountMode as BenefitMode,
             referralCode.discountValue,
-            referralCode.rewardKind === 'CASH' ? referralCode.rewardMode as BenefitMode : null,
+            referralCode.rewardKind === 'CASH' ? (referralCode.rewardMode as BenefitMode) : null,
             referralCode.rewardKind === 'CASH' ? referralCode.rewardValue : null
           )
         : null;
-      const subtotal = orderItemsToDeduct.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const subtotal = orderItemsToDeduct.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
       return tx.order.create({
         data: {
-          orderNumber: `RC-${randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase()}`,
+          orderNumber: `RC-${randomUUID().replaceAll('-', '').slice(0, 8).toUpperCase()}`,
           fullName: input.fullName,
           email,
           customerId: input.customerId,
