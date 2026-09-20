@@ -72,9 +72,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
   const [releaseDate, setReleaseDate] = useState<string | null>(
     initialProduct?.releaseDate ?? null
   );
-  const [preOrderEstimate, setPreOrderEstimate] = useState(
-    initialProduct?.preOrderEstimate || ''
-  );
+  const [preOrderEstimate, setPreOrderEstimate] = useState(initialProduct?.preOrderEstimate || '');
   const [stockMode, setStockMode] = useState<StockMode>(initialProduct?.stockMode || 'QUANTITY');
   const orderLimitMode = initialProduct?.orderLimitMode || 'UNLIMITED';
   const [edition, setEdition] = useState(initialProduct?.edition || '');
@@ -149,8 +147,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
       colors.find((c) => c.name.toLowerCase() === (colorsSelected[0] || '').toLowerCase())?.hex ||
       colorHex;
     const allColorHexes = colorsSelected.map(
-      (cName) =>
-        colors.find((c) => c.name.toLowerCase() === cName.toLowerCase())?.hex || colorHex
+      (cName) => colors.find((c) => c.name.toLowerCase() === cName.toLowerCase())?.hex || colorHex
     );
 
     const payload: ProductMutationInput = {
@@ -398,16 +395,33 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                 <Label htmlFor="pre-order-estimate" className="text-xs font-bold text-foreground">
                   Estimasi Waktu Pre-Order
                 </Label>
-                <Input
-                  id="pre-order-estimate"
-                  type="text"
-                  value={preOrderEstimate}
-                  onChange={(e) => setPreOrderEstimate(e.target.value)}
-                  placeholder="Misal: 7–14 hari kerja (Kosongkan untuk default)"
-                  className="h-10 rounded-xl text-xs"
-                />
+                <Select
+                  value={preOrderEstimate || '7–14 hari kerja'}
+                  onValueChange={(val) => setPreOrderEstimate(val)}
+                >
+                  <SelectTrigger id="pre-order-estimate" className="h-10 rounded-xl text-xs">
+                    <SelectValue placeholder="Pilih Estimasi Waktu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3–5 hari kerja">3–5 Hari Kerja (Cepat)</SelectItem>
+                    <SelectItem value="5–7 hari kerja">5–7 Hari Kerja (~1 Minggu)</SelectItem>
+                    <SelectItem value="7–14 hari kerja">7–14 Hari Kerja (Standar)</SelectItem>
+                    <SelectItem value="14–21 hari kerja">14–21 Hari Kerja (2–3 Minggu)</SelectItem>
+                    <SelectItem value="30 hari kerja">30 Hari Kerja (~1 Bulan)</SelectItem>
+                    {![
+                      '3–5 hari kerja',
+                      '5–7 hari kerja',
+                      '7–14 hari kerja',
+                      '14–21 hari kerja',
+                      '30 hari kerja'
+                    ].includes(preOrderEstimate) &&
+                      preOrderEstimate && (
+                        <SelectItem value={preOrderEstimate}>{preOrderEstimate}</SelectItem>
+                      )}
+                  </SelectContent>
+                </Select>
                 <p className="text-[11px] text-muted-foreground leading-normal">
-                  Estimasi waktu pengerjaan dan persiapan kirim (default: 7–14 hari kerja).
+                  Pilih estimasi waktu produksi & pengiriman untuk produk Pre-Order ini.
                 </p>
               </div>
             )}
