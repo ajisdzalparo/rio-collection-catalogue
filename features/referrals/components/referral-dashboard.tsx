@@ -12,7 +12,7 @@ import { ReferralPartnerTable } from './referral-partner-table';
 
 interface ReferralDashboardProps {
   canManage: boolean;
-  canSettle: boolean;
+  canSettle?: boolean;
 }
 
 export function ReferralDashboard({ canManage }: ReferralDashboardProps) {

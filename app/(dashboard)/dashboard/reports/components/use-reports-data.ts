@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useOrders } from '@/hooks/use-orders';
 import type { Order } from '@/hooks/use-orders';
-import { netItemRevenues, allocateAmountByWeights } from '@/lib/referral';
+import { allocateAmountByWeights, netItemRevenues } from '@/lib/referral';
 import type {
   ReportMetrics,
   ReportGrowth,

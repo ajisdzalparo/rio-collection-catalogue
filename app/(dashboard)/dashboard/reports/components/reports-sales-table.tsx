@@ -2,13 +2,13 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
-import { ReceiptText, Tag } from 'lucide-react';
+import { ReceiptText } from 'lucide-react';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { formatIDR } from '@/lib/utils';
 import type { Order } from '@/hooks/use-orders';
-import { netItemRevenues, allocateAmountByWeights } from '@/lib/referral';
+import { allocateAmountByWeights } from '@/lib/referral';
 
 interface ReportsSalesTableProps {
   currentOrders: Order[];

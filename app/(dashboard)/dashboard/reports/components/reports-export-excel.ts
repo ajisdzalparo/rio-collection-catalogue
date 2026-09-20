@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 import type { Order } from '@/hooks/use-orders';
 import type { ReportStatus } from './types';
-import { netItemRevenues, allocateAmountByWeights } from '@/lib/referral';
+import { allocateAmountByWeights } from '@/lib/referral';
 
 interface ExportExcelParams {
   currentOrders: Order[];
