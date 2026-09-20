@@ -2,6 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import axios from 'axios';
 import {
   BookOpen,
   ArrowLeft,
@@ -198,6 +199,19 @@ function JournalEditorContent() {
   };
 
   const handleSave = async () => {
+    if (!title.trim()) {
+      toast.error('Judul artikel wajib diisi.');
+      return;
+    }
+    if (!imageUrl.trim()) {
+      toast.error('Cover Foto artikel wajib diunggah.');
+      return;
+    }
+    if (!contentHtml.trim()) {
+      toast.error('Konten artikel wajib diisi.');
+      return;
+    }
+
     const slug = getSlug(title);
     const paragraphs = htmlToParagraphs(contentHtml);
 
@@ -228,15 +242,18 @@ function JournalEditorContent() {
         toast.success(`Artikel blog "${payload.title}" berhasil diterbitkan.`);
       }
       router.push('/dashboard/journal');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to save article:', err);
-      toast.error('Gagal menyimpan artikel blog.');
+      let errorMsg = 'Gagal menyimpan artikel blog.';
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      }
+      toast.error(errorMsg);
     }
   };
 
   const isEditing = !!articleId;
   const isSaving = isCreating || isUpdating;
-  const canSave = title.trim() && excerpt.trim() && contentHtml.trim();
 
   if (isLoading && articleId) {
     return <CmsPageSkeleton variant="form" />;
@@ -279,10 +296,10 @@ function JournalEditorContent() {
           </button>
           <Button
             onClick={handleSave}
-            disabled={!canSave || isSaving}
+            disabled={isSaving}
             className={cn(
               'gap-2 h-10 px-5 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs shadow-md transition-all duration-200',
-              canSave && !isSaving
+              !isSaving
                 ? 'bg-foreground text-background hover:bg-foreground/90 hover:shadow-lg hover:scale-[1.01]'
                 : 'bg-muted text-muted-foreground border border-border/40'
             )}
@@ -460,7 +477,7 @@ function JournalEditorContent() {
 
             <div className="space-y-1.5">
               <Label htmlFor="art-img" className="text-xs font-bold text-foreground">
-                Cover Foto
+                Cover Foto <span className="text-destructive">*</span>
               </Label>
               <ImageUpload
                 value={imageUrl}

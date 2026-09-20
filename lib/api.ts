@@ -231,14 +231,24 @@ export async function submitOrder(orderPayload: {
   items: Array<{ productId: string; color?: string; size: string; quantity: number }>;
 }, customerToken?: string) {
   const baseUrl = getBaseUrl();
-  const { data: result } = await axios.post(`${baseUrl}/v1/orders`, orderPayload, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(customerToken ? { Authorization: `Bearer ${customerToken}` } : {})
+  try {
+    const { data: result } = await axios.post(`${baseUrl}/v1/orders`, orderPayload, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(customerToken ? { Authorization: `Bearer ${customerToken}` } : {})
+      }
+    });
+    if (result.status !== 'success' && !result.data?.orderNumber) {
+      throw new Error(result.message || 'Pesanan gagal dikirim. Silakan coba lagi.');
     }
-  });
-  if (result.status !== 'success' && !result.data?.orderNumber) {
-    throw new Error(result.message || 'Pesanan gagal dikirim. Silakan coba lagi.');
+    return result;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message;
+      if (typeof message === 'string' && message.trim()) {
+        throw new Error(message);
+      }
+    }
+    throw error;
   }
-  return result;
 }

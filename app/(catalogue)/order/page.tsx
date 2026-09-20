@@ -665,9 +665,10 @@ function OrderContent() {
       sessionStorage.removeItem(REFERRAL_STORAGE_KEY);
       router.push(`/order/confirmation/${orderNum}`);
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : 'Pesanan gagal dikirim. Silakan coba lagi.'
-      );
+      const message =
+        error instanceof Error ? error.message : 'Pesanan gagal dikirim. Silakan coba lagi.';
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

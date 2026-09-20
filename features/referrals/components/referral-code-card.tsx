@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Copy, Gift, Check, Trash2 } from 'lucide-react';
+import { Copy, Gift, Check, Trash2, Link2 } from 'lucide-react';
 import { formatIDR } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,8 @@ export function ReferralCodeCard({
 }: ReferralCodeCardProps) {
   const actions = useReferralActions();
   const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productId, setProductId] = useState('');
   const [size, setSize] = useState('');
@@ -106,13 +107,24 @@ export function ReferralCodeCard({
     }
   }
 
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(code.code);
+      setCopiedCode(true);
+      toast.success(`Kode referral "${code.code}" berhasil disalin.`);
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch {
+      toast.error('Gagal menyalin kode.');
+    }
+  }
+
   async function copyLink() {
     try {
       const shareUrl = `${window.location.origin}/?ref=${code.code}`;
       await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
+      setCopiedLink(true);
       toast.success('Link referral berhasil disalin.');
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopiedLink(false), 2000);
     } catch {
       toast.error('Gagal menyalin link.');
     }
@@ -162,15 +174,32 @@ export function ReferralCodeCard({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={copyLink}
+                onClick={copyCode}
                 className="h-8 gap-1.5 text-xs font-semibold"
+                title={`Salin kode ${code.code}`}
               >
-                {copied ? (
+                {copiedCode ? (
                   <Check className="h-3.5 w-3.5 text-emerald-500" />
                 ) : (
                   <Copy className="h-3.5 w-3.5" />
                 )}
-                <span>{copied ? 'Tersalin' : 'Salin Link'}</span>
+                <span>{copiedCode ? 'Tersalin' : 'Salin Kode'}</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={copyLink}
+                className="h-8 gap-1.5 text-xs font-semibold"
+                title="Salin Link Referral"
+              >
+                {copiedLink ? (
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                ) : (
+                  <Link2 className="h-3.5 w-3.5" />
+                )}
+                <span>{copiedLink ? 'Tersalin' : 'Salin Link'}</span>
               </Button>
 
               {canDeleteCode && (
