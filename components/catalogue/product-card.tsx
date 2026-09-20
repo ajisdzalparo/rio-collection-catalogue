@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn, formatPrice } from '@/lib/utils';
-import { StatusBadge } from '@/components/catalogue/status-badge';
 import { CountdownTimer } from '@/components/catalogue/countdown-timer';
 import type { Product, ProductStatus } from '@/types/catalogue.types';
 import { SafeImage } from '@/components/shared';

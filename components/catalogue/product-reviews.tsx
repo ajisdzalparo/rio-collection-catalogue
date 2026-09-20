@@ -723,9 +723,12 @@ export function ProductReviews({ productSlug, productName }: ProductReviewsProps
               </div>
             ) : (
               <div className="relative max-w-3xl max-h-[85vh] w-auto h-auto rounded-xl overflow-hidden shadow-2xl border border-white/10">
-                <img
+                <Image
                   src={lightboxMedia.url}
                   alt={`Review media from ${lightboxMedia.customerName || 'customer'}`}
+                  width={1200}
+                  height={1200}
+                  unoptimized
                   className="max-h-[85vh] w-auto object-contain select-none"
                 />
               </div>
