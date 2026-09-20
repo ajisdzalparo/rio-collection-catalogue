@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, ArrowRight, Loader2, CheckCircle2, User, Phone, Sparkles } from 'lucide-react';
+import { Mail, ArrowRight, Loader2, CheckCircle2, User, Phone } from 'lucide-react';
 import { useCustomerStore } from '@/lib/customer-store';
 import { cn } from '@/lib/utils';
 import {
@@ -143,13 +143,12 @@ export default function CustomerLoginPage() {
               type="button"
               onClick={() => setAuthMode('REGISTER')}
               className={cn(
-                'py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-all cursor-pointer text-center flex items-center justify-center gap-1.5',
+                'py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-all cursor-pointer text-center',
                 authMode === 'REGISTER'
                   ? 'bg-(--cat-charcoal) text-white shadow-2xs'
                   : 'text-(--cat-on-surface-variant) hover:text-(--cat-on-surface)'
               )}
             >
-              <Sparkles size={12} className={authMode === 'REGISTER' ? 'text-amber-300' : 'text-amber-600'} />
               Daftar Baru
             </button>
           </div>
