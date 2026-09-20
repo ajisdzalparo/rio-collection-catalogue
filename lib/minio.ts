@@ -5,7 +5,10 @@ const minioEndpoint = process.env.MINIO_ENDPOINT || 'http://localhost:9000';
 const minioAccessKey = process.env.MINIO_ACCESS_KEY || 'minioadmin';
 const minioSecretKey = process.env.MINIO_SECRET_KEY || 'minioadmin';
 export const minioBucketName = process.env.MINIO_BUCKET_NAME || 'rio-collection-bucket';
-export const minioPublicUrl = process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || `${minioEndpoint}/${minioBucketName}`;
+const rawPublicUrl = (process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || minioEndpoint).replace(/\/+$/, '');
+export const minioPublicUrl = rawPublicUrl.includes(minioBucketName)
+  ? rawPublicUrl
+  : `${rawPublicUrl}/${minioBucketName}`;
 const IMAGE_PREFIX = 'images/';
 
 const minioRegion = process.env.MINIO_REGION || 'us-east-1';
