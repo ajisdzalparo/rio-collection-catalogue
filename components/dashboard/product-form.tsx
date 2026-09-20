@@ -22,7 +22,12 @@ import { ImageUpload, MultiImageUpload } from '@/components/shared/image-upload'
 import { ReleaseScheduleField } from '@/components/dashboard/release-schedule-field';
 import { useProducts } from '@/hooks/use-products';
 import { useJournals } from '@/hooks/use-journals';
-import { useCategoriesQuery, useColorsQuery, useSizesQuery, useMaterialsQuery } from '@/hooks/use-master-data';
+import {
+  useCategoriesQuery,
+  useColorsQuery,
+  useSizesQuery,
+  useMaterialsQuery
+} from '@/hooks/use-master-data';
 import type {
   Product,
   ProductMutationInput,
@@ -270,7 +275,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                 <RupiahInput
                   value={price}
                   onValueChange={setPrice}
-                  placeholder="Rp 250.000"
+                  placeholder="250.000"
                   className="h-10 text-xs font-bold rounded-xl"
                 />
               </div>
@@ -288,7 +293,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                 <RupiahInput
                   value={hpp}
                   onValueChange={setHpp}
-                  placeholder="Rp 180.000"
+                  placeholder="180.000"
                   className="h-10 text-xs font-bold rounded-xl"
                 />
               </div>
