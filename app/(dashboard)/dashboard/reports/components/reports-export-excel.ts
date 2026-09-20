@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 import type { Order } from '@/hooks/use-orders';
 import type { ReportStatus } from './types';
+import { netItemRevenues } from '@/lib/referral';
 
 interface ExportExcelParams {
   currentOrders: Order[];
@@ -49,14 +50,15 @@ function buildAccountingRows(
   let usesDefaultHpp = false;
 
   orders.forEach((order) => {
-    const items = order.items.filter(
-      (item) => selectedProducts.length === 0 || selectedProducts.includes(item.name)
+    const revenues = netItemRevenues(order.items, order.discountAmount ?? 0);
+    const items = order.items.map((item, index) => ({ item, index })).filter(
+      ({ item }) => selectedProducts.length === 0 || selectedProducts.includes(item.name)
     );
 
-    items.forEach((item, itemIndex) => {
+    items.forEach(({ item, index }, itemIndex) => {
       const unitHpp = item.cogs ?? DEFAULT_HPP;
       if (item.cogs === undefined) usesDefaultHpp = true;
-      const sales = item.price * item.quantity;
+      const sales = revenues[index];
       const cogs = unitHpp * item.quantity;
       const shippingFee = selectedProducts.length === 0 && itemIndex === 0
         ? order.shippingFee ?? 0
@@ -333,7 +335,7 @@ export async function exportReportToExcel({
       { key: 'product', width: 34 },
       { key: 'size', width: 10 },
       { key: 'quantity', width: 10 },
-      { key: 'unitPrice', width: 16 },
+      { key: 'unitPrice', width: 22 },
       { key: 'sales', width: 18 },
       { key: 'cogs', width: 18 },
       { key: 'grossProfit', width: 18 },
@@ -360,7 +362,7 @@ export async function exportReportToExcel({
       'Produk',
       'Ukuran',
       'Qty',
-      'Harga Jual',
+      'Harga Sebelum Diskon',
       'Penjualan Produk',
       'HPP',
       'Laba Kotor',

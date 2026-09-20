@@ -19,6 +19,7 @@ export type ActivityModule =
   | 'JOURNALS'
   | 'SETTINGS'
   | 'FINANCE'
+  | 'REFERRALS'
   | 'RBAC';
 
 interface RecordActivityInput {

@@ -32,6 +32,11 @@ export interface RolePermissions {
   // Reports
   'reports.view'?: boolean;
 
+  // Referral partners, codes, and rewards
+  'referrals.view'?: boolean;
+  'referrals.manage'?: boolean;
+  'referrals.settle'?: boolean;
+
   // Platform finance — Super Admin only
   'platform.finance.view'?: boolean;
 

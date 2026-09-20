@@ -188,7 +188,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           const commissionBaseAmount = existingOrder.items.reduce(
             (sum, item) => sum + item.price * item.quantity,
             0
-          );
+          ) - existingOrder.discountAmount;
           const commissionMode = financeSettings.commissionMode === 'NOMINAL' ? 'NOMINAL' : 'PERCENTAGE';
           const commissionValue = financeSettings.commissionRate;
           commissionUpdate = {

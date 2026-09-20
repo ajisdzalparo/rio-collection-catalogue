@@ -14,7 +14,7 @@ function createPrismaClient(): PrismaClient {
 let prismaInstance = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
-  if (!('materialMaster' in prismaInstance)) {
+  if (!('materialMaster' in prismaInstance) || !('referralCode' in prismaInstance)) {
     prismaInstance = createPrismaClient();
   }
   globalForPrisma.prisma = prismaInstance;

@@ -11,7 +11,8 @@ import {
   ScrollText,
   type LucideIcon,
   MessageSquare,
-  Boxes
+  Boxes,
+  Gift
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -80,6 +81,11 @@ export const navigation: NavigationItem[] = [
     title: 'Laporan Penjualan',
     href: '/dashboard/reports',
     icon: BarChart3
+  },
+  {
+    title: 'Referral',
+    href: '/dashboard/referrals',
+    icon: Gift
   },
   {
     title: 'Super Admin Finance',

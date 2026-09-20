@@ -143,8 +143,30 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
     ]
   },
   {
+    id: 'referrals',
+    menuName: '9. Referral & Partner',
+    description: 'Akses performa partner, kode referral, dan penyelesaian reward',
+    actions: [
+      {
+        key: 'referrals.view',
+        label: 'Lihat Referral',
+        description: 'Melihat partner, kode, order referral, dan performa penjualan'
+      },
+      {
+        key: 'referrals.manage',
+        label: 'Kelola Partner & Kode',
+        description: 'Membuat partner dan kode serta mengaktifkan atau menonaktifkan kode'
+      },
+      {
+        key: 'referrals.settle',
+        label: 'Selesaikan Reward',
+        description: 'Mencatat pembayaran reward uang dan penyerahan hadiah kaos'
+      }
+    ]
+  },
+  {
     id: 'users',
-    menuName: '9. Pengguna & Keamanan (RBAC)',
+    menuName: '10. Pengguna & Keamanan (RBAC)',
     description: 'Akses pengelolaan akun staf, hak akses role, & reset password',
     actions: [
       {
@@ -171,7 +193,7 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   },
   {
     id: 'activity',
-    menuName: '10. Activity Log',
+    menuName: '11. Activity Log',
     description: 'Riwayat aktivitas penting yang dilakukan pengelola CMS',
     actions: [
       {
@@ -201,6 +223,9 @@ export const DEFAULT_ADMIN_PERMISSIONS: RolePermissions = {
   'settings.view': true,
   'settings.manage': true,
   'reports.view': true,
+  'referrals.view': false,
+  'referrals.manage': false,
+  'referrals.settle': false,
   'users.view': true,
   'users.manage': true,
   'users.reset_password': true,

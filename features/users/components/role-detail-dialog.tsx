@@ -46,7 +46,7 @@ export function RoleDetailDialog({
     0
   );
 
-  const isFullAccess = activeCount >= totalActionsCount || role.name === 'Admin';
+  const isFullAccess = activeCount >= totalActionsCount;
 
   const handleEditClick = () => {
     onOpenChange(false);
@@ -80,7 +80,7 @@ export function RoleDetailDialog({
           </DialogDescription>
 
           <div className="flex items-center gap-3 pt-2">
-            <Badge variant={isFullAccess ? 'default' : 'secondary'} className="text-xs font-bold">
+            <Badge variant="outline" className={cn('text-xs font-bold', activeCount > 0 && 'border-zinc-900/20 bg-zinc-900/10 text-zinc-800 dark:border-zinc-100/20 dark:bg-zinc-100/10 dark:text-zinc-200')}>
               <ShieldCheck className="h-3.5 w-3.5 mr-1 inline" />
               {isFullAccess ? 'Akses Penuh Seluruh Sistem' : `${activeCount} / ${totalActionsCount} Akses Aktif`}
             </Badge>

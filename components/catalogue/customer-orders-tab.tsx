@@ -60,6 +60,10 @@ function OrderCard({ order }: { order: CustomerOrder }) {
       </div>
 
       {/* Footer Total */}
+      {Boolean(order.discountAmount) && <div className="flex justify-between border-t border-(--cat-stone)/50 pt-3 font-hanken text-[12px] text-green-700">
+        <span>Diskon referral ({order.referralCodeSnapshot})</span>
+        <span>−{formatPrice(order.discountAmount ?? 0)}</span>
+      </div>}
       <div className="pt-3 border-t border-(--cat-stone)/50 flex justify-between items-center">
         <span className="font-hanken text-[12px] text-(--cat-on-surface-variant)">
           Total Pembayaran

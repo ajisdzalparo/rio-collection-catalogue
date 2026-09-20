@@ -226,6 +226,7 @@ export async function submitOrder(orderPayload: {
   totalPrice?: number;
   shippingFee?: number;
   otpCode?: string;
+  referralCode?: string;
   shipping: { destination: string; courier: string; service: string };
   items: Array<{ productId: string; color?: string; size: string; quantity: number }>;
 }, customerToken?: string) {

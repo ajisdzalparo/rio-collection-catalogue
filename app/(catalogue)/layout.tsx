@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { StoreSettingsInitializer } from '@/components/catalogue/store-settings-initializer';
 import type { StoreSettings } from '@/hooks/use-store-settings';
 import { connection } from 'next/server';
+import { Suspense } from 'react';
+import { ReferralLinkCapture } from '@/components/catalogue/referral-link-capture';
 
 export default async function CatalogueLayout({ children }: { children: React.ReactNode }) {
   await connection();
@@ -17,6 +19,7 @@ export default async function CatalogueLayout({ children }: { children: React.Re
       className="relative flex min-h-screen flex-col font-hanken overflow-x-hidden bg-(--cat-surface)"
     >
       <StoreSettingsInitializer settings={settings as unknown as StoreSettings} />
+      <Suspense fallback={null}><ReferralLinkCapture /></Suspense>
       <div className="pointer-events-none absolute -top-40 left-1/2 h-125 w-125 -translate-x-1/2 rounded-full bg-linear-to-tr from-(--cat-stone)/15 via-neutral-100/5 to-transparent blur-3xl opacity-60 z-0" />
       <div className="pointer-events-none absolute top-1/3 right-0 h-150 w-150 rounded-full bg-linear-to-br from-neutral-200/10 via-(--cat-stone)/10 to-transparent blur-3xl opacity-50 z-0" />
       <div className="pointer-events-none absolute bottom-40 left-1/4 h-125 w-125 rounded-full bg-linear-to-tr from-(--cat-stone)/15 via-neutral-100/5 to-transparent blur-3xl opacity-60 z-0" />

@@ -5,6 +5,7 @@ import { DataTable, type Column } from '@/components/shared/data-table/data-tabl
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
 import { formatIDR } from '@/lib/utils';
 import type { Order } from '@/hooks/use-orders';
+import { netItemRevenues } from '@/lib/referral';
 
 interface ReportsSalesTableProps {
   currentOrders: Order[];
@@ -32,16 +33,18 @@ export function ReportsSalesTable({
 }: ReportsSalesTableProps) {
   const rows = useMemo<ReportTableRow[]>(
     () =>
-      currentOrders.flatMap((order) =>
-        order.items
+      currentOrders.flatMap((order) => {
+        const revenues = netItemRevenues(order.items, order.discountAmount ?? 0);
+        return order.items
+          .map((item, index) => ({ item, index }))
           .filter(
-            (item) => selectedProducts.length === 0 || selectedProducts.includes(item.name)
+            ({ item }) => selectedProducts.length === 0 || selectedProducts.includes(item.name)
           )
-          .map((item, itemIndex) => {
-            const sales = item.price * item.quantity;
+          .map(({ item, index }) => {
+            const sales = revenues[index];
             const cogs = (item.cogs ?? 180000) * item.quantity;
             return {
-              id: `${order.id}-${itemIndex}`,
+              id: `${order.id}-${index}`,
               orderId: order.id,
               createdAt: order.createdAt,
               orderNumber: order.orderNumber,
@@ -55,7 +58,7 @@ export function ReportsSalesTable({
               status: order.status
             };
           })
-      ),
+      }),
     [currentOrders, selectedProducts]
   );
 

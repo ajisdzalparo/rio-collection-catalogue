@@ -118,6 +118,7 @@ export async function GET(request: Request) {
         commissionModeSnapshot: true,
         commissionBaseAmount: true,
         commissionAmount: true,
+        discountAmount: true,
         items: {
           select: { price: true, quantity: true }
         }
@@ -125,7 +126,7 @@ export async function GET(request: Request) {
     });
 
     const transactions = orders.map((order) => {
-      const calculatedBase = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const calculatedBase = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0) - order.discountAmount;
       const baseAmount = order.commissionBaseAmount > 0 ? order.commissionBaseAmount : calculatedBase;
       const commissionMode = order.commissionModeSnapshot === 'NOMINAL' ? 'NOMINAL' : 'PERCENTAGE';
       const commissionValue = order.commissionRateSnapshot;

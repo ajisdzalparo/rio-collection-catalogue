@@ -14,6 +14,7 @@ export interface SelectOption {
 }
 
 export interface FormSelectProps {
+  id?: string;
   label?: string;
   error?: string;
   value?: string;
@@ -26,6 +27,7 @@ export interface FormSelectProps {
 }
 
 export function FormSelect({
+  id,
   label,
   error,
   value,
@@ -38,7 +40,7 @@ export function FormSelect({
 }: FormSelectProps) {
   return (
     <div className="space-y-1.5 w-full">
-      {label && <label className="text-xs font-bold text-foreground">{label}</label>}
+      {label && <label htmlFor={id} className="text-xs font-bold text-foreground">{label}</label>}
       <Select
         value={value}
         defaultValue={defaultValue}
@@ -49,7 +51,7 @@ export function FormSelect({
         }}
         disabled={disabled}
       >
-        <SelectTrigger className={cn(error && 'border-destructive', className)}>
+        <SelectTrigger id={id} className={cn(error && 'border-destructive', className)}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

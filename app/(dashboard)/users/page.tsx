@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import {
@@ -8,7 +8,6 @@ import {
   UserFormDialog,
   RoleFormDialog,
   RoleTable,
-  useRbacStore,
   useRolesQuery,
   type UserRole
 } from '@/features/users';
@@ -38,14 +37,7 @@ function UsersPageContent() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
 
-  const { data: mockRoles, isLoading: rolesLoading } = useRolesQuery();
-  const { setRoles } = useRbacStore();
-
-  useEffect(() => {
-    if (mockRoles && mockRoles.length > 0) {
-      setRoles(mockRoles);
-    }
-  }, [mockRoles, setRoles]);
+  const { isLoading: rolesLoading } = useRolesQuery();
 
   const handleOpenAddRole = () => {
     setShowRoleDialog(true);

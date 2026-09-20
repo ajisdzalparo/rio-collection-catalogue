@@ -55,3 +55,4 @@ tshirt_catalogue_order_management_prd.md
 # manual sql scripts
 *.sql
 prisma/*.sql
+!prisma/migrations/**/*.sql

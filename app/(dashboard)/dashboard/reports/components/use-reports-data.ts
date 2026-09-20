@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useOrders } from '@/hooks/use-orders';
 import type { Order } from '@/hooks/use-orders';
+import { netItemRevenues } from '@/lib/referral';
 import type {
   ReportMetrics,
   ReportGrowth,
@@ -129,10 +130,11 @@ export function useReportsData() {
       let totalQty = 0;
 
       orderList.forEach((o) => {
-        o.items.forEach((item) => {
+        const revenues = netItemRevenues(o.items, o.discountAmount ?? 0);
+        o.items.forEach((item, index) => {
           if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
 
-          const rev = item.price * item.quantity;
+          const rev = revenues[index];
           const hpp = (item.cogs ?? 180000) * item.quantity;
           revenue += rev;
           totalHpp += hpp;
@@ -175,11 +177,12 @@ export function useReportsData() {
     const map = new Map<string, TopSellingProduct>();
 
     currentOrders.forEach((o) => {
-      o.items.forEach((item) => {
+      const revenues = netItemRevenues(o.items, o.discountAmount ?? 0);
+      o.items.forEach((item, index) => {
         if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
 
         const key = item.name;
-        const rev = item.price * item.quantity;
+        const rev = revenues[index];
         const hpp = (item.cogs ?? 180000) * item.quantity;
         const profit = rev - hpp;
 
@@ -229,9 +232,10 @@ export function useReportsData() {
       currentOrders.forEach((o) => {
         const orderDateStr = new Date(o.createdAt).toLocaleDateString('id-ID');
         if (orderDateStr === keyDateStr) {
-          o.items.forEach((item) => {
+          const revenues = netItemRevenues(o.items, o.discountAmount ?? 0);
+          o.items.forEach((item, index) => {
             if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
-            const rev = item.price * item.quantity;
+            const rev = revenues[index];
             const hpp = (item.cogs ?? 180000) * item.quantity;
             dailyRevenue += rev;
             dailyProfit += rev - hpp;
@@ -243,9 +247,10 @@ export function useReportsData() {
         previousOrders.forEach((o) => {
           const orderDateStr = new Date(o.createdAt).toLocaleDateString('id-ID');
           if (orderDateStr === prevKeyDateStr) {
-            o.items.forEach((item) => {
+            const revenues = netItemRevenues(o.items, o.discountAmount ?? 0);
+            o.items.forEach((item, index) => {
               if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
-              prevDailyRevenue += item.price * item.quantity;
+              prevDailyRevenue += revenues[index];
             });
           }
         });

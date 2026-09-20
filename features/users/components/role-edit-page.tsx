@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, KeyRound, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { useRbacStore } from '../hooks/use-rbac';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRolesQuery } from '../hooks/use-rbac';
 import { useRoleMutations } from '../hooks/use-role-mutations';
 import type { UserRole } from '../types/roles.types';
 import { RolePermissionForm, type RoleFormValues } from './role-permission-form';
@@ -18,7 +19,7 @@ interface RoleEditPageProps {
 
 export function RoleEditPage({ roleName }: RoleEditPageProps) {
   const router = useRouter();
-  const { roles } = useRbacStore();
+  const { data: roles = [], isLoading } = useRolesQuery();
   const { update } = useRoleMutations();
 
   const currentRole = useMemo<UserRole | undefined>(
@@ -34,6 +35,8 @@ export function RoleEditPage({ roleName }: RoleEditPageProps) {
     toast.success(`Master role "${name}" berhasil diperbarui.`);
     router.push('/users?tab=rbac');
   };
+
+  if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-96 w-full rounded-xl" /></div>;
 
   if (!currentRole) {
     return (
@@ -82,7 +85,7 @@ export function RoleEditPage({ roleName }: RoleEditPageProps) {
 
       <section className="rounded-2xl border border-border/40 bg-card p-4 shadow-xs sm:p-6">
         {isSuperAdminRole(currentRole.name) ? (
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
+          <div className="rounded-xl border border-zinc-900/20 bg-zinc-900/5 dark:border-zinc-100/20 dark:bg-zinc-100/5 p-6 text-center">
             <h2 className="text-base font-bold text-foreground">Super Admin selalu full access</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Role sistem ini dikunci agar akun Super Admin tidak kehilangan akses platform.

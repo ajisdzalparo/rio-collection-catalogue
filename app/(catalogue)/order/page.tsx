@@ -18,6 +18,11 @@ import { isOrderableStatus } from '@/lib/product-availability';
 import { withActionLoading } from '@/hooks/use-action-loading';
 import { toast } from 'sonner';
 import { parseEnabledCourierCodes } from '@/lib/couriers';
+import { normalizeReferralCode, REFERRAL_STORAGE_KEY } from '@/lib/referral';
+import { useReferralQuote } from '@/hooks/use-referral-quote';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ShippingOption {
   key: string;
@@ -33,6 +38,7 @@ interface ShippingOption {
 function OrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const linkReferralCode = searchParams.get('ref');
   const isCartMode = searchParams.get('mode') === 'cart';
   const sizeParam = searchParams.get('size');
   const colorParam = searchParams.get('color');
@@ -76,6 +82,22 @@ function OrderContent() {
 
   // OTP Verification State
   const [otpCode, setOtpCode] = useState('');
+  const [referralInput, setReferralInput] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralInitialized, setReferralInitialized] = useState(false);
+  useEffect(() => {
+    if (referralInitialized) return;
+    const frame = window.requestAnimationFrame(() => {
+      localStorage.removeItem(REFERRAL_STORAGE_KEY);
+      const value = linkReferralCode || sessionStorage.getItem(REFERRAL_STORAGE_KEY) || '';
+      sessionStorage.removeItem(REFERRAL_STORAGE_KEY);
+      const normalized = normalizeReferralCode(value);
+      setReferralInput(normalized);
+      setReferralCode(normalized);
+      setReferralInitialized(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [linkReferralCode, referralInitialized]);
   const sendOrderOtpMutation = useSendOrderOtp();
   const verifyOrderOtpMutation = useVerifyOrderOtp();
   const isSendingOtp = sendOrderOtpMutation.isPending;
@@ -277,6 +299,17 @@ function OrderContent() {
   const subtotal = useMemo(() => {
     return orderItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   }, [orderItems]);
+  const quoteItems = useMemo(() => orderItems.map((item) => ({ productId: item.productId, quantity: item.quantity })), [orderItems]);
+  const referralQuote = useReferralQuote(referralCode, quoteItems);
+  const referralValid = !referralCode || (referralQuote.isSuccess && referralQuote.data.subtotal === subtotal);
+  const referralReady = referralInitialized && referralValid && normalizeReferralCode(referralInput) === referralCode;
+  const discountAmount = referralValid ? referralQuote.data?.discountAmount ?? 0 : 0;
+
+  const applyReferral = () => {
+    const code = normalizeReferralCode(referralInput);
+    setReferralInput(code);
+    setReferralCode(code);
+  };
 
   const totalItemCount = useMemo(() => {
     return orderItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -562,7 +595,7 @@ function OrderContent() {
 
   const selectedRate = rajaRates.find((rate) => rate.key === formData.courierService);
   const shippingFee = selectedRate?.cost || 0;
-  const totalPrice = subtotal + shippingFee;
+  const totalPrice = subtotal - discountAmount + shippingFee;
 
   const isEmailVerified =
     isOtpVerified || Boolean(isAuthenticated && customer && customer.email === formData.email);
@@ -605,6 +638,7 @@ function OrderContent() {
               totalPrice,
               shippingFee,
               otpCode: isOtpVerified ? otpCode || '000000' : undefined,
+              referralCode: referralCode || undefined,
               shipping: {
                 destination: selectedRate.destination,
                 courier: selectedRate.courierCode,
@@ -628,6 +662,7 @@ function OrderContent() {
       }
 
       const orderNum = res.data.orderNumber;
+      sessionStorage.removeItem(REFERRAL_STORAGE_KEY);
       router.push(`/order/confirmation/${orderNum}`);
     } catch (error) {
       setSubmitError(
@@ -640,6 +675,7 @@ function OrderContent() {
 
   const isValid =
     orderItems.length > 0 &&
+    referralReady &&
     !!selectedRate &&
     !isShippingLoading &&
     !!formData.fullName.trim() &&
@@ -730,6 +766,26 @@ function OrderContent() {
 
               {/* Totals Breakdown */}
               <div className="mt-4 pt-4 border-t border-(--cat-stone) space-y-2.5">
+                <div>
+                  <label htmlFor="referral-code" className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    Kode referral / promo
+                  </label>
+                  <div className="flex gap-2">
+                    <Input id="referral-code" type="text" maxLength={20} value={referralInput}
+                      onChange={(event) => setReferralInput(event.target.value.toUpperCase())}
+                      className="min-w-0 flex-1 h-10 rounded-none px-3 font-hanken text-[13px] font-normal bg-(--cat-surface) border-(--cat-stone) shadow-none text-(--cat-on-surface) focus-visible:border-(--cat-charcoal)"
+                      placeholder="Masukkan kode" />
+                    <Button type="button" onClick={applyReferral}
+                      className="px-3 h-10 rounded-none bg-(--cat-charcoal) hover:bg-(--cat-charcoal) text-white font-hanken text-[11px] uppercase font-semibold shadow-none">
+                      {referralInput.trim() ? 'Pakai' : 'Hapus'}
+                    </Button>
+                  </div>
+                  {referralCode && referralQuote.isFetching && <div role="status" aria-label="Memeriksa kode referral" className="mt-2"><Skeleton className="h-3 w-36 rounded-none bg-(--cat-stone)" /></div>}
+                  {referralCode && referralQuote.isError && <p className="mt-1 text-xs text-red-600" role="alert">{referralQuote.error.message}</p>}
+                  {referralCode && referralQuote.isSuccess && referralQuote.data.subtotal !== subtotal && <p className="mt-1 text-xs text-red-600" role="alert">Harga produk berubah. Muat ulang checkout.</p>}
+                  {referralCode && referralValid && referralQuote.isSuccess && <p className="mt-1 text-xs text-green-700">Kode {referralCode} aktif.</p>}
+                  {normalizeReferralCode(referralInput) !== referralCode && <p className="mt-1 text-xs text-amber-700">Klik Pakai untuk menerapkan perubahan kode.</p>}
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="font-hanken text-[13px] text-(--cat-on-surface-variant)">
                     Subtotal Produk
@@ -738,6 +794,11 @@ function OrderContent() {
                     {formatPrice(subtotal)}
                   </span>
                 </div>
+
+                {discountAmount > 0 && <div className="flex items-center justify-between text-green-700">
+                  <span className="font-hanken text-[13px]">Diskon referral ({referralCode})</span>
+                  <span className="font-hanken text-[14px] font-semibold tabular-nums">−{formatPrice(discountAmount)}</span>
+                </div>}
 
                 <div className="flex items-start justify-between">
                   <span className="font-hanken text-[13px] text-(--cat-on-surface-variant) flex items-center gap-1.5">

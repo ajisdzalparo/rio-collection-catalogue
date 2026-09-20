@@ -215,6 +215,69 @@ model Customer {
   @@index([whatsapp])
 }
 
+model ReferralPartner {
+  id        String                 @id @default(cuid())
+  name      String
+  whatsapp  String?
+  notes     String?
+  codes     ReferralCode[]
+  payouts   ReferralPayout[]
+  gifts     ReferralGiftDelivery[]
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+}
+
+model ReferralCode {
+  id             String                 @id @default(cuid())
+  code           String                 @unique
+  partnerId      String
+  partner        ReferralPartner        @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  isActive       Boolean                @default(true)
+  discountMode   String                 // PERCENTAGE, NOMINAL
+  discountValue  Int
+  rewardKind     String                 // CASH, SHIRT
+  rewardMode     String?                // PERCENTAGE, NOMINAL for CASH
+  rewardValue    Int?                   // Cash reward per order
+  giftEveryUnits Int?                   // One shirt for each completed unit target
+  orders         Order[]
+  gifts          ReferralGiftDelivery[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([partnerId])
+}
+
+model ReferralPayout {
+  id        String          @id @default(cuid())
+  partnerId String
+  partner   ReferralPartner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  amount    Int
+  note      String?
+  paidAt    DateTime        @default(now())
+  createdAt DateTime        @default(now())
+  orders    Order[]
+
+  @@index([partnerId, paidAt])
+}
+
+model ReferralGiftDelivery {
+  id          String          @id @default(cuid())
+  partnerId   String
+  partner     ReferralPartner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  codeId      String
+  code        ReferralCode    @relation(fields: [codeId], references: [id], onDelete: Restrict)
+  productId   String
+  productName String
+  size        String
+  quantity    Int
+  unitCogs    Int?
+  note        String?
+  deliveredAt DateTime        @default(now())
+
+  @@index([codeId, deliveredAt])
+  @@index([partnerId])
+}
+
 model OtpVerification {
   id        String   @id @default(cuid())
   email     String
@@ -269,6 +332,20 @@ model Order {
   refundProofUrl            String?
   shippingProofUrl          String?
   totalPrice                Int
+  discountAmount            Int         @default(0)
+  referralCodeId            String?
+  referralCode              ReferralCode? @relation(fields: [referralCodeId], references: [id], onDelete: Restrict)
+  referralCodeSnapshot      String?
+  referralPartnerSnapshot   String?
+  referralDiscountMode      String?
+  referralDiscountValue     Int?
+  referralRewardKind        String?
+  referralRewardMode        String?
+  referralRewardValue       Int?
+  referralGiftEveryUnits    Int?
+  referralRewardAmount      Int         @default(0)
+  referralPayoutId          String?
+  referralPayout            ReferralPayout? @relation(fields: [referralPayoutId], references: [id], onDelete: Restrict)
   commissionModeSnapshot    String      @default("PERCENTAGE")
   commissionRateSnapshot    Int         @default(20)
   commissionBaseAmount      Int         @default(0)
@@ -282,6 +359,8 @@ model Order {
   @@index([createdAt])
   @@index([status])
   @@index([customerId])
+  @@index([referralCodeId, status])
+  @@index([referralPayoutId])
 }
 
 model OrderItem {

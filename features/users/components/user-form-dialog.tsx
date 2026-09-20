@@ -19,7 +19,7 @@ import { Loader2 } from 'lucide-react';
 import { userSchema, type UserFormValues } from '../schemas/schema';
 import { useCreateUserMutation } from '../api/create-user';
 import { useUpdateUser } from '../hooks/use-update-user';
-import { useRbac, useRbacStore } from '../hooks/use-rbac';
+import { useRbac, useRolesQuery } from '../hooks/use-rbac';
 import type { User } from '../types/user.types';
 import { isSuperAdminRole } from '@/lib/auth/roles';
 import { useAuth } from '@/hooks/use-auth';
@@ -38,7 +38,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
   const isSuperAdminTarget = isEditing && isSuperAdminRole(user?.role);
   const isProtectedSuperAdminTarget = isSuperAdminTarget && !isSuperAdminRole(authUser?.role);
   const isSelfTarget = isEditing && authUser?.id === user?.id;
-  const roles = useRbacStore((state) => state.roles);
+  const { data: roles = [] } = useRolesQuery();
   const { currentRoleName } = useRbac();
   const canAssignSuperAdmin = isSuperAdminRole(currentRoleName);
   const roleOptions = roles

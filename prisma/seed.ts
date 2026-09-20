@@ -24,6 +24,9 @@ async function main() {
         manageSettings: true,
         manageUsers: true,
         'activity.view': true,
+        'referrals.view': true,
+        'referrals.manage': true,
+        'referrals.settle': true,
         'platform.finance.view': true
       }
     },
@@ -41,7 +44,10 @@ async function main() {
         viewReports: true,
         manageSettings: true,
         manageUsers: true,
-        'activity.view': true
+        'activity.view': true,
+        'referrals.view': true,
+        'referrals.manage': true,
+        'referrals.settle': true
       }
     },
     {
@@ -119,12 +125,7 @@ async function main() {
   for (const role of roles) {
     await prisma.role.upsert({
       where: { name: role.name },
-      update: {
-        permissions: role.permissions,
-        description: role.description,
-        isSystemRole: role.isSystemRole ?? false,
-        isActive: true
-      },
+      update: {},
       create: role
     });
   }

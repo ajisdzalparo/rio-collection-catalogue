@@ -51,6 +51,12 @@ export interface Order {
   courierName?: string;
   trackingNumber?: string;
   totalPrice: number;
+  discountAmount?: number;
+  referralCodeSnapshot?: string | null;
+  referralPartnerSnapshot?: string | null;
+  referralRewardKind?: string | null;
+  referralRewardAmount?: number;
+  referralPayoutId?: string | null;
   totalCogs?: number;
   estimatedProfit?: number;
   createdAt: string;
@@ -120,7 +126,7 @@ async function fetchOrders(): Promise<Order[]> {
       quotedShippingFee,
       totalPrice,
       totalCogs,
-      estimatedProfit: subtotal - totalCogs,
+      estimatedProfit: subtotal - (order.discountAmount ?? 0) - totalCogs,
       courierName: order.courierName || undefined,
       trackingNumber: order.trackingNumber || undefined
     };

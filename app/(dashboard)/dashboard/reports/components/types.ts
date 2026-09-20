@@ -1,9 +1,21 @@
 export interface ReportMetrics {
+  grossSales: number;
+  customerDiscount: number;
   revenue: number;
   totalHpp: number;
   netProfit: number;
+  cashReward: number;
+  shirtRewardCost: number;
+  profitAfterReferral: number;
   profitMargin: number;
   totalQty: number;
+}
+
+export interface ReferralGiftCost {
+  id: string;
+  deliveredAt: string;
+  quantity: number;
+  unitCogs: number | null;
 }
 
 export interface ReportGrowth {

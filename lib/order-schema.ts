@@ -8,6 +8,7 @@ export const orderSchema = z.object({
   notes: z.string().max(5000).optional(),
   otpCode: z.string().trim().min(6).max(6).optional(), // required unless bypass/authenticated
   shippingFee: z.number().int().nonnegative(),
+  referralCode: z.string().trim().max(20).optional(),
   shipping: z.object({
     destination: z.string().min(1).max(100),
     courier: z.string().min(1).max(40),

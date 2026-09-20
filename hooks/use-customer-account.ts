@@ -27,6 +27,8 @@ export interface CustomerOrder {
   whatsapp: string;
   address: string;
   totalPrice: number;
+  discountAmount?: number;
+  referralCodeSnapshot?: string | null;
   status: string;
   createdAt: string;
   items: CustomerOrderItem[];
@@ -278,4 +280,3 @@ export function useVerifyOrderOtp() {
     }
   });
 }
-

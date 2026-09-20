@@ -13,7 +13,12 @@ interface RolePayload {
 
 export function useRoleMutations() {
   const queryClient = useQueryClient();
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['roles'] });
+  const invalidate = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['roles'] }),
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+    ]);
+  };
   const create = useMutation({
     mutationFn: async (payload: { name: string; description?: string; permissions: RolePermissions }) => {
       const { data } = await axios.post('/api/v1/roles', payload);

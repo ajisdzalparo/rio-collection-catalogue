@@ -71,6 +71,9 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
 
       {/* Order Details */}
       <div className="mt-10 pt-8 border-t border-(--cat-stone)">
+        {order.discountAmount > 0 && <p className="mb-5 font-hanken text-[13px] text-green-700">
+          Diskon referral {order.referralCodeSnapshot}: −{formatPrice(order.discountAmount)}
+        </p>}
         <div className="grid grid-cols-2 gap-y-8 gap-x-8">
           <div>
             <p className="font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface-variant) mb-1">

@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Pencil, Trash2, ShieldCheck, CheckCircle2, Eye, Lock } from 'lucide-react';
 import type { UserRole } from '../types/roles.types';
 import { PERMISSION_TREE } from '../data/permission-tree';
-import { useRbacStore, syncRolePermissions } from '../hooks/use-rbac';
+import { useRolesQuery, syncRolePermissions } from '../hooks/use-rbac';
 import { useRoleMutations } from '../hooks/use-role-mutations';
 import { toast } from 'sonner';
 import { isSuperAdminRole, normalizeRoleName } from '@/lib/auth/roles';
@@ -21,7 +21,7 @@ interface RoleTableProps {
 
 export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   const router = useRouter();
-  const { roles, deleteRole } = useRbacStore();
+  const { data: roles = [] } = useRolesQuery();
   const { update, remove } = useRoleMutations();
   const { user: authUser } = useAuth();
   const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
@@ -81,12 +81,10 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
     if (target.id) {
       try {
         await remove.mutateAsync(target.id);
-        deleteRole(deleteTargetRole);
         toast.success(`Master role "${deleteTargetRole}" berhasil dihapus.`);
         setDeleteTargetRole(null);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 404) {
-          deleteRole(deleteTargetRole);
           toast.info(`Master role "${deleteTargetRole}" telah dibersihkan dari daftar.`);
           setDeleteTargetRole(null);
           return;
@@ -98,8 +96,7 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
         toast.error(message);
       }
     } else {
-      deleteRole(deleteTargetRole);
-      toast.success(`Master role "${deleteTargetRole}" berhasil dihapus.`);
+      toast.error('ID role tidak tersedia. Muat ulang halaman.');
       setDeleteTargetRole(null);
     }
   };
@@ -140,10 +137,13 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
 
         return (
           <div className="flex items-center py-1">
-            <CMSBadge variant={isFullAccess ? 'success' : activeCount > 0 ? 'info' : 'neutral'}>
+            <CMSBadge
+              variant="neutral"
+              className={activeCount > 0 ? 'bg-zinc-900 hover:bg-zinc-900 text-white dark:bg-zinc-100 dark:hover:bg-zinc-100 dark:text-zinc-900' : undefined}
+            >
               {isFullAccess ? (
                 <span className="flex items-center">
-                  <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-200 inline" />
+                  <CheckCircle2 className="h-3 w-3 mr-1 inline" />
                   Akses Penuh
                 </span>
               ) : (

@@ -16,8 +16,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useRbacStore, syncRolePermissions } from '@/features/users/hooks/use-rbac';
+import { useRolesQuery, syncRolePermissions } from '@/features/users/hooks/use-rbac';
+import { useRoleMutations } from '@/features/users/hooks/use-role-mutations';
 import { PERMISSION_TREE } from '@/features/users/data/permission-tree';
 import { isSuperAdminRole } from '@/lib/auth/roles';
 
@@ -30,7 +33,8 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
   const router = useRouter();
   const rawRoleName = decodeURIComponent(resolvedParams.roleName || '');
 
-  const { roles, updateRole } = useRbacStore();
+  const { data: roles = [], isLoading } = useRolesQuery();
+  const { update } = useRoleMutations();
 
   // Match role case-insensitively
   const currentRole = useMemo(() => {
@@ -60,6 +64,8 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
   }, [currentRole]);
 
   const isFullAccess = activeCount >= totalActionsCount;
+
+  if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-56 w-full rounded-xl" /><Skeleton className="h-72 w-full rounded-xl" /></div>;
 
   if (!currentRole) {
     return (
@@ -163,9 +169,11 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
             </div>
             <Switch
               checked={currentRole.isActive !== false}
-              disabled={isProtectedSystemRole}
+              disabled={isProtectedSystemRole || update.isPending || !currentRole.id}
               onCheckedChange={(checked) => {
-                updateRole(currentRole.name, { isActive: checked });
+                if (!currentRole.id) return;
+                void update.mutateAsync({ id: currentRole.id, payload: { isActive: checked } })
+                  .catch(() => toast.error('Gagal mengubah status role.'));
               }}
             />
           </div>
@@ -187,7 +195,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
               Total Izin Diaktifkan
             </span>
-            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
               {activeCount} dari {totalActionsCount} Hak Akses
             </p>
           </div>
@@ -244,8 +252,8 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
                     </div>
 
                     <Badge
-                      variant={isFullyActive ? 'default' : isPartiallyActive ? 'secondary' : 'outline'}
-                      className="text-[10px] font-bold shrink-0"
+                      variant="outline"
+                      className={cn('text-[10px] font-bold shrink-0', (isFullyActive || isPartiallyActive) && 'border-zinc-900/20 bg-zinc-900/10 text-zinc-800 dark:border-zinc-100/20 dark:bg-zinc-100/10 dark:text-zinc-200')}
                     >
                       {activeCountInMenu} / {menu.actions.length} Aktif
                     </Badge>
@@ -262,7 +270,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
                           className={cn(
                             'p-3 rounded-lg border text-xs flex items-start justify-between gap-3 transition-colors',
                             isAllowed
-                              ? 'bg-emerald-500/5 border-emerald-500/20 text-foreground'
+                              ? 'bg-zinc-900/5 border-zinc-900/20 text-foreground dark:bg-zinc-100/5 dark:border-zinc-100/20'
                               : 'bg-muted/10 border-border/20 text-muted-foreground'
                           )}
                         >
@@ -277,7 +285,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
 
                           <div className="shrink-0 pt-0.5">
                             {isAllowed ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-800 dark:text-zinc-200 bg-zinc-900/10 dark:bg-zinc-100/10 border border-zinc-900/20 dark:border-zinc-100/20 px-2 py-0.5 rounded-full">
                                 <CheckCircle2 className="h-3 w-3" />
                                 Diizinkan
                               </span>

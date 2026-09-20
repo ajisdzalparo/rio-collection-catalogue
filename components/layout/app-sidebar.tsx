@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRbac } from '@/features/users/hooks/use-rbac';
 import type { RolePermissions } from '@/features/users/types/roles.types';
 import { useStoreSettingsQuery } from '@/hooks/use-store-settings';
+import { useReferralAccess } from '@/features/referrals/hooks/use-referral-access';
 
 const NAVIGATION_PERMISSION_MAP: Record<string, string> = {
   'Overview': 'overview.view',
@@ -80,6 +81,7 @@ function SidebarBrandMark({ logoUrl, storeName }: SidebarBrandMarkProps) {
 export default function AppSidebar() {
   const pathname = usePathname();
   const { hasPermission } = useRbac();
+  const { data: referralAccess } = useReferralAccess();
   const { data: storeSettings } = useStoreSettingsQuery();
   const storeName = storeSettings?.storeName || 'RIO COLLECTION';
 
@@ -123,6 +125,7 @@ export default function AppSidebar() {
           <SidebarGroupContent className="mt-1">
             <SidebarMenu className="space-y-1">
               {navigation.map((item) => {
+                if (item.title === 'Referral' && !referralAccess?.canView) return null;
                 const permKey = NAVIGATION_PERMISSION_MAP[item.title];
                 if (permKey && !hasPermission(permKey as keyof RolePermissions)) {
                   return null;

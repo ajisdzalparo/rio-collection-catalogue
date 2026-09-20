@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { getEffectivePermissions } from '@/lib/auth/user-permissions';
 
 export async function GET() {
   try {
@@ -11,11 +12,12 @@ export async function GET() {
       );
     }
 
+    const permissions = await getEffectivePermissions(userData.role);
     return NextResponse.json({
       code: 200,
       status: 'success',
-      data: userData
-    });
+      data: { ...userData, permissions }
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch {
     return NextResponse.json(
       { code: 401, status: 'error', message: 'Sesi tidak valid' },

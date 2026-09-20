@@ -8,6 +8,7 @@ import { isOrderableStatus, normalizeProductAvailability } from '@/lib/product-a
 import { normalizeEmail, normalizeWhatsapp } from '@/lib/customer-identity';
 import { parseEnabledCourierCodes } from '@/lib/couriers';
 import { syncDueProductReleases } from '@/lib/product-release';
+import { calculateReferralAmounts, normalizeReferralCode, type BenefitMode } from '@/lib/referral';
 
 export class OrderError extends Error {
   constructor(
@@ -122,6 +123,25 @@ export async function createOrder(input: z.infer<typeof orderSchema> & { custome
         quantity: item.quantity,
         isPreOrder: item.isPreOrder
       }));
+      const referralCode = input.referralCode
+        ? await tx.referralCode.findUnique({
+            where: { code: normalizeReferralCode(input.referralCode) },
+            include: { partner: true }
+          })
+        : null;
+      if (input.referralCode && (!referralCode?.isActive || !referralCode.partner)) {
+        throw new OrderError('Kode referral tidak tersedia. Hapus atau ganti kode lalu coba lagi.');
+      }
+      const referralAmounts = referralCode
+        ? calculateReferralAmounts(
+            orderItemsToDeduct,
+            referralCode.discountMode as BenefitMode,
+            referralCode.discountValue,
+            referralCode.rewardKind === 'CASH' ? referralCode.rewardMode as BenefitMode : null,
+            referralCode.rewardKind === 'CASH' ? referralCode.rewardValue : null
+          )
+        : null;
+      const subtotal = orderItemsToDeduct.reduce((sum, item) => sum + item.price * item.quantity, 0);
       return tx.order.create({
         data: {
           orderNumber: `RC-${randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase()}`,
@@ -134,10 +154,20 @@ export async function createOrder(input: z.infer<typeof orderSchema> & { custome
           courierName: `${courier.toUpperCase()} ${service.service}`,
           quotedShippingFee: shippingFee,
           shippingFee,
-          totalPrice: orderItemsToDeduct.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            shippingFee
-          ),
+          totalPrice: subtotal - (referralAmounts?.discountAmount ?? 0) + shippingFee,
+          discountAmount: referralAmounts?.discountAmount ?? 0,
+          ...(referralCode && {
+            referralCodeId: referralCode.id,
+            referralCodeSnapshot: referralCode.code,
+            referralPartnerSnapshot: referralCode.partner.name,
+            referralDiscountMode: referralCode.discountMode,
+            referralDiscountValue: referralCode.discountValue,
+            referralRewardKind: referralCode.rewardKind,
+            referralRewardMode: referralCode.rewardMode,
+            referralRewardValue: referralCode.rewardValue,
+            referralGiftEveryUnits: referralCode.giftEveryUnits,
+            referralRewardAmount: referralAmounts?.rewardAmount ?? 0
+          }),
           status: 'PENDING',
           items: { create: orderItemsToDeduct }
         },

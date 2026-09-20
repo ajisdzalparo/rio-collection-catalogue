@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import type { RolePermissions } from '@/features/users/types/roles.types';
 
 export interface UserSession {
   id: string;
@@ -10,11 +12,20 @@ export interface UserSession {
   email: string;
   role: string;
   status: string;
+  permissions: RolePermissions;
 }
+
+let legacyRbacCleared = false;
 
 export function useAuth() {
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  useEffect(() => {
+    if (legacyRbacCleared) return;
+    try { window.localStorage.removeItem('rio-rbac-store'); } catch { /* Storage may be unavailable. */ }
+    legacyRbacCleared = true;
+  }, []);
 
   const { data: user, isLoading, error } = useQuery<UserSession | null>({
     queryKey: ['auth', 'me'],
@@ -29,7 +40,9 @@ export function useAuth() {
         return null;
       }
     },
-    staleTime: 1000 * 60 * 5 // 5 minutes
+    staleTime: 0,
+    refetchInterval: (query) => query.state.data ? 10_000 : false,
+    refetchOnWindowFocus: 'always'
   });
 
   const loginMutation = useMutation({
@@ -38,10 +51,10 @@ export function useAuth() {
       if (data.code !== 200 || !data.data) {
         throw new Error(data.message || 'Login gagal');
       }
-      return data.data as UserSession;
+      return data.data as Omit<UserSession, 'permissions'>;
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData(['auth', 'me'], data);
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       router.push('/dashboard');
     }
   });
@@ -52,6 +65,8 @@ export function useAuth() {
     },
     onSuccess: () => {
       queryClient.setQueryData(['auth', 'me'], null);
+      queryClient.removeQueries({ queryKey: ['roles'] });
+      queryClient.removeQueries({ queryKey: ['referrals'] });
       router.push('/login');
     }
   });

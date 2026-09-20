@@ -371,6 +371,18 @@ export default function OrderDetailPage({ params }: PageProps) {
                   {formatIDR(order.subtotal || order.totalPrice - (order.shippingFee || 15000))}
                 </span>
               </div>
+              {Boolean(order.discountAmount) && <div className="flex justify-between text-green-700">
+                <span>Diskon Referral ({order.referralCodeSnapshot})</span>
+                <span className="font-bold">−{formatIDR(order.discountAmount ?? 0)}</span>
+              </div>}
+              {order.referralCodeSnapshot && <div className="flex justify-between text-muted-foreground">
+                <span>Sumber Referral</span>
+                <span className="font-bold text-foreground">{order.referralPartnerSnapshot} · {order.referralCodeSnapshot}</span>
+              </div>}
+              {order.referralRewardKind === 'CASH' && <div className="flex justify-between text-muted-foreground">
+                <span>Reward Partner ({order.referralPayoutId ? 'dibayar' : order.status === 'FULFILLED' ? 'siap dibayar' : 'estimasi'})</span>
+                <span className="font-bold text-foreground">{formatIDR(order.referralRewardAmount ?? 0)}</span>
+              </div>}
               <div className="flex justify-between text-muted-foreground">
                 <span>Ongkos Kirim ({order.courierName || 'JNE Express'})</span>
                 <span className="font-bold text-foreground">
