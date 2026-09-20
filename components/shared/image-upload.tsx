@@ -390,11 +390,15 @@ export function MultiImageUpload({
   const [activeEditingIndex, setActiveEditingIndex] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
   // Process next file in queue
   const processNextInQueue = (remainingQueue: File[]) => {
     if (remainingQueue.length === 0) {
       setIsCropperOpen(false);
       setCurrentCropImage('');
+      setFileQueue([]);
       return;
     }
 
@@ -411,7 +415,8 @@ export function MultiImageUpload({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const availableSlots = maxImages - value.length;
+      const currentCount = valueRef.current.length;
+      const availableSlots = Math.max(0, maxImages - currentCount);
       const selectedFiles = Array.from(e.target.files).slice(0, availableSlots);
 
       if (selectedFiles.length > 0) {
@@ -425,8 +430,9 @@ export function MultiImageUpload({
   const handleCropComplete = async (croppedFile: File, previewUrl: string) => {
     if (activeEditingIndex !== null) {
       // Re-cropping an existing item
-      const updated = [...value];
+      const updated = [...valueRef.current];
       updated[activeEditingIndex] = previewUrl;
+      valueRef.current = updated;
       onChange(updated);
       setActiveEditingIndex(null);
       setIsCropperOpen(false);
@@ -439,12 +445,14 @@ export function MultiImageUpload({
     try {
       finalUrl = await uploadFileWithPresign(croppedFile, { purpose: 'product-image' });
     } catch {
-      // fallback to previewUrl
+      // fallback to previewUrl if presign upload fails
     } finally {
       setIsUploading(false);
     }
 
-    onChange([...value, finalUrl]);
+    const nextValue = [...valueRef.current, finalUrl];
+    valueRef.current = nextValue;
+    onChange(nextValue);
 
     // Check if more files in queue
     const remaining = fileQueue.slice(1);
@@ -453,7 +461,9 @@ export function MultiImageUpload({
   };
 
   const removeImage = (indexToRemove: number) => {
-    onChange(value.filter((_, idx) => idx !== indexToRemove));
+    const updated = valueRef.current.filter((_, idx) => idx !== indexToRemove);
+    valueRef.current = updated;
+    onChange(updated);
   };
 
   const openRecropItem = (imgUrl: string, idx: number) => {
@@ -464,6 +474,16 @@ export function MultiImageUpload({
 
   return (
     <div className="space-y-3">
+      {/* Hidden input placed safely at root level (not nested inside button) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <div className="grid grid-cols-3 gap-3">
         {value.map((img, idx) => (
           <div
@@ -512,14 +532,6 @@ export function MultiImageUpload({
             disabled={isUploading}
             className="flex flex-col items-center justify-center aspect-square w-full rounded-xl border border-dashed border-border/70 hover:border-foreground/40 bg-muted/10 hover:bg-muted/20 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleFileChange}
-            />
             {isUploading ? (
               <Loader2 className="mb-1 h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
@@ -547,6 +559,7 @@ export function MultiImageUpload({
           setIsCropperOpen(false);
           setActiveEditingIndex(null);
           setFileQueue([]);
+          setCurrentCropImage('');
         }}
         onCropComplete={handleCropComplete}
         defaultAspectRatio={aspectRatio}
