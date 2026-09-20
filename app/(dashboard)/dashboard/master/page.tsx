@@ -88,28 +88,10 @@ function MasterDataPageContent() {
   } = useMasterStore();
 
   useEffect(() => {
-    if (mockCats && categories.length === 0) setCategories(mockCats);
-  }, [mockCats, categories, setCategories]);
-
-  useEffect(() => {
-    if (mockCols && colors.length === 0) setColors(mockCols);
-  }, [mockCols, colors, setColors]);
-
-  useEffect(() => {
-    if (mockSizes) setSizes(mockSizes);
-  }, [mockSizes, setSizes]);
-
-  useEffect(() => {
-    if (mockTopics && topics.length === 0) setTopics(mockTopics);
-  }, [mockTopics, topics, setTopics]);
-
-  useEffect(() => {
-    if (mockEditions && editions.length === 0) setEditions(mockEditions);
-  }, [mockEditions, editions, setEditions]);
-
-  useEffect(() => {
-    if (mockBanks && banks.length === 0) setBanks(mockBanks);
-  }, [mockBanks, banks, setBanks]);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('master-data-storage');
+    }
+  }, []);
 
   const activeTab = searchParams.get('tab') || 'categories';
 
@@ -829,7 +811,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={categoryColumns}
-            data={categories}
+            data={mockCats || []}
             isLoading={loadingCats}
             searchKey="name"
             searchPlaceholder="Cari kategori kaos..."
@@ -860,7 +842,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={colorColumns}
-            data={colors}
+            data={mockCols || []}
             isLoading={loadingCols}
             searchKey="name"
             searchPlaceholder="Cari warna..."
@@ -959,7 +941,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={bankColumns}
-            data={banks}
+            data={mockBanks || []}
             isLoading={loadingBanks}
             searchKey="name"
             searchPlaceholder="Cari nama bank..."
@@ -990,7 +972,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={editionColumns}
-            data={editions}
+            data={mockEditions || []}
             isLoading={loadingEditions}
             searchKey="name"
             searchPlaceholder="Cari edisi atau drop kaos..."
@@ -1021,7 +1003,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={topicColumns}
-            data={topics}
+            data={mockTopics || []}
             isLoading={loadingTopics}
             searchKey="name"
             searchPlaceholder="Cari topik blog..."
@@ -1052,7 +1034,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={sizeColumns}
-            data={sizes}
+            data={mockSizes || []}
             isLoading={loadingSizes}
             searchKey="size"
             searchPlaceholder="Cari ukuran..."
