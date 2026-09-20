@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, ArrowRight, Loader2, CheckCircle2, User, Phone } from 'lucide-react';
+import { Mail, ArrowRight, Loader2, CheckCircle2, User, Phone, Sparkles } from 'lucide-react';
 import { useCustomerStore } from '@/lib/customer-store';
 import { cn } from '@/lib/utils';
 import {
@@ -12,10 +12,13 @@ import {
 } from '@/hooks/use-customer-account';
 import { toast } from 'sonner';
 
+type AuthMode = 'LOGIN' | 'REGISTER';
+
 export default function CustomerLoginPage() {
   const router = useRouter();
   const { isAuthenticated } = useCustomerStore();
 
+  const [authMode, setAuthMode] = useState<AuthMode>('LOGIN');
   const [step, setStep] = useState<'EMAIL' | 'OTP'>('EMAIL');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -47,6 +50,17 @@ export default function CustomerLoginPage() {
       return;
     }
 
+    if (authMode === 'REGISTER') {
+      if (!fullName.trim()) {
+        toast.error('Masukkan nama lengkap Anda.');
+        return;
+      }
+      if (!whatsapp.trim()) {
+        toast.error('Masukkan nomor WhatsApp Anda.');
+        return;
+      }
+    }
+
     setDevOtpHint(null);
     try {
       const data = await sendOtpMutation.mutateAsync({ email: email.trim() });
@@ -72,8 +86,8 @@ export default function CustomerLoginPage() {
       await verifyOtpMutation.mutateAsync({
         email: email.trim(),
         code: otpCode.trim(),
-        fullName: fullName.trim() || undefined,
-        whatsapp: whatsapp.trim() || undefined
+        fullName: authMode === 'REGISTER' && fullName.trim() ? fullName.trim() : undefined,
+        whatsapp: authMode === 'REGISTER' && whatsapp.trim() ? whatsapp.trim() : undefined
       });
 
       toast.success('Berhasil masuk!');
@@ -85,9 +99,9 @@ export default function CustomerLoginPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 md:py-20 bg-(--cat-surface)">
-      <div className="w-full max-w-md bg-(--cat-surface-container-low) border border-(--cat-stone) p-8 md:p-10">
+      <div className="w-full max-w-md bg-(--cat-surface-container-low) border border-(--cat-stone) p-8 md:p-10 shadow-xs">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <Link
             href="/"
             className="inline-block font-eb-garamond text-[28px] font-normal tracking-[-0.01em] text-(--cat-on-surface) mb-2"
@@ -95,14 +109,51 @@ export default function CustomerLoginPage() {
             RIO COLLECTION
           </Link>
           <h1 className="font-eb-garamond text-[22px] md:text-[24px] text-(--cat-on-surface)">
-            {step === 'EMAIL' ? 'Masuk ke Akun Pelanggan' : 'Verifikasi Kode OTP'}
+            {step === 'OTP'
+              ? 'Verifikasi Kode OTP'
+              : authMode === 'LOGIN'
+                ? 'Masuk ke Akun'
+                : 'Daftar Akun Baru'}
           </h1>
           <p className="font-hanken text-[13px] text-(--cat-on-surface-variant) mt-1">
-            {step === 'EMAIL'
-              ? 'Masuk atau daftar otomatis menggunakan email Anda.'
-              : `Kode 6-digit telah dikirim ke ${email}`}
+            {step === 'OTP'
+              ? `Kode 6-digit telah dikirim ke ${email}`
+              : authMode === 'LOGIN'
+                ? 'Gunakan email Anda untuk masuk dengan cepat.'
+                : 'Daftar akun untuk melacak pesanan & promo spesial.'}
           </p>
         </div>
+
+        {/* Tab Switcher (Hanya ditampilkan pada step EMAIL) */}
+        {step === 'EMAIL' && (
+          <div className="grid grid-cols-2 gap-1 p-1 bg-(--cat-surface) border border-(--cat-stone) mb-6">
+            <button
+              type="button"
+              onClick={() => setAuthMode('LOGIN')}
+              className={cn(
+                'py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-all cursor-pointer text-center',
+                authMode === 'LOGIN'
+                  ? 'bg-(--cat-charcoal) text-white shadow-2xs'
+                  : 'text-(--cat-on-surface-variant) hover:text-(--cat-on-surface)'
+              )}
+            >
+              Masuk
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMode('REGISTER')}
+              className={cn(
+                'py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-all cursor-pointer text-center flex items-center justify-center gap-1.5',
+                authMode === 'REGISTER'
+                  ? 'bg-(--cat-charcoal) text-white shadow-2xs'
+                  : 'text-(--cat-on-surface-variant) hover:text-(--cat-on-surface)'
+              )}
+            >
+              <Sparkles size={12} className={authMode === 'REGISTER' ? 'text-amber-300' : 'text-amber-600'} />
+              Daftar Baru
+            </button>
+          </div>
+        )}
 
         {devOtpHint && (
           <div className="mb-6 p-3.5 bg-amber-50 border border-amber-300 text-amber-950 text-xs font-mono rounded shadow-xs leading-relaxed">
@@ -113,6 +164,7 @@ export default function CustomerLoginPage() {
 
         {step === 'EMAIL' ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
+            {/* Field Email */}
             <div>
               <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
                 Alamat Email <span className="text-red-500">*</span>
@@ -121,6 +173,7 @@ export default function CustomerLoginPage() {
                 <input
                   type="email"
                   required
+                  autoFocus
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@email.com"
@@ -133,43 +186,50 @@ export default function CustomerLoginPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
-                Nama Lengkap (Opsional untuk akun baru)
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Nama Lengkap Anda"
-                  className="w-full h-11 pl-10 pr-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
-                />
-                <User
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-(--cat-on-surface-variant)"
-                  size={16}
-                />
-              </div>
-            </div>
+            {/* Field Tambahan Khusus Akun Baru */}
+            {authMode === 'REGISTER' && (
+              <>
+                <div>
+                  <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    Nama Lengkap <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Nama Lengkap Anda"
+                      className="w-full h-11 pl-10 pr-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
+                    />
+                    <User
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-(--cat-on-surface-variant)"
+                      size={16}
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
-                No. WhatsApp (Opsional)
-              </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="081234567890"
-                  className="w-full h-11 pl-10 pr-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
-                />
-                <Phone
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-(--cat-on-surface-variant)"
-                  size={16}
-                />
-              </div>
-            </div>
+                <div>
+                  <label className="block font-hanken text-[11px] font-semibold uppercase tracking-[0.08em] text-(--cat-on-surface) mb-1.5">
+                    No. WhatsApp <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      required
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
+                      placeholder="081234567890"
+                      className="w-full h-11 pl-10 pr-3 font-hanken text-[14px] bg-(--cat-surface) border border-(--cat-stone) focus:border-(--cat-charcoal) focus:outline-none transition-colors"
+                    />
+                    <Phone
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-(--cat-on-surface-variant)"
+                      size={16}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <button
               type="submit"
@@ -185,12 +245,43 @@ export default function CustomerLoginPage() {
                 <>
                   <Loader2 className="animate-spin" size={14} /> Mengirim OTP...
                 </>
-              ) : (
+              ) : authMode === 'LOGIN' ? (
                 <>
                   Kirim Kode OTP <ArrowRight size={14} />
                 </>
+              ) : (
+                <>
+                  Daftar & Kirim OTP <ArrowRight size={14} />
+                </>
               )}
             </button>
+
+            {/* Quick Switch Text Helper */}
+            <div className="text-center pt-3 text-[12px] font-hanken text-(--cat-on-surface-variant)">
+              {authMode === 'LOGIN' ? (
+                <p>
+                  Belum memiliki akun?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('REGISTER')}
+                    className="font-semibold text-(--cat-on-surface) hover:underline cursor-pointer"
+                  >
+                    Daftar di sini
+                  </button>
+                </p>
+              ) : (
+                <p>
+                  Sudah memiliki akun?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('LOGIN')}
+                    className="font-semibold text-(--cat-on-surface) hover:underline cursor-pointer"
+                  >
+                    Masuk langsung
+                  </button>
+                </p>
+              )}
+            </div>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
@@ -228,7 +319,7 @@ export default function CustomerLoginPage() {
                 </>
               ) : (
                 <>
-                  Masuk Sekarang <CheckCircle2 size={14} />
+                  Verifikasi & Masuk <CheckCircle2 size={14} />
                 </>
               )}
             </button>
