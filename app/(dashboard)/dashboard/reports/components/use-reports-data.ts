@@ -92,9 +92,7 @@ export function useReportsData() {
     () =>
       selectedStatuses.length === 0
         ? recordedOrders
-        : recordedOrders.filter((order) =>
-            selectedStatuses.includes(order.status as ReportStatus)
-          ),
+        : recordedOrders.filter((order) => selectedStatuses.includes(order.status as ReportStatus)),
     [recordedOrders, selectedStatuses]
   );
 
@@ -125,17 +123,24 @@ export function useReportsData() {
 
   const calculateMetrics = useCallback(
     (orderList: Order[]): ReportMetrics => {
+      let grossSales = 0;
+      let customerDiscount = 0;
       let revenue = 0;
       let totalHpp = 0;
+      let cashReward = 0;
       let totalQty = 0;
 
       orderList.forEach((o) => {
         const revenues = netItemRevenues(o.items, o.discountAmount ?? 0);
+        customerDiscount += o.discountAmount ?? 0;
+        cashReward += o.referralRewardAmount ?? 0;
+
         o.items.forEach((item, index) => {
           if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
 
           const rev = revenues[index];
-          const hpp = (item.cogs ?? 180000) * item.quantity;
+          const hpp = (item.cogs ?? 0) * item.quantity;
+          grossSales += item.price * item.quantity;
           revenue += rev;
           totalHpp += hpp;
           totalQty += item.quantity;
@@ -143,9 +148,22 @@ export function useReportsData() {
       });
 
       const netProfit = revenue - totalHpp;
+      const shirtRewardCost = 0;
+      const profitAfterReferral = netProfit - cashReward - shirtRewardCost;
       const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
 
-      return { revenue, totalHpp, netProfit, profitMargin, totalQty };
+      return {
+        grossSales,
+        customerDiscount,
+        revenue,
+        totalHpp,
+        netProfit,
+        cashReward,
+        shirtRewardCost,
+        profitAfterReferral,
+        profitMargin,
+        totalQty
+      };
     },
     [selectedProducts]
   );
