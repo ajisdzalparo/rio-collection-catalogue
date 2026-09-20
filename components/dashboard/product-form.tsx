@@ -394,24 +394,20 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
             )}
 
             {status === 'PRE_ORDER' && (
-              <div className="space-y-1.5 p-4 bg-amber-500/5 border border-amber-500/25 rounded-2xl animate-in fade-in duration-200">
-                <Label
-                  htmlFor="pre-order-estimate"
-                  className="text-xs font-bold text-foreground flex items-center gap-1.5"
-                >
-                  <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                  Estimasi Waktu Pre-Order (Produksi & Pengiriman)
+              <div className="space-y-1.5 animate-in fade-in duration-200">
+                <Label htmlFor="pre-order-estimate" className="text-xs font-bold text-foreground">
+                  Estimasi Waktu Pre-Order
                 </Label>
                 <Input
                   id="pre-order-estimate"
                   type="text"
                   value={preOrderEstimate}
                   onChange={(e) => setPreOrderEstimate(e.target.value)}
-                  placeholder="Misal: 7–14 hari kerja, 5–7 hari kerja, 2–3 minggu..."
-                  className="h-10 rounded-xl text-xs bg-background border-border/50 focus-visible:border-amber-500"
+                  placeholder="Misal: 7–14 hari kerja (Kosongkan untuk default)"
+                  className="h-10 rounded-xl text-xs"
                 />
                 <p className="text-[11px] text-muted-foreground leading-normal">
-                  Kosongkan jika ingin memakai estimasi default (<strong>7–14 hari kerja</strong>). Teks ini akan otomatis tampil pada box informasi detail produk publik.
+                  Estimasi waktu pengerjaan dan persiapan kirim (default: 7–14 hari kerja).
                 </p>
               </div>
             )}
