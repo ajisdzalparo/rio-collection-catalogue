@@ -405,7 +405,9 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                   <SelectContent>
                     <SelectItem value="3–5 hari kerja">3–5 Hari Kerja (Cepat)</SelectItem>
                     <SelectItem value="5–7 hari kerja">5–7 Hari Kerja (~1 Minggu)</SelectItem>
-                    <SelectItem value="7–14 hari kerja">7–14 Hari Kerja (Standar / Default)</SelectItem>
+                    <SelectItem value="7–14 hari kerja">
+                      7–14 Hari Kerja (Standar / Default)
+                    </SelectItem>
                     <SelectItem value="14–21 hari kerja">14–21 Hari Kerja (2–3 Minggu)</SelectItem>
                     <SelectItem value="30 hari kerja">30 Hari Kerja (~1 Bulan)</SelectItem>
                     {![
