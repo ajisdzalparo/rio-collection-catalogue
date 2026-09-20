@@ -1,14 +1,4 @@
-import React from 'react';
-import {
-  TrendingUp,
-  Coins,
-  Receipt,
-  Percent,
-  Tag,
-  HandCoins,
-  ShieldCheck,
-  ShoppingBag
-} from 'lucide-react';
+import { TrendingUp, Coins, Receipt, Percent, Tag, HandCoins, ShoppingBag } from 'lucide-react';
 import { formatIDR } from '@/lib/utils';
 import type { ReportMetrics, ReportGrowth } from './types';
 
@@ -100,7 +90,9 @@ export function ReportsMetricsCards({
           <h3 className="text-xl font-extrabold text-foreground tabular-nums">
             {currentMetrics.profitMargin.toFixed(1)}%
           </h3>
-          <p className="text-[11px] text-muted-foreground">Rasio efisiensi laba atas omzet bersih.</p>
+          <p className="text-[11px] text-muted-foreground">
+            Rasio efisiensi laba atas omzet bersih.
+          </p>
         </div>
       </div>
 
@@ -111,8 +103,12 @@ export function ReportsMetricsCards({
             <ShoppingBag className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Penjualan Kotor (Gross)</p>
-            <p className="text-xs font-bold text-foreground">{formatIDR(currentMetrics.grossSales)}</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+              Penjualan Kotor (Gross)
+            </p>
+            <p className="text-xs font-bold text-foreground">
+              {formatIDR(currentMetrics.grossSales)}
+            </p>
           </div>
         </div>
 
@@ -121,7 +117,9 @@ export function ReportsMetricsCards({
             <Tag className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Diskon Customer (Referral)</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+              Diskon Customer (Referral)
+            </p>
             <p className="text-xs font-bold text-rose-600 dark:text-rose-400">
               -{formatIDR(currentMetrics.customerDiscount)}
             </p>
@@ -133,7 +131,9 @@ export function ReportsMetricsCards({
             <HandCoins className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Komisi Partner Referral</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+              Komisi Partner Referral
+            </p>
             <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
               {formatIDR(currentMetrics.cashReward)}
             </p>
