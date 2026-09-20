@@ -11,6 +11,7 @@ export interface ProductReview {
   customerEmail?: string | null;
   rating: number;
   comment: string;
+  mediaUrls?: string[];
   isVerifiedBuyer: boolean;
   createdAt: string;
 }
@@ -71,10 +72,18 @@ export function useProductReviews(productSlug: string) {
   );
 
   const mutation = useMutation({
-    mutationFn: async ({ rating, comment }: { rating: number; comment: string }) => {
+    mutationFn: async ({
+      rating,
+      comment,
+      mediaUrls = []
+    }: {
+      rating: number;
+      comment: string;
+      mediaUrls?: string[];
+    }) => {
       const { data } = await axios.post(
         `/api/v1/products/${productSlug}/reviews`,
-        { rating, comment },
+        { rating, comment, mediaUrls },
         {
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -110,6 +119,7 @@ export function useProductReviews(productSlug: string) {
     hasUserReviewed,
     isAuthenticated,
     customer,
+    token,
     isLoading: query.isLoading,
     isError: query.isError,
     submitReview: mutation.mutateAsync,

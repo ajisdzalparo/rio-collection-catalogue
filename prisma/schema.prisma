@@ -301,6 +301,7 @@ model ProductReview {
   customerEmail   String?
   rating          Int       @default(5) // 1 - 5
   comment         String
+  mediaUrls       String[]  @default([])
   isVerifiedBuyer Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

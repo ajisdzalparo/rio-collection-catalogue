@@ -2,6 +2,7 @@ import axios from 'axios';
 
 export interface PresignUploadOptions {
   purpose?: string;
+  token?: string;
   onProgress?: (percent: number) => void;
 }
 
@@ -12,17 +13,22 @@ export async function uploadFileWithPresign(
   file: File,
   options: PresignUploadOptions = {}
 ): Promise<string> {
-  const { purpose = 'product-image', onProgress } = options;
+  const { purpose = 'product-image', token, onProgress } = options;
 
   const formData = new FormData();
   formData.append('file', file);
   formData.append('purpose', purpose);
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'multipart/form-data'
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const { data: serverRes } = await axios.post('/api/v1/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    },
-    timeout: 30000,
+    headers,
+    timeout: 60000,
     onUploadProgress: (progressEvent) => {
       if (progressEvent.total && onProgress) {
         const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);

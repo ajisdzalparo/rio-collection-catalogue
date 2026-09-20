@@ -83,7 +83,11 @@ export async function POST(request: Request, context: RouteContext) {
     const loggedCustomer = await getCustomerFromRequest(request);
     if (!loggedCustomer) {
       return NextResponse.json(
-        { code: 401, status: 'error', message: 'Anda harus masuk (login) terlebih dahulu untuk memberikan ulasan.' },
+        {
+          code: 401,
+          status: 'error',
+          message: 'Anda harus masuk (login) terlebih dahulu untuk memberikan ulasan.'
+        },
         { status: 401 }
       );
     }
@@ -107,12 +111,23 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { customerName, rating, comment } = body;
+    const { customerName, rating, comment, mediaUrls } = body;
 
-    const finalName = (loggedCustomer.fullName || customerName || loggedCustomer.email.split('@')[0]).trim();
+    const finalName = (
+      loggedCustomer.fullName ||
+      customerName ||
+      loggedCustomer.email.split('@')[0]
+    ).trim();
     const finalEmail = loggedCustomer.email.trim().toLowerCase();
     const finalRating = Number(rating);
     const finalComment = (comment || '').trim();
+
+    // Sanitize and limit mediaUrls (max 5 media items: 4 photos + 1 video)
+    const sanitizedMediaUrls: string[] = Array.isArray(mediaUrls)
+      ? (
+          mediaUrls.filter((url) => typeof url === 'string' && url.trim().length > 0) as string[]
+        ).slice(0, 5)
+      : [];
 
     if (!finalName) {
       return NextResponse.json(
@@ -138,10 +153,7 @@ export async function POST(request: Request, context: RouteContext) {
     // Check verified buyer
     const orderCount = await prisma.order.count({
       where: {
-        OR: [
-          { customerId: loggedCustomer.id },
-          ...(finalEmail ? [{ email: finalEmail }] : [])
-        ],
+        OR: [{ customerId: loggedCustomer.id }, ...(finalEmail ? [{ email: finalEmail }] : [])],
         items: {
           some: { productId: product.id }
         },
@@ -158,6 +170,7 @@ export async function POST(request: Request, context: RouteContext) {
         customerEmail: finalEmail,
         rating: Math.round(finalRating),
         comment: finalComment,
+        mediaUrls: sanitizedMediaUrls,
         isVerifiedBuyer
       }
     });

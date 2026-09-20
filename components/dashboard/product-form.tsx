@@ -56,7 +56,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
   // Form State
   const [name, setName] = useState(initialProduct?.name || '');
   const [price, setPrice] = useState(initialProduct?.price || 0);
-  const [hpp, setHpp] = useState(initialProduct?.hpp || 180000);
+  const [hpp, setHpp] = useState(initialProduct?.hpp || 0);
   const [colorsSelected, setColorsSelected] = useState<string[]>(
     initialProduct?.colors?.length
       ? initialProduct.colors
@@ -73,7 +73,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
   );
   const [stockMode, setStockMode] = useState<StockMode>(initialProduct?.stockMode || 'QUANTITY');
   const orderLimitMode = initialProduct?.orderLimitMode || 'UNLIMITED';
-  const [edition, setEdition] = useState(initialProduct?.edition || 'Edition 001');
+  const [edition, setEdition] = useState(initialProduct?.edition || '');
   const [description, setDescription] = useState(initialProduct?.description || '');
   const [imageUrl, setImageUrl] = useState(initialProduct?.imageUrl || '');
   const [imagesList, setImagesList] = useState<string[]>(initialProduct?.images || []);
@@ -275,7 +275,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                 <RupiahInput
                   value={price}
                   onValueChange={setPrice}
-                  placeholder="250.000"
+                  placeholder="0"
                   className="h-10 text-xs font-bold rounded-xl"
                 />
               </div>
@@ -293,7 +293,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                 <RupiahInput
                   value={hpp}
                   onValueChange={setHpp}
-                  placeholder="180.000"
+                  placeholder="0"
                   className="h-10 text-xs font-bold rounded-xl"
                 />
               </div>
