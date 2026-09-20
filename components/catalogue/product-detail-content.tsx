@@ -10,9 +10,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Clock,
   Minus,
   Plus,
-  ShoppingBag
+  ShoppingBag,
+  Truck
 } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import { StatusBadge } from '@/components/catalogue/status-badge';
@@ -384,6 +386,23 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
               )}
             </div>
 
+            {/* Pre-Order Estimate & Production Box */}
+            {effectiveStatus === 'PRE_ORDER' && (
+              <div className="mt-5 p-4 border border-amber-500/30 bg-amber-500/5 space-y-2">
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-hanken text-[12px] font-semibold uppercase tracking-[0.06em]">
+                  <Clock size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>Informasi Pre-Order & Estimasi</span>
+                </div>
+                <p className="font-hanken text-[13px] text-(--cat-on-surface-variant) leading-relaxed">
+                  Produk ini diproduksi berdasarkan pesanan (Made-to-Order). Estimasi waktu pengerjaan produksi dan persiapan pengiriman adalah <strong className="text-(--cat-on-surface) font-medium">7–14 hari kerja</strong> setelah pembayaran dikonfirmasi.
+                </p>
+                <div className="flex items-center gap-1.5 pt-1 text-[11px] font-hanken text-(--cat-on-surface-variant)/80">
+                  <Truck size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>Resi pengiriman otomatis diperbarui begitu produk siap dikirim.</span>
+                </div>
+              </div>
+            )}
+
             {/* Coming Soon Countdown Box */}
             {isComingSoon && product.releaseDate && (
               <div className="mt-6">
@@ -611,9 +630,15 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
                 </Link>
               </div>
 
-              {(product.status === 'AVAILABLE' || product.status === 'PRE_ORDER') && (
+              {product.status === 'AVAILABLE' && (
                 <p className="font-hanken text-[12px] text-(--cat-on-surface-variant) text-center sm:text-left">
                   Pengiriman ke seluruh Indonesia dengan opsi ekspedisi lengkap.
+                </p>
+              )}
+              {product.status === 'PRE_ORDER' && (
+                <p className="font-hanken text-[12px] text-amber-700 dark:text-amber-400 text-center sm:text-left flex items-center justify-center sm:justify-start gap-1.5 font-medium">
+                  <Clock size={13} className="shrink-0" />
+                  <span>Estimasi waktu produksi & pengiriman: 7–14 hari kerja.</span>
                 </p>
               )}
             </div>
