@@ -1,7 +1,6 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import type { HeroSlide } from '@/types/store-settings.types';
@@ -64,37 +63,30 @@ interface StoreSettingsState extends StoreSettings {
   updateSettings: (settings: Partial<StoreSettings>) => void;
 }
 
-export const useStoreSettingsStore = create<StoreSettingsState>()(
-  persist(
-    (set) => ({
-      storeName: '',
-      logoUrl: '',
-      whatsappNumber: '',
-      instagramUrl: '',
-      tiktokUrl: '',
-      facebookUrl: '',
-      pinterestUrl: '',
-      xTwitterUrl: '',
-      heroTitle: '',
-      heroSubtitle: '',
-      heroLayout: '2-grid',
-      heroSlides: [],
-      heroLeftImage: '',
-      heroCenterImage: '',
-      heroRightImage: '',
-      heroCtaText: '',
-      heroCtaLink: '/catalogue',
+export const useStoreSettingsStore = create<StoreSettingsState>()((set) => ({
+  storeName: '',
+  logoUrl: '',
+  whatsappNumber: '',
+  instagramUrl: '',
+  tiktokUrl: '',
+  facebookUrl: '',
+  pinterestUrl: '',
+  xTwitterUrl: '',
+  heroTitle: '',
+  heroSubtitle: '',
+  heroLayout: '2-grid',
+  heroSlides: [],
+  heroLeftImage: '',
+  heroCenterImage: '',
+  heroRightImage: '',
+  heroCtaText: '',
+  heroCtaLink: '/catalogue',
 
-      setSettings: (settings) => set({ ...settings }),
-      updateSettings: (newSettings) => set((state) => ({ ...state, ...newSettings }))
-    }),
-    {
-      name: 'rio-store-settings'
-    }
-  )
-);
+  setSettings: (settings) => set({ ...settings }),
+  updateSettings: (newSettings) => set((state) => ({ ...state, ...newSettings }))
+}));
 
-// React Query to retrieve settings from native backend API
+// React Query to retrieve settings directly from PostgreSQL backend API
 export function useStoreSettingsQuery() {
   return useQuery({
     queryKey: ['store-settings'],

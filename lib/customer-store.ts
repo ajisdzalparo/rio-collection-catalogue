@@ -77,13 +77,17 @@ export const useCustomerStore = create<CustomerState>()(
             get().logout();
           }
         } catch {
-          set({ isLoading: false });
+          get().logout();
         }
       }
     }),
     {
       name: 'rio_customer_session',
-      partialize: (state) => ({ customer: state.customer, token: state.token, isAuthenticated: state.isAuthenticated })
+      partialize: (state) => ({
+        customer: state.customer,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated
+      })
     }
   )
 );
