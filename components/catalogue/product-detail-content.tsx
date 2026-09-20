@@ -158,12 +158,12 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
     <>
       {/* Main Product Section */}
       <section className="mx-auto max-w-350 px-4 md:px-16 py-8 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-start">
           {/* Left Gallery: Multi-image thumbnails + Main display (7 columns on desktop) */}
-          <div className="md:col-span-7 flex flex-col-reverse md:flex-row gap-4">
+          <div className="md:col-span-7 flex flex-col-reverse md:flex-row gap-4 items-start md:sticky md:top-24">
             {/* Thumbnails list */}
             {imagesList.length > 1 && (
-              <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto shrink-0 scrollbar-none py-1 md:py-0">
+              <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto shrink-0 scrollbar-none py-1 md:py-0 max-h-[80vh]">
                 {imagesList.map((img, idx) => (
                   <button
                     key={`${img}-${idx}`}
@@ -189,7 +189,7 @@ export function ProductDetailContent({ product }: ProductDetailContentProps) {
             )}
 
             {/* Main Active Image View */}
-            <div className="relative flex-1 aspect-4/5 overflow-hidden bg-(--cat-surface-container-low) group">
+            <div className="relative flex-1 w-full aspect-3/4 max-h-[82vh] overflow-hidden bg-(--cat-surface-container-low) group">
               <SafeImage
                 src={activeImage}
                 alt={`${product.name} — ${product.color} (View ${activeImageIndex + 1})`}
