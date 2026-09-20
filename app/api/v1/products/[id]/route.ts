@@ -47,6 +47,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       price,
       status,
       releaseDate,
+      preOrderEstimate,
       imageUrl,
       images,
       description,

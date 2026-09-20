@@ -397,7 +397,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
                 </Label>
                 <Select
                   value={preOrderEstimate || '7–14 hari kerja'}
-                  onValueChange={(val) => setPreOrderEstimate(val)}
+                  onValueChange={(val) => setPreOrderEstimate(val ?? '')}
                 >
                   <SelectTrigger id="pre-order-estimate" className="h-10 rounded-xl text-xs">
                     <SelectValue placeholder="Pilih Estimasi Waktu" />
