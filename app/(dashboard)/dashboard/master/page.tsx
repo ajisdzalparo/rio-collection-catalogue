@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Plus, Pencil, Trash2, Building2, Shirt, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
-  useMasterStore,
   useCategoriesQuery,
   useColorsQuery,
   useSizesQuery,
@@ -45,53 +44,14 @@ import {
 function MasterDataPageContent() {
   const searchParams = useSearchParams();
 
-  // React Query hooks
-  const { data: mockCats, isLoading: loadingCats } = useCategoriesQuery();
-  const { data: mockCols, isLoading: loadingCols } = useColorsQuery();
-  const { data: mockSizes, isLoading: loadingSizes } = useSizesQuery();
-  const { data: mockTopics, isLoading: loadingTopics } = useTopicsQuery();
-  const { data: mockEditions, isLoading: loadingEditions } = useEditionsQuery();
-  const { data: mockBanks, isLoading: loadingBanks } = useBanksQuery();
-  const { data: mockMaterials = [], isLoading: loadingMaterials } = useMaterialsQuery();
-
-  const {
-    categories,
-    colors,
-    sizes,
-    topics,
-    editions,
-    banks,
-    setCategories,
-    setColors,
-    setSizes,
-    setTopics,
-    setEditions,
-    setBanks,
-    addCategory,
-    updateCategory,
-    deleteCategory,
-    addColor,
-    updateColor,
-    deleteColor,
-    toggleSize,
-    addSize,
-    deleteSize,
-    addTopic,
-    updateTopic,
-    deleteTopic,
-    addEdition,
-    updateEdition,
-    deleteEdition,
-    addBank,
-    updateBank,
-    deleteBank
-  } = useMasterStore();
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('master-data-storage');
-    }
-  }, []);
+  // Pure React Query hooks connected directly to the PostgreSQL Database
+  const { data: categories = [], isLoading: loadingCats } = useCategoriesQuery();
+  const { data: colors = [], isLoading: loadingCols } = useColorsQuery();
+  const { data: sizes = [], isLoading: loadingSizes } = useSizesQuery();
+  const { data: topics = [], isLoading: loadingTopics } = useTopicsQuery();
+  const { data: editions = [], isLoading: loadingEditions } = useEditionsQuery();
+  const { data: banks = [], isLoading: loadingBanks } = useBanksQuery();
+  const { data: materials = [], isLoading: loadingMaterials } = useMaterialsQuery();
 
   const activeTab = searchParams.get('tab') || 'categories';
 
@@ -196,17 +156,15 @@ function MasterDataPageContent() {
 
     try {
       if (editingItem) {
-        if (editingItem.type === 'cat') {
+        if (editingItem.type === 'cat' || editingItem.type === 'ed') {
           await masterMutations.updateCategory({
             id: editingItem.id,
             name: itemName,
             description: itemDesc
           });
-          updateCategory(editingItem.id, itemName, itemDesc);
           toast.success(`Kategori "${itemName}" berhasil diperbarui`);
         } else if (editingItem.type === 'col') {
           await masterMutations.updateColor({ id: editingItem.id, name: itemName, hex: itemHex });
-          updateColor(editingItem.id, itemName, itemHex);
           toast.success(`Warna "${itemName}" berhasil diperbarui`);
         } else if (editingItem.type === 'top') {
           await masterMutations.updateTopic({
@@ -214,11 +172,7 @@ function MasterDataPageContent() {
             name: itemName,
             description: itemDesc
           });
-          updateTopic(editingItem.id, itemName, itemDesc);
           toast.success(`Topik "${itemName}" berhasil diperbarui`);
-        } else if (editingItem.type === 'ed') {
-          updateEdition(editingItem.id, itemName, itemDesc);
-          toast.success(`Edisi "${itemName}" berhasil diperbarui`);
         } else if (editingItem.type === 'bank') {
           await masterMutations.updateBank({
             id: editingItem.id,
@@ -226,7 +180,6 @@ function MasterDataPageContent() {
             code: itemCode,
             logoUrl: itemLogoUrl
           });
-          updateBank(editingItem.id, itemName, itemCode, itemLogoUrl);
           toast.success('Master bank berhasil diperbarui');
         } else if (editingItem.type === 'material') {
           await masterMutations.updateMaterial({
@@ -237,26 +190,19 @@ function MasterDataPageContent() {
           toast.success('Master material berhasil diperbarui');
         }
       } else {
-        if (activeTab === 'categories') {
+        if (activeTab === 'categories' || activeTab === 'editions') {
           await masterMutations.addCategory({ name: itemName, description: itemDesc });
-          addCategory(itemName, itemDesc);
           toast.success(`Kategori "${itemName}" berhasil ditambahkan`);
         } else if (activeTab === 'colors') {
           await masterMutations.addColor({ name: itemName, hex: itemHex });
-          addColor(itemName, itemHex);
           toast.success(`Warna "${itemName}" berhasil ditambahkan`);
         } else if (activeTab === 'topics') {
           await masterMutations.addTopic({ name: itemName, description: itemDesc });
-          addTopic(itemName, itemDesc);
           toast.success(`Topik "${itemName}" berhasil ditambahkan`);
-        } else if (activeTab === 'editions') {
-          addEdition(itemName, itemDesc);
-          toast.success(`Edisi "${itemName}" berhasil ditambahkan`);
         } else if (activeTab === 'sizes') {
           const upperSize = itemName.trim().toUpperCase();
           if (upperSize) {
             await masterMutations.addSize({ size: upperSize });
-            addSize(upperSize);
             toast.success(`Ukuran "${upperSize}" berhasil ditambahkan`);
           }
         } else if (activeTab === 'banks') {
@@ -265,7 +211,6 @@ function MasterDataPageContent() {
             code: itemCode || itemName.toUpperCase(),
             logoUrl: itemLogoUrl
           });
-          addBank(itemName, itemCode, itemLogoUrl);
           toast.success('Master bank baru berhasil ditambahkan');
         } else if (activeTab === 'materials') {
           await masterMutations.addMaterial({
@@ -276,11 +221,11 @@ function MasterDataPageContent() {
           toast.success('Opsi material baru berhasil ditambahkan');
         }
       }
+      setIsDialogOpen(false);
     } catch (error) {
       console.error('Failed to save master item:', error);
       toast.error('Gagal menyimpan data master');
     }
-    setIsDialogOpen(false);
   };
 
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -301,23 +246,16 @@ function MasterDataPageContent() {
     if (!deleteTarget) return;
     const { type, id, name } = deleteTarget;
     try {
-      if (type === 'cat') {
+      if (type === 'cat' || type === 'ed') {
         await masterMutations.deleteCategory(id);
-        deleteCategory(id);
       } else if (type === 'col') {
         await masterMutations.deleteColor(id);
-        deleteColor(id);
       } else if (type === 'top') {
         await masterMutations.deleteTopic(id);
-        deleteTopic(id);
-      } else if (type === 'ed') {
-        deleteEdition(id);
       } else if (type === 'bank') {
         await masterMutations.deleteBank(id);
-        deleteBank(id);
       } else if (type === 'size') {
         await masterMutations.deleteSize(id);
-        deleteSize(id);
       } else if (type === 'material') {
         await masterMutations.deleteMaterial(id);
       }
@@ -342,7 +280,6 @@ function MasterDataPageContent() {
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.toggleSize({ size: item.size, isActive: checked });
-              toggleSize(item.size);
               toast.success(
                 `Ukuran "${item.size}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
               );
@@ -399,7 +336,6 @@ function MasterDataPageContent() {
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.updateCategory({ id: item.id, isActive: checked });
-              updateCategory(item.id, undefined, undefined, checked);
               toast.success(
                 `Kategori "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
               );
@@ -469,7 +405,6 @@ function MasterDataPageContent() {
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.updateColor({ id: item.id, isActive: checked });
-              updateColor(item.id, undefined, undefined, checked);
               toast.success(
                 `Warna "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
               );
@@ -529,7 +464,6 @@ function MasterDataPageContent() {
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.updateTopic({ id: item.id, isActive: checked });
-              updateTopic(item.id, undefined, undefined, checked);
               toast.success(
                 `Topik "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
               );
@@ -646,7 +580,6 @@ function MasterDataPageContent() {
           onCheckedChange={async (checked) => {
             try {
               await masterMutations.updateBank({ id: item.id, isActive: checked });
-              updateBank(item.id, undefined, undefined, undefined, checked);
               toast.success(
                 `Bank "${item.name}" berhasil ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
               );
@@ -811,7 +744,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={categoryColumns}
-            data={mockCats || []}
+            data={categories}
             isLoading={loadingCats}
             searchKey="name"
             searchPlaceholder="Cari kategori kaos..."
@@ -842,7 +775,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={colorColumns}
-            data={mockCols || []}
+            data={colors}
             isLoading={loadingCols}
             searchKey="name"
             searchPlaceholder="Cari warna..."
@@ -884,7 +817,7 @@ function MasterDataPageContent() {
           </TabsList>
 
           {MATERIAL_SECTIONS.map((section) => {
-            const sectionData = mockMaterials.filter((m) => m.type === section.type);
+            const sectionData = materials.filter((m) => m.type === section.type);
             return (
               <TabsContent key={section.type} value={section.type} className="mt-2">
                 <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs space-y-4">
@@ -941,7 +874,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={bankColumns}
-            data={mockBanks || []}
+            data={banks}
             isLoading={loadingBanks}
             searchKey="name"
             searchPlaceholder="Cari nama bank..."
@@ -972,7 +905,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={editionColumns}
-            data={mockEditions || []}
+            data={editions}
             isLoading={loadingEditions}
             searchKey="name"
             searchPlaceholder="Cari edisi atau drop kaos..."
@@ -1003,7 +936,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={topicColumns}
-            data={mockTopics || []}
+            data={topics}
             isLoading={loadingTopics}
             searchKey="name"
             searchPlaceholder="Cari topik blog..."
@@ -1034,7 +967,7 @@ function MasterDataPageContent() {
           </div>
           <DataTable
             columns={sizeColumns}
-            data={mockSizes || []}
+            data={sizes}
             isLoading={loadingSizes}
             searchKey="size"
             searchPlaceholder="Cari ukuran..."
