@@ -45,6 +45,7 @@ next-env.d.ts
 /tests/
 /testsprite_tests/
 /scripts/
+/test-outputs/
 
 # docs & specs (dev-only)
 /docs/

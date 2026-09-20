@@ -48,7 +48,7 @@ function getStatusLabel(status: Order['status']) {
   return status === 'FULFILLED' ? 'Dikirim' : 'Lunas';
 }
 
-function buildAccountingRows(orders: Order[], selectedProducts: string[]): AccountingRow[] {
+export function buildAccountingRows(orders: Order[], selectedProducts: string[]): AccountingRow[] {
   const rows: AccountingRow[] = [];
 
   orders.forEach((order) => {
@@ -101,40 +101,39 @@ function buildAccountingRows(orders: Order[], selectedProducts: string[]): Accou
   return rows;
 }
 
-export async function exportReportToExcel({
+export function buildReportWorkbook({
   currentOrders,
   selectedProducts,
   selectedStatuses,
   startDate,
   endDate
-}: ExportExcelParams): Promise<void> {
+}: ExportExcelParams): ExcelJS.Workbook | null {
   const paidOrders = currentOrders.filter(
     (order) => order.status === 'PAID' || order.status === 'FULFILLED'
   );
   const rows = buildAccountingRows(paidOrders, selectedProducts);
 
   if (rows.length === 0) {
-    toast.error('Tidak ada penjualan lunas pada periode dan produk yang dipilih.');
-    return;
+    return null;
   }
 
   try {
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'RIO Collection Official';
-    workbook.created = new Date();
-    workbook.calcProperties.fullCalcOnLoad = true;
+  workbook.creator = 'RIO Collection Official';
+  workbook.created = new Date();
+  workbook.calcProperties.fullCalcOnLoad = true;
 
-    // Totals calculation
-    const totalOrderCount = new Set(rows.map((r) => r.orderNumber)).size;
-    const totalQuantity = rows.reduce((sum, r) => sum + r.quantity, 0);
-    const totalGrossSales = rows.reduce((sum, r) => sum + r.grossSales, 0);
-    const totalDiscount = rows.reduce((sum, r) => sum + r.discount, 0);
-    const totalSales = rows.reduce((sum, r) => sum + r.sales, 0);
-    const totalCogs = rows.reduce((sum, r) => sum + r.cogs, 0);
-    const totalGrossProfit = rows.reduce((sum, r) => sum + r.grossProfit, 0);
-    const totalReferralReward = rows.reduce((sum, r) => sum + r.referralReward, 0);
-    const totalNetProfit = rows.reduce((sum, r) => sum + r.netProfit, 0);
-    const netMarginRate = totalSales > 0 ? totalNetProfit / totalSales : 0;
+  // Totals calculation
+  const totalOrderCount = new Set(rows.map((r) => r.orderNumber)).size;
+  const totalQuantity = rows.reduce((sum, r) => sum + r.quantity, 0);
+  const totalGrossSales = rows.reduce((sum, r) => sum + r.grossSales, 0);
+  const totalDiscount = rows.reduce((sum, r) => sum + r.discount, 0);
+  const totalSales = rows.reduce((sum, r) => sum + r.sales, 0);
+  const totalCogs = rows.reduce((sum, r) => sum + r.cogs, 0);
+  const totalGrossProfit = rows.reduce((sum, r) => sum + r.grossProfit, 0);
+  const totalReferralReward = rows.reduce((sum, r) => sum + r.referralReward, 0);
+  const totalNetProfit = rows.reduce((sum, r) => sum + r.netProfit, 0);
+  const netMarginRate = totalSales > 0 ? totalNetProfit / totalSales : 0;
 
     const BORDER_THIN: Partial<ExcelJS.Borders> = {
       top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
@@ -511,18 +510,34 @@ export async function exportReportToExcel({
     const lastDataRowNumber = 4 + rows.length;
     detailSheet.autoFilter = { from: 'A4', to: `S${lastDataRowNumber}` };
 
+    return workbook;
+  } catch (error) {
+    console.error('Failed to build report workbook:', error);
+    return null;
+  }
+}
+
+export async function exportReportToExcel(params: ExportExcelParams): Promise<void> {
+  const workbook = buildReportWorkbook(params);
+
+  if (!workbook) {
+    toast.error('Tidak ada penjualan lunas pada periode dan produk yang dipilih.');
+    return;
+  }
+
+  try {
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
     const productLabel =
-      selectedProducts.length === 0
+      params.selectedProducts.length === 0
         ? 'Semua_Produk'
-        : selectedProducts
+        : params.selectedProducts
             .join('-')
             .replace(/[^a-zA-Z0-9.-]/g, '_')
             .slice(0, 60);
-    const fileName = `Laporan_Keuangan_Penjualan_${startDate}_${endDate}_${productLabel}.xlsx`;
+    const fileName = `Laporan_Keuangan_Penjualan_${params.startDate}_${params.endDate}_${productLabel}.xlsx`;
     const url = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -534,7 +549,7 @@ export async function exportReportToExcel({
 
     toast.success('Laporan Excel keuangan & referral berhasil diunduh.');
   } catch (error) {
-    console.error('Failed to generate Excel report:', error);
+    console.error('Failed to export Excel report:', error);
     toast.error('Gagal mengekspor laporan Excel. Silakan coba kembali.');
   }
 }
