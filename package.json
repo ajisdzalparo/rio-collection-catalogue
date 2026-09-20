@@ -8,7 +8,6 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:reports": "bun run scripts/test-excel-reports.ts",
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
