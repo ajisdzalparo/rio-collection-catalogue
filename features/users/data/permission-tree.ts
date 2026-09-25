@@ -3,7 +3,7 @@ import type { MenuPermissionTree, RolePermissions } from '../types/roles.types';
 export const PERMISSION_TREE: MenuPermissionTree[] = [
   {
     id: 'overview',
-    menuName: '1. Overview & Dashboard',
+    menuName: '1. Ringkasan & Dashboard',
     description: 'Akses statistik utama, grafik penjualan, & aktivitas harian toko',
     actions: [
       {
@@ -42,7 +42,7 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   },
   {
     id: 'stock',
-    menuName: '3. Stock Management',
+    menuName: '3. Manajemen Stok',
     description: 'Akses pengelolaan ketersediaan dan kuantitas stok per varian ukuran',
     actions: [
       {
@@ -193,12 +193,12 @@ export const PERMISSION_TREE: MenuPermissionTree[] = [
   },
   {
     id: 'activity',
-    menuName: '11. Activity Log',
+    menuName: '11. Log Aktivitas',
     description: 'Riwayat aktivitas penting yang dilakukan pengelola CMS',
     actions: [
       {
         key: 'activity.view',
-        label: 'Lihat Activity Log',
+        label: 'Lihat Log Aktivitas',
         description: 'Melihat pelaku, waktu, dan rincian perubahan pada CMS'
       }
     ]

@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { getOrderStatusLabel } from '@/lib/order-status';
 
 export interface OrderStatusBadgeProps {
   status: string;
@@ -30,7 +31,7 @@ export function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
     }
   };
 
-  const formattedText = normalized.replace(/_/g, ' ');
+  const formattedText = getOrderStatusLabel(normalized);
 
   return (
     <span

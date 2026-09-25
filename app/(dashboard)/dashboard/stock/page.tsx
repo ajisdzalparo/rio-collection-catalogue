@@ -342,10 +342,10 @@ export default function StockManagementPage() {
         <div className="flex justify-end">
           <Button
             onClick={() => handleOpenEdit(product)}
-            variant="outline"
+            variant="link"
             size="icon"
             disabled={!canManageStock}
-            className="h-8 w-8 rounded-lg cursor-pointer"
+            className="h-8 w-8 cursor-pointer"
             title={canManageStock ? 'Edit Stok' : 'Tidak memiliki akses kelola stok'}
           >
             <Edit className="h-4 w-4" />
@@ -406,8 +406,7 @@ export default function StockManagementPage() {
               render={
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="gap-2 rounded-lg text-xs font-medium cursor-pointer"
+                  className="h-10 sm:h-9 px-3.5 gap-2 rounded-lg text-xs font-medium cursor-pointer border-border/60 bg-card/60 shadow-2xs hover:bg-muted"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   <span>Filter</span>
@@ -539,7 +538,8 @@ export default function StockManagementPage() {
 
                   {sortedActiveSizes.length === 0 ? (
                     <div className="p-4 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
-                      Belum ada ukuran aktif di Master Ukuran. Silakan aktifkan ukuran terlebih dahulu di menu Master Data.
+                      Belum ada ukuran aktif di Master Ukuran. Silakan aktifkan ukuran terlebih
+                      dahulu di menu Master Data.
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-60 overflow-y-auto pr-1">

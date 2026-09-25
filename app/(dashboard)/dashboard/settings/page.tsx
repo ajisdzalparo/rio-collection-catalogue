@@ -13,7 +13,8 @@ import {
   MessageSquare,
   Truck,
   RefreshCw,
-  MapPin
+  MapPin,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -616,8 +617,18 @@ export default function StoreSettingsPage() {
                           checked={isChecked}
                           onChange={() => toggleCourier(courier.code)}
                           aria-label={`${isChecked ? 'Nonaktifkan' : 'Aktifkan'} kurir ${courier.name}`}
-                          className="h-4 w-4 rounded-md text-primary border-border focus:ring-primary cursor-pointer shrink-0"
+                          className="sr-only"
                         />
+                        <div
+                          className={cn(
+                            'h-4.5 w-4.5 rounded-md border flex items-center justify-center shrink-0 transition-all duration-150',
+                            isChecked
+                              ? 'bg-primary border-primary text-primary-foreground shadow-2xs'
+                              : 'border-border/80 bg-card hover:border-border'
+                          )}
+                        >
+                          {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                        </div>
                       </label>
                     );
                   })}

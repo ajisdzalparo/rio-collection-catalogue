@@ -14,7 +14,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { FormInput, FormSelect } from '@/components/shared';
 import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { userSchema, type UserFormValues } from '../schemas/schema';
 import { useCreateUserMutation } from '../api/create-user';
@@ -45,7 +44,9 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
     .filter(
       (role) =>
         role.isActive !== false &&
-        (!isSuperAdminRole(role.name) || canAssignSuperAdmin || (isEditing && isSuperAdminRole(user?.role)))
+        (!isSuperAdminRole(role.name) ||
+          canAssignSuperAdmin ||
+          (isEditing && isSuperAdminRole(user?.role)))
     )
     .map((role) => ({ label: role.name, value: role.name }));
   const hasLegacyRole = !!user?.role && !roleOptions.some((option) => option.value === user.role);
@@ -182,14 +183,6 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
                     </p>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <span
-                      className={cn(
-                        'text-xs font-semibold select-none',
-                        isActive ? 'text-emerald-500 font-bold' : 'text-muted-foreground'
-                      )}
-                    >
-                      {isActive ? 'Active' : 'Inactive'}
-                    </span>
                     <Switch
                       id="user-status-switch"
                       checked={isActive}
@@ -201,7 +194,11 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
                             ? 'Status Super Admin hanya dapat diubah oleh Super Admin'
                             : 'Ubah status pengguna'
                       }
-                      className={isProtectedSuperAdminTarget || isSelfTarget ? 'opacity-35 grayscale' : undefined}
+                      className={
+                        isProtectedSuperAdminTarget || isSelfTarget
+                          ? 'opacity-35 grayscale'
+                          : undefined
+                      }
                       onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'inactive')}
                     />
                   </div>

@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/date-picker';
-import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
@@ -56,23 +56,15 @@ import { formatIDR, formatWaNumber } from '@/lib/utils';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { useStoreSettingsQuery, useStoreSettingsStore } from '@/hooks/use-store-settings';
-import { buildWhatsAppMessage } from '@/lib/order-whatsapp';
-
-const ORDER_STATUS_OPTIONS: MultiSelectOption[] = [
-  { value: 'PENDING', label: 'Menunggu Konfirmasi' },
-  { value: 'CONFIRMED', label: 'Dikonfirmasi' },
-  { value: 'WAITING_PAYMENT', label: 'Menunggu Pembayaran' },
-  { value: 'PAID', label: 'Sudah Dibayar' },
-  { value: 'FULFILLED', label: 'Pesanan Dikirim' },
-  { value: 'REJECTED', label: 'Pesanan Ditolak' },
-  { value: 'CANCELLED', label: 'Pesanan Dibatalkan' },
-  { value: 'EXPIRED', label: 'Kedaluwarsa' }
-];
+import { useStoreBanksQuery } from '@/hooks/use-store-banks';
+import { buildWhatsAppMessage, formatStoreBankDetails } from '@/lib/order-whatsapp';
+import { ORDER_STATUS_OPTIONS } from '@/lib/order-status';
 
 function OrdersPageContent() {
   const router = useRouter();
   const persistedStoreSettings = useStoreSettingsStore();
   const { data: latestStoreSettings } = useStoreSettingsQuery();
+  const { data: storeBanks = [] } = useStoreBanksQuery();
   const storeSettings = latestStoreSettings || persistedStoreSettings;
   const {
     data: orders = [],
@@ -127,8 +119,7 @@ function OrdersPageContent() {
     setIsFilterOpen(false);
   };
 
-  const activeFilterCount =
-    appliedStatuses.length + (appliedStartDate || appliedEndDate ? 1 : 0);
+  const activeFilterCount = appliedStatuses.length + (appliedStartDate || appliedEndDate ? 1 : 0);
 
   const handleRunCronCleanup = async () => {
     try {
@@ -162,7 +153,7 @@ function OrdersPageContent() {
 
   const getReminderWaLink = useCallback(
     (order: Order) => {
-      const bankDetails = `${storeSettings.bankName || 'BCA'}: ${storeSettings.bankAccountNumber || '1234567890'} a.n ${storeSettings.bankAccountOwner || 'RIO COLLECTION'}`;
+      const bankDetails = formatStoreBankDetails(storeBanks, storeSettings);
       const message = buildWhatsAppMessage({
         stage: 'REMINDER',
         templates: storeSettings,
@@ -174,7 +165,7 @@ function OrdersPageContent() {
 
       return `https://wa.me/${formatWaNumber(order.whatsapp)}?text=${encodeURIComponent(message)}`;
     },
-    [storeSettings]
+    [storeSettings, storeBanks]
   );
 
   const filteredOrders = useMemo(() => {
@@ -260,7 +251,7 @@ function OrdersPageContent() {
               <DropdownMenuTrigger
                 render={
                   <Button
-                    variant="ghost"
+                    variant="link"
                     size="icon-sm"
                     disabled={isUpdating}
                     aria-label={`Opsi untuk pesanan ${order.orderNumber}`}
@@ -367,8 +358,8 @@ function OrdersPageContent() {
             disabled={expiredOrderCount === 0 || isDeletingExpired}
             className="h-9 gap-1.5 rounded-xl px-3.5 text-xs font-bold"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span>Hapus Expired ({expiredOrderCount})</span>
+            <Trash2 className="h-3.5 w-3.5 text-white" />
+            <span>Hapus Pesanan Spam ({expiredOrderCount})</span>
           </Button>
         </div>
       </div>
@@ -387,8 +378,7 @@ function OrdersPageContent() {
               render={
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="gap-2 rounded-lg text-xs font-medium cursor-pointer"
+                  className="h-10 sm:h-9 px-3.5 gap-2 rounded-lg text-xs font-medium cursor-pointer border-border/60 bg-card/60 shadow-2xs hover:bg-muted"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   <span>Filter</span>

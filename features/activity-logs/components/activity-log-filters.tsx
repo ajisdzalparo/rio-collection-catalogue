@@ -42,15 +42,22 @@ export function ActivityLogFilterDrawer({ filters, onApply }: ActivityLogFilters
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger render={<Button variant="outline" className="h-10 gap-2 rounded-lg text-xs font-semibold" />}>
-        <SlidersHorizontal className="h-4 w-4" />
-        Filter
-        {activeCount > 0 && (
-          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
-            {activeCount}
-          </span>
-        )}
-      </SheetTrigger>
+      <SheetTrigger
+        render={
+          <Button
+            variant="outline"
+            className="h-10 sm:h-9 px-3.5 gap-2 rounded-lg text-xs font-medium cursor-pointer border-border/60 bg-card/60 shadow-2xs hover:bg-muted"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span>Filter</span>
+            {activeCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                {activeCount}
+              </span>
+            )}
+          </Button>
+        }
+      />
       <SheetContent side="right">
         <SheetHeader className="border-b border-border/40 pb-4 pr-8">
           <SheetTitle className="flex items-center gap-2 text-sm font-bold">

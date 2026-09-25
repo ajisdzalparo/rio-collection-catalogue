@@ -2,14 +2,21 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Activity, Eye, Search, UserRound, Workflow } from 'lucide-react';
+import { Activity, Eye, Search, UserRound, Workflow, X } from 'lucide-react';
 import PageHeader from '@/components/layout/page-header';
 import { ErrorState } from '@/components/shared';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
 import { useDebounce } from '@/hooks/use-debounce';
 import { ActivityLogFilterDrawer } from './activity-log-filters';
 import { ActivityLogSkeleton } from './activity-log-skeleton';
@@ -70,10 +77,12 @@ export function ActivityLogPage() {
       <Card className="gap-0 pb-0">
         <CardHeader className="border-b border-border/30">
           <CardTitle className="text-sm font-bold">Riwayat Aktivitas</CardTitle>
-          <CardDescription className="text-xs">Data terbaru ditampilkan lebih dulu.</CardDescription>
+          <CardDescription className="text-xs">
+            Data terbaru ditampilkan lebih dulu.
+          </CardDescription>
         </CardHeader>
-        <div className="flex flex-col gap-3 border-b border-border/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full sm:max-w-md">
+        <div className="flex flex-col gap-2.5 sm:gap-3 border-b border-border/30 px-4 py-3 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
@@ -83,8 +92,21 @@ export function ActivityLogPage() {
               }}
               placeholder="Cari nama, email, atau aktivitas..."
               aria-label="Cari activity log"
-              className="h-10 pl-9"
+              className="pl-9 pr-8 h-10 sm:h-9 text-xs rounded-lg border-border/60 bg-card/60 shadow-2xs focus-visible:ring-1 w-full"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setPage(1);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full cursor-pointer"
+                aria-label="Hapus pencarian"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
           <ActivityLogFilterDrawer
             filters={filters}
@@ -108,7 +130,7 @@ export function ActivityLogPage() {
           </div>
 
           <div className="hidden overflow-x-auto px-4 py-3 md:block">
-            <Table className="min-w-[900px]">
+            <Table className="min-w-225">
               <TableHeader>
                 <TableRow>
                   <TableHead>Waktu</TableHead>
@@ -149,7 +171,10 @@ export function ActivityLogPage() {
                 ))}
                 {items.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-14 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="py-14 text-center text-sm text-muted-foreground"
+                    >
                       Belum ada aktivitas yang cocok dengan filter.
                     </TableCell>
                   </TableRow>
@@ -173,7 +198,6 @@ export function ActivityLogPage() {
           />
         </div>
       </Card>
-
     </div>
   );
 }

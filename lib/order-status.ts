@@ -1,16 +1,28 @@
-const labels: Record<string, string> = {
+export const ORDER_STATUS_LABELS: Record<string, string> = {
   PENDING: 'Menunggu Konfirmasi',
-  CONFIRMED: 'Pesanan Dikonfirmasi',
+  CONFIRMED: 'Dikonfirmasi',
   WAITING_PAYMENT: 'Menunggu Pembayaran',
-  PAID: 'Pembayaran Diterima',
+  PAID: 'Sudah Dibayar',
   FULFILLED: 'Pesanan Dikirim',
   CANCELLED: 'Pesanan Dibatalkan',
   REJECTED: 'Pesanan Ditolak',
-  EXPIRED: 'Pesanan Kedaluwarsa'
+  EXPIRED: 'Kedaluwarsa'
 };
 
+export const ORDER_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'PENDING', label: 'Menunggu Konfirmasi' },
+  { value: 'CONFIRMED', label: 'Dikonfirmasi' },
+  { value: 'WAITING_PAYMENT', label: 'Menunggu Pembayaran' },
+  { value: 'PAID', label: 'Sudah Dibayar' },
+  { value: 'FULFILLED', label: 'Pesanan Dikirim' },
+  { value: 'REJECTED', label: 'Pesanan Ditolak' },
+  { value: 'CANCELLED', label: 'Pesanan Dibatalkan' },
+  { value: 'EXPIRED', label: 'Kedaluwarsa' }
+];
+
 export function getOrderStatusLabel(status: string): string {
-  return labels[status] || 'Status Sedang Diperbarui';
+  const normalized = (status || '').toUpperCase();
+  return ORDER_STATUS_LABELS[normalized] || normalized.replace(/_/g, ' ') || 'Status Sedang Diperbarui';
 }
 
 export function getOrderStatusMessage(status: string): string {

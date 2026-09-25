@@ -106,12 +106,8 @@ export function ReferralPartnerTable({
                 <Badge
                   key={code.id}
                   variant="outline"
-                  className={`font-mono text-[10px] px-1.5 py-0 whitespace-nowrap border border-primary/25 ${
-                    code.isActive ? 'text-primary dark:text-primary' : 'text-muted-foreground'
-                  }`}
-                >
-                  {code.code}
-                </Badge>
+                  className={`border-border/60 bg-card/60 text-muted-foreground font-mono text-[10px] px-1.5 py-0 whitespace-nowrap ${code.isActive ? 'text-primary dark:text-primary' : 'text-muted-foreground'}`}
+                ></Badge>
               ))
             )}
           </div>
@@ -206,7 +202,7 @@ export function ReferralPartnerTable({
               <Link href={`/dashboard/referrals/${partner.id}`}>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="link"
                   size="icon-sm"
                   aria-label={`Lihat detail ${partner.name}`}
                   title="Lihat Detail Partner"
@@ -219,7 +215,7 @@ export function ReferralPartnerTable({
               {canManage && isUnused && (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="link"
                   size="icon-sm"
                   onClick={() => setPartnerToDelete(partner)}
                   aria-label={`Hapus partner ${partner.name}`}

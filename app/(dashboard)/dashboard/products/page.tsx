@@ -199,7 +199,10 @@ function ProductsContent() {
         sortable: true,
         className: 'w-full min-w-[180px]',
         cell: (product) => (
-          <Link href={`/dashboard/products/${product.id}`} className="flex flex-col text-xs max-w-50 group">
+          <Link
+            href={`/dashboard/products/${product.id}`}
+            className="flex flex-col text-xs max-w-50 group"
+          >
             <TruncatedText
               text={product.name}
               maxWidth="max-w-[180px]"
@@ -264,7 +267,7 @@ function ProductsContent() {
           <div className="flex items-center justify-end gap-1">
             <Link href={`/dashboard/products/${product.id}`}>
               <Button
-                variant="ghost"
+                variant="link"
                 size="icon"
                 className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 title="Lihat Detail Produk & Stok"
@@ -273,7 +276,7 @@ function ProductsContent() {
               </Button>
             </Link>
             <Button
-              variant="ghost"
+              variant="link"
               size="icon"
               onClick={() => router.push(`/dashboard/products/${product.id}/edit`)}
               className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -282,7 +285,7 @@ function ProductsContent() {
               <Edit className="h-4 w-4" />
             </Button>
             <Button
-              variant="ghost"
+              variant="link"
               size="icon"
               onClick={() => setDeleteTargetProduct(product)}
               disabled={isDeleting}
@@ -305,7 +308,10 @@ function ProductsContent() {
         <div className="p-3.5 sm:p-4 rounded-lg border border-border/70 bg-card/90 shadow-2xs backdrop-blur-md flex flex-col gap-3 transition-all hover:border-border">
           {/* Top: Image + Info */}
           <div className="flex items-start gap-3">
-            <Link href={`/dashboard/products/${product.id}`} className="relative h-20 w-16 rounded-md overflow-hidden bg-muted/50 border border-border/30 shrink-0 shadow-xs">
+            <Link
+              href={`/dashboard/products/${product.id}`}
+              className="relative h-20 w-16 rounded-md overflow-hidden bg-muted/50 border border-border/30 shrink-0 shadow-xs"
+            >
               <SafeImage
                 src={product.imageUrl}
                 alt={product.name}
@@ -477,8 +483,7 @@ function ProductsContent() {
               render={
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="h-10 sm:h-9 gap-2 rounded-lg text-xs font-medium cursor-pointer"
+                  className="h-10 sm:h-9 px-3.5 gap-2 rounded-lg text-xs font-medium cursor-pointer border-border/60 bg-card/60 shadow-2xs hover:bg-muted"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   <span>Filter</span>

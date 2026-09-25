@@ -24,26 +24,26 @@ export interface NavigationItem {
 
 export const navigation: NavigationItem[] = [
   {
-    title: 'Overview',
+    title: 'Ringkasan',
     href: '/dashboard',
     icon: LayoutDashboard
   },
   {
-    title: 'Orders',
+    title: 'Pesanan',
     href: '/dashboard/orders',
     icon: ShoppingCart
   },
   {
-    title: 'Stock Management',
+    title: 'Manajemen Stok',
     href: '/dashboard/stock',
     icon: Boxes
   },
   {
-    title: 'Master Data',
+    title: 'Data Master',
     href: '#',
     icon: Database,
     subMenu: [
-      { title: 'Products', href: '/dashboard/products' },
+      { title: 'Produk', href: '/dashboard/products' },
       { title: 'Kategori Kaos', href: '/dashboard/master?tab=categories' },
       { title: 'Warna', href: '/dashboard/master?tab=colors' },
       { title: 'Ukuran', href: '/dashboard/master?tab=sizes' },
@@ -58,22 +58,22 @@ export const navigation: NavigationItem[] = [
     icon: BookOpen
   },
   {
-    title: 'Customers',
+    title: 'Pelanggan',
     href: '/dashboard/customers',
     icon: Users
   },
   {
-    title: 'Testimonials',
+    title: 'Testimoni',
     href: '/dashboard/testimonies',
     icon: MessageSquare
   },
   {
-    title: 'User Management',
+    title: 'Manajemen Pengguna',
     href: '#',
     icon: ShieldAlert,
     subMenu: [
-      { title: 'User List', href: '/users?tab=users' },
-      { title: 'Roles', href: '/users?tab=rbac' }
+      { title: 'Daftar Pengguna', href: '/users?tab=users' },
+      { title: 'Peran & Hak Akses', href: '/users?tab=rbac' }
     ]
   },
   {
@@ -87,17 +87,17 @@ export const navigation: NavigationItem[] = [
     icon: Gift
   },
   {
-    title: 'Super Admin Finance',
+    title: 'Keuangan Super Admin',
     href: '/dashboard/super-admin',
     icon: WalletCards
   },
   {
-    title: 'Activity Log',
+    title: 'Log Aktivitas',
     href: '/dashboard/activity-logs',
     icon: ScrollText
   },
   {
-    title: 'Store Settings',
+    title: 'Pengaturan Toko',
     href: '/dashboard/settings',
     icon: Settings
   }

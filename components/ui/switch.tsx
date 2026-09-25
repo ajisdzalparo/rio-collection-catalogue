@@ -38,7 +38,8 @@ export const thumbVariants = cva(
 );
 
 export interface SwitchProps
-  extends React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>,
+  extends
+    React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>,
     VariantProps<typeof switchVariants> {
   className?: string;
 }
@@ -50,10 +51,7 @@ export function Switch({ className, size = 'default', ...props }: SwitchProps) {
       className={cn(switchVariants({ size, className }))}
       {...props}
     >
-      <SwitchPrimitive.Thumb
-        data-slot="switch-thumb"
-        className={cn(thumbVariants({ size }))}
-      />
+      <SwitchPrimitive.Thumb data-slot="switch-thumb" className={cn(thumbVariants({ size }))} />
     </SwitchPrimitive.Root>
   );
 }

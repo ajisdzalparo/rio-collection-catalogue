@@ -26,18 +26,32 @@ import { useStoreSettingsQuery } from '@/hooks/use-store-settings';
 import { useReferralAccess } from '@/features/referrals/hooks/use-referral-access';
 
 const NAVIGATION_PERMISSION_MAP: Record<string, string> = {
+  // Indonesian titles
+  Ringkasan: 'overview.view',
+  Pesanan: 'orders.view',
+  'Manajemen Stok': 'stock.view',
+  'Data Master': 'products.view',
+  Blog: 'journal.view',
+  Pelanggan: 'orders.view',
+  Testimoni: 'testimonies.view',
+  'Laporan Penjualan': 'reports.view',
+  'Keuangan Super Admin': 'platform.finance.view',
+  'Log Aktivitas': 'activity.view',
+  'Pengaturan Toko': 'settings.view',
+  'Manajemen Pengguna': 'settings.view',
+  Referral: 'referrals.view',
+
+  // Fallbacks for English
   Overview: 'overview.view',
   Orders: 'orders.view',
   'Stock Management': 'stock.view',
   'Master Data': 'products.view',
-  Blog: 'journal.view',
+  Customers: 'orders.view',
   Testimonials: 'testimonies.view',
-  'Laporan Penjualan': 'reports.view',
   'Super Admin Finance': 'platform.finance.view',
   'Activity Log': 'activity.view',
   'Store Settings': 'settings.view',
-  'User Management': 'settings.view',
-  Customers: 'orders.view'
+  'User Management': 'settings.view'
 };
 
 interface SidebarBrandMarkProps {
@@ -132,7 +146,7 @@ export default function AppSidebar() {
                 </div>
               ) : (
                 navigation.map((item) => {
-                  if (item.title === 'Referral' && !referralAccess?.canView) return null;
+                  if ((item.href === '/dashboard/referrals' || item.title === 'Referral') && !referralAccess?.canView) return null;
                   const permKey = NAVIGATION_PERMISSION_MAP[item.title];
                   if (permKey && !hasPermission(permKey as keyof RolePermissions)) {
                     return null;

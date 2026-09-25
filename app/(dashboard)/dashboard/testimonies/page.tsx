@@ -343,8 +343,7 @@ export default function TestimoniesCmsPage() {
               render={
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="gap-2 rounded-lg text-xs font-medium cursor-pointer"
+                  className="h-10 sm:h-9 px-3.5 gap-2 rounded-lg text-xs font-medium cursor-pointer border-border/60 bg-card/60 shadow-2xs hover:bg-muted"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   <span>Filter</span>

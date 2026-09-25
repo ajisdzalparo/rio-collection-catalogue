@@ -9,6 +9,35 @@ export interface WhatsAppTemplates {
 
 export type WhatsAppMessageStage = 'ORDER' | 'PAYMENT' | 'SHIPPING' | 'REMINDER';
 
+export interface StoreBankLike {
+  bankName: string;
+  accountNumber: string;
+  accountOwner: string;
+  isActive?: boolean;
+}
+
+export function formatStoreBankDetails(
+  storeBanks: StoreBankLike[] = [],
+  storeSettings?: {
+    bankName?: string | null;
+    bankAccountNumber?: string | null;
+    bankAccountOwner?: string | null;
+  }
+): string {
+  const activeBanks = storeBanks.filter((b) => b.isActive !== false);
+  if (activeBanks.length > 0) {
+    return activeBanks
+      .map((b) => `${b.bankName}: ${b.accountNumber} a.n ${b.accountOwner}`)
+      .join('\n');
+  }
+
+  if (storeSettings?.bankAccountNumber && storeSettings.bankAccountNumber !== '1234567890') {
+    return `${storeSettings.bankName || 'Bank'}: ${storeSettings.bankAccountNumber} a.n ${storeSettings.bankAccountOwner || 'Toko'}`;
+  }
+
+  return '[⚠️ REKENING PEMBAYARAN BELUM DIATUR DI PENGATURAN TOKO]';
+}
+
 export const DEFAULT_WA_TEMPLATES: WhatsAppTemplates = {
   waTemplatePending:
     'Halo {nama_pelanggan},\n\nTerima kasih telah memesan di RIO COLLECTION.\nNomor pesanan: #{nomor_order}\nTotal tagihan: {total_pembayaran}\n\nSilakan lakukan pembayaran ke rekening berikut:\n{rekening_bank}\n\nSetelah pembayaran, mohon kirimkan bukti transfer melalui WhatsApp ini. Terima kasih.',
@@ -29,6 +58,7 @@ interface BuildWhatsAppMessageInput {
   bankDetails: string;
   courierName?: string | null;
   trackingNumber?: string | null;
+  storeName?: string | null;
 }
 
 const templateKeyByStage: Record<WhatsAppMessageStage, keyof WhatsAppTemplates> = {
@@ -44,9 +74,10 @@ export function buildWhatsAppMessage(input: BuildWhatsAppMessageInput): string {
 
   return template
     .replaceAll('{nama_pelanggan}', input.customerName)
+    .replaceAll('{nama_toko}', input.storeName?.trim() || '[NAMA TOKO]')
     .replaceAll('{nomor_order}', input.orderNumber)
     .replaceAll('{total_pembayaran}', formatIDR(input.totalPayment))
-    .replaceAll('{rekening_bank}', input.bankDetails)
-    .replaceAll('{kurir}', input.courierName?.trim() || '-')
-    .replaceAll('{nomor_resi}', input.trackingNumber?.trim() || '-');
+    .replaceAll('{rekening_bank}', input.bankDetails || '[REKENING BANK]')
+    .replaceAll('{kurir}', input.courierName?.trim() || '[KURIR]')
+    .replaceAll('{nomor_resi}', input.trackingNumber?.trim() || '[NOMOR RESI]');
 }

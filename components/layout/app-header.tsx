@@ -70,7 +70,7 @@ export default function AppHeader() {
               <DropdownMenuSeparator />
               <DropdownMenuItem render={<Link href="/users" className="flex items-center gap-2 cursor-pointer" />}>
                 <User className="h-4 w-4" />
-                <span>Kelola User & Role</span>
+                <span>Kelola Pengguna & Peran</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setShowChangePassword(true)} 
@@ -90,7 +90,7 @@ export default function AppHeader() {
                 className="cursor-pointer gap-2 rounded-xl text-destructive focus:text-destructive font-semibold"
               >
                 <LogOut className="h-4 w-4" />
-                <span>{isLoggingOut ? 'Logging out...' : 'Log out'}</span>
+                <span>{isLoggingOut ? 'Sedang keluar...' : 'Keluar'}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

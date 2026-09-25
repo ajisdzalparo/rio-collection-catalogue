@@ -2,13 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import {
-  Calendar,
-  ShoppingBag,
-  History,
-  SlidersHorizontal,
-  RotateCcw
-} from 'lucide-react';
+import { Calendar, ShoppingBag, History, SlidersHorizontal, RotateCcw } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -186,7 +180,7 @@ export default function CustomersCmsPage() {
         cell: (customer) => (
           <Link
             href={`/dashboard/customers/${encodeURIComponent(customer.whatsapp)}`}
-            className="h-8 px-3.5 rounded-xl border border-border/60 hover:bg-muted text-xs cursor-pointer inline-flex items-center gap-1.5 font-semibold text-foreground shadow-2xs transition-all hover:scale-[1.02]"
+            className="h-8 px-3.5 rounded-xl bg-card hover:bg-muted text-xs cursor-pointer inline-flex items-center gap-1.5 font-semibold text-foreground shadow-2xs transition-all"
           >
             <History className="h-3.5 w-3.5 text-foreground/70" />
             <span>Riwayat</span>
@@ -204,8 +198,8 @@ export default function CustomersCmsPage() {
           Database Pelanggan
         </h1>
         <p className="text-sm text-muted-foreground pt-1">
-          Daftar profil pembeli yang diakumulasikan otomatis berdasarkan nomor WhatsApp &amp; riwayat
-          transaksi.
+          Daftar profil pembeli yang diakumulasikan otomatis berdasarkan nomor WhatsApp &amp;
+          riwayat transaksi.
         </p>
       </VStack>
 
@@ -225,8 +219,7 @@ export default function CustomersCmsPage() {
               render={
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="gap-2 rounded-lg text-xs font-medium cursor-pointer"
+                  className="h-10 sm:h-9 px-3.5 gap-2 rounded-lg text-xs font-medium cursor-pointer border-border/60 bg-card/60 shadow-2xs hover:bg-muted"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   <span>Filter</span>

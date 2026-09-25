@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   MessageSquare,
   Save,
@@ -20,8 +20,12 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   DEFAULT_WA_TEMPLATES,
+  formatStoreBankDetails,
   type WhatsAppTemplates
 } from '@/lib/order-whatsapp';
+import { useStoreSettingsQuery } from '@/hooks/use-store-settings';
+import { useStoreBanksQuery } from '@/hooks/use-store-banks';
+import { COURIERS, parseEnabledCourierCodes } from '@/lib/couriers';
 
 export { DEFAULT_WA_TEMPLATES, type WhatsAppTemplates } from '@/lib/order-whatsapp';
 
@@ -69,15 +73,6 @@ const TEMPLATE_KEYS: Array<{
   }
 ];
 
-const AVAILABLE_VARIABLES = [
-  { tag: '{nama_pelanggan}', label: 'Nama Pelanggan', sample: 'Clara Sinta' },
-  { tag: '{nomor_order}', label: 'Nomor Order', sample: 'RC-8802' },
-  { tag: '{total_pembayaran}', label: 'Total Harga', sample: 'Rp 450.000' },
-  { tag: '{rekening_bank}', label: 'Info Bank Toko', sample: 'BCA: 1234567890 a.n RIO COLLECTION' },
-  { tag: '{kurir}', label: 'Ekspedisi Kurir', sample: 'JNE Express' },
-  { tag: '{nomor_resi}', label: 'Nomor Resi', sample: 'JNE-990123847' }
-];
-
 export function WhatsAppTemplateEditor({
   templates,
   onChange,
@@ -86,6 +81,37 @@ export function WhatsAppTemplateEditor({
 }: WhatsAppTemplateEditorProps) {
   const [activeKey, setActiveKey] = useState<keyof WhatsAppTemplates>('waTemplatePending');
   const [copiedPreview, setCopiedPreview] = useState(false);
+
+  const { data: storeSettings } = useStoreSettingsQuery();
+  const { data: storeBanks = [] } = useStoreBanksQuery();
+
+  const storeName = storeSettings?.storeName?.trim() || 'RIO COLLECTION';
+
+  const activeBanks = storeBanks.filter((b) => b.isActive !== false);
+  const hasConfiguredBank =
+    activeBanks.length > 0 ||
+    Boolean(storeSettings?.bankAccountNumber && storeSettings.bankAccountNumber !== '1234567890');
+
+  const realBankDetails = hasConfiguredBank
+    ? formatStoreBankDetails(storeBanks, storeSettings)
+    : '[⚠️ Belum ada rekening bank aktif - atur di tab Rekening Pembayaran Toko]';
+
+  const enabledCodes = parseEnabledCourierCodes(storeSettings?.enabledCouriers);
+  const sampleCourier =
+    COURIERS.find((c) => enabledCodes.includes(c.code))?.name || 'JNE Express';
+
+  const availableVariables = useMemo(
+    () => [
+      { tag: '{nama_pelanggan}', label: 'Nama Pelanggan', sample: 'Clara Sinta' },
+      { tag: '{nama_toko}', label: 'Nama Toko', sample: storeName },
+      { tag: '{nomor_order}', label: 'Nomor Order', sample: 'RC-8802' },
+      { tag: '{total_pembayaran}', label: 'Total Harga', sample: 'Rp 450.000' },
+      { tag: '{rekening_bank}', label: 'Info Bank Toko', sample: realBankDetails },
+      { tag: '{kurir}', label: 'Ekspedisi Kurir', sample: sampleCourier },
+      { tag: '{nomor_resi}', label: 'Nomor Resi', sample: 'RC-TRACK-9901' }
+    ],
+    [storeName, realBankDetails, sampleCourier]
+  );
 
   const activeTemplateMeta = TEMPLATE_KEYS.find((t) => t.key === activeKey)!;
   const currentText = templates[activeKey] || DEFAULT_WA_TEMPLATES[activeKey];
@@ -115,7 +141,7 @@ export function WhatsAppTemplateEditor({
 
   const generateSamplePreview = () => {
     let preview = currentText;
-    AVAILABLE_VARIABLES.forEach((v) => {
+    availableVariables.forEach((v) => {
       preview = preview.replaceAll(v.tag, v.sample);
     });
     return preview;
@@ -154,6 +180,19 @@ export function WhatsAppTemplateEditor({
           </Button>
         )}
       </div>
+
+      {/* Warning banner if bank is not configured */}
+      {!hasConfiguredBank && (
+        <div className="p-4 bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/25 dark:border-amber-800/30 rounded-xl text-xs leading-relaxed flex items-start gap-3 text-amber-800 dark:text-amber-300">
+          <AlertCircle className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="font-bold text-xs">Rekening Pembayaran Toko Belum Dikonfigurasi</p>
+            <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
+              Belum ada rekening pembayaran yang aktif di toko Anda. Pada template yang menggunakan tag <code>{'{rekening_bank}'}</code>, pesan akan menampilkan peringatan belum diatur sampai Anda menambahkan rekening di tab <strong>Rekening Pembayaran Toko</strong>.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Template Selector Tabs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
@@ -221,7 +260,7 @@ export function WhatsAppTemplateEditor({
               <span className="text-muted-foreground text-[10px]">Otomatis diganti data order</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {AVAILABLE_VARIABLES.map((v) => (
+              {availableVariables.map((v) => (
                 <button
                   key={v.tag}
                   type="button"
@@ -259,7 +298,7 @@ export function WhatsAppTemplateEditor({
             {/* Header Chat Tag */}
             <div className="flex items-center gap-2 pb-2.5 border-b border-white/10 text-[11px] text-emerald-400 font-semibold">
               <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>RIO COLLECTION Official WhatsApp</span>
+              <span>{storeName} Official WhatsApp</span>
             </div>
 
             {/* Chat Bubble Container */}

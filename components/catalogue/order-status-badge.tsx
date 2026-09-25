@@ -47,6 +47,10 @@ const STATUS_THEMES: Record<
   REJECTED: {
     container: 'bg-(--cat-error-container) text-(--cat-on-error-container) border-(--cat-error)/20',
     dot: 'bg-(--cat-error)'
+  },
+  EXPIRED: {
+    container: 'bg-(--cat-error-container) text-(--cat-on-error-container) border-(--cat-error)/20',
+    dot: 'bg-(--cat-error)'
   }
 };
 

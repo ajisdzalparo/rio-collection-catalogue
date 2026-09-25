@@ -47,10 +47,12 @@ import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { Stepper } from '@/components/ui/stepper';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { useStoreSettingsQuery, useStoreSettingsStore } from '@/hooks/use-store-settings';
+import { useStoreBanksQuery } from '@/hooks/use-store-banks';
 import { formatIDR, formatWaNumber } from '@/lib/utils';
 import { getEnabledCourierOptions } from '@/lib/couriers';
 import {
   buildWhatsAppMessage,
+  formatStoreBankDetails,
   type WhatsAppMessageStage
 } from '@/lib/order-whatsapp';
 
@@ -64,6 +66,7 @@ export default function OrderDetailPage({ params }: PageProps) {
   const { data: orders = [], isLoading: ordersLoading, updateOrder, isUpdating } = useOrders();
   const persistedStoreSettings = useStoreSettingsStore();
   const { data: latestStoreSettings } = useStoreSettingsQuery();
+  const { data: storeBanks = [] } = useStoreBanksQuery();
   const storeSettings = latestStoreSettings || persistedStoreSettings;
 
   const order = useMemo(() => {
@@ -78,7 +81,9 @@ export default function OrderDetailPage({ params }: PageProps) {
   const [refundReason, setRefundReason] = useState('');
   const [refundProofUrl, setRefundProofUrl] = useState('');
   const [additionalPaymentProofUrl, setAdditionalPaymentProofUrl] = useState('');
-  const [shippingAdjustmentChoice, setShippingAdjustmentChoice] = useState<'REFUND' | 'WAIVE' | null>(null);
+  const [shippingAdjustmentChoice, setShippingAdjustmentChoice] = useState<
+    'REFUND' | 'WAIVE' | null
+  >(null);
 
   // Dialogs
   const [isExpeditionDialogOpen, setIsExpeditionDialogOpen] = useState(false);
@@ -113,7 +118,8 @@ export default function OrderDetailPage({ params }: PageProps) {
   const shippingDifference = actualShippingFee - quotedShippingFee;
   const hasShippingDifference = shippingDifference !== 0;
   const courierOptions = useMemo(
-    () => getEnabledCourierOptions(storeSettings.enabledCouriers, courierName || order?.courierName),
+    () =>
+      getEnabledCourierOptions(storeSettings.enabledCouriers, courierName || order?.courierName),
     [courierName, order?.courierName, storeSettings.enabledCouriers]
   );
   const resolvedShippingAdjustmentStatuses = [
@@ -166,7 +172,7 @@ export default function OrderDetailPage({ params }: PageProps) {
   };
 
   const getStageWaLink = (orderItem: Order, stage: WhatsAppMessageStage) => {
-    const bankText = `${storeSettings.bankName || 'BCA'}: ${storeSettings.bankAccountNumber || '1234567890'} a.n ${storeSettings.bankAccountOwner || 'RIO COLLECTION'}`;
+    const bankText = formatStoreBankDetails(storeBanks, storeSettings);
     const message = buildWhatsAppMessage({
       stage,
       templates: storeSettings,
@@ -182,12 +188,11 @@ export default function OrderDetailPage({ params }: PageProps) {
   };
 
   const getShippingAdjustmentWaLink = (orderItem: Order, type: 'SURCHARGE' | 'REFUND_OFFER') => {
-    const bankText = `${storeSettings.bankName || 'BCA'}: ${storeSettings.bankAccountNumber || '1234567890'} a.n ${storeSettings.bankAccountOwner || 'RIO COLLECTION'}`;
+    const bankText = formatStoreBankDetails(storeBanks, storeSettings);
     const courierLine =
       courierName !== (orderItem.courierName || '')
         ? `Ekspedisi pesanan Anda kami sesuaikan menjadi ${courierName} (sebelumnya ${orderItem.courierName || 'belum dipilih'}).`
         : `Pesanan Anda akan dikirim via ${courierName || orderItem.courierName || 'ekspedisi pilihan toko'}.`;
-
     let message = '';
     if (type === 'SURCHARGE') {
       message = `Halo ${orderItem.fullName},\n\nUpdate pesanan #${orderItem.orderNumber} di RIO COLLECTION.\n\n${courierLine}\n\nBiaya ongkir aktual: ${formatIDR(actualShippingFee)} (sebelumnya ${formatIDR(quotedShippingFee)}).\nTerdapat KEKURANGAN ongkir sebesar ${formatIDR(shippingDifference)}.\n\nMohon konfirmasi & transfer kekurangan tersebut ke:\n${bankText}\n\nSetelah transfer, mohon kirimkan bukti pembayarannya ke WhatsApp ini. Terima kasih!`;
@@ -210,7 +215,10 @@ export default function OrderDetailPage({ params }: PageProps) {
         <p className="text-sm text-muted-foreground max-w-md">
           Pesanan dengan ID &quot;{id}&quot; tidak ditemukan atau telah dihapus dari sistem.
         </p>
-        <Button onClick={() => router.push('/dashboard/orders')} className="rounded-xl font-bold text-xs">
+        <Button
+          onClick={() => router.push('/dashboard/orders')}
+          className="rounded-xl font-bold text-xs"
+        >
           <ArrowLeft className="h-4 w-4 mr-1.5" />
           <span>Kembali ke Daftar Pesanan</span>
         </Button>
@@ -287,15 +295,15 @@ export default function OrderDetailPage({ params }: PageProps) {
         <div className="lg:col-span-8 space-y-6">
           {/* Pre-Order Warning Banner if applicable */}
           {order.items.some((item) => item.isPreOrder) && (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-foreground leading-relaxed flex items-start gap-3">
-              <ShieldAlert className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="p-4 bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/25 dark:border-amber-800/30 rounded-xl text-xs leading-relaxed flex items-start gap-3">
+              <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <strong className="text-amber-600 dark:text-amber-400 font-bold block">
+                <strong className="text-amber-800 dark:text-amber-300 font-bold block">
                   Pesanan Mengandung Item Pre-Order (PO)
                 </strong>
-                <p className="text-muted-foreground text-[11px] mt-0.5">
-                  Pesanan ini memiliki satu atau lebih kaos pre-order. Pastikan jadwal produksi telah
-                  selesai sebelum melakukan pengiriman barang.
+                <p className="text-amber-700/80 dark:text-amber-400/80 text-[11px] mt-0.5">
+                  Pesanan ini memiliki satu atau lebih kaos pre-order. Pastikan jadwal produksi
+                  telah selesai sebelum melakukan pengiriman barang.
                 </p>
               </div>
             </div>
@@ -371,18 +379,36 @@ export default function OrderDetailPage({ params }: PageProps) {
                   {formatIDR(order.subtotal || order.totalPrice - (order.shippingFee || 15000))}
                 </span>
               </div>
-              {Boolean(order.discountAmount) && <div className="flex justify-between text-green-700">
-                <span>Diskon Referral ({order.referralCodeSnapshot})</span>
-                <span className="font-bold">−{formatIDR(order.discountAmount ?? 0)}</span>
-              </div>}
-              {order.referralCodeSnapshot && <div className="flex justify-between text-muted-foreground">
-                <span>Sumber Referral</span>
-                <span className="font-bold text-foreground">{order.referralPartnerSnapshot} · {order.referralCodeSnapshot}</span>
-              </div>}
-              {order.referralRewardKind === 'CASH' && <div className="flex justify-between text-muted-foreground">
-                <span>Reward Partner ({order.referralPayoutId ? 'dibayar' : order.status === 'FULFILLED' ? 'siap dibayar' : 'estimasi'})</span>
-                <span className="font-bold text-foreground">{formatIDR(order.referralRewardAmount ?? 0)}</span>
-              </div>}
+              {Boolean(order.discountAmount) && (
+                <div className="flex justify-between text-green-700">
+                  <span>Diskon Referral ({order.referralCodeSnapshot})</span>
+                  <span className="font-bold">−{formatIDR(order.discountAmount ?? 0)}</span>
+                </div>
+              )}
+              {order.referralCodeSnapshot && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Sumber Referral</span>
+                  <span className="font-bold text-foreground">
+                    {order.referralPartnerSnapshot} · {order.referralCodeSnapshot}
+                  </span>
+                </div>
+              )}
+              {order.referralRewardKind === 'CASH' && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>
+                    Reward Partner (
+                    {order.referralPayoutId
+                      ? 'dibayar'
+                      : order.status === 'FULFILLED'
+                        ? 'siap dibayar'
+                        : 'estimasi'}
+                    )
+                  </span>
+                  <span className="font-bold text-foreground">
+                    {formatIDR(order.referralRewardAmount ?? 0)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-muted-foreground">
                 <span>Ongkos Kirim ({order.courierName || 'JNE Express'})</span>
                 <span className="font-bold text-foreground">
@@ -391,22 +417,18 @@ export default function OrderDetailPage({ params }: PageProps) {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Total Modal Produksi (HPP)</span>
-                <span className="font-bold text-rose-500">
-                  -{formatIDR(order.totalCogs || 0)}
-                </span>
+                <span className="font-bold text-rose-500">-{formatIDR(order.totalCogs || 0)}</span>
               </div>
               <div className="flex justify-between text-sm font-black text-foreground pt-2 border-t border-border/20">
                 <span>Total Tagihan Pembayaran</span>
                 <span className="text-primary">{formatIDR(order.totalPrice)}</span>
               </div>
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="p-3 bg-emerald-500/10 dark:bg-emerald-950/25 border border-emerald-500/20 dark:border-emerald-800/40 rounded-lg flex items-center justify-between font-bold text-emerald-800 dark:text-emerald-300">
                 <span className="flex items-center gap-1.5 text-xs">
-                  <TrendingUp className="h-4 w-4" />
+                  <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Estimasi Net Profit (Laba Bersih)</span>
                 </span>
-                <span className="text-sm font-black">
-                  +{formatIDR(order.estimatedProfit || 0)}
-                </span>
+                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">+{formatIDR(order.estimatedProfit || 0)}</span>
               </div>
             </div>
           </div>
@@ -466,12 +488,13 @@ export default function OrderDetailPage({ params }: PageProps) {
                           <FileText className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 space-y-0.5">
-                          <p className="text-xs font-bold text-foreground truncate">{proof.label}</p>
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {proof.label}
+                          </p>
                           <p className="text-[10px] text-muted-foreground">{proof.desc}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary shrink-0 ml-2 group-hover:underline">
-                        <span>Lihat</span>
                         <Eye className="h-3.5 w-3.5" />
                       </div>
                     </button>
@@ -530,14 +553,17 @@ export default function OrderDetailPage({ params }: PageProps) {
           )}
 
           {/* Progressive Order Actions & Workflow Steps */}
-          {['PENDING', 'CONFIRMED', 'WAITING_PAYMENT', 'PAID', 'FULFILLED'].includes(order.status) && (
+          {['PENDING', 'CONFIRMED', 'WAITING_PAYMENT', 'PAID', 'FULFILLED'].includes(
+            order.status
+          ) && (
             <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-5">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
                   Alur Pesanan
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Selesaikan setiap langkah secara berurutan. Tahap berikutnya terkunci sampai WhatsApp dikonfirmasi telah dikirim.
+                  Selesaikan setiap langkah secara berurutan. Tahap berikutnya terkunci sampai
+                  WhatsApp dikonfirmasi telah dikirim.
                 </p>
               </div>
 
@@ -611,7 +637,8 @@ export default function OrderDetailPage({ params }: PageProps) {
                     Order Lama: Normalisasi Status
                   </span>
                   <p className="text-xs text-muted-foreground">
-                    Status CONFIRMED berasal dari alur lama. Pindahkan ke Menunggu Pembayaran tanpa mengirim ulang tagihan.
+                    Status CONFIRMED berasal dari alur lama. Pindahkan ke Menunggu Pembayaran tanpa
+                    mengirim ulang tagihan.
                   </p>
                   <div className="flex justify-end">
                     <Button
@@ -783,7 +810,8 @@ export default function OrderDetailPage({ params }: PageProps) {
 
                   {!isShippingAdjustmentResolved && (
                     <p className="text-xs text-amber-600 dark:text-amber-400">
-                      Selesaikan penyesuaian ongkir terlebih dahulu melalui tombol “Ubah Kurir / Ongkir Aktual”.
+                      Selesaikan penyesuaian ongkir terlebih dahulu melalui tombol “Ubah Kurir /
+                      Ongkir Aktual”.
                     </p>
                   )}
 
@@ -797,7 +825,9 @@ export default function OrderDetailPage({ params }: PageProps) {
                       target="_blank"
                       rel="noreferrer"
                       aria-disabled={
-                        !courierName.trim() || !trackingNumber.trim() || !isShippingAdjustmentResolved
+                        !courierName.trim() ||
+                        !trackingNumber.trim() ||
+                        !isShippingAdjustmentResolved
                       }
                       onClick={(event) => {
                         if (!courierName.trim() || !trackingNumber.trim()) {
@@ -865,7 +895,9 @@ export default function OrderDetailPage({ params }: PageProps) {
                             courierName,
                             trackingNumber: trackingNumber.trim()
                           });
-                          toast.success(`Pesanan ${order.orderNumber} berhasil dikirim (FULFILLED)!`);
+                          toast.success(
+                            `Pesanan ${order.orderNumber} berhasil dikirim (FULFILLED)!`
+                          );
                         } catch {
                           toast.error('Gagal memperbarui status');
                         }
@@ -886,7 +918,7 @@ export default function OrderDetailPage({ params }: PageProps) {
               )}
 
               {order.status === 'FULFILLED' && (
-                <div className="flex items-center gap-2 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                <div className="flex items-center gap-2 p-4 bg-emerald-500/10 border border-primary/10 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                   <CheckCircle2 className="h-4 w-4" />
                   Semua tahap selesai. Pesanan telah dikirim dan nomor resi sudah diinformasikan.
                 </div>
@@ -895,33 +927,33 @@ export default function OrderDetailPage({ params }: PageProps) {
               {/* Danger Zone Actions: Cancel or Reject */}
               {order.status !== 'FULFILLED' && (
                 <div className="pt-3 border-t border-border/20 flex items-center justify-end gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setCancelMode('CANCEL');
-                    setIsCancelDialogOpen(true);
-                  }}
-                  disabled={isUpdating}
-                  className="h-9 px-4 rounded-lg text-xs font-bold text-destructive hover:bg-destructive/10 border-border/40"
-                >
-                  Batalkan Pesanan
-                </Button>
-                {order.status === 'PENDING' && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setCancelMode('REJECT');
+                      setCancelMode('CANCEL');
                       setIsCancelDialogOpen(true);
                     }}
                     disabled={isUpdating}
                     className="h-9 px-4 rounded-lg text-xs font-bold text-destructive hover:bg-destructive/10 border-border/40"
                   >
-                    <XCircle className="h-3.5 w-3.5 mr-1" />
-                    <span>Tolak Pesanan (Spam)</span>
+                    Batalkan Pesanan
                   </Button>
-                )}
+                  {order.status === 'PENDING' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCancelMode('REJECT');
+                        setIsCancelDialogOpen(true);
+                      }}
+                      disabled={isUpdating}
+                      className="h-9 px-4 rounded-lg text-xs font-bold text-destructive hover:bg-destructive/10 border-border/40"
+                    >
+                      <XCircle className="h-3.5 w-3.5 mr-1" />
+                      <span>Tolak Pesanan (Spam)</span>
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -1194,7 +1226,8 @@ export default function OrderDetailPage({ params }: PageProps) {
               <div className="space-y-3">
                 <p className="text-xs text-foreground">
                   Kelebihan ongkir sebesar{' '}
-                  <strong>{formatIDR(Math.abs(shippingDifference))}</strong>. Pilih keputusan customer:
+                  <strong>{formatIDR(Math.abs(shippingDifference))}</strong>. Pilih keputusan
+                  customer:
                 </p>
                 <a
                   href={getShippingAdjustmentWaLink(order, 'REFUND_OFFER')}
