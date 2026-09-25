@@ -17,7 +17,8 @@ import {
   TrendingUp,
   ShieldAlert,
   ExternalLink,
-  Eye
+  Eye,
+  Printer
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { toast } from 'sonner';
@@ -55,6 +56,7 @@ import {
   formatStoreBankDetails,
   type WhatsAppMessageStage
 } from '@/lib/order-whatsapp';
+import { OrderInvoiceDialog } from '@/components/dashboard/order-invoice-dialog';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -86,6 +88,7 @@ export default function OrderDetailPage({ params }: PageProps) {
   >(null);
 
   // Dialogs
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [isExpeditionDialogOpen, setIsExpeditionDialogOpen] = useState(false);
   const [isExpeditionConfirmOpen, setIsExpeditionConfirmOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
@@ -270,6 +273,16 @@ export default function OrderDetailPage({ params }: PageProps) {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {order.status === 'FULFILLED' && (
+            <Button
+              variant="outline"
+              onClick={() => setIsInvoiceOpen(true)}
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-xs font-bold border-border/60 bg-card/60 shadow-2xs hover:bg-muted cursor-pointer"
+            >
+              <Printer className="h-4 w-4 text-primary" />
+              <span>Cetak Invoice</span>
+            </Button>
+          )}
           <a
             href={`https://wa.me/${formatWaNumber(order.whatsapp)}`}
             target="_blank"
@@ -279,13 +292,6 @@ export default function OrderDetailPage({ params }: PageProps) {
             <WhatsAppIcon size={16} className="h-4 w-4" />
             <span>Chat WhatsApp Customer</span>
           </a>
-          <Button
-            variant="outline"
-            onClick={() => router.push('/dashboard/orders')}
-            className="h-10 rounded-xl text-xs font-bold border-border/60"
-          >
-            Kembali ke Daftar
-          </Button>
         </div>
       </div>
 
@@ -428,7 +434,9 @@ export default function OrderDetailPage({ params }: PageProps) {
                   <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Estimasi Net Profit (Laba Bersih)</span>
                 </span>
-                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">+{formatIDR(order.estimatedProfit || 0)}</span>
+                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                  +{formatIDR(order.estimatedProfit || 0)}
+                </span>
               </div>
             </div>
           </div>
@@ -1475,6 +1483,11 @@ export default function OrderDetailPage({ params }: PageProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Invoice & Bluetooth Thermal Print Dialog */}
+      {order && (
+        <OrderInvoiceDialog order={order} open={isInvoiceOpen} onOpenChange={setIsInvoiceOpen} />
+      )}
     </div>
   );
 }

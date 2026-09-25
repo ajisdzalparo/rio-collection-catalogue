@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, Building2, Pencil, Trash2, CreditCard } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Building2, Pencil, Trash2, CreditCard, GripVertical, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,7 +33,79 @@ import {
 export function StoreBanksManager() {
   const { data: storeBanks = [], isLoading } = useStoreBanksQuery();
   const { data: masterBanks = [] } = useBanksQuery(true);
-  const { addStoreBank, updateStoreBank, deleteStoreBank } = useStoreBankMutations();
+  const {
+    addStoreBank,
+    updateStoreBank,
+    deleteStoreBank,
+    reorderStoreBanks,
+    isAdding,
+    isUpdating,
+    isDeleting
+  } = useStoreBankMutations();
+
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [updatingBankId, setUpdatingBankId] = useState<string | null>(null);
+
+  const isSubmitting = isSaving || isAdding || isUpdating;
+
+  const items = useMemo(() => {
+    return [...storeBanks].sort((a, b) => a.sortOrder - b.sortOrder);
+  }, [storeBanks]);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newItems = [...items];
+    const [draggedItem] = newItems.splice(draggedIndex, 1);
+    newItems.splice(targetIndex, 0, draggedItem);
+
+    const updatedWithOrder = newItems.map((item, idx) => ({
+      ...item,
+      sortOrder: idx + 1
+    }));
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+
+    const payload = updatedWithOrder.map((item) => ({
+      id: item.id,
+      sortOrder: item.sortOrder
+    }));
+
+    try {
+      await reorderStoreBanks(payload);
+      toast.success('Urutan rekening berhasil diperbarui!');
+    } catch (err) {
+      console.error('Reorder error:', err);
+      toast.error('Gagal memperbarui urutan rekening');
+    }
+  };
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<StoreBankItem | null>(null);
@@ -78,6 +150,8 @@ export function StoreBanksManager() {
   };
 
   const handleSave = async () => {
+    if (isSubmitting) return;
+
     const finalBankName =
       selectedMasterBank === 'CUSTOM'
         ? customBankName.trim()
@@ -88,6 +162,7 @@ export function StoreBanksManager() {
       return;
     }
 
+    setIsSaving(true);
     try {
       if (editingItem) {
         await updateStoreBank({
@@ -105,14 +180,18 @@ export function StoreBanksManager() {
           accountNumber: accountNumber.trim(),
           accountOwner: accountOwner.trim(),
           isActive,
-          sortOrder: Number(sortOrder) || 0
+          sortOrder: Number(sortOrder) || items.length + 1
         });
         toast.success(`Rekening ${finalBankName} berhasil ditambahkan`);
       }
       setIsDialogOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save store bank:', error);
-      toast.error('Gagal menyimpan data rekening bank toko');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const apiMsg = (error as any)?.response?.data?.message;
+      toast.error(apiMsg || 'Gagal menyimpan data rekening bank toko');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -146,16 +225,24 @@ export function StoreBanksManager() {
         </Button>
       </div>
 
-      <p className="text-xs text-muted-foreground leading-relaxed">
-        Rekening bank yang diaktifkan di bawah ini akan ditampilkan secara otomatis kepada pembeli
-        pada halaman konfirmasi pesanan (order checkout) untuk transfer pembayaran manual.
-      </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Rekening bank yang diaktifkan di bawah ini akan ditampilkan secara otomatis kepada pembeli
+          pada halaman konfirmasi pesanan (order checkout) untuk transfer pembayaran manual.
+        </p>
+        {items.length > 1 && (
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-lg border border-border/40 shrink-0 select-none">
+            <GripVertical className="h-3.5 w-3.5 text-primary" />
+            <span>Drag &amp; drop kartu untuk ganti urutan</span>
+          </span>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="py-8 text-center text-xs text-muted-foreground animate-pulse">
           Memuat daftar rekening pembayaran toko...
         </div>
-      ) : storeBanks.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="py-8 border border-dashed border-border/40 rounded-xl text-center space-y-2">
           <Building2 className="h-8 w-8 text-muted-foreground/40 mx-auto" />
           <p className="text-xs font-semibold text-foreground">
@@ -168,17 +255,32 @@ export function StoreBanksManager() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-          {storeBanks.map((item) => (
+          {items.map((item, index) => (
             <div
               key={item.id}
-              className={`p-4 border rounded-2xl transition-all flex flex-col justify-between space-y-3 ${
-                item.isActive
-                  ? 'bg-card border-border/40 shadow-2xs'
-                  : 'bg-muted/10 border-border/20 opacity-60'
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
+              onDrop={(e) => handleDrop(e, index)}
+              className={`p-4 border rounded-2xl transition-all flex flex-col justify-between space-y-3 cursor-grab active:cursor-grabbing select-none ${
+                draggedIndex === index
+                  ? 'opacity-40 border-primary border-dashed scale-[0.98] ring-2 ring-primary/30'
+                  : dragOverIndex === index
+                    ? 'border-primary ring-2 ring-primary/40 bg-muted/40 -translate-y-0.5'
+                    : item.isActive
+                      ? 'bg-card border-border/40 shadow-2xs hover:border-border/70 hover:shadow-xs'
+                      : 'bg-muted/10 border-border/20 opacity-60'
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground p-1 -ml-1.5 rounded-md transition-colors shrink-0"
+                    title="Geser (drag) untuk mengubah urutan"
+                  >
+                    <GripVertical className="h-4 w-4" />
+                  </div>
                   <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-extrabold text-xs shrink-0 uppercase">
                     {item.bankName.slice(0, 3)}
                   </div>
@@ -195,27 +297,34 @@ export function StoreBanksManager() {
                   </div>
                 </div>
 
-                <Switch
-                  checked={item.isActive}
-                  onCheckedChange={async (checked) => {
-                    try {
-                      await updateStoreBank({ id: item.id, isActive: checked });
-                      toast.success(
-                        `Rekening ${item.bankName} ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
-                      );
-                    } catch (err) {
-                      console.error(err);
-                      toast.error('Gagal memperbarui status');
-                    }
-                  }}
-                />
+                <div onMouseDown={(e) => e.stopPropagation()}>
+                  <Switch
+                    checked={item.isActive}
+                    disabled={updatingBankId === item.id}
+                    onCheckedChange={async (checked) => {
+                      setUpdatingBankId(item.id);
+                      try {
+                        await updateStoreBank({ id: item.id, isActive: checked });
+                        toast.success(
+                          `Rekening ${item.bankName} ${checked ? 'diaktifkan' : 'dinonaktifkan'}`
+                        );
+                      } catch (err) {
+                        console.error(err);
+                        toast.error('Gagal memperbarui status');
+                      } finally {
+                        setUpdatingBankId(null);
+                      }
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-border/20 text-[11px]">
-                <span className="text-muted-foreground/70 font-mono text-[10px]">
-                  Urutan: #{item.sortOrder}
+                <span className="text-muted-foreground/70 font-mono text-[10px] flex items-center gap-1">
+                  <span>Urutan:</span>
+                  <span className="font-bold text-foreground">#{index + 1}</span>
                 </span>
-                <div className="flex gap-1">
+                <div className="flex gap-1" onMouseDown={(e) => e.stopPropagation()}>
                   <Button
                     type="button"
                     variant="ghost"
@@ -350,13 +459,26 @@ export function StoreBanksManager() {
             <Button
               type="button"
               variant="outline"
+              disabled={isSubmitting}
               onClick={() => setIsDialogOpen(false)}
-              className="h-9 rounded-xl text-xs"
+              className="h-9 rounded-xl text-xs cursor-pointer"
             >
               Batal
             </Button>
-            <Button type="button" onClick={handleSave} className="h-9 rounded-xl text-xs font-bold">
-              Simpan Rekening
+            <Button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleSave}
+              className="h-9 rounded-xl text-xs font-bold gap-1.5 cursor-pointer shadow-xs"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                <span>Simpan Rekening</span>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -377,6 +499,7 @@ export function StoreBanksManager() {
         confirmText="Hapus Rekening"
         cancelText="Batal"
         variant="destructive"
+        isLoading={isDeleting}
         onConfirm={confirmDelete}
       />
     </div>

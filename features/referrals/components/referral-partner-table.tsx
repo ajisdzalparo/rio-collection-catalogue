@@ -106,8 +106,14 @@ export function ReferralPartnerTable({
                 <Badge
                   key={code.id}
                   variant="outline"
-                  className={`border-border/60 bg-card/60 text-muted-foreground font-mono text-[10px] px-1.5 py-0 whitespace-nowrap ${code.isActive ? 'text-primary dark:text-primary' : 'text-muted-foreground'}`}
-                ></Badge>
+                  className={`border-border/60 bg-card/60 font-mono text-[10px] px-1.5 py-0.5 whitespace-nowrap ${
+                    code.isActive
+                      ? 'text-primary dark:text-primary font-bold'
+                      : 'text-muted-foreground line-through opacity-60'
+                  }`}
+                >
+                  {code.code}
+                </Badge>
               ))
             )}
           </div>

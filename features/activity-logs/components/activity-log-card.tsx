@@ -47,7 +47,7 @@ export function ActivityLogCard({ item, isFetching }: ActivityLogCardProps) {
         </Badge>
       </header>
 
-      <p className="break-words text-sm font-semibold leading-relaxed text-foreground">
+      <p className="wrap-break-word text-sm font-semibold leading-relaxed text-foreground">
         {item.description}
       </p>
 

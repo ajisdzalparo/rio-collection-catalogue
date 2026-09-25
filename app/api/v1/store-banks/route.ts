@@ -36,10 +36,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const trimmedBankName = String(bankName).trim();
+    const trimmedAccountNumber = String(accountNumber).trim();
+
+    // Prevent duplicate entries
+    const existing = await prisma.storeBank.findFirst({
+      where: {
+        bankName: { equals: trimmedBankName, mode: 'insensitive' },
+        accountNumber: trimmedAccountNumber
+      }
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        {
+          code: 409,
+          status: 'error',
+          message: `Nomor rekening ${trimmedAccountNumber} untuk ${trimmedBankName} sudah terdaftar.`
+        },
+        { status: 409 }
+      );
+    }
+
     const storeBank = await prisma.storeBank.create({
       data: {
-        bankName: String(bankName).trim(),
-        accountNumber: String(accountNumber).trim(),
+        bankName: trimmedBankName,
+        accountNumber: trimmedAccountNumber,
         accountOwner: String(accountOwner).trim(),
         isActive: isActive !== false,
         sortOrder: Number(sortOrder) || 0
@@ -51,6 +73,42 @@ export async function POST(request: Request) {
     console.error('Error creating store bank:', error);
     return NextResponse.json(
       { code: 500, status: 'error', message: 'Failed to create store bank account' },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH /api/v1/store-banks — bulk reorder store banks
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { items } = body;
+
+    if (!Array.isArray(items)) {
+      return NextResponse.json(
+        { code: 400, status: 'error', message: 'items array is required' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.$transaction(
+      items.map((item: { id: string; sortOrder: number }) =>
+        prisma.storeBank.update({
+          where: { id: item.id },
+          data: { sortOrder: Number(item.sortOrder) || 0 }
+        })
+      )
+    );
+
+    return NextResponse.json({
+      code: 200,
+      status: 'success',
+      message: 'Urutan rekening berhasil diperbarui'
+    });
+  } catch (error) {
+    console.error('Error reordering store banks:', error);
+    return NextResponse.json(
+      { code: 500, status: 'error', message: 'Failed to reorder store bank accounts' },
       { status: 500 }
     );
   }

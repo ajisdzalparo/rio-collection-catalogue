@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { uploadFileWithPresign } from '@/lib/presigned-upload';
+import { compressImage } from '@/lib/image-compressor';
 import { ImageCropperModal, AspectRatioOption } from '@/components/shared/image-cropper-modal';
 
 export interface ImageUploadProps {
@@ -60,7 +61,8 @@ export function ImageUpload({
     onChange(previewUrl);
 
     try {
-      const publicUrl = await uploadFileWithPresign(file, { purpose: 'product-image' });
+      const optimizedFile = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
+      const publicUrl = await uploadFileWithPresign(optimizedFile, { purpose: 'product-image' });
       onChange(publicUrl);
     } catch (error) {
       console.warn('Upload failed, keeping preview data URL:', error);
@@ -431,7 +433,8 @@ export function MultiImageUpload({
 
       setUploadingCount((c) => c + 1);
       try {
-        const publicUrl = await uploadFileWithPresign(croppedFile, { purpose: 'product-image' });
+        const optimizedFile = await compressImage(croppedFile, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
+        const publicUrl = await uploadFileWithPresign(optimizedFile, { purpose: 'product-image' });
         const refreshed = [...valueRef.current];
         const matchIdx = refreshed.indexOf(previewUrl);
         if (matchIdx !== -1) {
@@ -469,7 +472,8 @@ export function MultiImageUpload({
     // Upload in background to MinIO/S3
     setUploadingCount((c) => c + 1);
     try {
-      const publicUrl = await uploadFileWithPresign(croppedFile, { purpose: 'product-image' });
+      const optimizedFile = await compressImage(croppedFile, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
+      const publicUrl = await uploadFileWithPresign(optimizedFile, { purpose: 'product-image' });
       const refreshed = [...valueRef.current];
       const matchIdx = refreshed.indexOf(previewUrl);
       if (matchIdx !== -1) {

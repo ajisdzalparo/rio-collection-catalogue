@@ -18,7 +18,9 @@ export function useStoreBanksQuery(activeOnly = false) {
   return useQuery({
     queryKey: ['store-banks', activeOnly],
     queryFn: async () => {
-      const { data } = await axios.get(`/api/v1/store-banks${activeOnly ? '?activeOnly=true' : ''}`);
+      const { data } = await axios.get(
+        `/api/v1/store-banks${activeOnly ? '?activeOnly=true' : ''}`
+      );
       if (data.code === 200 && data.data) {
         return data.data as StoreBankItem[];
       }
@@ -86,12 +88,44 @@ export function useStoreBankMutations() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['store-banks'] })
   });
 
+  const reorderStoreBanksMutation = useMutation({
+    mutationFn: async (items: Array<{ id: string; sortOrder: number }>) => {
+      const { data } = await axios.patch('/api/v1/store-banks', { items });
+      return data;
+    },
+    onMutate: async (items) => {
+      await queryClient.cancelQueries({ queryKey: ['store-banks'] });
+      const previousStoreBanks = queryClient.getQueryData<StoreBankItem[]>(['store-banks', false]);
+
+      queryClient.setQueryData<StoreBankItem[]>(['store-banks', false], (old) => {
+        if (!Array.isArray(old)) return [];
+        const orderMap = new Map(items.map((it) => [it.id, it.sortOrder]));
+        return [...old]
+          .map((item) => ({
+            ...item,
+            sortOrder: orderMap.get(item.id) ?? item.sortOrder
+          }))
+          .sort((a, b) => a.sortOrder - b.sortOrder);
+      });
+
+      return { previousStoreBanks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousStoreBanks) {
+        queryClient.setQueryData(['store-banks', false], context.previousStoreBanks);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['store-banks'] })
+  });
+
   return {
     addStoreBank: addStoreBankMutation.mutateAsync,
     updateStoreBank: updateStoreBankMutation.mutateAsync,
     deleteStoreBank: deleteStoreBankMutation.mutateAsync,
+    reorderStoreBanks: reorderStoreBanksMutation.mutateAsync,
     isAdding: addStoreBankMutation.isPending,
     isUpdating: updateStoreBankMutation.isPending,
-    isDeleting: deleteStoreBankMutation.isPending
+    isDeleting: deleteStoreBankMutation.isPending,
+    isReordering: reorderStoreBanksMutation.isPending
   };
 }

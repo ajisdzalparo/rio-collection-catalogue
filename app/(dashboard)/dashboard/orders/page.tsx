@@ -14,7 +14,8 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Trash2,
-  BellRing
+  BellRing,
+  Printer
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { toast } from 'sonner';
@@ -59,6 +60,7 @@ import { useStoreSettingsQuery, useStoreSettingsStore } from '@/hooks/use-store-
 import { useStoreBanksQuery } from '@/hooks/use-store-banks';
 import { buildWhatsAppMessage, formatStoreBankDetails } from '@/lib/order-whatsapp';
 import { ORDER_STATUS_OPTIONS } from '@/lib/order-status';
+import { OrderInvoiceDialog } from '@/components/dashboard/order-invoice-dialog';
 
 function OrdersPageContent() {
   const router = useRouter();
@@ -87,6 +89,7 @@ function OrdersPageContent() {
   const [isDeleteExpiredOpen, setIsDeleteExpiredOpen] = useState(false);
 
   const [cancelTargetOrder, setCancelTargetOrder] = useState<Order | null>(null);
+  const [invoiceTargetOrder, setInvoiceTargetOrder] = useState<Order | null>(null);
   const [cancelReason, setCancelReason] = useState('');
 
   const handleOpenFilterDrawer = (open: boolean) => {
@@ -269,6 +272,16 @@ function OrdersPageContent() {
                   <Eye className="h-3.5 w-3.5 text-primary" />
                   <span>Lihat &amp; Proses Pesanan</span>
                 </DropdownMenuItem>
+
+                {order.status === 'FULFILLED' && (
+                  <DropdownMenuItem
+                    onClick={() => setInvoiceTargetOrder(order)}
+                    className="gap-2 cursor-pointer font-medium"
+                  >
+                    <Printer className="h-3.5 w-3.5 text-primary" />
+                    <span>Cetak Invoice</span>
+                  </DropdownMenuItem>
+                )}
 
                 <DropdownMenuItem
                   onClick={() => {
@@ -560,6 +573,17 @@ function OrdersPageContent() {
         isLoading={isDeletingExpired}
         onConfirm={() => void handleDeleteExpiredOrders()}
       />
+
+      {/* Invoice & Bluetooth Thermal Print Dialog */}
+      {invoiceTargetOrder && (
+        <OrderInvoiceDialog
+          order={invoiceTargetOrder}
+          open={Boolean(invoiceTargetOrder)}
+          onOpenChange={(open) => {
+            if (!open) setInvoiceTargetOrder(null);
+          }}
+        />
+      )}
     </VStack>
   );
 }
