@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Shirt, Layers, Tag } from 'lucide-react';
 import { toast } from 'sonner';
+import axios from 'axios';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -200,9 +201,26 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
         );
       }
       router.push('/dashboard/products');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to save product:', err);
-      toast.error('Gagal menyimpan produk');
+      let errorMsg = 'Gagal menyimpan produk';
+      if (axios.isAxiosError(err)) {
+        const serverMsg = err.response?.data?.message || err.response?.data?.error;
+        if (serverMsg) {
+          if (
+            typeof serverMsg === 'string' &&
+            (serverMsg.includes('field slug already exists') || serverMsg.includes('slug'))
+          ) {
+            errorMsg =
+              'Nama produk sudah terdaftar (slug duplikat). Silakan gunakan nama produk yang berbeda.';
+          } else {
+            errorMsg = String(serverMsg);
+          }
+        }
+      } else if (err instanceof Error) {
+        errorMsg = err.message;
+      }
+      toast.error(errorMsg);
     }
   };
 

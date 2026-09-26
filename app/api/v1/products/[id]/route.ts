@@ -66,7 +66,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const normalizedStatus = status === undefined ? existingProduct.status : String(status);
     const effectiveReleaseDate =
       releaseDate === undefined
-        ? existingProduct.releaseDate?.toISOString() ?? null
+        ? (existingProduct.releaseDate?.toISOString() ?? null)
         : releaseDate;
     const releaseValidation = validateReleaseSchedule(normalizedStatus, effectiveReleaseDate);
     if (!releaseValidation.valid) {
@@ -199,6 +199,25 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     });
   } catch (error) {
     console.error('Error updating product:', error);
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      const target =
+        'meta' in error && error.meta && typeof error.meta === 'object' && 'target' in error.meta
+          ? (error.meta as { target: string[] }).target
+          : ['unknown'];
+      const targetList = Array.isArray(target) ? target : [String(target)];
+      const isSlug = targetList.includes('slug');
+      const targetStr = targetList.join(', ');
+      return NextResponse.json(
+        {
+          code: 409,
+          status: 'error',
+          message: isSlug
+            ? 'Nama produk sudah digunakan (slug duplikat). Silakan gunakan nama produk yang berbeda.'
+            : `Data ${targetStr} sudah terdaftar dan tidak boleh duplikat.`
+        },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { code: 500, status: 'error', message: 'Failed to update product' },
       { status: 500 }

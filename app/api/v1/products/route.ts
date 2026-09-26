@@ -191,11 +191,16 @@ export async function POST(request: Request) {
         'meta' in error && error.meta && typeof error.meta === 'object' && 'target' in error.meta
           ? (error.meta as { target: string[] }).target
           : ['unknown'];
+      const targetList = Array.isArray(target) ? target : [String(target)];
+      const isSlug = targetList.includes('slug');
+      const targetStr = targetList.join(', ');
       return NextResponse.json(
         {
           code: 409,
           status: 'error',
-          message: `Duplicate value: field ${Array.isArray(target) ? target.join(', ') : target} already exists`
+          message: isSlug
+            ? 'Nama produk sudah digunakan (slug duplikat). Silakan gunakan nama produk yang berbeda.'
+            : `Data ${targetStr} sudah terdaftar dan tidak boleh duplikat.`
         },
         { status: 409 }
       );
