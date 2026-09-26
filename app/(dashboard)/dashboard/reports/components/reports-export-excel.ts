@@ -39,8 +39,10 @@ const CURRENCY_FORMAT = '"Rp" #,##0;[Red]("Rp" #,##0);"-"';
 const NUMBER_FORMAT = '#,##0';
 const PERCENT_FORMAT = '0.0%';
 
-function safeExcelText(value: string) {
-  const normalized = value.trim() || '-';
+function safeExcelText(value?: string | null) {
+  if (!value) return '';
+  const normalized = value.trim();
+  if (!normalized || normalized === '-') return '';
   return /^[=+\-@]/.test(normalized) ? `'${normalized}` : normalized;
 }
 
@@ -85,8 +87,8 @@ export function buildAccountingRows(orders: Order[], selectedProducts: string[])
         unitPrice: item.price,
         grossSales: grossItem,
         discount,
-        referralCode: safeExcelText(order.referralCodeSnapshot || '-'),
-        referralPartner: safeExcelText(order.referralPartnerSnapshot || '-'),
+        referralCode: safeExcelText(order.referralCodeSnapshot || ''),
+        referralPartner: safeExcelText(order.referralPartnerSnapshot || ''),
         sales,
         cogs,
         grossProfit,
@@ -119,21 +121,21 @@ export function buildReportWorkbook({
 
   try {
     const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'RIO Collection Official';
-  workbook.created = new Date();
-  workbook.calcProperties.fullCalcOnLoad = true;
+    workbook.creator = 'RIO Collection Official';
+    workbook.created = new Date();
+    workbook.calcProperties.fullCalcOnLoad = true;
 
-  // Totals calculation
-  const totalOrderCount = new Set(rows.map((r) => r.orderNumber)).size;
-  const totalQuantity = rows.reduce((sum, r) => sum + r.quantity, 0);
-  const totalGrossSales = rows.reduce((sum, r) => sum + r.grossSales, 0);
-  const totalDiscount = rows.reduce((sum, r) => sum + r.discount, 0);
-  const totalSales = rows.reduce((sum, r) => sum + r.sales, 0);
-  const totalCogs = rows.reduce((sum, r) => sum + r.cogs, 0);
-  const totalGrossProfit = rows.reduce((sum, r) => sum + r.grossProfit, 0);
-  const totalReferralReward = rows.reduce((sum, r) => sum + r.referralReward, 0);
-  const totalNetProfit = rows.reduce((sum, r) => sum + r.netProfit, 0);
-  const netMarginRate = totalSales > 0 ? totalNetProfit / totalSales : 0;
+    // Totals calculation
+    const totalOrderCount = new Set(rows.map((r) => r.orderNumber)).size;
+    const totalQuantity = rows.reduce((sum, r) => sum + r.quantity, 0);
+    const totalGrossSales = rows.reduce((sum, r) => sum + r.grossSales, 0);
+    const totalDiscount = rows.reduce((sum, r) => sum + r.discount, 0);
+    const totalSales = rows.reduce((sum, r) => sum + r.sales, 0);
+    const totalCogs = rows.reduce((sum, r) => sum + r.cogs, 0);
+    const totalGrossProfit = rows.reduce((sum, r) => sum + r.grossProfit, 0);
+    const totalReferralReward = rows.reduce((sum, r) => sum + r.referralReward, 0);
+    const totalNetProfit = rows.reduce((sum, r) => sum + r.netProfit, 0);
+    const netMarginRate = totalSales > 0 ? totalNetProfit / totalSales : 0;
 
     const BORDER_THIN: Partial<ExcelJS.Borders> = {
       top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
@@ -493,11 +495,39 @@ export function buildReportWorkbook({
 
       dataRow.getCell(8).numFmt = CURRENCY_FORMAT;
       dataRow.getCell(9).numFmt = CURRENCY_FORMAT;
-      dataRow.getCell(10).numFmt = CURRENCY_FORMAT;
+
+      // Cell 10: Diskon Referral (kosongkan jika tidak ada promo/diskon)
+      if (row.discount > 0) {
+        dataRow.getCell(10).value = row.discount;
+        dataRow.getCell(10).numFmt = CURRENCY_FORMAT;
+      } else {
+        dataRow.getCell(10).value = '';
+      }
+      dataRow.getCell(10).alignment = { horizontal: 'right', vertical: 'middle' };
+
+      // Cell 11 & 12: Kode & Partner Referral (kosongkan jika tidak ada)
+      dataRow.getCell(11).value = row.referralCode || '';
       dataRow.getCell(11).alignment = { horizontal: 'center', vertical: 'middle' };
+      dataRow.getCell(12).value = row.referralPartner || '';
       dataRow.getCell(12).alignment = { horizontal: 'left', vertical: 'middle' };
 
-      for (let column = 13; column <= 19; column++) {
+      // Cell 13-15: Penjualan Bersih, HPP, Laba Kotor
+      for (let column = 13; column <= 15; column++) {
+        dataRow.getCell(column).numFmt = CURRENCY_FORMAT;
+        dataRow.getCell(column).alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+
+      // Cell 16: Komisi Referral (kosongkan jika tidak ada)
+      if (row.referralReward > 0) {
+        dataRow.getCell(16).value = row.referralReward;
+        dataRow.getCell(16).numFmt = CURRENCY_FORMAT;
+      } else {
+        dataRow.getCell(16).value = '';
+      }
+      dataRow.getCell(16).alignment = { horizontal: 'right', vertical: 'middle' };
+
+      // Cell 17-19: Laba Bersih Akhir, Ongkir, Total Kas Masuk
+      for (let column = 17; column <= 19; column++) {
         dataRow.getCell(column).numFmt = CURRENCY_FORMAT;
         dataRow.getCell(column).alignment = { horizontal: 'right', vertical: 'middle' };
       }

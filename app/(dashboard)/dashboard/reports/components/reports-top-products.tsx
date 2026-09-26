@@ -13,7 +13,7 @@ export function ReportsTopProducts({ topProducts, selectedProduct }: ReportsTopP
     <div className="bg-card border border-border/40 rounded-xl p-5 space-y-4 shadow-2xs w-full min-w-0">
       <div className="flex items-center justify-between border-b border-border/10 pb-3 flex-wrap gap-2">
         <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-          <Flame className="h-4 w-4 text-orange-500 shrink-0" />
+          <Flame className="h-4 w-4" />
           <span>
             {selectedProduct === 'ALL'
               ? 'Top 5 Kaos Terlaris Periode Ini'
@@ -62,7 +62,9 @@ export function ReportsTopProducts({ topProducts, selectedProduct }: ReportsTopP
                 </div>
 
                 <div className="space-y-1 pt-1">
-                  <h5 className="text-xs font-bold text-foreground line-clamp-1 truncate">{p.name}</h5>
+                  <h5 className="text-xs font-bold text-foreground line-clamp-1 truncate">
+                    {p.name}
+                  </h5>
                   <p className="text-[11px] font-extrabold text-emerald-500">
                     {formatIDR(p.revenue)}
                   </p>

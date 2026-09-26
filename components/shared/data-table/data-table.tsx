@@ -61,6 +61,7 @@ export interface DataTableProps<T> {
   pageSizeOptions?: number[];
   striped?: boolean;
   density?: 'comfortable' | 'compact';
+  tableClassName?: string;
 
   isLoading?: boolean;
   emptyTitle?: string;
@@ -102,6 +103,7 @@ export function DataTable<T extends object>({
   onSelectionChange,
   striped = false,
   density = 'comfortable',
+  tableClassName,
   bulkActions,
   emptyTitle = 'No data found',
   emptyDescription = 'Try adjusting your search query or filters to find what you are looking for.',
@@ -614,7 +616,7 @@ export function DataTable<T extends object>({
 
       {/* Desktop Table View (Screen >= md) */}
       <div className="hidden md:block">
-        <Table>
+        <Table className={tableClassName}>
           <TableHeader>
             <TableRow>
               {enableSelection && (
@@ -648,11 +650,13 @@ export function DataTable<T extends object>({
                 const isRightAligned =
                   col.align === 'right' ||
                   (typeof col.className === 'string' &&
-                    (col.className.includes('text-right') || col.className.includes('justify-end')));
+                    (col.className.includes('text-right') ||
+                      col.className.includes('justify-end')));
                 const isCenterAligned =
                   col.align === 'center' ||
                   (typeof col.className === 'string' &&
-                    (col.className.includes('text-center') || col.className.includes('justify-center')));
+                    (col.className.includes('text-center') ||
+                      col.className.includes('justify-center')));
 
                 const alignmentClass = isRightAligned
                   ? 'justify-end text-right'

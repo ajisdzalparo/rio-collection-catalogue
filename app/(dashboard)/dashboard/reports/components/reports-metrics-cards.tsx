@@ -23,7 +23,7 @@ export function ReportsMetricsCards({
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
               Penjualan Bersih (Net)
             </span>
-            <Receipt className="h-4 w-4 text-blue-500" />
+            <Receipt className="h-4 w-4" />
           </div>
           <h3 className="text-xl font-extrabold text-foreground tabular-nums">
             {formatIDR(currentMetrics.revenue)}
@@ -47,7 +47,7 @@ export function ReportsMetricsCards({
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
               Total HPP (Modal)
             </span>
-            <Coins className="h-4 w-4 text-amber-500" />
+            <Coins className="h-4 w-4" />
           </div>
           <h3 className="text-xl font-extrabold text-foreground tabular-nums">
             {formatIDR(currentMetrics.totalHpp)}
@@ -58,12 +58,12 @@ export function ReportsMetricsCards({
         {/* Laba Bersih Toko (Net Profit Setelah Komisi) */}
         <div className="bg-card border border-border/60 rounded-xl p-4.5 space-y-1.5 shadow-2xs min-w-0">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+            <span className="text-[10px] font-bold uppercase tracking-widest">
               Laba Bersih Akhir
             </span>
-            <TrendingUp className="h-4 w-4 text-emerald-500" />
+            <TrendingUp className="h-4 w-4" />
           </div>
-          <h3 className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+          <h3 className="text-xl font-extrabold tabular-nums">
             {formatIDR(currentMetrics.profitAfterReferral)}
           </h3>
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">
@@ -85,7 +85,7 @@ export function ReportsMetricsCards({
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
               Profit Margin
             </span>
-            <Percent className="h-4 w-4 text-purple-500" />
+            <Percent className="h-4 w-4" />
           </div>
           <h3 className="text-xl font-extrabold text-foreground tabular-nums">
             {currentMetrics.profitMargin.toFixed(1)}%
@@ -113,30 +113,26 @@ export function ReportsMetricsCards({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background border border-border/60 text-muted-foreground">
             <Tag className="h-4 w-4" />
           </div>
           <div>
             <p className="text-[10px] font-semibold text-muted-foreground uppercase">
               Diskon Customer (Referral)
             </p>
-            <p className="text-xs font-bold text-rose-600 dark:text-rose-400">
-              -{formatIDR(currentMetrics.customerDiscount)}
-            </p>
+            <p className="text-xs font-bold">-{formatIDR(currentMetrics.customerDiscount)}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background border border-border/60 text-muted-foreground">
             <HandCoins className="h-4 w-4" />
           </div>
           <div>
             <p className="text-[10px] font-semibold text-muted-foreground uppercase">
               Komisi Partner Referral
             </p>
-            <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
-              {formatIDR(currentMetrics.cashReward)}
-            </p>
+            <p className="text-xs font-bold">{formatIDR(currentMetrics.cashReward)}</p>
           </div>
         </div>
       </div>
