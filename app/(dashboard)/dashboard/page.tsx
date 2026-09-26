@@ -226,7 +226,7 @@ export default function DashboardPage() {
             <div className="h-10 w-10 rounded-2xl bg-muted/60 text-foreground flex items-center justify-center border border-border/20 shadow-xs">
               <ShoppingBag className="h-5 w-5" />
             </div>
-            <HStack gap="xs" className="text-[11px] font-bold text-emerald-500">
+            <HStack gap="xs" className="text-[11px] font-bold">
               <TrendingUp className="h-3 w-3" />
               <span>+{stats.monthlyGrowth}%</span>
             </HStack>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
         {/* Card 2: Pending Orders */}
         <VStack gap="md" className="equa-card p-5 justify-between">
           <HStack justify="between" className="w-full">
-            <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 shadow-xs">
+            <div className="h-10 w-10 rounded-2xl bg-muted/60 text-foreground flex items-center justify-center shadow-xs">
               <Hourglass className="h-5 w-5" />
             </div>
           </HStack>
@@ -263,7 +263,7 @@ export default function DashboardPage() {
         {/* Card 3: Paid Orders */}
         <VStack gap="md" className="equa-card p-5 justify-between">
           <HStack justify="between" className="w-full">
-            <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 shadow-xs">
+            <div className="h-10 w-10 rounded-2xl bg-muted/60 text-foreground flex items-center justify-center shadow-xs">
               <CreditCard className="h-5 w-5" />
             </div>
           </HStack>
@@ -281,7 +281,7 @@ export default function DashboardPage() {
         {/* Card 4: Total Revenue */}
         <VStack gap="md" className="equa-card p-5 justify-between">
           <HStack justify="between" className="w-full">
-            <div className="h-10 w-10 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center border border-purple-500/20 shadow-xs">
+            <div className="h-10 w-10 rounded-2xl bg-muted/60 text-foreground flex items-center justify-center shadow-xs">
               <DollarSign className="h-5 w-5" />
             </div>
           </HStack>
@@ -378,8 +378,11 @@ export default function DashboardPage() {
               </div>
               <p className="text-xs font-medium text-muted-foreground leading-relaxed">
                 Terdapat{' '}
-                <span className="font-bold text-foreground">{stats.outOfStockProducts} produk aktif</span>{' '}
-                yang stoknya habis (0 pcs). Anda bisa mengisikan stok baru atau mengubah statusnya menjadi SOLD OUT di panel Produk CMS.
+                <span className="font-bold text-foreground">
+                  {stats.outOfStockProducts} produk aktif
+                </span>{' '}
+                yang stoknya habis (0 pcs). Anda bisa mengisikan stok baru atau mengubah statusnya
+                menjadi SOLD OUT di panel Produk CMS.
               </p>
               <Link
                 href="/dashboard/products?filter=out_of_stock"

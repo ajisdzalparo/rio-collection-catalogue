@@ -135,13 +135,12 @@ export default function LoginPage() {
                 </>
               )}
             </Button>
+            {/* Footer Security Tag */}
+            <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+              <span>Sistem Otorisasi {settings?.storeName || '[NAMA TOKO]'} Admin v2.0</span>
+            </div>
           </form>
-        </div>
-
-        {/* Footer Security Tag */}
-        <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-          <span>Sistem Otorisasi {settings?.storeName || 'RIO COLLECTION'} Admin v1.0</span>
         </div>
       </div>
 
