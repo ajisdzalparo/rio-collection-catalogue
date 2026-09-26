@@ -32,7 +32,7 @@ function ReportsPageContent() {
     setSelectedStatuses,
     availableProducts,
     currentOrders,
-    previousOrders,
+    hasPreviousPeriod,
     currentMetrics,
     growth,
     topProducts,
@@ -92,13 +92,13 @@ function ReportsPageContent() {
         <ReportsMetricsCards
           currentMetrics={currentMetrics}
           growth={growth}
-          hasPreviousPeriod={previousOrders.length > 0}
+          hasPreviousPeriod={hasPreviousPeriod}
         />
 
         <ReportsSalesChart
           chartDataPoints={chartDataPoints}
           chartInsights={chartInsights}
-          hasPreviousPeriod={previousOrders.length > 0}
+          hasPreviousPeriod={hasPreviousPeriod}
           startDate={startDate}
           endDate={endDate}
           selectedProduct={selectedProductLabel}
@@ -106,8 +106,10 @@ function ReportsPageContent() {
         />
 
         <ReportsSalesTable
-          currentOrders={currentOrders}
           selectedProducts={selectedProducts}
+          selectedStatuses={selectedStatuses}
+          startDate={startDate}
+          endDate={endDate}
         />
 
         {/* Top Best-Selling Kaos Section */}

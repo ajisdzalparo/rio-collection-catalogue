@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useOrders } from './use-orders';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import type { Order } from './use-orders';
 
 export interface CustomerSummary {
@@ -16,67 +16,51 @@ export interface CustomerSummary {
   orders: Order[];
 }
 
-export function useCustomers() {
-  const { data: orders = [], isLoading, error } = useOrders();
+export interface CustomersMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
 
-  const customersList = useMemo(() => {
-    const customerMap: Record<string, Order[]> = {};
+interface UseCustomersParams {
+  search?: string;
+  types?: string[];
+  page?: number;
+  pageSize?: number;
+}
 
-    // Group orders by WhatsApp number
-    orders.forEach((order) => {
-      const wa = order.whatsapp.trim();
-      if (!customerMap[wa]) {
-        customerMap[wa] = [];
+export function useCustomers(params: UseCustomersParams = {}) {
+  return useQuery<{ customers: CustomerSummary[]; meta: CustomersMeta }, Error>({
+    queryKey: ['customers', params],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/v1/customers', {
+        params: {
+          search: params.search || undefined,
+          type: params.types?.length ? params.types.join(',') : undefined,
+          page: params.page || 1,
+          pageSize: params.pageSize || 10
+        }
+      });
+      if (data.code !== 200 || !Array.isArray(data.data)) {
+        throw new Error(data.message || 'Gagal memuat pelanggan.');
       }
-      customerMap[wa].push(order);
-    });
+      return { customers: data.data, meta: data.meta };
+    },
+    placeholderData: (previousData) => previousData
+  });
+}
 
-    // Compute summaries
-    const summaries: CustomerSummary[] = Object.entries(customerMap).map(
-      ([whatsapp, customerOrders]) => {
-        // Sort orders by date desc
-        const sortedOrders = [...customerOrders].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
-        // Latest order holds the most current contact info
-        const latestOrder = sortedOrders[0];
-
-        // Collect unique delivery addresses
-        const addressSet = new Set<string>();
-        sortedOrders.forEach((o) => {
-          if (o.address && o.address.trim()) {
-            addressSet.add(o.address.trim());
-          }
-        });
-        const addresses = Array.from(addressSet);
-
-        // Sum spent of PAID or FULFILLED orders
-        const totalSpent = customerOrders
-          .filter((o) => o.status === 'PAID' || o.status === 'FULFILLED')
-          .reduce((sum, o) => sum + o.totalPrice, 0);
-
-        return {
-          id: whatsapp,
-          whatsapp,
-          fullName: latestOrder.fullName,
-          latestAddress: latestOrder.address,
-          addresses,
-          totalOrders: customerOrders.length,
-          totalSpent,
-          lastOrderDate: latestOrder.createdAt,
-          orders: sortedOrders
-        };
+export function useCustomer(customerId: string) {
+  return useQuery<CustomerSummary, Error>({
+    queryKey: ['customers', 'detail', customerId],
+    enabled: Boolean(customerId),
+    queryFn: async () => {
+      const { data } = await axios.get(`/api/v1/customers/${encodeURIComponent(customerId)}`);
+      if (data.code !== 200 || !data.data) {
+        throw new Error(data.message || 'Pelanggan tidak ditemukan.');
       }
-    );
-
-    // Sort by order count descending
-    return summaries.sort((a, b) => b.totalOrders - a.totalOrders);
-  }, [orders]);
-
-  return {
-    data: customersList,
-    isLoading,
-    error
-  };
+      return data.data as CustomerSummary;
+    }
+  });
 }

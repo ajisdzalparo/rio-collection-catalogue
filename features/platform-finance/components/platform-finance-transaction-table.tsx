@@ -10,6 +10,10 @@ import { PlatformFinanceTransactionCard } from './platform-finance-transaction-c
 
 interface PlatformFinanceTransactionTableProps {
   transactions: PlatformFinanceTransaction[];
+  page: number;
+  totalEntries: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 }
 
 function formatTransactionDate(value: string) {
@@ -21,7 +25,11 @@ function formatTransactionDate(value: string) {
 }
 
 export function PlatformFinanceTransactionTable({
-  transactions
+  transactions,
+  page,
+  totalEntries,
+  onPageChange,
+  onPageSizeChange
 }: PlatformFinanceTransactionTableProps) {
   const columns: Column<PlatformFinanceTransaction>[] = useMemo(
     () => [
@@ -112,6 +120,11 @@ export function PlatformFinanceTransactionTable({
       showSearch={false}
       searchParamKey={false}
       pageSize={10}
+      manualPagination
+      page={page}
+      totalEntries={totalEntries}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
       emptyTitle="Transaksi Tidak Ditemukan"
       emptyDescription="Tidak ada transaksi yang cocok dengan periode, status, atau pencarian saat ini."
       renderCard={(transaction) => (

@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { SlidersHorizontal, RotateCcw, Edit } from 'lucide-react';
+import { SlidersHorizontal, RotateCcw, SquarePen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -30,8 +30,9 @@ import { Label } from '@/components/ui/label';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { useRbac } from '@/features/users/hooks/use-rbac';
-import { useSizesQuery } from '@/hooks/use-master-data';
+import { useCategoriesQuery, useSizesQuery } from '@/hooks/use-master-data';
 import { sortSizes } from '@/lib/size-sorter';
+import { useDebounce } from '@/hooks/use-debounce';
 
 interface Variant {
   id: string;
@@ -67,6 +68,10 @@ export default function StockManagementPage() {
   // Applied Filters (used to filter the stock table)
   const [appliedCategories, setAppliedCategories] = useState<string[]>([]);
   const [appliedStockModes, setAppliedStockModes] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 350);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Draft Filters (used inside the filter drawer before clicking Terapkan)
   const [draftCategories, setDraftCategories] = useState<string[]>([]);
@@ -81,6 +86,7 @@ export default function StockManagementPage() {
 
   // Master Sizes from DB
   const { data: masterSizes = [] } = useSizesQuery();
+  const { data: masterCategories = [] } = useCategoriesQuery();
   const activeMasterSizes = useMemo(() => {
     return masterSizes.filter((s) => s.isActive && !s.deletedAt);
   }, [masterSizes]);
@@ -95,13 +101,46 @@ export default function StockManagementPage() {
   );
 
   // Fetch products
-  const { data: products = [], isLoading } = useQuery<StockProduct[]>({
-    queryKey: ['admin-stock-products'],
+  const { data: stockData, isLoading } = useQuery<{
+    products: StockProduct[];
+    meta: {
+      page: number;
+      pageSize: number;
+      total: number;
+      totalPages: number;
+      stats?: {
+        totalProducts: number;
+        inStockCount: number;
+        lowStockCount: number;
+        soldOutCount: number;
+      };
+    };
+  }>({
+    queryKey: [
+      'admin-stock-products',
+      debouncedSearch,
+      appliedCategories,
+      appliedStockModes,
+      page,
+      pageSize
+    ],
     queryFn: async () => {
-      const { data } = await axios.get('/api/v1/products');
-      return data.data || [];
-    }
+      const { data } = await axios.get('/api/v1/products', {
+        params: {
+          search: debouncedSearch.trim() || undefined,
+          category: appliedCategories.length ? appliedCategories.join(',') : undefined,
+          stockState: appliedStockModes.length ? appliedStockModes.join(',') : undefined,
+          page,
+          pageSize,
+          includeStats: true
+        }
+      });
+      return { products: data.data || [], meta: data.meta };
+    },
+    placeholderData: (previousData) => previousData
   });
+  const products = stockData?.products ?? [];
+  const meta = stockData?.meta ?? { page: 1, pageSize, total: 0, totalPages: 1 };
 
   // Mutation to update stock variants
   const updateStockMutation = useMutation({
@@ -134,14 +173,12 @@ export default function StockManagementPage() {
     }
   });
 
-  const categories = Array.from(new Set(products.map((p) => p.category))).filter(Boolean);
-
   const categoryOptions: MultiSelectOption[] = useMemo(() => {
-    return categories.map((cat) => ({
-      value: cat,
-      label: cat
+    return masterCategories.map((category) => ({
+      value: category.name,
+      label: category.name
     }));
-  }, [categories]);
+  }, [masterCategories]);
 
   const stockModeOptions: MultiSelectOption[] = useMemo(() => {
     return STOCK_MODE_OPTIONS.map((opt) => ({
@@ -161,6 +198,7 @@ export default function StockManagementPage() {
   const handleApplyFilters = () => {
     setAppliedCategories(draftCategories);
     setAppliedStockModes(draftStockModes);
+    setPage(1);
     setIsFilterOpen(false);
   };
 
@@ -169,41 +207,17 @@ export default function StockManagementPage() {
     setDraftStockModes([]);
     setAppliedCategories([]);
     setAppliedStockModes([]);
+    setPage(1);
     setIsFilterOpen(false);
   };
 
   const activeFilterCount = appliedCategories.length + appliedStockModes.length;
 
-  const filteredProducts = products.filter((product) => {
-    const matchesCategory =
-      appliedCategories.length === 0 || appliedCategories.includes(product.category);
-
-    let matchesMode = true;
-    if (appliedStockModes.length > 0) {
-      const isAlways = product.stockMode === 'ALWAYS_AVAILABLE';
-      const isReady = isAlways || product.stock > 0;
-      const isSoldOut = product.stockMode === 'QUANTITY' && product.stock === 0;
-
-      matchesMode = appliedStockModes.some((mode) => {
-        if (mode === 'ALWAYS_AVAILABLE') return isAlways;
-        if (mode === 'IN_STOCK') return isReady;
-        if (mode === 'SOLD_OUT') return isSoldOut;
-        return false;
-      });
-    }
-
-    return matchesCategory && matchesMode;
-  });
-
   // Analytics stats
-  const totalProducts = products.length;
-  const inStockCount = products.filter(
-    (p) => p.stockMode === 'ALWAYS_AVAILABLE' || p.stock > 0
-  ).length;
-  const lowStockCount = products.filter(
-    (p) => p.stockMode === 'QUANTITY' && p.stock > 0 && p.stock <= 5
-  ).length;
-  const soldOutCount = products.filter((p) => p.stockMode === 'QUANTITY' && p.stock === 0).length;
+  const totalProducts = meta.stats?.totalProducts ?? 0;
+  const inStockCount = meta.stats?.inStockCount ?? 0;
+  const lowStockCount = meta.stats?.lowStockCount ?? 0;
+  const soldOutCount = meta.stats?.soldOutCount ?? 0;
 
   const handleOpenEdit = (product: StockProduct) => {
     setEditingProduct(product);
@@ -348,7 +362,7 @@ export default function StockManagementPage() {
             className="h-8 w-8 cursor-pointer"
             title={canManageStock ? 'Edit Stok' : 'Tidak memiliki akses kelola stok'}
           >
-            <Edit className="h-4 w-4" />
+            <SquarePen className="h-4 w-4" />
           </Button>
         </div>
       )
@@ -392,11 +406,24 @@ export default function StockManagementPage() {
       {/* Products Stock Table */}
       <DataTable
         columns={stockColumns}
-        data={filteredProducts}
+        data={products}
         isLoading={isLoading}
         searchKey="name"
         extraSearchKeys={['color', 'category']}
         searchPlaceholder="Cari nama produk, warna, atau kategori..."
+        manualSearch
+        onSearchChange={(search) => {
+          setSearchQuery(search);
+          setPage(1);
+        }}
+        manualPagination
+        page={meta.page}
+        totalEntries={meta.total}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
         emptyTitle="Tidak ada produk"
         emptyDescription="Coba ubah kata kunci pencarian atau filter kriteria Anda."
         pageSize={10}

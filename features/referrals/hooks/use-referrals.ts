@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import type { ReferralPartnerView } from '../types';
+import type { ReferralPartnerOption, ReferralPartnerView } from '../types';
 
 function getApiError(error: unknown): string {
   if (axios.isAxiosError(error)) return error.response?.data?.error || error.message;
@@ -15,7 +15,40 @@ export function useReferralDashboard() {
     queryFn: async () => {
       const response = await axios.get('/api/v1/referrals/dashboard');
       return response.data.data as ReferralPartnerView[];
-    }
+    },
+    placeholderData: (previousData) => previousData
+  });
+}
+
+export interface ReferralDashboardPageData {
+  partners: ReferralPartnerView[];
+  options: ReferralPartnerOption[];
+  summary: {
+    totalPartners: number;
+    totalPaidOrders: number;
+    totalUnitsSold: number;
+    totalNetRevenue: number;
+  };
+  meta: { page: number; pageSize: number; total: number; totalPages: number };
+}
+
+export function useReferralDashboardPage(params: {
+  search?: string;
+  page: number;
+  pageSize: number;
+}) {
+  return useQuery<ReferralDashboardPageData, Error>({
+    queryKey: ['referrals', 'dashboard', 'page', params],
+    queryFn: async () => {
+      const response = await axios.get('/api/v1/referrals/dashboard', { params });
+      return {
+        partners: response.data.data as ReferralPartnerView[],
+        options: response.data.options as ReferralPartnerOption[],
+        summary: response.data.summary,
+        meta: response.data.meta
+      };
+    },
+    placeholderData: (previousData) => previousData
   });
 }
 

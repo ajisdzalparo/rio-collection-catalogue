@@ -53,7 +53,8 @@ export function useProductReviews(productSlug: string) {
     queryKey: ['reviews', productSlug],
     queryFn: () => fetchProductReviews(productSlug),
     enabled: Boolean(productSlug),
-    staleTime: 60_000
+    staleTime: 60_000,
+    placeholderData: (previousData) => previousData
   });
 
   const reviewData = query.data ?? DEFAULT_REVIEW_DATA;

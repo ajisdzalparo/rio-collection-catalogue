@@ -77,27 +77,15 @@ export default function DashboardPage() {
     isLoading: statsLoading,
     error: statsError
   } = useDashboardStats(dateFilterRange);
-  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useOrders();
+  const { data: recentOrders = [], isLoading: ordersLoading, error: ordersError } = useOrders({
+    startDate: dateFilterRange.startDate,
+    endDate: dateFilterRange.endDate,
+    page: 1,
+    pageSize: 5
+  });
 
   const loading = statsLoading || ordersLoading;
   const error = statsError || ordersError;
-
-  const recentOrders = useMemo(() => {
-    let filtered = [...orders];
-
-    if (dateFilterRange.startDate) {
-      const startTime = new Date(dateFilterRange.startDate).getTime();
-      filtered = filtered.filter((o) => new Date(o.createdAt).getTime() >= startTime);
-    }
-    if (dateFilterRange.endDate) {
-      const endTime = new Date(dateFilterRange.endDate).getTime();
-      filtered = filtered.filter((o) => new Date(o.createdAt).getTime() <= endTime);
-    }
-
-    return filtered
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5);
-  }, [orders, dateFilterRange]);
 
   const getStatusBadge = (status: string) => {
     return <OrderStatusBadge status={status} />;

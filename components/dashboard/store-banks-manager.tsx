@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Building2, Pencil, Trash2, CreditCard, GripVertical, Loader2 } from 'lucide-react';
+import { Plus, Building2, SquarePen, Trash2, CreditCard, GripVertical, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -332,7 +332,7 @@ export function StoreBanksManager() {
                     onClick={() => handleOpenEdit(item)}
                     className="h-7 w-7 rounded-lg cursor-pointer"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <SquarePen className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     type="button"

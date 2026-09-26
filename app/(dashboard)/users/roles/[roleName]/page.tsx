@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   KeyRound,
   ShieldCheck,
-    Pencil,
+  SquarePen,
   FolderTree,
   CheckCircle2,
   XCircle,
@@ -123,7 +123,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
             className="gap-1.5 h-9 rounded-lg text-xs font-bold cursor-pointer bg-foreground text-background hover:bg-foreground/90 shadow-xs"
             title={isProtectedSystemRole ? 'Super Admin selalu full access' : 'Edit Role & Permissions'}
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <SquarePen className="h-3.5 w-3.5" />
             <span>Edit</span>
           </Button>
         </div>

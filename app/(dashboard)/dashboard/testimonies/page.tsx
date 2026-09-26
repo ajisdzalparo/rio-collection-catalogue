@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import {
   MessageSquare,
   Plus,
   Trash2,
-  Edit,
+  SquarePen,
   Eye,
   Calendar,
   ImageIcon,
@@ -23,6 +23,7 @@ import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-selec
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { SafeImage, CMSBadge } from '@/components/shared';
 import { ImageUpload } from '@/components/shared/image-upload';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useTestimonies } from '@/hooks/use-testimonies';
 import type { Testimony } from '@/types/catalogue.types';
 import {
@@ -49,20 +50,30 @@ const TESTIMONY_STATUS_OPTIONS: MultiSelectOption[] = [
 ];
 
 export default function TestimoniesCmsPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 350);
+  const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
+  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageSize, setCurrentPageSize] = useState(10);
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+
   const {
     data: testimonies,
+    meta,
     addTestimony,
     updateTestimony,
     deleteTestimony,
     isLoading,
-    isCreating,
+    isAdding,
     isUpdating,
     isDeleting
-  } = useTestimonies();
-
-  const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
-  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
-  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  } = useTestimonies({
+    search: debouncedSearch.trim() || undefined,
+    status: appliedStatuses,
+    page: currentPage,
+    pageSize: currentPageSize
+  });
 
   const handleOpenFilterDrawer = (open: boolean) => {
     if (open) {
@@ -73,21 +84,18 @@ export default function TestimoniesCmsPage() {
 
   const handleApplyFilters = () => {
     setAppliedStatuses(draftStatuses);
+    setCurrentPage(1);
     setIsFilterOpen(false);
   };
 
   const handleResetFilters = () => {
     setDraftStatuses([]);
     setAppliedStatuses([]);
+    setCurrentPage(1);
     setIsFilterOpen(false);
   };
 
   const activeFilterCount = appliedStatuses.length;
-
-  const filteredTestimonies = useMemo(() => {
-    if (appliedStatuses.length === 0) return testimonies;
-    return testimonies.filter((t) => appliedStatuses.includes(t.status || 'ACTIVE'));
-  }, [testimonies, appliedStatuses]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Testimony | null>(null);
@@ -137,7 +145,7 @@ export default function TestimoniesCmsPage() {
 
     try {
       if (editingItem) {
-        await updateTestimony(editingItem.id, formData);
+        await updateTestimony({ id: editingItem.id, updates: formData });
         toast.success('Testimoni berhasil diperbarui.');
       } else {
         await addTestimony({
@@ -161,7 +169,7 @@ export default function TestimoniesCmsPage() {
     }
   };
 
-  const isSaving = isCreating || isUpdating;
+  const isSaving = isAdding || isUpdating;
 
   const columns: Column<Testimony>[] = [
     {
@@ -205,8 +213,13 @@ export default function TestimoniesCmsPage() {
             size="lg"
             checked={item.status === 'ACTIVE'}
             onCheckedChange={(checked) => {
-              void updateTestimony(item.id, { status: checked ? 'ACTIVE' : 'HIDDEN' }).catch(() => {
-                toast.error('Gagal memperbarui status testimoni. Mengembalikan ke status sebelumnya.');
+              void updateTestimony({
+                id: item.id,
+                updates: { status: checked ? 'ACTIVE' : 'HIDDEN' }
+              }).catch(() => {
+                toast.error(
+                  'Gagal memperbarui status testimoni. Mengembalikan ke status sebelumnya.'
+                );
               });
             }}
             aria-label={`${item.status === 'ACTIVE' ? 'Sembunyikan' : 'Tampilkan'} testimoni ${item.clientName || item.alt}`}
@@ -260,7 +273,7 @@ export default function TestimoniesCmsPage() {
             title="Edit"
             className="h-8 w-8 rounded-lg hover:bg-muted cursor-pointer text-muted-foreground hover:text-foreground"
           >
-            <Edit size={15} />
+            <SquarePen size={15} />
           </Button>
 
           <Button
@@ -292,7 +305,7 @@ export default function TestimoniesCmsPage() {
             </h1>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Kelola & upload gambar tangkapan layar bukti chat WhatsApp kepuasan pelanggan secara
+            Kelola &amp; upload gambar tangkapan layar bukti chat WhatsApp kepuasan pelanggan secara
             langsung.
           </p>
         </div>
@@ -309,14 +322,16 @@ export default function TestimoniesCmsPage() {
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Total Testimoni
           </span>
-          <p className="text-2xl font-bold mt-1 text-foreground">{testimonies.length}</p>
+          <p className="text-2xl font-bold mt-1 text-foreground">
+            {meta.stats?.total ?? 0}
+          </p>
         </div>
         <div className="p-4 rounded-xl border border-border/60 bg-card">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Testimoni Aktif
           </span>
           <p className="text-2xl font-bold mt-1 text-emerald-600">
-            {testimonies.filter((t) => t.status === 'ACTIVE').length}
+            {meta.stats?.active ?? 0}
           </p>
         </div>
         <div className="p-4 rounded-xl border border-border/60 bg-card">
@@ -324,7 +339,7 @@ export default function TestimoniesCmsPage() {
             Disembunyikan
           </span>
           <p className="text-2xl font-bold mt-1 text-zinc-500">
-            {testimonies.filter((t) => t.status === 'HIDDEN').length}
+            {meta.stats?.hidden ?? 0}
           </p>
         </div>
       </div>
@@ -332,11 +347,23 @@ export default function TestimoniesCmsPage() {
       {/* Data Table */}
       <DataTable
         columns={columns}
-        data={filteredTestimonies}
+        data={testimonies}
         isLoading={isLoading}
         searchKey="clientName"
-        extraSearchKeys={['alt']}
         searchPlaceholder="Cari nama atau keterangan..."
+        manualSearch
+        onSearchChange={(query) => {
+          setSearchQuery(query);
+          setCurrentPage(1);
+        }}
+        manualPagination
+        page={meta?.page ?? 1}
+        totalEntries={meta.total}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setCurrentPageSize(size);
+          setCurrentPage(1);
+        }}
         filterComponents={
           <Sheet open={isFilterOpen} onOpenChange={handleOpenFilterDrawer}>
             <SheetTrigger
@@ -449,51 +476,49 @@ export default function TestimoniesCmsPage() {
               {/* Right Column: Details & Status */}
               <div className="md:col-span-7 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-foreground">
-                    Nama Pelanggan / Keterangan
-                  </label>
+                  <Label className="text-xs font-medium text-foreground">
+                    Nama Klien / Pengirim
+                  </Label>
                   <Input
+                    type="text"
+                    placeholder="Contoh: Kak Dinda (Bandung)"
                     value={formData.clientName}
-                    onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                    placeholder="Contoh: Harish - Jakarta"
-                    className="h-9 text-xs"
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, clientName: e.target.value }))
+                    }
+                    className="text-xs rounded-lg"
                   />
-                  <p className="text-[11px] text-muted-foreground">
-                    Opsional, untuk identifikasi internal & referensi.
-                  </p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-foreground">
-                    Teks Alternatif (Alt Text)
-                  </label>
+                  <Label className="text-xs font-medium text-foreground">
+                    Keterangan Singkat / Alt Text
+                  </Label>
                   <Input
+                    type="text"
+                    placeholder="Contoh: Chat repeat order 3 kaos oversize"
                     value={formData.alt}
-                    onChange={(e) => setFormData({ ...formData, alt: e.target.value })}
-                    placeholder="Deskripsi singkat gambar untuk aksesibilitas"
-                    className="h-9 text-xs"
+                    onChange={(e) => setFormData((prev) => ({ ...prev, alt: e.target.value }))}
+                    className="text-xs rounded-lg"
                   />
                 </div>
 
-                <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-muted/20">
-                  <div className="space-y-0.5 pr-2">
-                    <label className="text-xs font-medium text-foreground cursor-pointer" htmlFor="testimony-status-switch">
-                      Tampilkan di Katalog
-                    </label>
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-muted/10">
+                  <div>
+                    <Label className="text-xs font-medium text-foreground block">
+                      Tampilkan di Beranda
+                    </Label>
                     <p className="text-[11px] text-muted-foreground">
-                      {formData.status === 'ACTIVE'
-                        ? 'Testimoni aktif dan muncul di beranda'
-                        : 'Disembunyikan dari publik'}
+                      Status aktif akan menampilkan testimoni di slider katalog depan.
                     </p>
                   </div>
                   <Switch
-                    id="testimony-status-switch"
                     checked={formData.status === 'ACTIVE'}
                     onCheckedChange={(checked) =>
-                      setFormData({
-                        ...formData,
+                      setFormData((prev) => ({
+                        ...prev,
                         status: checked ? 'ACTIVE' : 'HIDDEN'
-                      })
+                      }))
                     }
                   />
                 </div>
@@ -511,11 +536,7 @@ export default function TestimoniesCmsPage() {
                 Batal
               </Button>
               <Button type="submit" size="sm" disabled={isSaving}>
-                {isSaving
-                  ? 'Menyimpan...'
-                  : editingItem
-                    ? 'Simpan Perubahan'
-                    : 'Tambah Testimoni'}
+                {isSaving ? 'Menyimpan...' : editingItem ? 'Simpan Perubahan' : 'Tambah Testimoni'}
               </Button>
             </DialogFooter>
           </form>
@@ -604,7 +625,7 @@ export default function TestimoniesCmsPage() {
                   }}
                   className="gap-1.5"
                 >
-                  <Edit size={14} />
+                  <SquarePen size={14} />
                   Edit Testimoni
                 </Button>
               </DialogFooter>

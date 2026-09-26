@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { Flex, VStack } from '@/components/ui/layout';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useJournals } from '@/hooks/use-journals';
 import type { JournalArticle } from '@/types/catalogue.types';
 import { JournalDetailDialog } from './components/journal-detail-dialog';
@@ -15,7 +16,25 @@ import { JournalTable } from './components/journal-table';
 
 function JournalCmsPageContent() {
   const router = useRouter();
-  const { data: articles = [], isLoading, deleteJournal, isDeleting } = useJournals();
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 350);
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageSize, setCurrentPageSize] = useState(10);
+
+  const {
+    data: articles = [],
+    meta,
+    isLoading,
+    deleteJournal,
+    isDeleting
+  } = useJournals({
+    search: debouncedSearch.trim() || undefined,
+    category: selectedCategory === 'ALL' ? undefined : selectedCategory,
+    page: currentPage,
+    pageSize: currentPageSize
+  });
+
   const [detailArticle, setDetailArticle] = useState<JournalArticle | null>(null);
   const [deleteTargetArticle, setDeleteTargetArticle] = useState<JournalArticle | null>(null);
 
@@ -66,8 +85,23 @@ function JournalCmsPageContent() {
 
       <JournalTable
         articles={articles}
+        meta={meta}
         isLoading={isLoading}
         isDeleting={isDeleting}
+        selectedCategory={selectedCategory}
+        onCategoryChange={(cat) => {
+          setSelectedCategory(cat);
+          setCurrentPage(1);
+        }}
+        onSearchChange={(search) => {
+          setSearchQuery(search);
+          setCurrentPage(1);
+        }}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setCurrentPageSize(size);
+          setCurrentPage(1);
+        }}
         onView={setDetailArticle}
         onEdit={editArticle}
         onDelete={setDeleteTargetArticle}

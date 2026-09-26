@@ -25,7 +25,8 @@ export function useStoreBanksQuery(activeOnly = false) {
         return data.data as StoreBankItem[];
       }
       return Array.isArray(data) ? data : [];
-    }
+    },
+    placeholderData: (previousData) => previousData
   });
 }
 

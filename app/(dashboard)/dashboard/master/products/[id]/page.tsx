@@ -9,7 +9,7 @@ import { CMSBadge } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatIDR, cn } from '@/lib/utils';
-import { ArrowLeft, Edit, Trash2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, SquarePen, Trash2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
@@ -134,7 +134,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               size="sm"
               className="h-9 px-3.5 rounded-xl text-xs font-medium cursor-pointer gap-1.5"
             >
-              <Edit className="h-3.5 w-3.5" />
+              <SquarePen className="h-3.5 w-3.5" />
               <span>Edit</span>
             </Button>
           </Link>

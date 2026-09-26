@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Users, ShoppingBag, Package, TrendingUp } from 'lucide-react';
 import { formatIDR } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useReferralDashboard } from '../hooks/use-referrals';
+import { useReferralDashboardPage } from '../hooks/use-referrals';
+import { useDebounce } from '@/hooks/use-debounce';
 import { ReferralCreateModal } from './referral-create-modal';
 import { ReferralDashboardSkeleton } from './referral-dashboard-skeleton';
 import { ReferralPartnerTable } from './referral-partner-table';
@@ -16,21 +17,25 @@ interface ReferralDashboardProps {
 }
 
 export function ReferralDashboard({ canManage }: ReferralDashboardProps) {
-  const { data: partners = [], isLoading, error } = useReferralDashboard();
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 350);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { data, isLoading, error } = useReferralDashboardPage({
+    search: debouncedSearch.trim() || undefined,
+    page,
+    pageSize
+  });
+  const partners = data?.partners ?? [];
+  const options = data?.options ?? [];
+  const summary = data?.summary ?? {
+    totalPartners: 0,
+    totalPaidOrders: 0,
+    totalUnitsSold: 0,
+    totalNetRevenue: 0
+  };
+  const meta = data?.meta ?? { page: 1, pageSize, total: 0, totalPages: 1 };
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  const totalPaidOrders = useMemo(
-    () => partners.reduce((sum, partner) => sum + partner.paidOrders, 0),
-    [partners]
-  );
-  const totalUnitsSold = useMemo(
-    () => partners.reduce((sum, partner) => sum + partner.unitsSold, 0),
-    [partners]
-  );
-  const totalNetRevenue = useMemo(
-    () => partners.reduce((sum, partner) => sum + partner.netRevenue, 0),
-    [partners]
-  );
 
   if (isLoading) return <ReferralDashboardSkeleton canManage={canManage} />;
 
@@ -75,7 +80,7 @@ export function ReferralDashboard({ canManage }: ReferralDashboardProps) {
               <Users className="h-4 w-4 text-muted-foreground/60" />
             </div>
             <p className="mt-2 text-2xl font-extrabold tracking-tight text-foreground">
-              {partners.length}
+              {summary.totalPartners}
             </p>
           </CardContent>
         </Card>
@@ -87,7 +92,7 @@ export function ReferralDashboard({ canManage }: ReferralDashboardProps) {
               <ShoppingBag className="h-4 w-4 text-muted-foreground/60" />
             </div>
             <p className="mt-2 text-2xl font-extrabold tracking-tight text-foreground">
-              {totalPaidOrders}
+              {summary.totalPaidOrders}
             </p>
           </CardContent>
         </Card>
@@ -99,7 +104,7 @@ export function ReferralDashboard({ canManage }: ReferralDashboardProps) {
               <Package className="h-4 w-4 text-muted-foreground/60" />
             </div>
             <p className="mt-2 text-2xl font-extrabold tracking-tight text-foreground">
-              {totalUnitsSold}{' '}
+              {summary.totalUnitsSold}{' '}
               <span className="text-xs font-normal text-muted-foreground">pcs</span>
             </p>
           </CardContent>
@@ -112,7 +117,7 @@ export function ReferralDashboard({ canManage }: ReferralDashboardProps) {
               <TrendingUp className="h-4 w-4 text-muted-foreground/60" />
             </div>
             <p className="mt-2 text-2xl font-extrabold tracking-tight">
-              {formatIDR(totalNetRevenue)}
+              {formatIDR(summary.totalNetRevenue)}
             </p>
           </CardContent>
         </Card>
@@ -123,7 +128,7 @@ export function ReferralDashboard({ canManage }: ReferralDashboardProps) {
         <ReferralCreateModal
           open={showCreateModal}
           onOpenChange={setShowCreateModal}
-          partners={partners}
+          partners={options}
         />
       )}
 
@@ -136,7 +141,22 @@ export function ReferralDashboard({ canManage }: ReferralDashboardProps) {
           </p>
         </div>
 
-        <ReferralPartnerTable data={partners} isLoading={isLoading} canManage={canManage} />
+        <ReferralPartnerTable
+          data={partners}
+          isLoading={isLoading}
+          canManage={canManage}
+          page={meta.page}
+          totalEntries={meta.total}
+          onSearchChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
       </div>
     </div>
   );

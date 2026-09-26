@@ -4,25 +4,66 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Testimony } from '@/types/catalogue.types';
 import axios from 'axios';
 
-async function fetchTestimonies(): Promise<Testimony[]> {
-  const { data } = await axios.get('/api/v1/testimonies');
+export interface UseTestimoniesParams {
+  search?: string;
+  status?: string[];
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TestimoniesMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  stats?: { total: number; active: number; hidden: number };
+}
+
+async function fetchTestimonies(
+  params?: UseTestimoniesParams
+): Promise<{ testimonies: Testimony[]; meta: TestimoniesMeta }> {
+  const queryParams: Record<string, string> = {};
+  if (params?.search) queryParams.search = params.search;
+  if (params?.status?.length) queryParams.status = params.status.join(',');
+  if (params?.page) queryParams.page = String(params.page);
+  if (params?.pageSize) queryParams.pageSize = String(params.pageSize);
+
+  const { data } = await axios.get('/api/v1/testimonies', { params: queryParams });
+  let list: Testimony[] = [];
   if (data.code === 200 && data.data) {
-    return data.data.map((item: Testimony & { clientName?: string }, index: number) => ({
+    list = data.data.map((item: Testimony & { clientName?: string }, index: number) => ({
       ...item,
       clientName: item.clientName || item.alt || `Pelanggan Testimoni ${index + 1}`,
       status: item.status || 'ACTIVE',
       createdAt: item.createdAt || '2026-08-01'
     }));
   }
-  return [];
+
+  const meta: TestimoniesMeta = data.meta ?? {
+    page: 1,
+    pageSize: list.length,
+    total: list.length,
+    totalPages: 1
+  };
+
+  return { testimonies: list, meta };
 }
 
-export function useTestimonies() {
+export function useTestimonies(params?: UseTestimoniesParams) {
   const queryClient = useQueryClient();
 
-  const query = useQuery<Testimony[], Error>({
-    queryKey: ['testimonies'],
-    queryFn: fetchTestimonies
+  const queryKey = [
+    'testimonies',
+    params?.search || '',
+    params?.status?.join(',') || '',
+    params?.page || 1,
+    params?.pageSize || ''
+  ];
+
+  const query = useQuery<{ testimonies: Testimony[]; meta: TestimoniesMeta }, Error>({
+    queryKey,
+    queryFn: () => fetchTestimonies(params),
+    placeholderData: (previousData) => previousData
   });
 
   const createMutation = useMutation({
@@ -43,23 +84,7 @@ export function useTestimonies() {
       const { data } = await axios.patch(`/api/v1/testimonies/${id}`, updates);
       return data.data;
     },
-    onMutate: async ({ id, updates }) => {
-      await queryClient.cancelQueries({ queryKey: ['testimonies'] });
-      const previousTestimonies = queryClient.getQueryData<Testimony[]>(['testimonies']);
-
-      queryClient.setQueryData<Testimony[]>(['testimonies'], (old) => {
-        if (!Array.isArray(old)) return [];
-        return old.map((item) => (item.id === id ? { ...item, ...updates } : item));
-      });
-
-      return { previousTestimonies };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousTestimonies) {
-        queryClient.setQueryData(['testimonies'], context.previousTestimonies);
-      }
-    },
-    onSettled: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['testimonies'] });
     }
   });
@@ -75,18 +100,17 @@ export function useTestimonies() {
   });
 
   return {
-    data: query.data || [],
+    data: query.data?.testimonies ?? [],
+    meta: query.data?.meta ?? { page: 1, pageSize: 10, total: 0, totalPages: 1 },
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
     addTestimony: createMutation.mutateAsync,
-    isCreating: createMutation.isPending,
-    updateTestimony: (id: string, updates: Partial<Testimony>) => updateMutation.mutateAsync({ id, updates }),
+    isAdding: createMutation.isPending,
+    updateTestimony: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
-    toggleTestimonyStatus: async (id: string) => {
-      const item = (query.data || []).find((t) => t.id === id);
-      const newStatus = item?.status === 'ACTIVE' ? 'HIDDEN' : 'ACTIVE';
-      return updateMutation.mutateAsync({ id, updates: { status: newStatus } });
-    },
     deleteTestimony: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending
   };

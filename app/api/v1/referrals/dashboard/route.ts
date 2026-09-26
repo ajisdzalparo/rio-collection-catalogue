@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getReferralViewer } from '@/lib/auth/referral-owner';
 import { giftEntitlement, isReferralRewardEligible, isReferralSale } from '@/lib/referral';
 
-export async function GET() {
+export async function GET(request: Request) {
   const actor = await getReferralViewer();
   if (!actor) return NextResponse.json({ success: false, error: 'Akses ditolak.' }, { status: 403 });
   const partners = await prisma.referralPartner.findMany({
@@ -65,5 +65,38 @@ export async function GET() {
       codes, payouts: partner.payouts
     };
   });
-  return NextResponse.json({ success: true, data });
+  const { searchParams } = new URL(request.url);
+  const search = searchParams.get('search')?.trim().toLowerCase() || '';
+  const pageParam = searchParams.get('page');
+  const pageSizeParam = searchParams.get('pageSize');
+  const page = Math.max(1, Number.parseInt(pageParam || '1', 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number.parseInt(pageSizeParam || '10', 10) || 10));
+  const paginated = Boolean(pageParam || pageSizeParam);
+  const filtered = data.filter(
+    (partner) =>
+      !search ||
+      partner.name.toLowerCase().includes(search) ||
+      partner.whatsapp?.toLowerCase().includes(search) ||
+      partner.notes?.toLowerCase().includes(search)
+  );
+  const pageData = paginated ? filtered.slice((page - 1) * pageSize, page * pageSize) : filtered;
+  const summary = {
+    totalPartners: data.length,
+    totalPaidOrders: data.reduce((sum, partner) => sum + partner.paidOrders, 0),
+    totalUnitsSold: data.reduce((sum, partner) => sum + partner.unitsSold, 0),
+    totalNetRevenue: data.reduce((sum, partner) => sum + partner.netRevenue, 0)
+  };
+
+  return NextResponse.json({
+    success: true,
+    data: pageData,
+    options: data.map((partner) => ({ id: partner.id, name: partner.name })),
+    summary,
+    meta: {
+      page: paginated ? page : 1,
+      pageSize: paginated ? pageSize : filtered.length,
+      total: filtered.length,
+      totalPages: paginated ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1
+    }
+  });
 }

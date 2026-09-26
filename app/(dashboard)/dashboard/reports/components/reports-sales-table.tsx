@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ReceiptText } from 'lucide-react';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
@@ -9,10 +9,15 @@ import { formatIDR } from '@/lib/utils';
 import type { Order } from '@/hooks/use-orders';
 import { allocateAmountByWeights } from '@/lib/referral';
 import { Badge } from '@/components/ui/badge';
+import { useOrders } from '@/hooks/use-orders';
+import { useDebounce } from '@/hooks/use-debounce';
+import type { ReportStatus } from './types';
 
 interface ReportsSalesTableProps {
-  currentOrders: Order[];
   selectedProducts: string[];
+  selectedStatuses: ReportStatus[];
+  startDate: string;
+  endDate: string;
 }
 
 interface ReportTableRow {
@@ -37,10 +42,28 @@ interface ReportTableRow {
   referralPayoutId: string | null;
 }
 
-export function ReportsSalesTable({ currentOrders, selectedProducts }: ReportsSalesTableProps) {
+export function ReportsSalesTable({
+  selectedProducts,
+  selectedStatuses,
+  startDate,
+  endDate
+}: ReportsSalesTableProps) {
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 350);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { data: tableOrders, meta, isLoading } = useOrders({
+    search: debouncedSearch.trim() || undefined,
+    status: selectedStatuses.length ? selectedStatuses : ['PAID', 'FULFILLED'],
+    product: selectedProducts.length ? selectedProducts : undefined,
+    startDate,
+    endDate,
+    page,
+    pageSize
+  });
   const rows = useMemo<ReportTableRow[]>(
     () =>
-      currentOrders.flatMap((order) => {
+      tableOrders.flatMap((order) => {
         const itemGross = order.items.map((it) => it.price * it.quantity);
         const itemDiscounts = allocateAmountByWeights(itemGross, order.discountAmount ?? 0);
         const itemRevenues = itemGross.map((g, idx) => g - itemDiscounts[idx]);
@@ -83,7 +106,7 @@ export function ReportsSalesTable({ currentOrders, selectedProducts }: ReportsSa
             };
           });
       }),
-    [currentOrders, selectedProducts]
+    [tableOrders, selectedProducts]
   );
 
   const columns = useMemo<Column<ReportTableRow>[]>(
@@ -232,10 +255,21 @@ export function ReportsSalesTable({ currentOrders, selectedProducts }: ReportsSa
         data={rows}
         getRowId={(row) => row.id}
         searchKey="orderNumber"
-        extraSearchKeys={
-          ['customer', 'product', 'referralCode', 'referralPartner'] as Array<keyof ReportTableRow>
-        }
         searchPlaceholder="Cari pesanan, pelanggan, produk, kode, atau partner..."
+        manualSearch
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
+        manualPagination
+        page={meta.page}
+        totalEntries={meta.total}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+        isLoading={isLoading}
         searchParamKey="reportSearch"
         pageSize={10}
         pageSizeOptions={[10, 20, 50, 100]}

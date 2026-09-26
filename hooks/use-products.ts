@@ -5,8 +5,54 @@ import type { Product, ProductMutationInput } from '@/types/catalogue.types';
 import { normalizeProductAvailability } from '@/lib/product-availability';
 import axios from 'axios';
 
-async function fetchProducts(): Promise<Product[]> {
-  const { data } = await axios.get('/api/v1/products');
+export interface UseProductsParams {
+  search?: string;
+  category?: string | string[];
+  status?: string | string[];
+  stockState?: string | string[];
+  needsStock?: boolean;
+  includeStats?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProductsMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  stats?: {
+    totalProducts: number;
+    inStockCount: number;
+    lowStockCount: number;
+    soldOutCount: number;
+  };
+}
+
+async function fetchProducts(
+  params?: UseProductsParams
+): Promise<{ products: Product[]; meta: ProductsMeta }> {
+  const queryParams: Record<string, string> = {};
+  if (params?.search) queryParams.search = params.search;
+  if (params?.category) {
+    queryParams.category = Array.isArray(params.category)
+      ? params.category.join(',')
+      : params.category;
+  }
+  if (params?.status) {
+    queryParams.status = Array.isArray(params.status) ? params.status.join(',') : params.status;
+  }
+  if (params?.stockState) {
+    queryParams.stockState = Array.isArray(params.stockState)
+      ? params.stockState.join(',')
+      : params.stockState;
+  }
+  if (params?.needsStock) queryParams.needsStock = 'true';
+  if (params?.includeStats) queryParams.includeStats = 'true';
+  if (params?.page) queryParams.page = String(params.page);
+  if (params?.pageSize) queryParams.pageSize = String(params.pageSize);
+
+  const { data } = await axios.get('/api/v1/products', { params: queryParams });
   let prods: Product[] = [];
   if (data.code === 200 && data.data) {
     prods = data.data;
@@ -16,15 +62,36 @@ async function fetchProducts(): Promise<Product[]> {
     throw new Error('Invalid products data received');
   }
 
-  return prods.map(normalizeProductAvailability);
+  const products = prods.map(normalizeProductAvailability);
+  const meta: ProductsMeta = data.meta ?? {
+    page: 1,
+    pageSize: products.length,
+    total: products.length,
+    totalPages: 1
+  };
+
+  return { products, meta };
 }
 
-export function useProducts() {
+export function useProducts(params?: UseProductsParams) {
   const queryClient = useQueryClient();
 
-  const query = useQuery<Product[], Error>({
-    queryKey: ['products'],
-    queryFn: fetchProducts
+  const queryKey = [
+    'products',
+    params?.search || '',
+    Array.isArray(params?.category) ? params.category.join(',') : params?.category || '',
+    Array.isArray(params?.status) ? params.status.join(',') : params?.status || '',
+    Array.isArray(params?.stockState) ? params.stockState.join(',') : params?.stockState || '',
+    params?.needsStock || false,
+    params?.includeStats || false,
+    params?.page || 1,
+    params?.pageSize || ''
+  ];
+
+  const query = useQuery<{ products: Product[]; meta: ProductsMeta }, Error>({
+    queryKey,
+    queryFn: () => fetchProducts(params),
+    placeholderData: (previousData) => previousData
   });
 
   const createMutation = useMutation({
@@ -58,7 +125,13 @@ export function useProducts() {
   });
 
   return {
-    ...query,
+    data: query.data?.products ?? [],
+    meta: query.data?.meta ?? { page: 1, pageSize: 10, total: 0, totalPages: 1 },
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
     createProduct: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     updateProduct: updateMutation.mutateAsync,

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Calendar, Edit, Eye, ImageIcon, Layers, Trash2, User } from 'lucide-react';
+import { Calendar, SquarePen, Eye, ImageIcon, Layers, Trash2, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatSafeDate } from '@/lib/utils';
 import type { JournalArticle } from '@/types/catalogue.types';
@@ -84,7 +84,7 @@ export function JournalMobileCard({
             className="h-9 gap-1.5 rounded-lg px-2 text-[11px]"
             aria-label={`Edit artikel ${article.title}`}
           >
-            <Edit className="h-3.5 w-3.5" />
+            <SquarePen className="h-3.5 w-3.5" />
             Edit
           </Button>
           <Button

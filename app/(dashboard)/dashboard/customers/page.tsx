@@ -13,6 +13,7 @@ import { VStack } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { formatIDR, formatWaNumber } from '@/lib/utils';
+import { useDebounce } from '@/hooks/use-debounce';
 import {
   Sheet,
   SheetContent,
@@ -30,11 +31,21 @@ const CUSTOMER_TYPE_OPTIONS: MultiSelectOption[] = [
 ];
 
 export default function CustomersCmsPage() {
-  const { data: customersList = [], isLoading: loading } = useCustomers();
-
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 350);
   const [appliedTypes, setAppliedTypes] = useState<string[]>([]);
   const [draftTypes, setDraftTypes] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { data, isLoading: loading } = useCustomers({
+    search: debouncedSearch.trim() || undefined,
+    types: appliedTypes,
+    page,
+    pageSize
+  });
+  const customersList = data?.customers ?? [];
+  const meta = data?.meta ?? { page: 1, pageSize, total: 0, totalPages: 1 };
 
   const handleOpenFilterDrawer = (open: boolean) => {
     if (open) {
@@ -45,32 +56,18 @@ export default function CustomersCmsPage() {
 
   const handleApplyFilters = () => {
     setAppliedTypes(draftTypes);
+    setPage(1);
     setIsFilterOpen(false);
   };
 
   const handleResetFilters = () => {
     setDraftTypes([]);
     setAppliedTypes([]);
+    setPage(1);
     setIsFilterOpen(false);
   };
 
   const activeFilterCount = appliedTypes.length;
-
-  const filteredCustomers = useMemo(() => {
-    if (appliedTypes.length === 0) return customersList;
-    return customersList.filter((c) => {
-      const isRepeat = c.totalOrders > 1;
-      const isNew = c.totalOrders === 1;
-      const isVip = c.totalSpent >= 500000;
-
-      return appliedTypes.some((type) => {
-        if (type === 'REPEAT') return isRepeat;
-        if (type === 'NEW') return isNew;
-        if (type === 'VIP') return isVip;
-        return false;
-      });
-    });
-  }, [customersList, appliedTypes]);
 
   // Table Columns Definition for DataTable
   const columns: Column<CustomerSummary>[] = useMemo(
@@ -206,10 +203,23 @@ export default function CustomersCmsPage() {
       {/* Customers DataTable */}
       <DataTable
         columns={columns}
-        data={filteredCustomers}
+        data={customersList}
         isLoading={loading}
         searchKey="fullName"
         searchPlaceholder="Cari nama, nomor WhatsApp, atau alamat..."
+        manualSearch
+        onSearchChange={(search) => {
+          setSearchQuery(search);
+          setPage(1);
+        }}
+        manualPagination
+        page={meta.page}
+        totalEntries={meta.total}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
         emptyTitle="Pelanggan Tidak Ditemukan"
         emptyDescription="Database pelanggan kosong atau tidak cocok dengan pencarian Anda."
         pageSize={10}

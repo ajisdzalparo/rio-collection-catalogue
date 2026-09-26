@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus, Pencil, Trash2, Building2, Shirt, Globe } from 'lucide-react';
+import { Plus, SquarePen, Trash2, Building2, Shirt, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
@@ -23,19 +23,15 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
-  useCategoriesQuery,
-  useColorsQuery,
-  useSizesQuery,
-  useTopicsQuery,
-  useBanksQuery,
-  useMaterialsQuery,
+  useMasterDataPageQuery,
   useMasterMutations,
   type CategoryItem,
   type ColorItem,
   type TopicItem,
   type BankItem,
   type SizeItem,
-  type MaterialItem
+  type MaterialItem,
+  type MasterDataResource
 } from '@/hooks/use-master-data';
 
 export const TAB_SLUG_MAP: Record<string, string> = {
@@ -65,18 +61,60 @@ export const TAB_REVERSE_MAP: Record<string, string> = {
 
 export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string }) {
   const searchParams = useSearchParams();
-
-  // Pure React Query hooks connected directly to the PostgreSQL Database
-  const { data: categories = [], isLoading: loadingCats } = useCategoriesQuery();
-  const { data: colors = [], isLoading: loadingCols } = useColorsQuery();
-  const { data: sizes = [], isLoading: loadingSizes } = useSizesQuery();
-  const { data: topics = [], isLoading: loadingTopics } = useTopicsQuery();
-  const { data: banks = [], isLoading: loadingBanks } = useBanksQuery();
-  const { data: materials = [], isLoading: loadingMaterials } = useMaterialsQuery();
-
-  const activeTab = tabSlug
-    ? TAB_SLUG_MAP[tabSlug] || 'categories'
-    : searchParams.get('tab') || 'categories';
+  const requestedTab = tabSlug ? TAB_SLUG_MAP[tabSlug] : searchParams.get('tab');
+  const activeTab =
+    requestedTab && Object.hasOwn(TAB_REVERSE_MAP, requestedTab) ? requestedTab : 'categories';
+  const [activeMaterialSubTab, setActiveMaterialSubTab] = useState<'FABRIC' | 'ORIGIN'>('FABRIC');
+  const [listSearch, setListSearch] = useState('');
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize, setListPageSize] = useState(10);
+  const activeResource = activeTab as MasterDataResource;
+  const { data: listData, isLoading: loadingList } = useMasterDataPageQuery<
+    CategoryItem | ColorItem | SizeItem | TopicItem | BankItem | MaterialItem
+  >(
+    activeResource,
+    {
+      search: listSearch.trim() || undefined,
+      type: activeResource === 'materials' ? activeMaterialSubTab : undefined,
+      page: listPage,
+      pageSize: listPageSize
+    },
+    Boolean(activeResource)
+  );
+  const listItems = listData?.items ?? [];
+  const listMeta = listData?.meta ?? {
+    page: 1,
+    pageSize: listPageSize,
+    total: 0,
+    totalPages: 1
+  };
+  const categories = activeResource === 'categories' ? (listItems as CategoryItem[]) : [];
+  const colors = activeResource === 'colors' ? (listItems as ColorItem[]) : [];
+  const sizes = activeResource === 'sizes' ? (listItems as SizeItem[]) : [];
+  const topics = activeResource === 'topics' ? (listItems as TopicItem[]) : [];
+  const banks = activeResource === 'banks' ? (listItems as BankItem[]) : [];
+  const materials = activeResource === 'materials' ? (listItems as MaterialItem[]) : [];
+  const loadingCats = loadingList;
+  const loadingCols = loadingList;
+  const loadingSizes = loadingList;
+  const loadingTopics = loadingList;
+  const loadingBanks = loadingList;
+  const loadingMaterials = loadingList;
+  const serverTableProps = {
+    manualSearch: true,
+    onSearchChange: (value: string) => {
+      setListSearch(value);
+      setListPage(1);
+    },
+    manualPagination: true,
+    page: listMeta.page,
+    totalEntries: listMeta.total,
+    onPageChange: setListPage,
+    onPageSizeChange: (size: number) => {
+      setListPageSize(size);
+      setListPage(1);
+    }
+  };
 
   const tabTitles: Record<string, { title: string; desc: string }> = {
     categories: {
@@ -114,7 +152,6 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
     id: string;
   } | null>(null);
 
-  const [activeMaterialSubTab, setActiveMaterialSubTab] = useState<'FABRIC' | 'ORIGIN'>('FABRIC');
   const [materialType, setMaterialType] = useState<'FABRIC' | 'ORIGIN'>('FABRIC');
   const [itemName, setItemName] = useState('');
   const [itemHex, setItemHex] = useState('#1A1A1A');
@@ -387,7 +424,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             onClick={() => handleOpenEdit('cat', item)}
             className="h-8 w-8 rounded-lg cursor-pointer"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <SquarePen className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
@@ -456,7 +493,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             onClick={() => handleOpenEdit('col', item)}
             className="h-8 w-8 rounded-lg cursor-pointer"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <SquarePen className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
@@ -515,7 +552,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             onClick={() => handleOpenEdit('top', item)}
             className="h-8 w-8 rounded-lg cursor-pointer"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <SquarePen className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
@@ -588,7 +625,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             onClick={() => handleOpenEdit('bank', item)}
             className="h-8 w-8 rounded-lg cursor-pointer"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <SquarePen className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
@@ -648,7 +685,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             onClick={() => handleOpenEdit('material', item)}
             className="h-8 w-8 rounded-lg cursor-pointer"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <SquarePen className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
@@ -734,6 +771,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             isLoading={loadingCats}
             searchKey="name"
             searchPlaceholder="Cari kategori kaos..."
+            {...serverTableProps}
             emptyTitle="Belum Ada Kategori"
             emptyDescription="Mulai tambahkan kategori kaos baru di katalog Anda."
             pageSize={10}
@@ -765,6 +803,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             isLoading={loadingCols}
             searchKey="name"
             searchPlaceholder="Cari warna..."
+            {...serverTableProps}
             emptyTitle="Belum Ada Warna"
             emptyDescription="Mulai tambahkan varian warna kain baru."
             pageSize={10}
@@ -775,7 +814,11 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
       {activeTab === 'materials' && (
         <Tabs
           value={activeMaterialSubTab}
-          onValueChange={(val) => setActiveMaterialSubTab(val as 'FABRIC' | 'ORIGIN')}
+          onValueChange={(val) => {
+            setActiveMaterialSubTab(val as 'FABRIC' | 'ORIGIN');
+            setListSearch('');
+            setListPage(1);
+          }}
           className="w-full space-y-4"
         >
           <TabsList
@@ -829,6 +872,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
                     isLoading={loadingMaterials}
                     searchKey="name"
                     searchPlaceholder={`Cari ${section.shortTitle.toLowerCase()}...`}
+                    {...serverTableProps}
                     emptyTitle={`Belum Ada Data ${section.shortTitle}`}
                     emptyDescription={`Tambahkan opsi ${section.shortTitle.toLowerCase()} baru.`}
                     pageSize={10}
@@ -864,6 +908,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             isLoading={loadingBanks}
             searchKey="name"
             searchPlaceholder="Cari nama bank..."
+            {...serverTableProps}
             emptyTitle="Belum Ada Master Bank"
             emptyDescription="Mulai tambahkan nama bank baru untuk pilihan transfer pembayaran."
             pageSize={10}
@@ -895,6 +940,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             isLoading={loadingTopics}
             searchKey="name"
             searchPlaceholder="Cari topik blog..."
+            {...serverTableProps}
             emptyTitle="Belum Ada Topik Blog"
             emptyDescription="Tambahkan topik editorial/kategori tulisan blog baru."
             pageSize={10}
@@ -926,6 +972,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
             isLoading={loadingSizes}
             searchKey="size"
             searchPlaceholder="Cari ukuran..."
+            {...serverTableProps}
             emptyTitle="Belum Ada Ukuran"
             emptyDescription="Mulai tambahkan ukuran kaos baru."
             pageSize={10}

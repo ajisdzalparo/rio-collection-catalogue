@@ -5,12 +5,12 @@ import { X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import type { ReferralPartnerView } from '../types';
+import type { ReferralPartnerOption } from '../types';
 import { ReferralPartnerForm } from './referral-partner-form';
 import { ReferralCodeForm } from './referral-code-form';
 
 interface ReferralCreateFormsProps {
-  partners: ReferralPartnerView[];
+  partners: ReferralPartnerOption[];
   onClose?: () => void;
   defaultPartnerId?: string;
   defaultTab?: 'partner' | 'code';

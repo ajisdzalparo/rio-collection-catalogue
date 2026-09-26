@@ -36,7 +36,7 @@ const createRoleSchema = z.object({
   permissions: z.record(z.string(), z.boolean()).default({})
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const viewer = await getActivityLogViewer();
   if (!viewer) return NextResponse.json({ code: 403, status: 'error', message: 'Akses master role ditolak.' }, { status: 403 });
   try {
@@ -48,7 +48,36 @@ export async function GET() {
       const legacyRoles = await prisma.role.findMany({ select: legacyRoleSelect, orderBy: { createdAt: 'asc' } });
       roles = legacyRoles.map(addRoleCompatibilityFields);
     }
-    return NextResponse.json({ code: 200, status: 'success', data: roles });
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search')?.trim().toLowerCase() || '';
+    const pageParam = searchParams.get('page');
+    const pageSizeParam = searchParams.get('pageSize');
+    const filteredRoles = search
+      ? roles.filter(
+          (role) =>
+            role.name.toLowerCase().includes(search) ||
+            ('description' in role && typeof role.description === 'string'
+              ? role.description.toLowerCase().includes(search)
+              : false)
+        )
+      : roles;
+    const page = Math.max(1, Number.parseInt(pageParam || '1', 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number.parseInt(pageSizeParam || '10', 10) || 10));
+    const paginated = Boolean(pageParam || pageSizeParam);
+    const data = paginated
+      ? filteredRoles.slice((page - 1) * pageSize, page * pageSize)
+      : filteredRoles;
+    return NextResponse.json({
+      code: 200,
+      status: 'success',
+      data,
+      meta: {
+        page: paginated ? page : 1,
+        pageSize: paginated ? pageSize : filteredRoles.length,
+        total: filteredRoles.length,
+        totalPages: paginated ? Math.max(1, Math.ceil(filteredRoles.length / pageSize)) : 1
+      }
+    });
   } catch (error) {
     console.error('Error fetching roles:', error);
     return NextResponse.json({ code: 500, status: 'error', message: 'Gagal memuat master role.' }, { status: 500 });

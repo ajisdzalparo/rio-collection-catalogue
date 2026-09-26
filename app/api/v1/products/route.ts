@@ -13,37 +13,158 @@ const journalSummarySelect = {
   id: true, slug: true, title: true, excerpt: true, category: true, date: true, imageUrl: true
 } as const;
 
-export async function GET() {
+import { Prisma } from '@prisma/client';
+
+export async function GET(request: Request) {
   try {
     await syncDueProductReleases();
-    const products = await prisma.product.findMany({
-      where: {
-        deletedAt: null
-      },
-      include: {
-        variants: {
-          select: {
-            size: true,
-            inStock: true,
-            stock: true
+
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search')?.trim() || searchParams.get('q')?.trim() || '';
+    const categoryParam = searchParams.get('category')?.trim() || '';
+    const statusParam = searchParams.get('status')?.trim() || '';
+    const stockStateParam = searchParams.get('stockState')?.trim() || '';
+    const needsStock = searchParams.get('needsStock') === 'true';
+    const includeStats = searchParams.get('includeStats') === 'true';
+    const pageParam = searchParams.get('page');
+    const pageSizeParam = searchParams.get('pageSize') || searchParams.get('limit');
+
+    const where: Prisma.ProductWhereInput = {
+      deletedAt: null
+    };
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { slug: { contains: search, mode: 'insensitive' } },
+        { color: { contains: search, mode: 'insensitive' } },
+        { category: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    if (categoryParam) {
+      const categories = categoryParam
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
+      if (categories.length === 1) {
+        where.category = categories[0];
+      } else if (categories.length > 1) {
+        where.category = { in: categories };
+      }
+    }
+
+    if (statusParam) {
+      const statuses = statusParam
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (statuses.length === 1) {
+        where.status = statuses[0];
+      } else if (statuses.length > 1) {
+        where.status = { in: statuses };
+      }
+    }
+
+    const stockStates = stockStateParam
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const stockConditions: Prisma.ProductWhereInput[] = [];
+    if (stockStates.includes('ALWAYS_AVAILABLE')) {
+      stockConditions.push({ stockMode: 'ALWAYS_AVAILABLE' });
+    }
+    if (stockStates.includes('IN_STOCK')) {
+      stockConditions.push({
+        OR: [{ stockMode: 'ALWAYS_AVAILABLE' }, { stockMode: 'QUANTITY', stock: { gt: 0 } }]
+      });
+    }
+    if (stockStates.includes('SOLD_OUT')) {
+      stockConditions.push({ stockMode: 'QUANTITY', stock: { lte: 0 } });
+    }
+    if (stockConditions.length) {
+      where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), { OR: stockConditions }];
+    }
+    if (needsStock) {
+      where.AND = [
+        ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+        { status: 'AVAILABLE', stockMode: 'QUANTITY', stock: { lte: 0 } }
+      ];
+    }
+
+    const isPaginated = Boolean(pageParam || pageSizeParam);
+    const page = Math.max(1, parseInt(pageParam || '1', 10) || 1);
+    const pageSize = Math.max(1, parseInt(pageSizeParam || '10', 10) || 10);
+    const skip = isPaginated ? (page - 1) * pageSize : undefined;
+    const take = isPaginated ? pageSize : undefined;
+
+    const [total, products, stockStats] = await Promise.all([
+      prisma.product.count({ where }),
+      prisma.product.findMany({
+        where,
+        skip,
+        take,
+        include: {
+          variants: {
+            select: {
+              size: true,
+              inStock: true,
+              stock: true
+            }
+          },
+          journalLinks: {
+            include: { journal: { select: journalSummarySelect } },
+            orderBy: { createdAt: 'desc' }
           }
         },
-        journalLinks: {
-          include: { journal: { select: journalSummarySelect } },
-          orderBy: { createdAt: 'desc' }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+        orderBy: { createdAt: 'desc' }
+      }),
+      includeStats
+        ? Promise.all([
+            prisma.product.count({ where: { deletedAt: null } }),
+            prisma.product.count({
+              where: {
+                deletedAt: null,
+                OR: [{ stockMode: 'ALWAYS_AVAILABLE' }, { stockMode: 'QUANTITY', stock: { gt: 0 } }]
+              }
+            }),
+            prisma.product.count({
+              where: { deletedAt: null, stockMode: 'QUANTITY', stock: { gt: 0, lte: 5 } }
+            }),
+            prisma.product.count({
+              where: { deletedAt: null, stockMode: 'QUANTITY', stock: { lte: 0 } }
+            })
+          ])
+        : null
+    ]);
+
+    const mappedProducts = products.map((product) =>
+      normalizeProductAvailability(
+        mapProductRelations(product as unknown as Parameters<typeof mapProductRelations>[0])
+      )
+    );
 
     return NextResponse.json({
       code: 200,
       status: 'success',
-      data: products.map((product) =>
-        normalizeProductAvailability(
-          mapProductRelations(product as unknown as Parameters<typeof mapProductRelations>[0])
-        )
-      )
+      data: mappedProducts,
+      meta: {
+        page: isPaginated ? page : 1,
+        pageSize: isPaginated ? pageSize : total,
+        total,
+        totalPages: isPaginated ? Math.max(1, Math.ceil(total / pageSize)) : 1,
+        ...(stockStats
+          ? {
+              stats: {
+                totalProducts: stockStats[0],
+                inStockCount: stockStats[1],
+                lowStockCount: stockStats[2],
+                soldOutCount: stockStats[3]
+              }
+            }
+          : {})
+      }
     });
   } catch (error) {
     console.error('Error fetching products:', error);

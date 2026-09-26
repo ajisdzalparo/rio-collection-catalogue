@@ -17,12 +17,22 @@ interface ReferralPartnerTableProps {
   data: ReferralPartnerView[];
   isLoading?: boolean;
   canManage?: boolean;
+  page: number;
+  totalEntries: number;
+  onSearchChange: (search: string) => void;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 }
 
 export function ReferralPartnerTable({
   data,
   isLoading = false,
-  canManage = true
+  canManage = true,
+  page,
+  totalEntries,
+  onSearchChange,
+  onPageChange,
+  onPageSizeChange
 }: ReferralPartnerTableProps) {
   const actions = useReferralActions();
   const [partnerToDelete, setPartnerToDelete] = useState<ReferralPartnerView | null>(null);
@@ -244,8 +254,14 @@ export function ReferralPartnerTable({
         columns={columns}
         data={data}
         searchKey="name"
-        extraSearchKeys={['whatsapp', 'notes'] as Array<keyof ReferralPartnerView>}
         searchPlaceholder="Cari nama partner, nomor whatsapp, atau catatan..."
+        manualSearch
+        onSearchChange={onSearchChange}
+        manualPagination
+        page={page}
+        totalEntries={totalEntries}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
         isLoading={isLoading}
         showSearch
         pageSize={10}

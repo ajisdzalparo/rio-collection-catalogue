@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Image from 'next/image';
-import { Calendar, Edit, Eye, ImageIcon, Layers, Trash2, User } from 'lucide-react';
+import { Calendar, SquarePen, Eye, ImageIcon, Layers, Trash2, User } from 'lucide-react';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,13 +15,20 @@ import {
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { formatSafeDate } from '@/lib/utils';
 import type { JournalArticle } from '@/types/catalogue.types';
+import type { JournalsMeta } from '@/hooks/use-journals';
 import { useTopicsQuery } from '@/hooks/use-master-data';
 import { JournalMobileCard } from './journal-mobile-card';
 
 interface JournalTableProps {
   articles: JournalArticle[];
+  meta: JournalsMeta;
   isLoading: boolean;
   isDeleting: boolean;
+  selectedCategory: string;
+  onCategoryChange: (cat: string) => void;
+  onSearchChange: (search: string) => void;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
   onView: (article: JournalArticle) => void;
   onEdit: (article: JournalArticle) => void;
   onDelete: (article: JournalArticle) => void;
@@ -29,13 +36,18 @@ interface JournalTableProps {
 
 export function JournalTable({
   articles,
+  meta,
   isLoading,
   isDeleting,
+  selectedCategory,
+  onCategoryChange,
+  onSearchChange,
+  onPageChange,
+  onPageSizeChange,
   onView,
   onEdit,
   onDelete
 }: JournalTableProps) {
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
   const { data: masterTopics = [] } = useTopicsQuery();
 
   const categoryOptions = useMemo(() => {
@@ -56,13 +68,6 @@ export function JournalTable({
           ])
     ];
   }, [masterTopics]);
-  const filteredArticles = useMemo(
-    () =>
-      articles.filter(
-        (article) => selectedCategory === 'ALL' || article.category === selectedCategory
-      ),
-    [articles, selectedCategory]
-  );
 
   const columns: Column<JournalArticle>[] = useMemo(
     () => [
@@ -71,7 +76,13 @@ export function JournalTable({
         cell: (article) => (
           <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md border border-border/20 bg-muted/50">
             {article.imageUrl ? (
-              <Image src={article.imageUrl} alt={article.title} fill sizes="64px" className="object-cover" />
+              <Image
+                src={article.imageUrl}
+                alt={article.title}
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                 <ImageIcon className="h-4 w-4" />
@@ -85,7 +96,11 @@ export function JournalTable({
         accessorKey: 'title',
         className: 'w-full min-w-[200px]',
         cell: (article) => (
-          <TruncatedText text={article.title} maxWidth="max-w-[320px]" className="text-xs font-bold text-foreground" />
+          <TruncatedText
+            text={article.title}
+            maxWidth="max-w-[320px]"
+            className="text-xs font-bold text-foreground"
+          />
         )
       },
       {
@@ -121,7 +136,11 @@ export function JournalTable({
       {
         header: 'Ringkasan Excerpt',
         cell: (article) => (
-          <TruncatedText text={article.excerpt} maxWidth="max-w-[320px]" className="text-xs font-normal text-muted-foreground" />
+          <TruncatedText
+            text={article.excerpt}
+            maxWidth="max-w-[320px]"
+            className="text-xs font-normal text-muted-foreground"
+          />
         )
       },
       {
@@ -130,13 +149,32 @@ export function JournalTable({
         sortable: false,
         cell: (article) => (
           <div className="flex items-center justify-end gap-1">
-            <Button variant="ghost" size="icon" onClick={() => onView(article)} className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Lihat detail artikel ${article.title}`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onView(article)}
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={`Lihat detail artikel ${article.title}`}
+            >
               <Eye className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => onEdit(article)} className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Edit artikel ${article.title}`}>
-              <Edit className="h-4 w-4" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(article)}
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={`Edit artikel ${article.title}`}
+            >
+              <SquarePen className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(article)} disabled={isDeleting} className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label={`Hapus artikel ${article.title}`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(article)}
+              disabled={isDeleting}
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              aria-label={`Hapus artikel ${article.title}`}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -149,21 +187,34 @@ export function JournalTable({
   return (
     <DataTable
       columns={columns}
-      data={filteredArticles}
+      data={articles}
       isLoading={isLoading}
       searchKey="title"
-      extraSearchKeys={['excerpt', 'author']}
       searchPlaceholder="Cari judul artikel, kutipan, penulis..."
+      manualSearch
+      onSearchChange={onSearchChange}
+      manualPagination
+      page={meta.page}
+      totalEntries={meta.total}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
       filterComponents={
         <div className="flex w-full items-center gap-2 sm:w-auto">
-          <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-muted-foreground">Topik:</span>
-          <Select value={selectedCategory} onValueChange={(value) => value && setSelectedCategory(value)}>
+          <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Topik:
+          </span>
+          <Select
+            value={selectedCategory}
+            onValueChange={(value) => value && onCategoryChange(value)}
+          >
             <SelectTrigger className="h-9 min-w-0 flex-1 rounded-xl sm:w-45 sm:flex-none">
               <SelectValue placeholder="Semua Topik" />
             </SelectTrigger>
             <SelectContent>
               {categoryOptions.map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -174,7 +225,13 @@ export function JournalTable({
       pageSize={10}
       getRowId={(article) => article.id}
       renderCard={(article) => (
-        <JournalMobileCard article={article} isDeleting={isDeleting} onView={onView} onEdit={onEdit} onDelete={onDelete} />
+        <JournalMobileCard
+          article={article}
+          isDeleting={isDeleting}
+          onView={onView}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       )}
     />
   );

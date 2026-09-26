@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/date-picker';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
 import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
@@ -69,8 +70,9 @@ function OrdersPageContent() {
   const { data: storeBanks = [] } = useStoreBanksQuery();
   const storeSettings = latestStoreSettings || persistedStoreSettings;
 
-  // Server-side search, filter, pagination state
+  // Server-side search, filter, pagination state driven by reactive client state
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 350);
   const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
   const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
   const [appliedStartDate, setAppliedStartDate] = useState<Date | undefined>();
@@ -93,7 +95,7 @@ function OrdersPageContent() {
     deleteExpiredOrders,
     isDeletingExpired
   } = useOrders({
-    search: searchQuery || undefined,
+    search: debouncedSearch.trim() || undefined,
     status: appliedStatuses.length > 0 ? appliedStatuses : undefined,
     startDate: appliedStartDate?.toISOString(),
     endDate: appliedEndDate?.toISOString(),

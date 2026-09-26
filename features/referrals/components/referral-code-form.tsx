@@ -5,12 +5,12 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput, FormRupiahInput, FormSelect } from '@/components/shared';
-import type { ReferralPartnerView } from '../types';
+import type { ReferralPartnerOption } from '../types';
 import { useReferralActions } from '../hooks/use-referrals';
 import { ReferralCodePreview } from './referral-code-preview';
 
 interface ReferralCodeFormProps {
-  partners: ReferralPartnerView[];
+  partners: ReferralPartnerOption[];
   defaultPartnerId?: string;
   onSuccess?: () => void;
   onCancel?: () => void;

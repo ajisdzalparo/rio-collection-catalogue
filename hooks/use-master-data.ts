@@ -53,6 +53,38 @@ export interface MaterialItem {
   createdAt?: string;
 }
 
+export type MasterDataResource =
+  | 'categories'
+  | 'colors'
+  | 'sizes'
+  | 'topics'
+  | 'banks'
+  | 'materials';
+
+export function useMasterDataPageQuery<T>(
+  resource: MasterDataResource,
+  params: { search?: string; type?: string; page: number; pageSize: number },
+  enabled = true
+) {
+  return useQuery<{
+    items: T[];
+    meta: { page: number; pageSize: number; total: number; totalPages: number };
+  }>({
+    queryKey: [resource, 'page', params],
+    enabled,
+    queryFn: async () => {
+      const { data } = await axios.get('/api/v1/master-data', {
+        params: { resource, ...params }
+      });
+      if (data.code !== 200 || !Array.isArray(data.data)) {
+        throw new Error(data.message || 'Gagal memuat master data.');
+      }
+      return { items: data.data as T[], meta: data.meta };
+    },
+    placeholderData: (previousData) => previousData
+  });
+}
+
 interface MasterDataState {
   categories: CategoryItem[];
   colors: ColorItem[];
@@ -250,7 +282,8 @@ export function useCategoriesQuery() {
         return data.data as CategoryItem[];
       }
       return Array.isArray(data) ? data : [];
-    }
+    },
+    placeholderData: (previousData) => previousData
   });
 }
 
@@ -263,7 +296,8 @@ export function useColorsQuery() {
         return data.data as ColorItem[];
       }
       return Array.isArray(data) ? data : [];
-    }
+    },
+    placeholderData: (previousData) => previousData
   });
 }
 
@@ -276,7 +310,8 @@ export function useSizesQuery() {
         return data.data as SizeItem[];
       }
       return Array.isArray(data) ? data : [];
-    }
+    },
+    placeholderData: (previousData) => previousData
   });
 }
 
@@ -289,7 +324,8 @@ export function useTopicsQuery() {
         return data.data as TopicItem[];
       }
       return Array.isArray(data) ? data : [];
-    }
+    },
+    placeholderData: (previousData) => previousData
   });
 }
 
@@ -302,7 +338,8 @@ export function useBanksQuery(activeOnly = false) {
         return data.data as BankItem[];
       }
       return Array.isArray(data) ? data : [];
-    }
+    },
+    placeholderData: (previousData) => previousData
   });
 }
 
@@ -315,7 +352,8 @@ export function useMaterialsQuery() {
         return data.data as MaterialItem[];
       }
       return Array.isArray(data) ? data : [];
-    }
+    },
+    placeholderData: (previousData) => previousData
   });
 }
 

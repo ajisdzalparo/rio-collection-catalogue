@@ -5,14 +5,15 @@ import { DataTable, type Column, CMSBadge } from '@/components/shared';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Trash2, ShieldCheck, CheckCircle2, Eye, Lock } from 'lucide-react';
+import { SquarePen, Trash2, ShieldCheck, CheckCircle2, Eye, Lock } from 'lucide-react';
 import type { UserRole } from '../types/roles.types';
 import { PERMISSION_TREE } from '../data/permission-tree';
-import { useRolesQuery, syncRolePermissions } from '../hooks/use-rbac';
+import { useRolesPageQuery, syncRolePermissions } from '../hooks/use-rbac';
 import { useRoleMutations } from '../hooks/use-role-mutations';
 import { toast } from 'sonner';
 import { isSuperAdminRole, normalizeRoleName } from '@/lib/auth/roles';
 import { useAuth } from '@/hooks/use-auth';
+import { useDebounce } from '@/hooks/use-debounce';
 
 interface RoleTableProps {
   onEditRole: (role: UserRole) => void;
@@ -21,7 +22,17 @@ interface RoleTableProps {
 
 export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   const router = useRouter();
-  const { data: roles = [] } = useRolesQuery();
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 350);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { data, isLoading } = useRolesPageQuery({
+    search: debouncedSearch.trim() || undefined,
+    page,
+    pageSize
+  });
+  const roles = data?.roles ?? [];
+  const meta = data?.meta ?? { page: 1, pageSize, total: 0, totalPages: 1 };
   const { update, remove } = useRoleMutations();
   const { user: authUser } = useAuth();
   const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
@@ -212,7 +223,7 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
                 : 'Edit Role & Permissions'
             }
           >
-            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+            <SquarePen className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
 
           {isRoleDeleteLocked(role.name) ? (
@@ -253,6 +264,20 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
         getRowId={(role) => role.id || role.name}
         searchKey="name"
         searchPlaceholder="Cari master role berdasarkan nama..."
+        manualSearch
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
+        manualPagination
+        page={meta.page}
+        totalEntries={meta.total}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+        isLoading={isLoading}
       />
       <ConfirmModal
         open={Boolean(deleteTargetRole)}

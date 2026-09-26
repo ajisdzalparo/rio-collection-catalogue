@@ -65,3 +65,5 @@ export interface ReferralPartnerView {
   codes: ReferralCodeView[];
   payouts: ReferralPayoutView[];
 }
+
+export type ReferralPartnerOption = Pick<ReferralPartnerView, 'id' | 'name'>;

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Lock, MoreHorizontal, Pencil, Trash2, KeyRound } from 'lucide-react';
+import { Lock, MoreHorizontal, SquarePen, Trash2, KeyRound } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { UserFormDialog } from './user-form-dialog';
 import { ResetPasswordDialog } from './reset-password-dialog';
@@ -101,7 +101,7 @@ export function UserActions({ user }: UserActionsProps) {
               className="cursor-pointer gap-2 text-xs font-semibold rounded-xl py-2 px-2.5"
               onClick={() => setShowEditDialog(true)}
             >
-              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+              <SquarePen className="h-3.5 w-3.5 text-muted-foreground" />
               <span>Edit Pengguna</span>
             </DropdownMenuItem>
           )}

@@ -17,7 +17,7 @@ import {
 import { WhatsAppIcon } from '@/components/icons/social-icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useCustomers } from '@/hooks/use-customers';
+import { useCustomer } from '@/hooks/use-customers';
 import { formatIDR } from '@/lib/utils';
 import { OrderStatusBadge } from '@/components/shared/order-status-badge';
 import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
@@ -31,19 +31,8 @@ export default function CustomerDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const decodedId = decodeURIComponent(id);
 
-  const { data: customersList = [], isLoading: loading } = useCustomers();
+  const { data: customer = null, isLoading: loading } = useCustomer(decodedId);
   const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'addresses'>('orders');
-
-  const customer = useMemo(() => {
-    return (
-      customersList.find(
-        (c) =>
-          c.whatsapp === decodedId ||
-          c.whatsapp.replace(/[^0-9]/g, '') === decodedId.replace(/[^0-9]/g, '') ||
-          c.fullName.toLowerCase() === decodedId.toLowerCase()
-      ) || null
-    );
-  }, [customersList, decodedId]);
 
   const getWhatsAppLink = (whatsapp: string, fullName: string) => {
     const text = `Halo ${fullName},\n\nTerima kasih telah berbelanja di RIO COLLECTION. Ada yang bisa kami bantu?`;

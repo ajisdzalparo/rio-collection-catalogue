@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -114,7 +115,6 @@ export function DataTable<T extends object>({
   onSortChange,
   manualSorting = false,
   manualSearch = false,
-  searchValue,
   onSearchChange,
   manualPagination = false,
   page: controlledPage,
@@ -133,7 +133,7 @@ export function DataTable<T extends object>({
   bulkActions,
   emptyTitle = 'No data found',
   emptyDescription = 'Try adjusting your search query or filters to find what you are looking for.',
-  searchParamKey = 'q',
+  searchParamKey = false,
   debounceMs = 300,
   renderCard
 }: DataTableProps<T>) {
@@ -150,10 +150,22 @@ export function DataTable<T extends object>({
     }
   };
 
+  const pathname = usePathname();
   const [inputValue, setInputValue] = useState(getInitialSearchParam);
   const [searchQuery, setSearchQuery] = useState(getInitialSearchParam);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentSize, setCurrentSize] = useState(pageSize);
+
+  // Reset search state when navigating to a different page
+  const prevPathname = useRef(pathname);
+  useEffect(() => {
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      setInputValue('');
+      setSearchQuery('');
+      setCurrentPage(1);
+    }
+  }, [pathname]);
 
   // Sync on browser back/forward history navigation
   useEffect(() => {
@@ -197,6 +209,12 @@ export function DataTable<T extends object>({
     return () => clearTimeout(timer);
   }, [inputValue, debounceMs, searchParamKey]);
 
+  useEffect(() => {
+    if (manualSearch && onSearchChange) {
+      onSearchChange(searchQuery);
+    }
+  }, [searchQuery, manualSearch, onSearchChange]);
+
   const [internalSortKey, setInternalSortKey] = useState<keyof T | null>(null);
   const [internalSortDirection, setInternalSortDirection] = useState<'asc' | 'desc' | null>(null);
 
@@ -208,6 +226,7 @@ export function DataTable<T extends object>({
   const isSearchVisible = showSearch !== undefined ? showSearch : Boolean(searchKey);
 
   const filteredData = useMemo(() => {
+    if (manualSearch) return data;
     if (!searchQuery.trim() || !isSearchVisible) return data;
     const query = searchQuery.toLowerCase();
     const keys = [searchKey, ...(extraSearchKeys ?? [])].filter(Boolean) as Array<keyof T>;
@@ -221,7 +240,7 @@ export function DataTable<T extends object>({
           .includes(query);
       });
     });
-  }, [data, searchKey, extraSearchKeys, searchQuery, isSearchVisible]);
+  }, [data, searchKey, extraSearchKeys, searchQuery, isSearchVisible, manualSearch]);
 
   const getItemKey = React.useCallback(
     (item: T, idx: number): string | number => {

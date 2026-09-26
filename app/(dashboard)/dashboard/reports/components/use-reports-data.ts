@@ -1,21 +1,23 @@
-import { useState, useMemo, useCallback } from 'react';
+'use client';
+
+import { useCallback, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { useOrders } from '@/hooks/use-orders';
-import type { Order } from '@/hooks/use-orders';
-import { allocateAmountByWeights, netItemRevenues } from '@/lib/referral';
 import type {
-  ReportMetrics,
-  ReportGrowth,
-  TopSellingProduct,
-  DailyChartPoint,
   ChartInsights,
+  DailyChartPoint,
   PresetRangeType,
-  ReportStatus
+  ReportGrowth,
+  ReportMetrics,
+  ReportStatus,
+  TopSellingProduct
 } from './types';
 
-export const formatDateToInput = (d: Date): string => {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+export const formatDateToInput = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
@@ -23,303 +25,108 @@ export const formatDisplayDate = (dateStr: string): string => {
   if (!dateStr) return '';
   const [year, month, day] = dateStr.split('-').map(Number);
   if (!year || !month || !day) return dateStr;
-  const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(year, month - 1, day).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+};
+
+interface ReportsApiData {
+  currentMetrics: ReportMetrics;
+  growth: ReportGrowth;
+  topProducts: TopSellingProduct[];
+  chartDataPoints: DailyChartPoint[];
+  chartInsights: ChartInsights;
+  availableProducts: string[];
+  hasPreviousPeriod: boolean;
+}
+
+const EMPTY_METRICS: ReportMetrics = {
+  grossSales: 0,
+  customerDiscount: 0,
+  revenue: 0,
+  totalHpp: 0,
+  netProfit: 0,
+  cashReward: 0,
+  shirtRewardCost: 0,
+  profitAfterReferral: 0,
+  profitMargin: 0,
+  totalQty: 0
 };
 
 export function useReportsData() {
-  const { data: orders = [], isLoading, error } = useOrders();
-  const recordedOrders = useMemo(
-    () => orders.filter((order) => order.status === 'PAID' || order.status === 'FULFILLED'),
-    [orders]
-  );
-
-  const [startDate, setStartDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 29);
-    return formatDateToInput(d);
+  const [startDate, setStartDate] = useState(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 29);
+    return formatDateToInput(date);
   });
-  const [endDate, setEndDate] = useState<string>(() => {
-    return formatDateToInput(new Date());
-  });
+  const [endDate, setEndDate] = useState(() => formatDateToInput(new Date()));
   const [presetRange, setPresetRange] = useState<PresetRangeType>('30D');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<ReportStatus[]>([]);
-
-  const applyPreset = useCallback(
-    (preset: PresetRangeType) => {
-      const now = new Date();
-      if (preset === '7D') {
-        const s = new Date();
-        s.setDate(now.getDate() - 6);
-        setStartDate(formatDateToInput(s));
-        setEndDate(formatDateToInput(now));
-      } else if (preset === '30D') {
-        const s = new Date();
-        s.setDate(now.getDate() - 29);
-        setStartDate(formatDateToInput(s));
-        setEndDate(formatDateToInput(now));
-      } else if (preset === 'THIS_MONTH') {
-        const s = new Date(now.getFullYear(), now.getMonth(), 1);
-        setStartDate(formatDateToInput(s));
-        setEndDate(formatDateToInput(now));
-      } else if (preset === 'LAST_MONTH') {
-        const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const e = new Date(now.getFullYear(), now.getMonth(), 0);
-        setStartDate(formatDateToInput(s));
-        setEndDate(formatDateToInput(e));
-      } else if (preset === 'ALL') {
-        const oldest =
-          orders.length > 0
-            ? new Date(Math.min(...orders.map((o) => new Date(o.createdAt).getTime())))
-            : new Date(now.getFullYear() - 1, 0, 1);
-        setStartDate(formatDateToInput(oldest));
-        setEndDate(formatDateToInput(now));
-      }
-    },
-    [orders]
+  const statuses = useMemo(
+    () => (selectedStatuses.length ? selectedStatuses : ['PAID', 'FULFILLED']),
+    [selectedStatuses]
   );
 
-  const availableProducts = useMemo(() => {
-    const names = new Set<string>();
-    recordedOrders.forEach((o) => {
-      o.items.forEach((item) => names.add(item.name));
-    });
-    return Array.from(names);
-  }, [recordedOrders]);
-
-  const statusFilteredOrders = useMemo(
-    () =>
-      selectedStatuses.length === 0
-        ? recordedOrders
-        : recordedOrders.filter((order) => selectedStatuses.includes(order.status as ReportStatus)),
-    [recordedOrders, selectedStatuses]
-  );
-
-  const { currentOrders, previousOrders } = useMemo(() => {
-    if (!startDate || !endDate) return { currentOrders: [], previousOrders: [] };
-
-    const start = new Date(startDate + 'T00:00:00');
-    const end = new Date(endDate + 'T23:59:59');
-
-    if (start > end) return { currentOrders: [], previousOrders: [] };
-
-    const diffMs = end.getTime() - start.getTime();
-    const prevEnd = new Date(start.getTime() - 1);
-    const prevStart = new Date(prevEnd.getTime() - diffMs);
-
-    const current = statusFilteredOrders.filter((o) => {
-      const d = new Date(o.createdAt);
-      return d >= start && d <= end;
-    });
-
-    const previous = statusFilteredOrders.filter((o) => {
-      const d = new Date(o.createdAt);
-      return d >= prevStart && d <= prevEnd;
-    });
-
-    return { currentOrders: current, previousOrders: previous };
-  }, [statusFilteredOrders, startDate, endDate]);
-
-  const calculateMetrics = useCallback(
-    (orderList: Order[]): ReportMetrics => {
-      let grossSales = 0;
-      let customerDiscount = 0;
-      let revenue = 0;
-      let totalHpp = 0;
-      let cashReward = 0;
-      let totalQty = 0;
-
-      orderList.forEach((o) => {
-        const itemGross = o.items.map((it) => it.price * it.quantity);
-        const itemDiscounts = allocateAmountByWeights(itemGross, o.discountAmount ?? 0);
-        const itemRevenues = itemGross.map((g, idx) => g - itemDiscounts[idx]);
-        const itemRewards = allocateAmountByWeights(itemGross, o.referralRewardAmount ?? 0);
-
-        o.items.forEach((item, index) => {
-          if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
-
-          const gross = itemGross[index];
-          const disc = itemDiscounts[index];
-          const rev = itemRevenues[index];
-          const rew = itemRewards[index];
-          const hpp = (item.cogs ?? 0) * item.quantity;
-
-          grossSales += gross;
-          customerDiscount += disc;
-          revenue += rev;
-          cashReward += rew;
-          totalHpp += hpp;
-          totalQty += item.quantity;
-        });
-      });
-
-      const netProfit = revenue - totalHpp;
-      const shirtRewardCost = 0;
-      const profitAfterReferral = netProfit - cashReward - shirtRewardCost;
-      const profitMargin = revenue > 0 ? (profitAfterReferral / revenue) * 100 : 0;
-
-      return {
-        grossSales,
-        customerDiscount,
-        revenue,
-        totalHpp,
-        netProfit,
-        cashReward,
-        shirtRewardCost,
-        profitAfterReferral,
-        profitMargin,
-        totalQty
-      };
-    },
-    [selectedProducts]
-  );
-
-  const currentMetrics = useMemo(
-    () => calculateMetrics(currentOrders),
-    [currentOrders, calculateMetrics]
-  );
-
-  const previousMetrics = useMemo(
-    () => calculateMetrics(previousOrders),
-    [previousOrders, calculateMetrics]
-  );
-
-  const growth: ReportGrowth = useMemo(() => {
-    const calcGrowth = (curr: number, prev: number) => {
-      if (prev === 0) return curr > 0 ? 100 : 0;
-      return ((curr - prev) / prev) * 100;
-    };
-
-    return {
-      revenue: calcGrowth(currentMetrics.revenue, previousMetrics.revenue),
-      profit: calcGrowth(currentMetrics.netProfit, previousMetrics.netProfit),
-      qty: calcGrowth(currentMetrics.totalQty, previousMetrics.totalQty)
-    };
-  }, [currentMetrics, previousMetrics]);
-
-  const topProducts: TopSellingProduct[] = useMemo(() => {
-    const map = new Map<string, TopSellingProduct>();
-
-    currentOrders.forEach((o) => {
-      const revenues = netItemRevenues(o.items, o.discountAmount ?? 0);
-      o.items.forEach((item, index) => {
-        if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
-
-        const key = item.name;
-        const rev = revenues[index];
-        const hpp = (item.cogs ?? 0) * item.quantity;
-        const profit = rev - hpp;
-
-        const current = map.get(key) || { name: item.name, totalQty: 0, revenue: 0, profit: 0 };
-        map.set(key, {
-          name: item.name,
-          totalQty: current.totalQty + item.quantity,
-          revenue: current.revenue + rev,
-          profit: current.profit + profit
-        });
-      });
-    });
-
-    return Array.from(map.values())
-      .sort((a, b) => b.totalQty - a.totalQty)
-      .slice(0, 5);
-  }, [currentOrders, selectedProducts]);
-
-  const chartDataPoints: DailyChartPoint[] = useMemo(() => {
-    if (!startDate || !endDate) return [];
-
-    const start = new Date(startDate + 'T00:00:00');
-    const end = new Date(endDate + 'T23:59:59');
-
-    if (start > end) return [];
-
-    const diffMs = end.getTime() - start.getTime();
-    const totalDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
-
-    const dates: { dateStr: string; keyDateStr: string; prevKeyDateStr: string }[] = [];
-    const current = new Date(start);
-    while (current <= end) {
-      const prevD = new Date(current.getTime() - totalDays * 24 * 60 * 60 * 1000);
-      dates.push({
-        dateStr: current.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
-        keyDateStr: current.toLocaleDateString('id-ID'),
-        prevKeyDateStr: prevD.toLocaleDateString('id-ID')
-      });
-      current.setDate(current.getDate() + 1);
-    }
-
-    return dates.map(({ dateStr, keyDateStr, prevKeyDateStr }) => {
-      let dailyRevenue = 0;
-      let dailyProfit = 0;
-      let prevDailyRevenue = 0;
-
-      currentOrders.forEach((o) => {
-        const orderDateStr = new Date(o.createdAt).toLocaleDateString('id-ID');
-        if (orderDateStr === keyDateStr) {
-          const revenues = netItemRevenues(o.items, o.discountAmount ?? 0);
-          o.items.forEach((item, index) => {
-            if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
-            const rev = revenues[index];
-            const hpp = (item.cogs ?? 0) * item.quantity;
-            dailyRevenue += rev;
-            dailyProfit += rev - hpp;
-          });
+  const reportQuery = useQuery<ReportsApiData, Error>({
+    queryKey: [
+      'reports',
+      'sales',
+      startDate,
+      endDate,
+      selectedProducts.join(','),
+      statuses.join(',')
+    ],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/v1/reports/sales', {
+        params: {
+          startDate,
+          endDate,
+          product: selectedProducts.length ? selectedProducts.join(',') : undefined,
+          status: statuses.join(',')
         }
       });
-
-      if (previousOrders.length > 0) {
-        previousOrders.forEach((o) => {
-          const orderDateStr = new Date(o.createdAt).toLocaleDateString('id-ID');
-          if (orderDateStr === prevKeyDateStr) {
-            const revenues = netItemRevenues(o.items, o.discountAmount ?? 0);
-            o.items.forEach((item, index) => {
-              if (selectedProducts.length > 0 && !selectedProducts.includes(item.name)) return;
-              prevDailyRevenue += revenues[index];
-            });
-          }
-        });
+      if (data.code !== 200 || !data.data) {
+        throw new Error(data.message || 'Gagal memuat laporan.');
       }
+      return data.data as ReportsApiData;
+    },
+    placeholderData: (previousData) => previousData
+  });
 
-      return {
-        label: dateStr,
-        revenue: dailyRevenue,
-        profit: dailyProfit,
-        prevRevenue: prevDailyRevenue
-      };
-    });
-  }, [currentOrders, previousOrders, startDate, endDate, selectedProducts]);
+  const exportOrdersQuery = useOrders({
+    status: statuses,
+    product: selectedProducts.length ? selectedProducts : undefined,
+    startDate,
+    endDate
+  });
 
-  const chartInsights: ChartInsights = useMemo(() => {
-    let peakRevenue = 0;
-    let peakLabel = '-';
-    let totalRev = 0;
-    let daysWithSales = 0;
+  const applyPreset = useCallback((preset: PresetRangeType) => {
+    const now = new Date();
+    if (preset === '7D' || preset === '30D') {
+      const start = new Date(now);
+      start.setDate(now.getDate() - (preset === '7D' ? 6 : 29));
+      setStartDate(formatDateToInput(start));
+      setEndDate(formatDateToInput(now));
+    } else if (preset === 'THIS_MONTH') {
+      setStartDate(formatDateToInput(new Date(now.getFullYear(), now.getMonth(), 1)));
+      setEndDate(formatDateToInput(now));
+    } else if (preset === 'LAST_MONTH') {
+      setStartDate(formatDateToInput(new Date(now.getFullYear(), now.getMonth() - 1, 1)));
+      setEndDate(formatDateToInput(new Date(now.getFullYear(), now.getMonth(), 0)));
+    } else if (preset === 'ALL') {
+      setStartDate('2000-01-01');
+      setEndDate(formatDateToInput(now));
+    }
+  }, []);
 
-    chartDataPoints.forEach((d) => {
-      totalRev += d.revenue;
-      if (d.revenue > peakRevenue) {
-        peakRevenue = d.revenue;
-        peakLabel = d.label;
-      }
-      if (d.revenue > 0) daysWithSales++;
-    });
-
-    const avgDaily = chartDataPoints.length > 0 ? totalRev / chartDataPoints.length : 0;
-
-    return {
-      peakRevenue,
-      peakLabel,
-      avgDaily,
-      daysWithSales,
-      totalPoints: chartDataPoints.length
-    };
-  }, [chartDataPoints]);
-
+  const data = reportQuery.data;
   return {
-    orders,
-    isLoading,
-    error,
+    orders: exportOrdersQuery.data,
+    isLoading: reportQuery.isLoading || exportOrdersQuery.isLoading,
+    error: reportQuery.error || exportOrdersQuery.error,
     startDate,
     setStartDate,
     endDate,
@@ -331,14 +138,19 @@ export function useReportsData() {
     selectedStatuses,
     setSelectedStatuses,
     applyPreset,
-    availableProducts,
-    currentOrders,
-    previousOrders,
-    currentMetrics,
-    previousMetrics,
-    growth,
-    topProducts,
-    chartDataPoints,
-    chartInsights
+    availableProducts: data?.availableProducts ?? [],
+    currentOrders: exportOrdersQuery.data,
+    currentMetrics: data?.currentMetrics ?? EMPTY_METRICS,
+    growth: data?.growth ?? { revenue: 0, profit: 0, qty: 0 },
+    topProducts: data?.topProducts ?? [],
+    chartDataPoints: data?.chartDataPoints ?? [],
+    chartInsights: data?.chartInsights ?? {
+      peakRevenue: 0,
+      peakLabel: '-',
+      avgDaily: 0,
+      daysWithSales: 0,
+      totalPoints: 0
+    },
+    hasPreviousPeriod: data?.hasPreviousPeriod ?? false
   };
 }

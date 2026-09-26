@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim() || searchParams.get('q')?.trim() || '';
     const statusParam = searchParams.get('status')?.trim() || '';
+    const productParam = searchParams.get('product')?.trim() || '';
     const startDateParam = searchParams.get('startDate')?.trim() || '';
     const endDateParam = searchParams.get('endDate')?.trim() || '';
     const pageParam = searchParams.get('page');
@@ -22,11 +23,24 @@ export async function GET(request: Request) {
     const where: Prisma.OrderWhereInput = {};
 
     if (statusParam) {
-      const statuses = statusParam.split(',').map((s) => s.trim()).filter(Boolean);
+      const statuses = statusParam
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       if (statuses.length === 1) {
-        where.status = statuses[0] as any;
+        where.status = statuses[0];
       } else if (statuses.length > 1) {
-        where.status = { in: statuses as any };
+        where.status = { in: statuses };
+      }
+    }
+
+    if (productParam) {
+      const products = productParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (products.length) {
+        where.items = { some: { name: { in: products } } };
       }
     }
 
@@ -49,7 +63,10 @@ export async function GET(request: Request) {
         { orderNumber: { contains: search, mode: 'insensitive' } },
         { fullName: { contains: search, mode: 'insensitive' } },
         { whatsapp: { contains: search, mode: 'insensitive' } },
-        { address: { contains: search, mode: 'insensitive' } }
+        { address: { contains: search, mode: 'insensitive' } },
+        { referralCodeSnapshot: { contains: search, mode: 'insensitive' } },
+        { referralPartnerSnapshot: { contains: search, mode: 'insensitive' } },
+        { items: { some: { name: { contains: search, mode: 'insensitive' } } } }
       ];
     }
 

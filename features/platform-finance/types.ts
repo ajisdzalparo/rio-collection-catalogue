@@ -29,4 +29,10 @@ export interface PlatformFinanceData {
   settings: PlatformFinanceSettings;
   summary: PlatformFinanceSummary;
   transactions: PlatformFinanceTransaction[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 }

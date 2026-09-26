@@ -23,6 +23,7 @@ import type { DateRange } from '@/types/date-picker.types';
 import { isSuperAdminRole } from '@/lib/auth/roles';
 import { useAuth } from '@/hooks/use-auth';
 import { useDebounce } from '@/hooks/use-debounce';
+import axios from 'axios';
 import { usePlatformFinance } from '../hooks/use-platform-finance';
 import type { PlatformFinanceTransaction } from '../types';
 import { PlatformFinanceFilters, type FinanceStatusFilter } from './platform-finance-filters';
@@ -72,6 +73,8 @@ export function PlatformFinancePage() {
   }));
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FinanceStatusFilter>('ALL');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const canViewFinance = isSuperAdminRole(user?.role);
   const period = useMemo(
@@ -82,24 +85,20 @@ export function PlatformFinancePage() {
     [dateRange]
   );
   const { data, isLoading, error, updateSettings, isUpdatingSettings } = usePlatformFinance(
-    period,
+    {
+      ...period,
+      search: debouncedSearchQuery.trim() || undefined,
+      status: statusFilter,
+      page,
+      pageSize
+    },
     canViewFinance
   );
-
-  const filteredTransactions = useMemo(() => {
-    const normalizedSearch = debouncedSearchQuery.trim().toLowerCase();
-    return (data?.transactions || []).filter((transaction) => {
-      const matchesStatus = statusFilter === 'ALL' || transaction.status === statusFilter;
-      const matchesSearch = !normalizedSearch ||
-        transaction.orderNumber.toLowerCase().includes(normalizedSearch) ||
-        transaction.customerName.toLowerCase().includes(normalizedSearch);
-      return matchesStatus && matchesSearch;
-    });
-  }, [data?.transactions, debouncedSearchQuery, statusFilter]);
 
   const resetFilters = () => {
     setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
     setStatusFilter('ALL');
+    setPage(1);
   };
 
   if (isAuthLoading) {
@@ -126,6 +125,22 @@ export function PlatformFinancePage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const response = await axios.get('/api/v1/platform-finance', {
+        params: {
+          ...period,
+          search: debouncedSearchQuery.trim() || undefined,
+          status: statusFilter === 'ALL' ? undefined : statusFilter,
+          export: true
+        }
+      });
+      exportTransactions(response.data.data?.transactions || []);
+    } catch {
+      toast.error('Gagal menyiapkan export transaksi finance.');
+    }
+  };
+
   if (error) {
     return <ErrorState message={error.message || 'Finance platform tidak tersedia.'} />;
   }
@@ -146,7 +161,7 @@ export function PlatformFinancePage() {
         title="Super Admin Finance"
         description="Pantau komisi penjualan dan rincian transaksi secara terpisah dari laporan Owner."
       >
-        <Button variant="outline" onClick={() => exportTransactions(filteredTransactions)} disabled={!filteredTransactions.length} className="gap-2 rounded-xl">
+        <Button variant="outline" onClick={() => void handleExport()} disabled={!data?.pagination.total} className="gap-2 rounded-xl">
           <Download className="h-4 w-4" />
           Export CSV
         </Button>
@@ -155,7 +170,7 @@ export function PlatformFinancePage() {
       <section aria-labelledby="finance-summary-heading" className="space-y-3">
         <div className="mb-3 flex items-center justify-between">
           <h2 id="finance-summary-heading" className="text-sm font-bold uppercase tracking-wider text-foreground">Ringkasan Periode</h2>
-          <span className="text-xs text-muted-foreground">{filteredTransactions.length} dari {data.summary.transactionCount} transaksi aktif</span>
+          <span className="text-xs text-muted-foreground">{data.pagination.total} dari {data.summary.transactionCount} transaksi aktif</span>
         </div>
         <Grid cols={3} gap="sm">
           {cards.map(({ label, value, icon: Icon }) => (
@@ -202,6 +217,7 @@ export function PlatformFinancePage() {
               value={searchQuery}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
+                setPage(1);
               }}
               aria-label="Cari transaksi berdasarkan nomor order atau pelanggan"
               placeholder="Cari nomor order atau nama pelanggan..."
@@ -215,12 +231,22 @@ export function PlatformFinancePage() {
             onApply={(filters) => {
               setDateRange(filters.dateRange);
               setStatusFilter(filters.statusFilter);
+              setPage(1);
             }}
             onReset={resetFilters}
           />
         </div>
         <CardContent className="p-3 sm:p-4">
-          <PlatformFinanceTransactionTable transactions={filteredTransactions} />
+          <PlatformFinanceTransactionTable
+            transactions={data.transactions}
+            page={data.pagination.page}
+            totalEntries={data.pagination.total}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
         </CardContent>
       </Card>
     </VStack>

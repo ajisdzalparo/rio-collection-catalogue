@@ -97,6 +97,7 @@ export function useStoreSettingsQuery() {
         return data.data as StoreSettings;
       }
       return data as StoreSettings;
-    }
+    },
+    placeholderData: (previousData) => previousData
   });
 }

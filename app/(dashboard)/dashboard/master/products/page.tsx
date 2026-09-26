@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Plus,
-  Edit,
+  SquarePen,
   Layers,
   Trash2,
   Eye,
@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useProducts } from '@/hooks/use-products';
 import { useMasterStore } from '@/hooks/use-master-data';
 import { VStack, Flex } from '@/components/ui/layout';
@@ -53,19 +54,37 @@ function ProductsContent() {
   const filterParam = searchParams.get('filter');
   const isOutOfStockFilter = filterParam === 'out_of_stock';
 
-  const { data: products = [], isLoading: loading, deleteProduct, isDeleting } = useProducts();
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 350);
+  const [appliedCategories, setAppliedCategories] = useState<string[]>([]);
+  const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
+  const [draftCategories, setDraftCategories] = useState<string[]>([]);
+  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageSize, setCurrentPageSize] = useState(10);
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+
+  const {
+    data: products = [],
+    meta,
+    isLoading: loading,
+    deleteProduct,
+    isDeleting
+  } = useProducts({
+    search: debouncedSearch.trim() || undefined,
+    category: appliedCategories.length > 0 ? appliedCategories : undefined,
+    status: isOutOfStockFilter
+      ? undefined
+      : appliedStatuses.length > 0
+        ? appliedStatuses
+        : undefined,
+    needsStock: isOutOfStockFilter,
+    page: currentPage,
+    pageSize: currentPageSize
+  });
 
   // Master data
   const { categories } = useMasterStore();
-
-  // Applied Filters (used to filter the data table)
-  const [appliedCategories, setAppliedCategories] = useState<string[]>([]);
-  const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
-
-  // Draft Filters (used inside the filter drawer before clicking Terapkan)
-  const [draftCategories, setDraftCategories] = useState<string[]>([]);
-  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
-  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
 
   const categoryOptions: MultiSelectOption[] = useMemo(() => {
     return categories.map((cat) => ({
@@ -92,6 +111,7 @@ function ProductsContent() {
   const handleApplyFilters = () => {
     setAppliedCategories(draftCategories);
     setAppliedStatuses(draftStatuses);
+    setCurrentPage(1);
     setIsFilterOpen(false);
   };
 
@@ -100,6 +120,7 @@ function ProductsContent() {
     setDraftStatuses([]);
     setAppliedCategories([]);
     setAppliedStatuses([]);
+    setCurrentPage(1);
     setIsFilterOpen(false);
   };
 
@@ -155,24 +176,6 @@ function ProductsContent() {
         );
     }
   }, []);
-
-  // Filter products list
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      const matchesCategory =
-        appliedCategories.length === 0 || appliedCategories.includes(p.category);
-      const matchesStatus = appliedStatuses.length === 0 || appliedStatuses.includes(p.status);
-
-      const totalStock =
-        p.stock ?? p.variants.reduce((acc, v) => acc + (v.stock || (v.inStock ? 10 : 0)), 0);
-
-      const matchesOutOfStockFilter =
-        !isOutOfStockFilter ||
-        (p.status === 'AVAILABLE' && p.stockMode === 'QUANTITY' && totalStock <= 0);
-
-      return matchesCategory && matchesStatus && matchesOutOfStockFilter;
-    });
-  }, [products, appliedCategories, appliedStatuses, isOutOfStockFilter]);
 
   // Table Columns Definition for DataTable
   const columns: Column<Product>[] = useMemo(
@@ -282,7 +285,7 @@ function ProductsContent() {
               className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               title="Edit Detail Produk"
             >
-              <Edit className="h-4 w-4" />
+              <SquarePen className="h-4 w-4" />
             </Button>
             <Button
               variant="link"
@@ -389,7 +392,7 @@ function ProductsContent() {
                 onClick={() => router.push(`/dashboard/products/${product.id}/edit`)}
                 className="flex-1 h-8 text-xs font-bold rounded-xl gap-1 cursor-pointer bg-primary/5 hover:bg-primary/10 text-primary border-primary/20"
               >
-                <Edit className="h-3.5 w-3.5" />
+                <SquarePen className="h-3.5 w-3.5" />
                 <span>Edit</span>
               </Button>
             </div>
@@ -448,7 +451,7 @@ function ProductsContent() {
             <AlertCircle className="h-5 w-5 shrink-0 text-amber-500" />
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-amber-500">
-                Filter: Produk Perlu Tindakan ({filteredProducts.length} Produk)
+                Filter: Produk Perlu Tindakan ({meta.total} Produk)
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Menampilkan produk aktif yang stoknya habis (0 pcs). Silakan klik ikon Edit (pensil)
@@ -472,10 +475,23 @@ function ProductsContent() {
       {/* Products DataTable with Adaptive Mobile Card View */}
       <DataTable
         columns={columns}
-        data={filteredProducts}
+        data={products}
         isLoading={loading}
         searchKey="name"
         searchPlaceholder="Cari nama kaos, edisi, deskripsi..."
+        manualSearch
+        onSearchChange={(search) => {
+          setSearchQuery(search);
+          setCurrentPage(1);
+        }}
+        manualPagination
+        page={meta.page}
+        totalEntries={meta.total}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setCurrentPageSize(size);
+          setCurrentPage(1);
+        }}
         renderCard={renderProductCard}
         filterComponents={
           <Sheet open={isFilterOpen} onOpenChange={handleOpenFilterDrawer}>

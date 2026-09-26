@@ -100,7 +100,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { from, to, month } = getFinancePeriod(new URL(request.url).searchParams);
+    const searchParams = new URL(request.url).searchParams;
+    const { from, to, month } = getFinancePeriod(searchParams);
+    const search = searchParams.get('search')?.trim().toLowerCase() || '';
+    const status = searchParams.get('status')?.trim() || '';
+    const exportAll = searchParams.get('export') === 'true';
+    const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number.parseInt(searchParams.get('pageSize') || '10', 10) || 10));
     const settings = await getSettings();
     const orders = await prisma.order.findMany({
       where: {
@@ -151,6 +157,18 @@ export async function GET(request: Request) {
     });
 
     const commissionTotal = transactions.reduce((sum, transaction) => sum + transaction.commissionAmount, 0);
+    const filteredTransactions = transactions.filter((transaction) => {
+      const matchesSearch =
+        !search ||
+        transaction.orderNumber.toLowerCase().includes(search) ||
+        transaction.customerName.toLowerCase().includes(search);
+      const matchesStatus = !status || transaction.status === status;
+      return matchesSearch && matchesStatus;
+    });
+    const total = filteredTransactions.length;
+    const paginatedTransactions = exportAll
+      ? filteredTransactions
+      : filteredTransactions.slice((page - 1) * pageSize, page * pageSize);
 
     return NextResponse.json({
       code: 200,
@@ -167,7 +185,13 @@ export async function GET(request: Request) {
           commissionTotal,
           averageCommission: transactions.length ? Math.round(commissionTotal / transactions.length) : 0
         },
-        transactions
+        transactions: paginatedTransactions,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / pageSize))
+        }
       }
     });
   } catch (error) {

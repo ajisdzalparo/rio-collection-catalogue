@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Calendar, ImageIcon, Layers, Pencil, User } from 'lucide-react';
+import { Calendar, ImageIcon, Layers, SquarePen, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatSafeDate } from '@/lib/utils';
@@ -85,7 +85,7 @@ export function JournalDetailDialog({ article, onClose, onEdit }: JournalDetailD
           <DialogFooter className="gap-2 border-t border-border/20 pt-4">
             <Button variant="outline" onClick={onClose} className="h-10 rounded-xl text-xs">Tutup</Button>
             <Button onClick={() => onEdit(article)} className="h-10 gap-1.5 rounded-xl text-xs">
-              <Pencil className="h-3.5 w-3.5" />
+              <SquarePen className="h-3.5 w-3.5" />
               Edit Artikel
             </Button>
           </DialogFooter>

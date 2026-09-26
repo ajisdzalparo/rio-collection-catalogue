@@ -86,6 +86,7 @@ export interface UpdateOrderPayload {
 export interface UseOrdersParams {
   search?: string;
   status?: string[];
+  product?: string[];
   startDate?: string;
   endDate?: string;
   page?: number;
@@ -149,6 +150,7 @@ async function fetchOrders(
 
   if (params?.search) queryParams.search = params.search;
   if (params?.status && params.status.length > 0) queryParams.status = params.status.join(',');
+  if (params?.product && params.product.length > 0) queryParams.product = params.product.join(',');
   if (params?.startDate) queryParams.startDate = params.startDate;
   if (params?.endDate) queryParams.endDate = params.endDate;
   if (params?.page) queryParams.page = String(params.page);
@@ -177,6 +179,7 @@ export function useOrders(params?: UseOrdersParams) {
     'orders',
     params?.search || '',
     params?.status?.join(',') || '',
+    params?.product?.join(',') || '',
     params?.startDate || '',
     params?.endDate || '',
     params?.page || 1,
@@ -185,7 +188,8 @@ export function useOrders(params?: UseOrdersParams) {
 
   const query = useQuery<{ orders: Order[]; meta: OrdersMeta }, Error>({
     queryKey,
-    queryFn: () => fetchOrders(params)
+    queryFn: () => fetchOrders(params),
+    placeholderData: (previousData) => previousData
   });
 
   const updateMutation = useMutation({

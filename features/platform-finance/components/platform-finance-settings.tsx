@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Pencil } from 'lucide-react';
+import { SquarePen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RupiahInput } from '@/components/ui/rupiah-input';
@@ -164,7 +164,7 @@ export function PlatformFinanceSettingsForm({
               onClick={() => setIsEditing(true)}
               className="h-10 w-full gap-2 rounded-lg lg:min-w-44"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <SquarePen className="h-3.5 w-3.5" />
               Edit Pengaturan
             </Button>
           )}

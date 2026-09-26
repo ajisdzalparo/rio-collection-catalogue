@@ -19,6 +19,23 @@ export function useRolesQuery() {
   });
 }
 
+export function useRolesPageQuery(params: { search?: string; page: number; pageSize: number }) {
+  return useQuery<{
+    roles: UserRole[];
+    meta: { page: number; pageSize: number; total: number; totalPages: number };
+  }>({
+    queryKey: ['roles', 'page', params],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/v1/roles', { params });
+      if (data.code !== 200 || !Array.isArray(data.data)) {
+        throw new Error(data.message || 'Gagal memuat master role.');
+      }
+      return { roles: data.data as UserRole[], meta: data.meta };
+    },
+    placeholderData: (previousData) => previousData
+  });
+}
+
 export function useRbac() {
   const { user, isLoading } = useAuth();
   const currentRoleName = isLoading ? '' : user?.role || '';
