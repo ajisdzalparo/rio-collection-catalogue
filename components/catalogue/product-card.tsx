@@ -104,7 +104,7 @@ export function ProductCard({ product, className, priority = false }: ProductCar
       {/* Metadata — Centered with comfortable padding */}
       <div className="p-3.5 sm:p-4 flex flex-col items-center text-center flex-1 justify-between">
         <div className="space-y-1">
-          <h3 className="font-hanken text-[13px] sm:text-[14px] font-medium text-(--cat-on-surface) line-clamp-2 leading-snug group-hover:text-black dark:group-hover:text-white transition-colors">
+          <h3 className="font-hanken text-[13px] sm:text-[14px] font-medium text-(--cat-on-surface) line-clamp-2 leading-snug">
             {product.name}
           </h3>
 
