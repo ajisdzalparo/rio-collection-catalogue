@@ -51,6 +51,24 @@ export interface DataTableProps<T> {
   onSortChange?: (sortKey: keyof T | string | null, sortOrder: 'asc' | 'desc' | null) => void;
   manualSorting?: boolean;
 
+  /** When true, DataTable will not filter data locally; the parent handles server-side search. */
+  manualSearch?: boolean;
+  /** Controlled search value. */
+  searchValue?: string;
+  /** Callback invoked after debounceMs when search input changes. */
+  onSearchChange?: (search: string) => void;
+
+  /** When true, DataTable delegates pagination to server and will not slice data. */
+  manualPagination?: boolean;
+  /** Current page index (1-based) from server. */
+  page?: number;
+  /** Total count of items on server. */
+  totalEntries?: number;
+  /** Callback invoked when page number changes. */
+  onPageChange?: (page: number) => void;
+  /** Callback invoked when page size changes. */
+  onPageSizeChange?: (pageSize: number) => void;
+
   enableSelection?: boolean;
   /** Determines whether a row can be selected for bulk actions. */
   isRowSelectable?: (item: T) => boolean;
@@ -95,6 +113,14 @@ export function DataTable<T extends object>({
   sortOrder,
   onSortChange,
   manualSorting = false,
+  manualSearch = false,
+  searchValue,
+  onSearchChange,
+  manualPagination = false,
+  page: controlledPage,
+  totalEntries: controlledTotalEntries,
+  onPageChange: controlledOnPageChange,
+  onPageSizeChange: controlledOnPageSizeChange,
   isLoading = false,
   pageSize = 10,
   pageSizeOptions = [5, 10, 20, 50],
@@ -257,14 +283,34 @@ export function DataTable<T extends object>({
     });
   }, [filteredData, activeSortKey, activeSortDirection, manualSorting]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / currentSize));
-  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const effectiveTotalEntries =
+    manualPagination && controlledTotalEntries !== undefined
+      ? controlledTotalEntries
+      : sortedData.length;
+  const effectiveCurrentPage =
+    manualPagination && controlledPage !== undefined ? controlledPage : currentPage;
+  const totalPages = Math.max(1, Math.ceil(effectiveTotalEntries / currentSize));
+  const safeCurrentPage = Math.min(Math.max(1, effectiveCurrentPage), totalPages);
+
   const paginatedData = useMemo(() => {
+    if (manualPagination) return sortedData;
     const start = (safeCurrentPage - 1) * currentSize;
     return sortedData.slice(start, start + currentSize);
-  }, [sortedData, safeCurrentPage, currentSize]);
+  }, [manualPagination, sortedData, safeCurrentPage, currentSize]);
 
-  if (currentPage > totalPages) {
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    controlledOnPageChange?.(newPage);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setCurrentSize(newSize);
+    setCurrentPage(1);
+    controlledOnPageSizeChange?.(newSize);
+    controlledOnPageChange?.(1);
+  };
+
+  if (!manualPagination && currentPage > totalPages) {
     setCurrentPage(totalPages);
   }
 
@@ -816,13 +862,10 @@ export function DataTable<T extends object>({
       <Pagination
         currentPage={safeCurrentPage}
         totalPages={totalPages}
-        totalEntries={sortedData.length}
+        totalEntries={effectiveTotalEntries}
         pageSize={currentSize}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={(newSize) => {
-          setCurrentSize(newSize);
-          setCurrentPage(1);
-        }}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
         pageSizeOptions={pageSizeOptions}
         disabled={isLoading}
       />

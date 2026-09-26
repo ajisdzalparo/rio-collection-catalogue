@@ -83,69 +83,117 @@ export interface UpdateOrderPayload {
   shippingProofUrl?: string;
 }
 
+export interface UseOrdersParams {
+  search?: string;
+  status?: string[];
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface OrdersMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 const STALE_PENDING_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
-async function fetchOrders(): Promise<Order[]> {
-  const { data } = await axios.get('/api/v1/orders');
+function enrichOrder(order: Order): Order {
+  const enrichedItems = (order.items || []).map((item) => ({
+    ...item,
+    cogs: item.cogs
+  }));
+  const itemsSubtotal = enrichedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalCogs = enrichedItems.reduce(
+    (acc, item) => acc + (item.cogs ?? 180000) * item.quantity,
+    0
+  );
+  const shippingFee = order.shippingFee ?? 15000;
+  const quotedShippingFee = order.quotedShippingFee ?? shippingFee;
+  const totalPrice = order.totalPrice ?? itemsSubtotal + shippingFee;
+  const subtotal = order.subtotal ?? itemsSubtotal;
+  const createdTime = new Date(order.createdAt).getTime();
+  const now = Date.now();
+  const isStale =
+    order.status === 'PENDING' && now - createdTime > STALE_PENDING_THRESHOLD_MS;
+  const status: Order['status'] = isStale ? 'EXPIRED' : order.status;
+  const adminNotes = isStale
+    ? order.adminNotes
+      ? `${order.adminNotes} (Otomatis Expired via Cron)`
+      : 'Otomatis Kadaluarsa via Cron Job (Pending > 24 jam)'
+    : order.adminNotes || undefined;
+
+  return {
+    ...order,
+    status,
+    adminNotes,
+    items: enrichedItems,
+    subtotal,
+    shippingFee,
+    quotedShippingFee,
+    totalPrice,
+    totalCogs,
+    estimatedProfit: subtotal - (order.discountAmount ?? 0) - totalCogs,
+    courierName: order.courierName || undefined,
+    trackingNumber: order.trackingNumber || undefined
+  };
+}
+
+async function fetchOrders(
+  params?: UseOrdersParams
+): Promise<{ orders: Order[]; meta: OrdersMeta }> {
+  const queryParams: Record<string, string> = {};
+
+  if (params?.search) queryParams.search = params.search;
+  if (params?.status && params.status.length > 0) queryParams.status = params.status.join(',');
+  if (params?.startDate) queryParams.startDate = params.startDate;
+  if (params?.endDate) queryParams.endDate = params.endDate;
+  if (params?.page) queryParams.page = String(params.page);
+  if (params?.pageSize) queryParams.pageSize = String(params.pageSize);
+
+  const { data } = await axios.get('/api/v1/orders', { params: queryParams });
   if (data.code !== 200 || !data.data) {
     throw new Error(data.message || 'Invalid orders data received');
   }
 
-  const now = Date.now();
-  return (data.data as Order[]).map((order) => {
-    const enrichedItems = (order.items || []).map((item) => ({
-      ...item,
-      cogs: item.cogs
-    }));
-    const itemsSubtotal = enrichedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const totalCogs = enrichedItems.reduce(
-      (acc, item) => acc + (item.cogs ?? 180000) * item.quantity,
-      0
-    );
-    const shippingFee = order.shippingFee ?? 15000;
-    const quotedShippingFee = order.quotedShippingFee ?? shippingFee;
-    const totalPrice = order.totalPrice ?? itemsSubtotal + shippingFee;
-    const subtotal = order.subtotal ?? itemsSubtotal;
-    const createdTime = new Date(order.createdAt).getTime();
-    const isStale =
-      order.status === 'PENDING' && now - createdTime > STALE_PENDING_THRESHOLD_MS;
-    const status: Order['status'] = isStale ? 'EXPIRED' : order.status;
-    const adminNotes = isStale
-      ? order.adminNotes
-        ? `${order.adminNotes} (Otomatis Expired via Cron)`
-        : 'Otomatis Kadaluarsa via Cron Job (Pending > 24 jam)'
-      : order.adminNotes || undefined;
+  const orders = (data.data as Order[]).map(enrichOrder);
+  const meta: OrdersMeta = data.meta ?? {
+    page: 1,
+    pageSize: orders.length,
+    total: orders.length,
+    totalPages: 1
+  };
 
-    return {
-      ...order,
-      status,
-      adminNotes,
-      items: enrichedItems,
-      subtotal,
-      shippingFee,
-      quotedShippingFee,
-      totalPrice,
-      totalCogs,
-      estimatedProfit: subtotal - (order.discountAmount ?? 0) - totalCogs,
-      courierName: order.courierName || undefined,
-      trackingNumber: order.trackingNumber || undefined
-    };
-  });
+  return { orders, meta };
 }
 
-export function useOrders() {
+export function useOrders(params?: UseOrdersParams) {
   const queryClient = useQueryClient();
-  const query = useQuery<Order[], Error>({ queryKey: ['orders'], queryFn: fetchOrders });
+
+  const queryKey = [
+    'orders',
+    params?.search || '',
+    params?.status?.join(',') || '',
+    params?.startDate || '',
+    params?.endDate || '',
+    params?.page || 1,
+    params?.pageSize || ''
+  ];
+
+  const query = useQuery<{ orders: Order[]; meta: OrdersMeta }, Error>({
+    queryKey,
+    queryFn: () => fetchOrders(params)
+  });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...payload }: UpdateOrderPayload) => {
       const { data } = await axios.patch(`/api/v1/orders/${id}`, payload);
       return data.data as Order;
     },
-    onSuccess: (updatedOrder) => {
-      queryClient.setQueryData<Order[]>(['orders'], (orders) =>
-        orders?.map((order) => (order.id === updatedOrder.id ? { ...order, ...updatedOrder } : order))
-      );
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
     }
@@ -161,24 +209,7 @@ export function useOrders() {
       return true;
     },
     onSuccess: () => {
-      queryClient.setQueryData<Order[]>(['orders'], (old) => {
-        if (!Array.isArray(old)) return [];
-        const now = Date.now();
-        return old.map((order) => {
-          const createdTime = new Date(order.createdAt).getTime();
-          const isStale =
-            order.status === 'PENDING' && now - createdTime > STALE_PENDING_THRESHOLD_MS;
-          return isStale
-            ? {
-                ...order,
-                status: 'EXPIRED',
-                adminNotes: order.adminNotes
-                  ? `${order.adminNotes} (Expired via Cron)`
-                  : 'Otomatis Kadaluarsa via Cron Job (Pending > 24 jam)'
-              }
-            : order;
-        });
-      });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
     }
   });
 
@@ -195,7 +226,13 @@ export function useOrders() {
   });
 
   return {
-    ...query,
+    data: query.data?.orders ?? [],
+    meta: query.data?.meta ?? { page: 1, pageSize: 10, total: 0, totalPages: 1 },
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
     updateOrder: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
     cleanupStaleOrders: cleanupCronMutation.mutateAsync,

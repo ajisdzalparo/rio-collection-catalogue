@@ -68,8 +68,23 @@ function OrdersPageContent() {
   const { data: latestStoreSettings } = useStoreSettingsQuery();
   const { data: storeBanks = [] } = useStoreBanksQuery();
   const storeSettings = latestStoreSettings || persistedStoreSettings;
+
+  // Server-side search, filter, pagination state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
+  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
+  const [appliedStartDate, setAppliedStartDate] = useState<Date | undefined>();
+  const [appliedEndDate, setAppliedEndDate] = useState<Date | undefined>();
+  const [draftStartDate, setDraftStartDate] = useState<Date | undefined>();
+  const [draftEndDate, setDraftEndDate] = useState<Date | undefined>();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageSize, setCurrentPageSize] = useState(10);
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  const [isDeleteExpiredOpen, setIsDeleteExpiredOpen] = useState(false);
+
   const {
-    data: orders = [],
+    data: orders,
+    meta,
     isLoading: loading,
     updateOrder,
     isUpdating,
@@ -77,16 +92,14 @@ function OrdersPageContent() {
     isCleaningUp,
     deleteExpiredOrders,
     isDeletingExpired
-  } = useOrders();
-
-  const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
-  const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
-  const [appliedStartDate, setAppliedStartDate] = useState<Date | undefined>();
-  const [appliedEndDate, setAppliedEndDate] = useState<Date | undefined>();
-  const [draftStartDate, setDraftStartDate] = useState<Date | undefined>();
-  const [draftEndDate, setDraftEndDate] = useState<Date | undefined>();
-  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
-  const [isDeleteExpiredOpen, setIsDeleteExpiredOpen] = useState(false);
+  } = useOrders({
+    search: searchQuery || undefined,
+    status: appliedStatuses.length > 0 ? appliedStatuses : undefined,
+    startDate: appliedStartDate?.toISOString(),
+    endDate: appliedEndDate?.toISOString(),
+    page: currentPage,
+    pageSize: currentPageSize
+  });
 
   const [cancelTargetOrder, setCancelTargetOrder] = useState<Order | null>(null);
   const [invoiceTargetOrder, setInvoiceTargetOrder] = useState<Order | null>(null);
@@ -109,6 +122,7 @@ function OrdersPageContent() {
     setAppliedStatuses(draftStatuses);
     setAppliedStartDate(draftStartDate);
     setAppliedEndDate(draftEndDate);
+    setCurrentPage(1);
     setIsFilterOpen(false);
   };
 
@@ -119,6 +133,7 @@ function OrdersPageContent() {
     setDraftEndDate(undefined);
     setAppliedStartDate(undefined);
     setAppliedEndDate(undefined);
+    setCurrentPage(1);
     setIsFilterOpen(false);
   };
 
@@ -173,20 +188,7 @@ function OrdersPageContent() {
     [storeSettings, storeBanks]
   );
 
-  const filteredOrders = useMemo(() => {
-    const startBoundary = appliedStartDate ? new Date(appliedStartDate) : undefined;
-    const endBoundary = appliedEndDate ? new Date(appliedEndDate) : undefined;
-    startBoundary?.setHours(0, 0, 0, 0);
-    endBoundary?.setHours(23, 59, 59, 999);
-
-    return orders.filter((order) => {
-      if (appliedStatuses.length > 0 && !appliedStatuses.includes(order.status)) return false;
-      const createdAt = new Date(order.createdAt);
-      if (startBoundary && createdAt < startBoundary) return false;
-      if (endBoundary && createdAt > endBoundary) return false;
-      return true;
-    });
-  }, [orders, appliedStatuses, appliedStartDate, appliedEndDate]);
+  // Data is already filtered by backend, no need for client-side filtering
 
   const columns: Column<Order>[] = useMemo(
     () => [
@@ -382,11 +384,24 @@ function OrdersPageContent() {
       {/* Orders DataTable */}
       <DataTable
         columns={columns}
-        data={filteredOrders}
+        data={orders}
         isLoading={loading}
         searchKey="orderNumber"
-        extraSearchKeys={['fullName', 'whatsapp']}
         searchPlaceholder="Cari no. order / nama / no. HP..."
+        manualSearch
+        onSearchChange={(search) => {
+          setSearchQuery(search);
+          setCurrentPage(1);
+        }}
+        manualPagination
+        page={meta.page}
+        totalEntries={meta.total}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setCurrentPageSize(size);
+          setCurrentPage(1);
+        }}
+        debounceMs={400}
         filterComponents={
           <Sheet open={isFilterOpen} onOpenChange={handleOpenFilterDrawer}>
             <SheetTrigger
