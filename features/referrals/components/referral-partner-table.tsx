@@ -74,10 +74,10 @@ export function ReferralPartnerTable({
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
                   >
-                    <WhatsAppIcon size={11} className="text-emerald-600 dark:text-emerald-400" />
-                    <span>{formatWaNumber(partner.whatsapp)}</span>
+                    <WhatsAppIcon size={11} className="text-primary" />
+                    <span className="text-primary">{formatWaNumber(partner.whatsapp)}</span>
                   </a>
                 ) : (
                   <span className="text-[11px] text-muted-foreground">WhatsApp -</span>
@@ -218,19 +218,18 @@ export function ReferralPartnerTable({
                 </Button>
               </Link>
 
-              {canManage && isUnused && (
-                <Button
-                  type="button"
-                  variant="link"
-                  size="icon-sm"
-                  onClick={() => setPartnerToDelete(partner)}
-                  aria-label={`Hapus partner ${partner.name}`}
-                  title="Hapus Partner (Belum ada transaksi)"
-                  className="rounded-lg h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="link"
+                size="icon-sm"
+                onClick={() => setPartnerToDelete(partner)}
+                aria-label={`Hapus partner ${partner.name}`}
+                disabled={!canManage || !isUnused}
+                title="Hapus Partner (Belum ada transaksi)"
+                className="rounded-lg h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           );
         }

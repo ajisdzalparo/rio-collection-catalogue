@@ -84,16 +84,15 @@ export function ReferralPartnerDetailPage({
           </Button>
         </Link>
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-center text-sm text-destructive">
-          <strong>Partner Tidak Ditemukan:</strong> {error?.message || 'Data partner tidak ada atau telah dihapus.'}
+          <strong>Partner Tidak Ditemukan:</strong>{' '}
+          {error?.message || 'Data partner tidak ada atau telah dihapus.'}
         </div>
       </div>
     );
   }
 
   const isUnused =
-    partner.paidOrders === 0 &&
-    partner.unitsSold === 0 &&
-    partner.payouts.length === 0;
+    partner.paidOrders === 0 && partner.unitsSold === 0 && partner.payouts.length === 0;
 
   async function handleDeletePartner() {
     if (!partner) return;
@@ -146,10 +145,16 @@ export function ReferralPartnerDetailPage({
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">{partner.name}</h1>
-                <Badge variant="outline" className="text-xs">Partner</Badge>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  {partner.name}
+                </h1>
+                <Badge variant="outline" className="text-xs">
+                  Partner
+                </Badge>
               </div>
-              <p className="text-xs text-muted-foreground">Detail profil, kode referral, dan riwayat komisi partner.</p>
+              <p className="text-xs text-muted-foreground">
+                Detail profil, kode referral, dan riwayat komisi partner.
+              </p>
             </div>
           </div>
 
@@ -187,7 +192,10 @@ export function ReferralPartnerDetailPage({
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
                       >
-                        <WhatsAppIcon size={14} className="text-emerald-600 dark:text-emerald-400" />
+                        <WhatsAppIcon
+                          size={14}
+                          className="text-emerald-600 dark:text-emerald-400"
+                        />
                         <span>{formatWaNumber(partner.whatsapp)}</span>
                       </a>
                     ) : (
@@ -195,7 +203,10 @@ export function ReferralPartnerDetailPage({
                     )}
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5" />
-                      Bergabung: {new Date(partner.createdAt).toLocaleDateString('id-ID', { dateStyle: 'long' })}
+                      Bergabung:{' '}
+                      {new Date(partner.createdAt).toLocaleDateString('id-ID', {
+                        dateStyle: 'long'
+                      })}
                     </span>
                   </div>
                 </div>
@@ -219,7 +230,7 @@ export function ReferralPartnerDetailPage({
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 pt-2">
               <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <ShoppingBag className="h-3.5 w-3.5 text-primary" />
+                  <ShoppingBag className="h-3.5 w-3.5" />
                   <span>Order Lunas</span>
                 </div>
                 <p className="mt-1 text-xl font-extrabold text-foreground">{partner.paidOrders}</p>
@@ -227,26 +238,31 @@ export function ReferralPartnerDetailPage({
 
               <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Users className="h-3.5 w-3.5 text-blue-500" />
+                  <Users className="h-3.5 w-3.5" />
                   <span>Customer Unik</span>
                 </div>
-                <p className="mt-1 text-xl font-extrabold text-foreground">{partner.customerCount}</p>
+                <p className="mt-1 text-xl font-extrabold text-foreground">
+                  {partner.customerCount}
+                </p>
               </div>
 
               <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Package className="h-3.5 w-3.5 text-amber-500" />
+                  <Package className="h-3.5 w-3.5" />
                   <span>Unit Terjual</span>
                 </div>
-                <p className="mt-1 text-xl font-extrabold text-foreground">{partner.unitsSold} <span className="text-xs font-normal text-muted-foreground">pcs</span></p>
+                <p className="mt-1 text-xl font-extrabold text-foreground">
+                  {partner.unitsSold}{' '}
+                  <span className="text-xs font-normal text-muted-foreground">pcs</span>
+                </p>
               </div>
 
               <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                  <TrendingUp className="h-3.5 w-3.5" />
                   <span>Penjualan Neto</span>
                 </div>
-                <p className="mt-1 text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                <p className="mt-1 text-xl font-extrabold text-foreground">
                   {formatIDR(partner.netRevenue)}
                 </p>
               </div>
@@ -256,36 +272,54 @@ export function ReferralPartnerDetailPage({
 
         {/* Tabs Breakdown */}
         <Tabs defaultValue="codes" className="w-full">
-          <TabsList variant="pills" className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="codes" variant="pills" className="gap-2">
-              <QrCode className="h-4 w-4" />
-              <span>Kode Referral & Reward</span>
-              <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-bold">
+          <TabsList
+            variant="pills"
+            className="w-full flex items-center justify-start gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar scrollbar-none p-1 sm:p-1.5 rounded-xl sm:rounded-2xl bg-muted/40 border border-border/50"
+          >
+            <TabsTrigger
+              value="codes"
+              variant="pills"
+              className="shrink-0 whitespace-nowrap gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg sm:rounded-xl transition-all"
+            >
+              <QrCode className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden sm:inline">Kode Referral & Reward</span>
+              <span className="sm:hidden">Kode & Reward</span>
+              <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-muted/80 px-1.5 py-0.2 text-[10px] font-bold text-muted-foreground group-data-selected:bg-primary-foreground/20 group-data-selected:text-primary-foreground group-aria-selected:bg-primary-foreground/20 group-aria-selected:text-primary-foreground transition-colors">
                 {partner.codes.length}
-              </Badge>
+              </span>
             </TabsTrigger>
 
-            <TabsTrigger value="payouts" variant="pills" className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span>Pembayaran Reward (Tunai)</span>
+            <TabsTrigger
+              value="payouts"
+              variant="pills"
+              className="shrink-0 whitespace-nowrap gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg sm:rounded-xl transition-all"
+            >
+              <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden sm:inline">Pembayaran Reward (Tunai)</span>
+              <span className="sm:hidden">Reward Tunai</span>
               {totalPendingCash > 0 && (
-                <Badge variant="destructive" className="px-1.5 py-0 text-[10px] font-bold">
+                <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-rose-500/15 px-1.5 py-0.2 text-[10px] font-bold text-rose-600 dark:text-rose-400 group-data-selected:bg-rose-500 group-data-selected:text-white transition-colors">
                   {formatIDR(totalPendingCash)}
-                </Badge>
+                </span>
               )}
               {totalAvailableGifts > 0 && (
-                <Badge className="bg-amber-500 hover:bg-amber-600 px-1.5 py-0 text-[10px] font-bold text-white">
+                <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-amber-500/15 px-1.5 py-0.2 text-[10px] font-bold text-amber-600 dark:text-amber-400 group-data-selected:bg-amber-500 group-data-selected:text-white transition-colors">
                   {totalAvailableGifts} Kaos
-                </Badge>
+                </span>
               )}
             </TabsTrigger>
 
-            <TabsTrigger value="orders" variant="pills" className="gap-2">
-              <ShoppingBag className="h-4 w-4" />
-              <span>Riwayat Pesanan</span>
-              <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-bold">
+            <TabsTrigger
+              value="orders"
+              variant="pills"
+              className="shrink-0 whitespace-nowrap gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg sm:rounded-xl transition-all"
+            >
+              <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden sm:inline">Riwayat Pesanan</span>
+              <span className="sm:hidden">Riwayat Order</span>
+              <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-muted/80 px-1.5 py-0.2 text-[10px] font-bold text-muted-foreground group-data-selected:bg-primary-foreground/20 group-data-selected:text-primary-foreground group-aria-selected:bg-primary-foreground/20 group-aria-selected:text-primary-foreground transition-colors">
                 {allOrders.length}
-              </Badge>
+              </span>
             </TabsTrigger>
           </TabsList>
 
@@ -323,7 +357,10 @@ export function ReferralPartnerDetailPage({
             ) : (
               <div className="divide-y divide-border/60 rounded-xl border border-border bg-card">
                 {allOrders.map((order) => (
-                  <div key={order.id} className="flex flex-wrap items-center justify-between gap-3 p-4 text-xs">
+                  <div
+                    key={order.id}
+                    className="flex flex-wrap items-center justify-between gap-3 p-4 text-xs"
+                  >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Link
@@ -340,14 +377,20 @@ export function ReferralPartnerDetailPage({
                         </span>
                       </div>
                       <p className="text-muted-foreground">
-                        Pembeli: <strong className="text-foreground">{order.fullName}</strong> · {new Date(order.createdAt).toLocaleDateString('id-ID', { dateStyle: 'medium' })}
+                        Pembeli: <strong className="text-foreground">{order.fullName}</strong> ·{' '}
+                        {new Date(order.createdAt).toLocaleDateString('id-ID', {
+                          dateStyle: 'medium'
+                        })}
                       </p>
                     </div>
 
                     <div className="text-right">
                       <div className="font-bold text-foreground">
                         {formatIDR(order.netProducts)}
-                        <span className="text-[11px] font-normal text-muted-foreground"> ({order.units} unit)</span>
+                        <span className="text-[11px] font-normal text-muted-foreground">
+                          {' '}
+                          ({order.units} unit)
+                        </span>
                       </div>
                       {order.referralRewardAmount > 0 && (
                         <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">

@@ -31,11 +31,12 @@ export function useReferralPartner(partnerId: string) {
 export function useReferralActions() {
   const queryClient = useQueryClient();
   return {
-    async post(path: string, payload: object) {
+    async post<T = unknown>(path: string, payload: object): Promise<T> {
       try {
-        await axios.post(`/api/v1/referrals/${path}`, payload);
+        const response = await axios.post<T>(`/api/v1/referrals/${path}`, payload);
         await queryClient.invalidateQueries({ queryKey: ['referrals', 'dashboard'] });
         await queryClient.invalidateQueries({ queryKey: ['products'] });
+        return response.data;
       } catch (error) {
         throw new Error(getApiError(error));
       }

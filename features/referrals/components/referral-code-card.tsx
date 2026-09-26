@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Copy, Gift, Check, Trash2, Link2 } from 'lucide-react';
+import { Copy, Gift, Check, Trash2, Link2, CreditCard } from 'lucide-react';
 import { formatIDR } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,7 @@ export function ReferralCodeCard({
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showClaimForm, setShowClaimForm] = useState(false);
   const [productId, setProductId] = useState('');
   const [size, setSize] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -132,66 +133,73 @@ export function ReferralCodeCard({
 
   return (
     <>
-      <Card className="overflow-hidden border-border/70 bg-card/60 shadow-xs">
-        <CardContent className="space-y-4 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-base font-extrabold tracking-wider text-foreground">
-                  {code.code}
-                </span>
-                <Badge
-                  variant="outline"
-                  className={
-                    code.isActive
-                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold'
-                      : 'bg-muted text-muted-foreground text-[10px]'
-                  }
+      <Card className="overflow-hidden border-border/60 bg-card shadow-xs rounded-2xl">
+        <CardContent className="space-y-4 p-4 sm:p-5">
+          {/* Header & Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-3.5">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Code with quick 1-click copy */}
+                <button
+                  type="button"
+                  onClick={copyCode}
+                  title="Klik untuk salin kode"
+                  className="group/code inline-flex items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 hover:bg-muted/70 px-2.5 py-1 transition-colors cursor-pointer"
                 >
-                  {code.isActive ? 'AKTIF' : 'NONAKTIF'}
-                </Badge>
-                <Badge variant="secondary" className="text-[10px]">
+                  <span className="font-mono text-sm sm:text-base font-extrabold tracking-wider text-foreground">
+                    {code.code}
+                  </span>
+                  {copiedCode ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover/code:text-foreground transition-colors" />
+                  )}
+                </button>
+
+                {/* Status indicator */}
+                {code.isActive ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">
+                    AKTIF
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                    NONAKTIF
+                  </span>
+                )}
+
+                {/* Reward Type Badge */}
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">
                   {code.rewardKind === 'CASH' ? 'Reward Uang' : 'Reward Kaos'}
-                </Badge>
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Diskon Pembeli:{' '}
-                <strong className="text-foreground">
-                  {benefitLabel(code.discountMode, code.discountValue)}
-                </strong>
-                {' · '}
-                Komisi Partner:{' '}
-                <strong className="text-foreground">
-                  {code.rewardKind === 'CASH'
-                    ? benefitLabel(code.rewardMode, code.rewardValue)
-                    : `1 Kaos / ${code.giftEveryUnits} unit selesai`}
-                </strong>
-              </p>
+
+              {/* Benefits summary tags */}
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded-md bg-muted/40 px-2 py-0.5 text-[11px] font-medium border border-border/40">
+                  Diskon Pembeli:{' '}
+                  <strong className="text-foreground">
+                    {benefitLabel(code.discountMode, code.discountValue)}
+                  </strong>
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-muted/40 px-2 py-0.5 text-[11px] font-medium border border-border/40">
+                  Komisi Partner:{' '}
+                  <strong className="text-foreground">
+                    {code.rewardKind === 'CASH'
+                      ? benefitLabel(code.rewardMode, code.rewardValue)
+                      : `1 Kaos / ${code.giftEveryUnits} unit selesai`}
+                  </strong>
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={copyCode}
-                className="h-8 gap-1.5 text-xs font-semibold"
-                title={`Salin kode ${code.code}`}
-              >
-                {copiedCode ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5" />
-                )}
-                <span>{copiedCode ? 'Tersalin' : 'Salin Kode'}</span>
-              </Button>
-
+            {/* Top Actions */}
+            <div className="flex items-center gap-2 self-start sm:self-center">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={copyLink}
-                className="h-8 gap-1.5 text-xs font-semibold"
+                className="h-8 gap-1.5 text-xs font-semibold rounded-lg"
                 title="Salin Link Referral"
               >
                 {copiedLink ? (
@@ -211,14 +219,14 @@ export function ReferralCodeCard({
                   disabled={busy}
                   aria-label={`Hapus kode ${code.code}`}
                   title="Hapus kode (belum digunakan)"
-                  className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  className="h-8 w-8 text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-lg"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               )}
 
               {canManage && (
-                <div className="flex items-center gap-1.5 pl-2 border-l border-border">
+                <div className="flex items-center pl-2 border-l border-border/60">
                   <Switch
                     checked={code.isActive}
                     disabled={busy}
@@ -230,69 +238,99 @@ export function ReferralCodeCard({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 rounded-lg bg-muted/40 p-2.5 text-xs sm:grid-cols-4">
-            <div>
-              <p className="text-[11px] text-muted-foreground">Order Masuk / Lunas</p>
-              <p className="text-sm font-bold text-foreground">
-                {code.orderCount} <span className="text-muted-foreground font-normal">/</span>{' '}
+          {/* Clean 3-Column Performance Metrics */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 rounded-xl bg-muted/30 p-2.5 sm:p-3 border border-border/40 text-center sm:text-left">
+            <div className="space-y-0.5">
+              <p className="text-[11px] font-medium text-muted-foreground">Order Lunas</p>
+              <p className="text-sm sm:text-base font-extrabold text-foreground">
                 {code.paidOrders}
+                <span className="text-[11px] font-normal text-muted-foreground ml-1">
+                  / {code.orderCount}
+                </span>
               </p>
             </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">Unit Terjual</p>
-              <p className="text-sm font-bold text-foreground">{code.unitsSold} pcs</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">Penjualan Neto</p>
-              <p className="text-sm font-bold text-foreground">{formatIDR(code.netRevenue)}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">
-                {code.rewardKind === 'CASH' ? 'Reward Siap Bayar' : 'Hak Kaos Tersedia'}
+            <div className="space-y-0.5 border-x border-border/40 px-1 sm:px-2">
+              <p className="text-[11px] font-medium text-muted-foreground">Unit Terjual</p>
+              <p className="text-sm sm:text-base font-extrabold text-foreground">
+                {code.unitsSold}{' '}
+                <span className="text-[11px] font-normal text-muted-foreground">pcs</span>
               </p>
-              <p className="text-sm font-bold text-primary">
-                {code.rewardKind === 'CASH'
-                  ? formatIDR(code.payableCash)
-                  : `${code.availableGifts} pcs`}
+            </div>
+            <div className="space-y-0.5">
+              <p className="text-[11px] font-medium text-muted-foreground">Penjualan Neto</p>
+              <p className="text-sm sm:text-base font-extrabold text-primary truncate">
+                {formatIDR(code.netRevenue)}
               </p>
             </div>
           </div>
 
+          {/* Reward Status Card - CASH */}
           {code.rewardKind === 'CASH' && (
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <span>
-                Estimasi Komisi Total:{' '}
-                <strong className="text-foreground">{formatIDR(code.estimatedCash)}</strong>
-              </span>
-              <span>
-                Sudah Ditransfer:{' '}
-                <strong className="text-emerald-600 dark:text-emerald-400">
-                  {formatIDR(code.paidCash)}
-                </strong>
-              </span>
+            <div className="rounded-xl border bg-primary/5 dark:bg-primary/10 p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <CreditCard className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      Reward Siap Bayar:
+                    </span>
+                    <span className="text-sm font-extrabold text-primary">
+                      {formatIDR(code.payableCash)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Estimasi total:{' '}
+                    <strong className="text-foreground">{formatIDR(code.estimatedCash)}</strong> ·
+                    Sudah ditransfer:{' '}
+                    <strong className="text-foreground">{formatIDR(code.paidCash)}</strong>
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
+          {/* Reward Status Card - SHIRT */}
           {code.rewardKind === 'SHIRT' && (
             <div className="space-y-3">
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span>
-                  Total Hak Terkumpul:{' '}
-                  <strong className="text-foreground">{code.earnedGifts} kaos</strong>
-                </span>
-                <span>
-                  Sudah Diserahkan:{' '}
-                  <strong className="text-emerald-600 dark:text-emerald-400">
-                    {code.deliveredGifts} kaos
-                  </strong>
-                </span>
-                <span>
-                  Sisa Klaim: <strong className="text-primary">{code.availableGifts} kaos</strong>
-                </span>
+              <div className="rounded-xl border bg-primary/5 dark:bg-primary/10 p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                    <Gift className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        Sisa Hak Kaos:
+                      </span>
+                      <span className="text-sm font-extrabold text-primary">
+                        {code.availableGifts} Kaos
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Total hak terkumpul:{' '}
+                      <strong className="text-foreground">{code.earnedGifts}</strong> · Sudah
+                      diserahkan: <strong className="text-foreground">{code.deliveredGifts}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {canSettle && code.availableGifts > 0 && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setShowClaimForm((prev) => !prev)}
+                    className="h-8 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-xs"
+                  >
+                    {showClaimForm ? 'Tutup Form' : 'Serahkan Kaos Hadiah'}
+                  </Button>
+                )}
               </div>
 
               {canSettle &&
                 code.availableGifts > 0 &&
+                showClaimForm &&
                 (productsLoading ? (
                   <div className="grid gap-2 border-t border-border pt-3 sm:grid-cols-3">
                     {Array.from({ length: 3 }).map((_, index) => (
@@ -302,7 +340,7 @@ export function ReferralCodeCard({
                 ) : (
                   <form
                     onSubmit={handleDeliverGift}
-                    className="grid gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3 sm:grid-cols-3"
+                    className="grid gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5 sm:grid-cols-3 animate-in fade-in duration-200"
                   >
                     <div className="sm:col-span-3 flex items-center gap-2 text-xs font-bold text-foreground">
                       <Gift className="h-4 w-4 text-primary" />
