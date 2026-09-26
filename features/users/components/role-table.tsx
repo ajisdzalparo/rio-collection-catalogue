@@ -26,17 +26,16 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
   const { user: authUser } = useAuth();
   const [deleteTargetRole, setDeleteTargetRole] = useState<string | null>(null);
 
-  const totalActionsCount = PERMISSION_TREE.reduce(
-    (acc, menu) => acc + menu.actions.length,
-    0
-  );
+  const totalActionsCount = PERMISSION_TREE.reduce((acc, menu) => acc + menu.actions.length, 0);
 
   const isProtectedSystemRole = (name: string) => {
     return isSuperAdminRole(name);
   };
 
   const isRoleDeleteLocked = (name: string) => {
-    return isProtectedSystemRole(name) || normalizeRoleName(name) === normalizeRoleName(authUser?.role);
+    return (
+      isProtectedSystemRole(name) || normalizeRoleName(name) === normalizeRoleName(authUser?.role)
+    );
   };
 
   const handleViewDetail = (role: UserRole) => {
@@ -139,7 +138,11 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
           <div className="flex items-center py-1">
             <CMSBadge
               variant="neutral"
-              className={activeCount > 0 ? 'bg-zinc-900 hover:bg-zinc-900 text-white dark:bg-zinc-100 dark:hover:bg-zinc-100 dark:text-zinc-900' : undefined}
+              className={
+                activeCount > 0
+                  ? 'bg-zinc-900 hover:bg-zinc-900 text-white dark:bg-zinc-100 dark:hover:bg-zinc-100 dark:text-zinc-900'
+                  : undefined
+              }
             >
               {isFullAccess ? (
                 <span className="flex items-center">
@@ -166,7 +169,11 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
           <Switch
             checked={role.isActive ?? true}
             disabled={isProtectedSystemRole(role.name)}
-            title={isProtectedSystemRole(role.name) ? 'Status role Super Admin terkunci' : 'Ubah status role'}
+            title={
+              isProtectedSystemRole(role.name)
+                ? 'Status role Super Admin terkunci'
+                : 'Ubah status role'
+            }
             className={isProtectedSystemRole(role.name) ? 'opacity-35 grayscale' : undefined}
             onCheckedChange={(checked) => {
               if (!role.id) return;
@@ -179,37 +186,39 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
       )
     },
     {
-      header: 'Actions',
+      header: 'Aksi',
       className: 'w-32 text-right',
       cell: (role) => (
         <div className="flex items-center justify-end gap-1">
           <Button
             size="sm"
-            variant="ghost"
+            variant="link"
             onClick={() => handleViewDetail(role)}
             className="h-8 px-2 cursor-pointer gap-1.5 text-xs font-semibold hover:bg-muted"
             title="Lihat Detail Role"
           >
             <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="hidden sm:inline">Detail</span>
           </Button>
 
           <Button
             size="sm"
-            variant="ghost"
+            variant="link"
             onClick={() => onEditRole(role)}
             disabled={isProtectedSystemRole(role.name)}
             className="h-8 px-2 cursor-pointer gap-1.5 text-xs font-semibold hover:bg-muted"
-            title={isProtectedSystemRole(role.name) ? 'Super Admin selalu full access' : 'Edit Role & Permissions'}
+            title={
+              isProtectedSystemRole(role.name)
+                ? 'Super Admin selalu full access'
+                : 'Edit Role & Permissions'
+            }
           >
             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="hidden sm:inline">Edit</span>
           </Button>
 
           {isRoleDeleteLocked(role.name) ? (
             <Button
               size="sm"
-              variant="ghost"
+              variant="link"
               disabled
               className="h-8 w-8 p-0 opacity-40 cursor-not-allowed text-muted-foreground"
               title={
@@ -223,7 +232,7 @@ export function RoleTable({ onEditRole, onViewRoleDetail }: RoleTableProps) {
           ) : (
             <Button
               size="sm"
-              variant="ghost"
+              variant="link"
               onClick={() => handleDelete(role.name)}
               className="h-8 w-8 p-0 cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Hapus Role"

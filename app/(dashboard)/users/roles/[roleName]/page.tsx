@@ -72,7 +72,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
       <div className="space-y-6 pb-12">
         <div className="flex items-center gap-2">
           <Link
-            href="/users?tab=rbac"
+            href="/manajemen-pengguna/role"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -90,7 +90,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
           </p>
           <div className="pt-2">
             <Button
-              onClick={() => router.push('/users?tab=rbac')}
+              onClick={() => router.push('/manajemen-pengguna/role')}
               className="rounded-lg text-xs font-bold cursor-pointer"
             >
               Lihat Semua Master Role
@@ -105,7 +105,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
     <div className="space-y-6 pb-16">
       {/* Back Navigation & Breadcrumb */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Link href="/users?tab=rbac">
+        <Link href="/manajemen-pengguna/role">
           <Button
             variant="outline"
             size="icon"

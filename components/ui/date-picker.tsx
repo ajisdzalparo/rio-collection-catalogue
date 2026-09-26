@@ -111,6 +111,7 @@ export function DatePicker({
   isClearable = true,
   disabled = false,
   className,
+  buttonClassName,
   size = 'md',
   align = 'left'
 }: DatePickerProps) {
@@ -284,9 +285,10 @@ export function DatePicker({
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          'flex w-full items-center justify-between gap-2 border border-border/60 bg-muted/30 font-semibold text-foreground shadow-2xs transition-all hover:bg-muted/60 focus:outline-none focus:ring-1 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none',
+          'flex w-full items-center justify-between gap-2 border border-border/60 bg-card font-semibold text-foreground shadow-2xs transition-all hover:bg-muted/40 focus:outline-none focus:ring-1 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none',
           sizeClasses[size],
-          isOpen && 'border-primary ring-1 ring-primary/40'
+          isOpen && 'border-primary ring-1 ring-primary/40',
+          buttonClassName
         )}
       >
         <div className="flex items-center gap-2 truncate">
@@ -332,9 +334,9 @@ export function DatePicker({
                     ? Boolean(value && val.from && isSameDay(value, val.from))
                     : Boolean(
                         rangeValue?.from &&
-                          rangeValue?.to &&
-                          isSameDay(rangeValue.from, val.from!) &&
-                          isSameDay(rangeValue.to, val.to!)
+                        rangeValue?.to &&
+                        isSameDay(rangeValue.from, val.from!) &&
+                        isSameDay(rangeValue.to, val.to!)
                       );
 
                 return (

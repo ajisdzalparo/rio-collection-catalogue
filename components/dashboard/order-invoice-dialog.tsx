@@ -146,19 +146,42 @@ export function OrderInvoiceDialog({ order, open, onOpenChange }: OrderInvoiceDi
       size: A4 portrait;
       margin: 12mm 15mm;
     }
-    * {
+    *, *::before, *::after {
       box-sizing: border-box;
+      color: #000000 !important;
+    }
+    body, h1, h2, h3, h4, p, ul, ol, figure {
       margin: 0;
       padding: 0;
-      color: #000000 !important;
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
       color: #000000;
       background: #ffffff;
-      padding: 24px;
+      margin: 0;
+      padding: 0;
       font-size: 12px;
       line-height: 1.45;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .invoice-wrapper {
+      width: 100%;
+      max-width: 794px;
+      padding: 44px 48px 56px 48px;
+      box-sizing: border-box;
+      background: #ffffff;
+      margin: 0 auto;
+    }
+    @media print {
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .invoice-wrapper {
+        padding: 0 !important;
+        max-width: none !important;
+      }
     }
     .header {
       display: flex;
@@ -250,6 +273,7 @@ export function OrderInvoiceDialog({ order, open, onOpenChange }: OrderInvoiceDi
   </style>
 </head>
 <body>
+  <div class="invoice-wrapper" style="padding: 44px 48px 56px 48px; box-sizing: border-box; background: #ffffff; width: 100%;">
   <div class="header">
     <div>
       <div class="store-name">${storeName}</div>
@@ -350,6 +374,7 @@ export function OrderInvoiceDialog({ order, open, onOpenChange }: OrderInvoiceDi
   <div class="footer">
     <div style="font-weight: bold; margin-bottom: 2px;">Terima kasih telah berbelanja di ${storeName}!</div>
     <div>Simpan invoice ini sebagai bukti resmi transaksi Anda.</div>
+  </div>
   </div>
 </body>
 </html>`;
@@ -521,6 +546,8 @@ export function OrderInvoiceDialog({ order, open, onOpenChange }: OrderInvoiceDi
       tempContainer.style.left = '-9999px';
       tempContainer.style.top = '0';
       tempContainer.style.width = '794px';
+      tempContainer.style.minHeight = '1123px';
+      tempContainer.style.boxSizing = 'border-box';
       tempContainer.style.backgroundColor = '#ffffff';
       tempContainer.style.color = '#000000';
       tempContainer.style.zIndex = '-9999';
@@ -550,10 +577,26 @@ export function OrderInvoiceDialog({ order, open, onOpenChange }: OrderInvoiceDi
         format: 'a4'
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+      const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      if (pdfHeight > pageHeight + 5) {
+        let heightLeft = pdfHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight, undefined, 'FAST');
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 5) {
+          position -= pageHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight, undefined, 'FAST');
+          heightLeft -= pageHeight;
+        }
+      } else {
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      }
 
       // Native Blob download: works seamlessly on Mobile (iOS Safari, Android Chrome) and Desktop
       const pdfBlob = pdf.output('blob');

@@ -28,6 +28,7 @@ export interface DatePickerProps {
   isClearable?: boolean;
   disabled?: boolean;
   className?: string;
+  buttonClassName?: string;
   size?: 'sm' | 'md' | 'lg';
   align?: 'left' | 'right';
 }

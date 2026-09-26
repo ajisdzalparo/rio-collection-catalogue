@@ -43,13 +43,13 @@ export const navigation: NavigationItem[] = [
     href: '#',
     icon: Database,
     subMenu: [
-      { title: 'Produk', href: '/dashboard/products' },
-      { title: 'Kategori Kaos', href: '/dashboard/master?tab=categories' },
-      { title: 'Warna', href: '/dashboard/master?tab=colors' },
-      { title: 'Ukuran', href: '/dashboard/master?tab=sizes' },
-      { title: 'Bahan & Perawatan', href: '/dashboard/master?tab=materials' },
-      { title: 'Topik Blog', href: '/dashboard/master?tab=topics' },
-      { title: 'Master Bank', href: '/dashboard/master?tab=banks' }
+      { title: 'Produk', href: '/dashboard/master/products' },
+      { title: 'Kategori Kaos', href: '/dashboard/master/kategori' },
+      { title: 'Warna', href: '/dashboard/master/warna' },
+      { title: 'Ukuran', href: '/dashboard/master/ukuran' },
+      { title: 'Bahan & Perawatan', href: '/dashboard/master/bahan' },
+      { title: 'Topik Blog', href: '/dashboard/master/topik-blog' },
+      { title: 'Master Bank', href: '/dashboard/master/bank' }
     ]
   },
   {
@@ -72,8 +72,8 @@ export const navigation: NavigationItem[] = [
     href: '#',
     icon: ShieldAlert,
     subMenu: [
-      { title: 'Daftar Pengguna', href: '/users?tab=users' },
-      { title: 'Peran & Hak Akses', href: '/users?tab=rbac' }
+      { title: 'Daftar Pengguna', href: '/manajemen-pengguna/user' },
+      { title: 'Peran & Hak Akses', href: '/manajemen-pengguna/role' }
     ]
   },
   {

@@ -230,6 +230,7 @@ export const DEFAULT_ADMIN_PERMISSIONS: RolePermissions = {
   'users.manage': true,
   'users.reset_password': true,
   'users.delete': true,
+  'activity.view': true,
   // legacy
   viewOverview: true,
   manageOrders: true,

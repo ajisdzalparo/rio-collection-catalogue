@@ -78,6 +78,7 @@ export function syncRolePermissions(permissions?: RolePermissions, roleName?: st
   checkAndSync('referrals.view', isOwnerRole(roleName));
   checkAndSync('referrals.manage', isOwnerRole(roleName));
   checkAndSync('referrals.settle', isOwnerRole(roleName));
+  checkAndSync('activity.view', isOwnerRole(roleName) || isSuperAdminRole(roleName));
 
   if (normalizedRole === 'manager') {
     checkAndSync('users.view', true);

@@ -97,7 +97,7 @@ export function ReportsMetricsCards({
       </div>
 
       {/* Secondary Referral & Discount Balance Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-border/50 bg-muted/20 p-3 text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-border/60 bg-muted/10 p-3 text-xs">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background border border-border/60 text-muted-foreground">
             <ShoppingBag className="h-4 w-4" />

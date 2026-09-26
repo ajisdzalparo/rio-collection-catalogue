@@ -9,14 +9,7 @@ import { CMSBadge } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatIDR, cn } from '@/lib/utils';
-import {
-  ArrowLeft,
-  Edit,
-  Trash2,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';

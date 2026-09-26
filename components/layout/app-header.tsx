@@ -68,7 +68,7 @@ export default function AppHeader() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem render={<Link href="/users" className="flex items-center gap-2 cursor-pointer" />}>
+              <DropdownMenuItem render={<Link href="/manajemen-pengguna/user" className="flex items-center gap-2 cursor-pointer" />}>
                 <User className="h-4 w-4" />
                 <span>Kelola Pengguna & Peran</span>
               </DropdownMenuItem>

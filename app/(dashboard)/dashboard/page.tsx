@@ -342,7 +342,7 @@ export default function DashboardPage() {
 
             <div className="flex flex-col gap-2">
               <Link
-                href="/dashboard/products"
+                href="/dashboard/master/products"
                 className="w-full inline-flex items-center justify-between p-3.5 rounded-xl border border-border/40 bg-muted/10 hover:bg-muted/30 transition-all group"
               >
                 <div className="flex flex-col text-left">
@@ -385,7 +385,7 @@ export default function DashboardPage() {
                 menjadi SOLD OUT di panel Produk CMS.
               </p>
               <Link
-                href="/dashboard/products?filter=out_of_stock"
+                href="/dashboard/master/products?filter=out_of_stock"
                 className="inline-flex px-3.5 py-1.5 bg-amber-500 text-white hover:bg-amber-600 transition-colors text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer"
               >
                 Cek Produk

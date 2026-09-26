@@ -33,7 +33,7 @@ export function RoleEditPage({ roleName }: RoleEditPageProps) {
 
     await update.mutateAsync({ id: currentRole.id, payload: { name, description, permissions } });
     toast.success(`Master role "${name}" berhasil diperbarui.`);
-    router.push('/users?tab=rbac');
+    router.push('/manajemen-pengguna/role');
   };
 
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-96 w-full rounded-xl" /></div>;
@@ -41,7 +41,7 @@ export function RoleEditPage({ roleName }: RoleEditPageProps) {
   if (!currentRole) {
     return (
       <div className="space-y-6 pb-12">
-        <Link href="/users?tab=rbac" className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground">
+        <Link href="/manajemen-pengguna/role" className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Kembali ke Master Roles
         </Link>
@@ -51,7 +51,7 @@ export function RoleEditPage({ roleName }: RoleEditPageProps) {
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             Role “{roleName}” tidak ada atau telah dihapus dari sistem.
           </p>
-          <Button onClick={() => router.push('/users?tab=rbac')} className="mt-5 rounded-xl">
+          <Button onClick={() => router.push('/manajemen-pengguna/role')} className="mt-5 rounded-xl">
             Lihat Semua Master Role
           </Button>
         </section>
@@ -90,7 +90,7 @@ export function RoleEditPage({ roleName }: RoleEditPageProps) {
             <p className="mt-2 text-sm text-muted-foreground">
               Role sistem ini dikunci agar akun Super Admin tidak kehilangan akses platform.
             </p>
-            <Button onClick={() => router.push('/users?tab=rbac')} className="mt-4 rounded-xl">
+            <Button onClick={() => router.push('/manajemen-pengguna/role')} className="mt-4 rounded-xl">
               Kembali ke Master Roles
             </Button>
           </div>
@@ -100,7 +100,7 @@ export function RoleEditPage({ roleName }: RoleEditPageProps) {
             roleToEdit={currentRole}
             onSubmit={handleSubmit}
             isSubmitting={update.isPending}
-            onCancel={() => router.push('/users?tab=rbac')}
+            onCancel={() => router.push('/manajemen-pengguna/role')}
           />
         )}
       </section>

@@ -200,7 +200,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
           `Produk "${payload.name}" berhasil ditambahkan! Silakan atur kuantitas stok di Manajemen Stok.`
         );
       }
-      router.push('/dashboard/products');
+      router.push('/dashboard/master/products');
     } catch (err: unknown) {
       console.error('Failed to save product:', err);
       let errorMsg = 'Gagal menyimpan produk';
@@ -229,7 +229,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
       {/* Top Header Navigation */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard/products">
+          <Link href="/dashboard/master/products">
             <Button
               variant="outline"
               size="icon"
@@ -256,7 +256,7 @@ export function ProductForm({ initialProduct }: ProductFormProps) {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <Link href="/dashboard/products">
+          <Link href="/dashboard/master/products">
             <Button variant="outline" className="h-10 rounded-xl text-xs font-bold cursor-pointer">
               Batal
             </Button>
