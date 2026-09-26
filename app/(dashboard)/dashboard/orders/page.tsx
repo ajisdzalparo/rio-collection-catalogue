@@ -163,7 +163,9 @@ function OrdersPageContent() {
         customerName: order.fullName,
         orderNumber: order.orderNumber,
         totalPayment: order.totalPrice,
-        bankDetails
+        bankDetails,
+        items: order.items,
+        storeName: storeSettings?.storeName?.trim() || '[NAMA TOKO]'
       });
 
       return `https://wa.me/${formatWaNumber(order.whatsapp)}?text=${encodeURIComponent(message)}`;

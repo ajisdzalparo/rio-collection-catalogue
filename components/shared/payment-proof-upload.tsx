@@ -11,7 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog';
 
 interface PaymentProofUploadProps {
@@ -56,7 +56,10 @@ export function PaymentProofUpload({
       const formData = new FormData();
       formData.append('file', file);
       formData.append('purpose', 'payment-proof');
-      const { data: result } = await axios.post<{ data?: { url?: string }; message?: string }>('/api/v1/upload', formData);
+      const { data: result } = await axios.post<{ data?: { url?: string }; message?: string }>(
+        '/api/v1/upload',
+        formData
+      );
       if (!result.data?.url) {
         throw new Error(result.message || 'Upload bukti gagal.');
       }
@@ -82,12 +85,12 @@ export function PaymentProofUpload({
         aria-label={label}
       />
       {value ? (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3">
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/40 p-3">
           <div className="flex min-w-0 items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
             <div className="min-w-0">
               <p className="truncate text-xs font-bold text-foreground">{fileName}</p>
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Bukti siap disimpan</p>
+              <p className="text-[10px] text-primary">Bukti berhasil diunggah</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -128,11 +131,19 @@ export function PaymentProofUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={isUploading}
-          className={cn('flex w-full items-center gap-3 rounded-lg border border-dashed border-border/60 bg-muted/10 p-3 text-left transition-colors hover:border-foreground/40 hover:bg-muted/25 disabled:cursor-not-allowed disabled:opacity-60')}
+          className={cn(
+            'flex w-full items-center gap-3 rounded-lg border border-dashed border-border/60 bg-muted/10 p-3 text-left transition-colors hover:border-foreground/40 hover:bg-muted/25 disabled:cursor-not-allowed disabled:opacity-60'
+          )}
         >
-          {isUploading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : <Upload className="h-4 w-4 text-muted-foreground" />}
+          {isUploading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : (
+            <Upload className="h-4 w-4 text-muted-foreground" />
+          )}
           <span className="min-w-0">
-            <span className="block text-xs font-bold text-foreground">{isUploading ? 'Mengunggah bukti...' : 'Upload bukti pembayaran'}</span>
+            <span className="block text-xs font-bold text-foreground">
+              {isUploading ? 'Mengunggah bukti...' : 'Upload bukti pembayaran'}
+            </span>
             <span className="block text-[10px] text-muted-foreground">{description}</span>
           </span>
           <FileText className="ml-auto h-4 w-4 shrink-0 text-muted-foreground/60" />
@@ -162,7 +173,9 @@ export function PaymentProofUpload({
                 className="max-h-[60vh] w-auto max-w-full object-contain rounded-md shadow-xs select-none"
               />
             ) : (
-              <div className="text-center py-12 text-xs text-muted-foreground">Berkas tidak ditemukan.</div>
+              <div className="text-center py-12 text-xs text-muted-foreground">
+                Berkas tidak ditemukan.
+              </div>
             )}
           </div>
 

@@ -183,6 +183,8 @@ export default function OrderDetailPage({ params }: PageProps) {
       orderNumber: orderItem.orderNumber,
       totalPayment: orderItem.totalPrice,
       bankDetails: bankText,
+      items: orderItem.items,
+      storeName: storeSettings?.storeName?.trim() || '[NAMA TOKO]',
       courierName,
       trackingNumber
     });
@@ -301,13 +303,13 @@ export default function OrderDetailPage({ params }: PageProps) {
         <div className="lg:col-span-8 space-y-6">
           {/* Pre-Order Warning Banner if applicable */}
           {order.items.some((item) => item.isPreOrder) && (
-            <div className="p-4 bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/25 dark:border-amber-800/30 rounded-xl text-xs leading-relaxed flex items-start gap-3">
-              <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="p-4 bg-primary/10 dark:bg-primary/20 border border-primary/25 dark:border-primary/30 rounded-xl text-xs leading-relaxed flex items-start gap-3">
+              <ShieldAlert className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div>
-                <strong className="text-amber-800 dark:text-amber-300 font-bold block">
+                <strong className="text-primary font-bold block">
                   Pesanan Mengandung Item Pre-Order (PO)
                 </strong>
-                <p className="text-amber-700/80 dark:text-amber-400/80 text-[11px] mt-0.5">
+                <p className="text-primary/80 dark:text-primary/80 text-[11px] mt-0.5">
                   Pesanan ini memiliki satu atau lebih kaos pre-order. Pastikan jadwal produksi
                   telah selesai sebelum melakukan pengiriman barang.
                 </p>
@@ -423,18 +425,20 @@ export default function OrderDetailPage({ params }: PageProps) {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Total Modal Produksi (HPP)</span>
-                <span className="font-bold text-rose-500">-{formatIDR(order.totalCogs || 0)}</span>
+                <span className="font-bold text-rose-600 dark:text-rose-400">
+                  -{formatIDR(order.totalCogs || 0)}
+                </span>
               </div>
               <div className="flex justify-between text-sm font-black text-foreground pt-2 border-t border-border/20">
                 <span>Total Tagihan Pembayaran</span>
                 <span className="text-primary">{formatIDR(order.totalPrice)}</span>
               </div>
-              <div className="p-3 bg-emerald-500/10 dark:bg-emerald-950/25 border border-emerald-500/20 dark:border-emerald-800/40 rounded-lg flex items-center justify-between font-bold text-emerald-800 dark:text-emerald-300">
+              <div className="p-3 bg-primary/5 dark:bg-primary/10 rounded-lg flex items-center justify-between font-bold">
                 <span className="flex items-center gap-1.5 text-xs">
-                  <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Estimasi Net Profit (Laba Bersih)</span>
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <span className="text-primary">Estimasi Net Profit (Laba Bersih)</span>
                 </span>
-                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                <span className="text-sm font-black text-primary">
                   +{formatIDR(order.estimatedProfit || 0)}
                 </span>
               </div>
@@ -926,7 +930,7 @@ export default function OrderDetailPage({ params }: PageProps) {
               )}
 
               {order.status === 'FULFILLED' && (
-                <div className="flex items-center gap-2 p-4 bg-emerald-500/10 border border-primary/10 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                <div className="flex items-center gap-2 p-4 rounded-lg text-xs font-semibold text-primary bg-primary/10">
                   <CheckCircle2 className="h-4 w-4" />
                   Semua tahap selesai. Pesanan telah dikirim dan nomor resi sudah diinformasikan.
                 </div>

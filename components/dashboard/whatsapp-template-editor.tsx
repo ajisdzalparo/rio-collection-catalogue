@@ -97,14 +97,18 @@ export function WhatsAppTemplateEditor({
     : '[⚠️ Belum ada rekening bank aktif - atur di tab Rekening Pembayaran Toko]';
 
   const enabledCodes = parseEnabledCourierCodes(storeSettings?.enabledCouriers);
-  const sampleCourier =
-    COURIERS.find((c) => enabledCodes.includes(c.code))?.name || 'JNE Express';
+  const sampleCourier = COURIERS.find((c) => enabledCodes.includes(c.code))?.name || 'JNE Express';
 
   const availableVariables = useMemo(
     () => [
       { tag: '{nama_pelanggan}', label: 'Nama Pelanggan', sample: 'Clara Sinta' },
       { tag: '{nama_toko}', label: 'Nama Toko', sample: storeName },
       { tag: '{nomor_order}', label: 'Nomor Order', sample: 'RC-8802' },
+      {
+        tag: '{daftar_produk}',
+        label: 'Daftar Produk & Qty',
+        sample: '• Graphic Edition 01 (L) x2\n• Midnight Structure (XL) x1'
+      },
       { tag: '{total_pembayaran}', label: 'Total Harga', sample: 'Rp 450.000' },
       { tag: '{rekening_bank}', label: 'Info Bank Toko', sample: realBankDetails },
       { tag: '{kurir}', label: 'Ekspedisi Kurir', sample: sampleCourier },
@@ -119,7 +123,10 @@ export function WhatsAppTemplateEditor({
   const handleInsertVariable = (variableTag: string) => {
     const updated = {
       ...templates,
-      [activeKey]: currentText + (currentText.endsWith(' ') || currentText.endsWith('\n') ? '' : ' ') + variableTag
+      [activeKey]:
+        currentText +
+        (currentText.endsWith(' ') || currentText.endsWith('\n') ? '' : ' ') +
+        variableTag
     };
     onChange(updated);
   };
@@ -144,6 +151,13 @@ export function WhatsAppTemplateEditor({
     availableVariables.forEach((v) => {
       preview = preview.replaceAll(v.tag, v.sample);
     });
+    preview = preview
+      .replaceAll('{rincian_pesanan}', '• Graphic Edition 01 (L) x2\n• Midnight Structure (XL) x1')
+      .replaceAll('{daftar_item}', '• Graphic Edition 01 (L) x2\n• Midnight Structure (XL) x1')
+      .replaceAll('{item_name}', '• Graphic Edition 01 (L) x2\n• Midnight Structure (XL) x1')
+      .replaceAll('{items}', '• Graphic Edition 01 (L) x2\n• Midnight Structure (XL) x1')
+      .replaceAll('{qty}', '3')
+      .replaceAll('{total_qty}', '3');
     return preview;
   };
 
@@ -164,7 +178,8 @@ export function WhatsAppTemplateEditor({
             Editor Template Pesan WhatsApp Follow-Up
           </h3>
           <p className="text-xs text-muted-foreground">
-            Sesuaikan kata-kata follow-up otomatis untuk pelanggan. Klik chip variabel untuk memasukkan data dinamis secara instan.
+            Sesuaikan kata-kata follow-up otomatis untuk pelanggan. Klik chip variabel untuk
+            memasukkan data dinamis secara instan.
           </p>
         </div>
 
@@ -188,7 +203,9 @@ export function WhatsAppTemplateEditor({
           <div className="space-y-0.5">
             <p className="font-bold text-xs">Rekening Pembayaran Toko Belum Dikonfigurasi</p>
             <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
-              Belum ada rekening pembayaran yang aktif di toko Anda. Pada template yang menggunakan tag <code>{'{rekening_bank}'}</code>, pesan akan menampilkan peringatan belum diatur sampai Anda menambahkan rekening di tab <strong>Rekening Pembayaran Toko</strong>.
+              Belum ada rekening pembayaran yang aktif di toko Anda. Pada template yang menggunakan
+              tag <code>{'{rekening_bank}'}</code>, pesan akan menampilkan peringatan belum diatur
+              sampai Anda menambahkan rekening di tab <strong>Rekening Pembayaran Toko</strong>.
             </p>
           </div>
         </div>
@@ -211,7 +228,9 @@ export function WhatsAppTemplateEditor({
               }`}
             >
               <div className="flex items-center justify-between">
-                <Icon className={`h-4 w-4 ${isActive ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+                <Icon
+                  className={`h-4 w-4 ${isActive ? 'text-emerald-500' : 'text-muted-foreground'}`}
+                />
                 <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-bold uppercase">
                   {item.badge}
                 </Badge>
@@ -312,7 +331,10 @@ export function WhatsAppTemplateEditor({
             {/* Footer Tip */}
             <div className="pt-2 border-t border-white/10 flex items-center gap-1.5 text-[10px] text-white/50">
               <HelpCircle className="h-3 w-3 shrink-0 text-white/40" />
-              <span>Variabel seperti <code className="text-emerald-300">{'{nama_pelanggan}'}</code> akan terisi otomatis saat mengeklik tombol WA di dashboard order.</span>
+              <span>
+                Variabel seperti <code className="text-emerald-300">{'{nama_pelanggan}'}</code> akan
+                terisi otomatis saat mengeklik tombol WA di dashboard order.
+              </span>
             </div>
           </div>
         </div>
