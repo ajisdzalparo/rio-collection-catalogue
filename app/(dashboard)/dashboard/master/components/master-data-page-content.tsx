@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Plus, Pencil, Trash2, Building2, Shirt, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { VStack, Flex } from '@/components/ui/layout';
 import { DataTable, type Column } from '@/components/shared/data-table/data-table';
-import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import {
   Dialog,
@@ -65,7 +64,6 @@ export const TAB_REVERSE_MAP: Record<string, string> = {
 };
 
 export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Pure React Query hooks connected directly to the PostgreSQL Database

@@ -158,12 +158,12 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
           </div>
 
           {/* Status Toggle on Header */}
-          <div className="flex items-center gap-3 bg-muted/20 border border-border/30 rounded-lg p-3 shrink-0 self-start">
-            <div className="text-right">
+          <div className="flex items-center justify-between sm:justify-start gap-4 bg-muted/20 border border-border/30 rounded-lg p-4 w-full sm:w-auto shrink-0">
+            <div className="space-y-0.5 text-left sm:text-right">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
                 Status Role
               </span>
-              <span className="text-xs font-bold text-foreground">
+              <span className="text-xs sm:text-sm font-bold text-foreground">
                 {currentRole.isActive !== false ? 'Aktif Digunakan' : 'Non-aktif'}
               </span>
             </div>

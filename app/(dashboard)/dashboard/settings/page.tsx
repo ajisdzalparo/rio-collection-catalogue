@@ -48,7 +48,14 @@ import type { HeroSlide } from '@/types/store-settings.types';
 import { HeroSlidesEditor } from '@/components/dashboard/hero-slides-editor';
 
 type SettingsTab =
-  'profile' | 'couriers' | 'whatsapp' | 'payments' | 'socials' | 'hero' | 'homepage' | 'pages';
+  | 'profile'
+  | 'couriers'
+  | 'whatsapp'
+  | 'payments'
+  | 'socials'
+  | 'hero'
+  | 'homepage'
+  | 'pages';
 
 export default function StoreSettingsPage() {
   const queryClient = useQueryClient();
@@ -154,11 +161,7 @@ export default function StoreSettingsPage() {
     setHeroSlides(
       persistedHeroSlides.length
         ? persistedHeroSlides
-        : [
-            mockSettings.heroLeftImage,
-            mockSettings.heroCenterImage,
-            mockSettings.heroRightImage
-          ]
+        : [mockSettings.heroLeftImage, mockSettings.heroCenterImage, mockSettings.heroRightImage]
             .filter((image): image is string => Boolean(image))
             .map((imageUrl, index) => ({
               id: `legacy-hero-${index + 1}`,
@@ -524,7 +527,7 @@ export default function StoreSettingsPage() {
                         Lokasi Asal Pengiriman Toko (Origin)
                       </span>
                     </div>
-                    <span className="w-full break-words rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1.5 text-left font-mono text-[11px] font-medium leading-relaxed text-primary sm:w-auto sm:text-right">
+                    <span className="w-full wrap-break-word rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1.5 text-left font-mono text-[11px] font-medium leading-relaxed text-primary sm:w-auto sm:text-right">
                       ID Kota Asal: {originCityId} ({originCityName}, {originProvinceName})
                     </span>
                   </div>
@@ -562,7 +565,8 @@ export default function StoreSettingsPage() {
                         onValueChange={(val: string) => {
                           const cities = INDONESIA_MASTER_LOCATIONS[originProvinceName] || [];
                           const matched = cities.find(
-                            (c: { name: string; defaultId: string }) => c.name.toLowerCase() === val.toLowerCase()
+                            (c: { name: string; defaultId: string }) =>
+                              c.name.toLowerCase() === val.toLowerCase()
                           );
                           setOriginCityName(val);
                           if (matched) {
@@ -627,7 +631,7 @@ export default function StoreSettingsPage() {
                               : 'border-border/80 bg-card hover:border-border'
                           )}
                         >
-                          {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                          {isChecked && <Check className="h-3 w-3 stroke-3" />}
                         </div>
                       </label>
                     );
@@ -732,7 +736,8 @@ export default function StoreSettingsPage() {
                     Banner Hero Katalog Depan (Slider)
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Banner akan berganti otomatis setiap 5 detik dan tetap bisa dikontrol dengan panah, dot, keyboard, atau swipe.
+                    Banner akan berganti otomatis setiap 5 detik dan tetap bisa dikontrol dengan
+                    panah, dot, keyboard, atau swipe.
                   </p>
                 </div>
                 <HeroSlidesEditor

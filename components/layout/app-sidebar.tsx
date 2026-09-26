@@ -333,8 +333,8 @@ function AppSidebarInner() {
                           tooltip={item.title}
                           onClick={() => toggleSubMenu(item.title)}
                           className={`h-10 rounded-2xl px-3.5 group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center transition-all duration-200 cursor-pointer ${
-                            isItemActive
-                              ? 'bg-primary! text-primary-foreground! font-bold shadow-xs hover:bg-primary/90! hover:text-primary-foreground!'
+                            isSubActive
+                              ? 'text-foreground font-semibold bg-muted/60 hover:bg-muted/80'
                               : 'hover:bg-muted/80 text-muted-foreground hover:text-foreground font-medium'
                           }`}
                         >
@@ -378,7 +378,7 @@ function AppSidebarInner() {
                                         render={<Link href={subItem.href} />}
                                         className={`h-8.5 rounded-xl px-3 text-xs transition-all duration-200 ${
                                           isSubItemActive
-                                            ? 'bg-primary/10 text-primary font-bold shadow-2xs'
+                                            ? 'bg-primary! text-primary-foreground! font-bold shadow-xs hover:bg-primary/90! hover:text-primary-foreground!'
                                             : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 font-medium'
                                         }`}
                                       >
