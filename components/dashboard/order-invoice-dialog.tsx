@@ -512,37 +512,35 @@ export function OrderInvoiceDialog({ order, open, onOpenChange }: OrderInvoiceDi
     setIsDownloadingPdf(true);
     const toastId = toast.loading('Menyiapkan file PDF invoice...');
 
+    let tempContainer: HTMLDivElement | null = null;
     try {
-      let targetEl = document.getElementById('rio-invoice-a4-target');
-      let createdTemp = false;
-
-      // If target element is not in DOM (e.g. user currently viewing thermal tab), create offscreen container
-      if (!targetEl) {
-        createdTemp = true;
-        const tempContainer = document.createElement('div');
-        tempContainer.id = 'rio-temp-invoice-export';
-        tempContainer.style.position = 'fixed';
-        tempContainer.style.left = '-9999px';
-        tempContainer.style.top = '0';
-        tempContainer.style.width = '794px';
-        tempContainer.style.backgroundColor = '#ffffff';
-        tempContainer.innerHTML = generateStandardInvoiceHtml();
-        document.body.appendChild(tempContainer);
-        targetEl = tempContainer;
-      }
+      // Always create a clean, dedicated 794px A4 container with zero external styling conflicts
+      tempContainer = document.createElement('div');
+      tempContainer.id = 'rio-temp-invoice-export';
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '794px';
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.style.color = '#000000';
+      tempContainer.style.zIndex = '-9999';
+      tempContainer.innerHTML = generateStandardInvoiceHtml();
+      document.body.appendChild(tempContainer);
 
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
-      const canvas = await html2canvas(targetEl, {
+      const canvas = await html2canvas(tempContainer, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: 794
       });
 
-      if (createdTemp && targetEl) {
-        targetEl.remove();
+      if (tempContainer) {
+        tempContainer.remove();
+        tempContainer = null;
       }
 
       const imgData = canvas.toDataURL('image/png');
@@ -556,16 +554,33 @@ export function OrderInvoiceDialog({ order, open, onOpenChange }: OrderInvoiceDi
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-      pdf.save(`Invoice-${order.orderNumber}.pdf`);
+
+      // Native Blob download: works seamlessly on Mobile (iOS Safari, Android Chrome) and Desktop
+      const pdfBlob = pdf.output('blob');
+      const fileName = `Invoice-${order.orderNumber}.pdf`;
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = blobUrl;
+      downloadLink.download = fileName;
+      downloadLink.style.display = 'none';
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+
+      setTimeout(() => {
+        downloadLink.remove();
+        URL.revokeObjectURL(blobUrl);
+      }, 1500);
 
       toast.success('Invoice berhasil didownload (PDF)!', { id: toastId });
     } catch (err: unknown) {
       console.error('Download PDF error:', err);
-      toast.error('Gagal mengunduh PDF otomatis. Membuka dialog cetak...', {
+      toast.error('Gagal mengunduh file PDF invoice. Silakan coba kembali.', {
         id: toastId
       });
-      printViaIframe(generateStandardInvoiceHtml());
     } finally {
+      if (tempContainer) {
+        tempContainer.remove();
+      }
       setIsDownloadingPdf(false);
     }
   };
@@ -717,7 +732,9 @@ export function OrderInvoiceDialog({ order, open, onOpenChange }: OrderInvoiceDi
           <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 flex items-center gap-2 text-xs text-amber-900 dark:text-amber-200 shrink-0">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <span>
-              <strong>Perhatian:</strong> Pesanan ini berstatus <strong>{getOrderStatusLabel(order.status)}</strong>. Invoice resmi diterbitkan untuk pesanan yang telah dikirim (FULFILLED).
+              <strong>Perhatian:</strong> Pesanan ini berstatus{' '}
+              <strong>{getOrderStatusLabel(order.status)}</strong>. Invoice resmi diterbitkan untuk
+              pesanan yang telah dikirim (FULFILLED).
             </span>
           </div>
         )}
@@ -932,256 +949,264 @@ export function OrderInvoiceDialog({ order, open, onOpenChange }: OrderInvoiceDi
         )}
 
         {/* Scrollable Document Preview Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-neutral-100 dark:bg-neutral-950 flex justify-center">
+        <div className="flex-1 overflow-y-auto overflow-x-auto p-3 sm:p-6 pb-16 bg-neutral-100 dark:bg-neutral-950 flex flex-col items-center">
           {viewMode === 'standard' ? (
             /* A4 / PDF Document Invoice Layout (100% Monochrome Black & White) */
-            <div
-              id="rio-invoice-a4-target"
-              className="w-full max-w-190 bg-white text-black shadow-lg rounded-xl p-6 sm:p-10 text-xs font-sans leading-relaxed border border-zinc-300"
-            >
-              {/* Invoice Header */}
-              <div className="flex items-start justify-between border-b-2 border-black pb-5 gap-4">
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase">
-                    {storeName}
-                  </h1>
-                  <p className="text-[11px] text-zinc-700 mt-1 max-w-sm">{storeAddress}</p>
-                  {storePhone && (
-                    <p className="text-[11px] text-zinc-700 font-mono mt-0.5">
-                      WhatsApp: +{formatWaNumber(storePhone)}
-                    </p>
-                  )}
-                </div>
-
-                <div className="text-right shrink-0">
-                  <div className="inline-block border-2 border-black text-black font-black text-xs uppercase px-3 py-1 tracking-wider">
-                    INVOICE PESANAN
-                  </div>
-                  <p className="font-mono font-bold text-sm text-black mt-1.5">
-                    INV/{order.orderNumber}
-                  </p>
-                  <p className="text-[11px] text-zinc-600 mt-0.5">
-                    Tgl:{' '}
-                    {new Date(order.createdAt).toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric'
-                    })}
-                  </p>
-                  <div className="mt-1">
-                    <span className="inline-block px-2 py-0.5 text-[10px] font-bold border border-black text-black uppercase tracking-wider">
-                      {order.status === 'FULFILLED'
-                        ? 'LUNAS & DIKIRIM'
-                        : getOrderStatusLabel(order.status).toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 2-Column Info: Recipient & Shipping Details */}
-              <div className="grid grid-cols-2 gap-6 py-5 border-b border-black">
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider block mb-1">
-                    DITUJUKAN KEPADA:
-                  </span>
-                  <p className="font-bold text-black text-sm">{order.fullName}</p>
-                  <p className="font-mono text-black text-[11px] mt-0.5">
-                    +{formatWaNumber(order.whatsapp)}
-                  </p>
-                  <p className="text-zinc-700 text-[11px] mt-1 leading-relaxed whitespace-pre-wrap">
-                    {order.address}
-                  </p>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider block mb-1">
-                    DETAIL PENGIRIMAN &amp; PEMBAYARAN:
-                  </span>
-                  <div className="space-y-1 text-[11px]">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-600">Ekspedisi:</span>
-                      <span className="font-bold text-black">
-                        {order.courierName || 'JNE Express'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-600">No. Resi:</span>
-                      <span className="font-mono font-bold text-black">
-                        {order.trackingNumber || '-'}
-                      </span>
-                    </div>
-                    <div className="pt-2 border-t border-zinc-300 mt-2">
-                      <span className="text-[10px] text-zinc-600 block mb-0.5">
-                        Info Rekening Toko:
-                      </span>
-                      <p className="font-mono text-[10px] text-black whitespace-pre-line leading-tight">
-                        {bankDetails}
+            <div className="w-full flex justify-center pb-4">
+              <div
+                id="rio-invoice-a4-target"
+                className="w-full max-w-190 bg-white text-black shadow-lg rounded-xl p-4 sm:p-10 text-xs font-sans leading-relaxed border border-zinc-300 min-w-0"
+              >
+                {/* Invoice Header */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b-2 border-black pb-4 sm:pb-5 gap-3 sm:gap-4">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase">
+                      {storeName}
+                    </h1>
+                    <p className="text-[11px] text-zinc-700 mt-1 max-w-sm">{storeAddress}</p>
+                    {storePhone && (
+                      <p className="text-[11px] text-zinc-700 font-mono mt-0.5">
+                        WhatsApp: +{formatWaNumber(storePhone)}
                       </p>
+                    )}
+                  </div>
+
+                  <div className="text-left sm:text-right shrink-0">
+                    <div className="inline-block border-2 border-black text-black font-black text-xs uppercase px-3 py-1 tracking-wider">
+                      INVOICE PESANAN
+                    </div>
+                    <p className="font-mono font-bold text-sm text-black mt-1.5">
+                      INV/{order.orderNumber}
+                    </p>
+                    <p className="text-[11px] text-zinc-600 mt-0.5">
+                      Tgl:{' '}
+                      {new Date(order.createdAt).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </p>
+                    <div className="mt-1">
+                      <span className="inline-block px-2 py-0.5 text-[10px] font-bold border border-black text-black uppercase tracking-wider">
+                        {order.status === 'FULFILLED'
+                          ? 'LUNAS & DIKIRIM'
+                          : getOrderStatusLabel(order.status).toUpperCase()}
+                      </span>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Item Table */}
-              <div className="py-4">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b-2 border-black text-[10px] font-bold uppercase text-black tracking-wider">
-                      <th className="py-2.5 w-8">#</th>
-                      <th className="py-2.5">Deskripsi Produk</th>
-                      <th className="py-2.5 text-center w-20">Ukuran</th>
-                      <th className="py-2.5 text-right w-24">Harga</th>
-                      <th className="py-2.5 text-center w-14">Qty</th>
-                      <th className="py-2.5 text-right w-28">Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-300">
-                    {order.items.map((item, idx) => (
-                      <tr key={idx} className="text-[11px]">
-                        <td className="py-3 text-zinc-600 font-mono">{idx + 1}</td>
-                        <td className="py-3 pr-2">
-                          <span className="font-bold text-black block">{item.name}</span>
-                          {item.isPreOrder && (
-                            <span className="inline-block mt-0.5 px-1.5 py-0.2 border border-black text-black text-[9px] font-bold">
-                              PRE-ORDER
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 text-center font-bold text-black">{item.size}</td>
-                        <td className="py-3 text-right font-mono text-black">
-                          {formatIDR(item.price)}
-                        </td>
-                        <td className="py-3 text-center font-bold text-black">{item.quantity}</td>
-                        <td className="py-3 text-right font-mono font-bold text-black">
-                          {formatIDR(item.price * item.quantity)}
-                        </td>
+                {/* 2-Column Info: Recipient & Shipping Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 py-4 sm:py-5 border-b border-black">
+                  <div>
+                    <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider block mb-1">
+                      DITUJUKAN KEPADA:
+                    </span>
+                    <p className="font-bold text-black text-sm">{order.fullName}</p>
+                    <p className="font-mono text-black text-[11px] mt-0.5">
+                      +{formatWaNumber(order.whatsapp)}
+                    </p>
+                    <p className="text-zinc-700 text-[11px] mt-1 leading-relaxed whitespace-pre-wrap">
+                      {order.address}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider block mb-1">
+                      DETAIL PENGIRIMAN &amp; PEMBAYARAN:
+                    </span>
+                    <div className="space-y-1 text-[11px]">
+                      <div className="flex justify-between">
+                        <span className="text-zinc-600">Ekspedisi:</span>
+                        <span className="font-bold text-black">
+                          {order.courierName || 'JNE Express'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-600">No. Resi:</span>
+                        <span className="font-mono font-bold text-black">
+                          {order.trackingNumber || '-'}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t border-zinc-300 mt-2">
+                        <span className="text-[10px] text-zinc-600 block mb-0.5">
+                          Info Rekening Toko:
+                        </span>
+                        <p className="font-mono text-[10px] text-black whitespace-pre-line leading-tight">
+                          {bankDetails}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Item Table (Horizontal scroll wrapper on mobile) */}
+                <div className="py-4 overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
+                  <table className="w-full min-w-110 sm:min-w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b-2 border-black text-[10px] font-bold uppercase text-black tracking-wider">
+                        <th className="py-2.5 w-8">#</th>
+                        <th className="py-2.5">Deskripsi Produk</th>
+                        <th className="py-2.5 text-center w-16">Ukuran</th>
+                        <th className="py-2.5 text-right w-24">Harga</th>
+                        <th className="py-2.5 text-center w-12">Qty</th>
+                        <th className="py-2.5 text-right w-24">Subtotal</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-300">
+                      {order.items.map((item, idx) => (
+                        <tr key={idx} className="text-[11px]">
+                          <td className="py-3 text-zinc-600 font-mono">{idx + 1}</td>
+                          <td className="py-3 pr-2">
+                            <span className="font-bold text-black block">{item.name}</span>
+                            {item.isPreOrder && (
+                              <span className="inline-block mt-0.5 px-1.5 py-0.2 border border-black text-black text-[9px] font-bold">
+                                PRE-ORDER
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 text-center font-bold text-black">{item.size}</td>
+                          <td className="py-3 text-right font-mono text-black">
+                            {formatIDR(item.price)}
+                          </td>
+                          <td className="py-3 text-center font-bold text-black">{item.quantity}</td>
+                          <td className="py-3 text-right font-mono font-bold text-black">
+                            {formatIDR(item.price * item.quantity)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-              {/* Calculation & Total Breakdown */}
-              <div className="border-t-2 border-black pt-4 flex justify-between items-start gap-6">
-                {/* Left: Barcode for Warehousing / Courier scanning */}
-                <div className="w-56 shrink-0 pt-1">
-                  <span className="text-[10px] text-zinc-600 uppercase font-bold block mb-1">
-                    Barcode Pesanan:
-                  </span>
-                  <div
-                    className="bg-white p-2 border border-black rounded-none"
-                    dangerouslySetInnerHTML={{ __html: barcodeSvg }}
-                  />
-                  <p className="text-[9px] text-zinc-600 text-center mt-1 font-mono">
-                    Scan untuk verifikasi gudang &amp; ekspedisi
+                {/* Calculation & Total Breakdown */}
+                <div className="border-t-2 border-black pt-4 flex flex-col sm:flex-row justify-between items-center sm:items-start gap-5 sm:gap-6">
+                  {/* Left: Barcode for Warehousing / Courier scanning */}
+                  <div className="w-full sm:w-56 shrink-0 pt-1 text-center sm:text-left">
+                    <span className="text-[10px] text-zinc-600 uppercase font-bold block mb-1">
+                      Barcode Pesanan:
+                    </span>
+                    <div
+                      className="bg-white p-2 border border-black inline-block max-w-full"
+                      dangerouslySetInnerHTML={{ __html: barcodeSvg }}
+                    />
+                    <p className="text-[9px] text-zinc-600 text-center sm:text-left mt-1 font-mono">
+                      Scan untuk verifikasi gudang &amp; ekspedisi
+                    </p>
+                  </div>
+
+                  {/* Right: Calculations */}
+                  <div className="w-full sm:w-64 space-y-1.5 text-[11px]">
+                    <div className="flex justify-between text-zinc-700">
+                      <span>Subtotal Produk</span>
+                      <span className="font-mono font-bold text-black">{formatIDR(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-zinc-700">
+                      <span>Ongkir ({order.courierName || 'Kurir'})</span>
+                      <span className="font-mono font-bold text-black">
+                        {formatIDR(shippingFee)}
+                      </span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-black">
+                        <span>Diskon Voucher</span>
+                        <span className="font-mono font-bold">-{formatIDR(discount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-base font-black text-black pt-2 border-t-2 border-black">
+                      <span>TOTAL BAYAR</span>
+                      <span className="font-mono">{formatIDR(order.totalPrice)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Invoice Footer */}
+                <div className="mt-8 pt-4 border-t border-dashed border-zinc-400 text-center text-[10px] text-zinc-600 space-y-0.5">
+                  <p className="font-bold text-black">
+                    Terima kasih telah berbelanja di {storeName}!
+                  </p>
+                  <p>
+                    Apabila ada pertanyaan terkait pesanan, hubungi layanan pelanggan kami melalui
+                    WhatsApp.
                   </p>
                 </div>
-
-                {/* Right: Calculations */}
-                <div className="w-64 space-y-1.5 text-[11px]">
-                  <div className="flex justify-between text-zinc-700">
-                    <span>Subtotal Produk</span>
-                    <span className="font-mono font-bold text-black">{formatIDR(subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-zinc-700">
-                    <span>Ongkir ({order.courierName || 'Kurir'})</span>
-                    <span className="font-mono font-bold text-black">{formatIDR(shippingFee)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-black">
-                      <span>Diskon Voucher</span>
-                      <span className="font-mono font-bold">-{formatIDR(discount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-base font-black text-black pt-2 border-t-2 border-black">
-                    <span>TOTAL BAYAR</span>
-                    <span className="font-mono">{formatIDR(order.totalPrice)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Invoice Footer */}
-              <div className="mt-8 pt-4 border-t border-dashed border-zinc-400 text-center text-[10px] text-zinc-600 space-y-0.5">
-                <p className="font-bold text-black">
-                  Terima kasih telah berbelanja di {storeName}!
-                </p>
-                <p>
-                  Apabila ada pertanyaan terkait pesanan, hubungi layanan pelanggan kami melalui
-                  WhatsApp.
-                </p>
               </div>
             </div>
           ) : (
             /* Thermal Receipt Layout (58mm / 80mm preview - 100% Monochrome Black & White) */
-            <div
-              className={`bg-white text-black font-mono text-[11px] p-4 shadow-xl border border-zinc-400 rounded-none leading-tight transition-all ${
-                printerSettings.paperSize === '80mm' ? 'w-90' : 'w-70'
-              }`}
-            >
-              <div className="text-center pb-2 border-b border-dashed border-black">
-                <p className="text-sm font-black uppercase text-black">{storeName}</p>
-                <p className="text-[10px] text-black">{storeAddress}</p>
-                {storePhone && <p className="text-[10px] text-black">WA: {storePhone}</p>}
-              </div>
+            <div className="w-full flex justify-center pb-4">
+              <div
+                className={`bg-white text-black font-mono text-[11px] p-4 shadow-xl border border-zinc-400 rounded-none leading-tight transition-all max-w-full ${
+                  printerSettings.paperSize === '80mm' ? 'w-80' : 'w-72'
+                }`}
+              >
+                <div className="text-center pb-2 border-b border-dashed border-black">
+                  <p className="text-sm font-black uppercase text-black">{storeName}</p>
+                  <p className="text-[10px] text-black">{storeAddress}</p>
+                  {storePhone && <p className="text-[10px] text-black">WA: {storePhone}</p>}
+                </div>
 
-              <div className="py-2 border-b border-dashed border-black space-y-0.5 text-[10px] text-black">
-                <p className="font-bold">NO: #{order.orderNumber}</p>
-                <p>TGL: {new Date(order.createdAt).toLocaleDateString('id-ID')}</p>
-                <p>STATUS: {printData.status}</p>
-                <p className="truncate">CUST: {order.fullName}</p>
-                <p>HP: {order.whatsapp}</p>
-                <p>KIRIM: {order.courierName || 'Reguler'}</p>
-                {order.trackingNumber && <p className="font-bold">RESI: {order.trackingNumber}</p>}
-              </div>
+                <div className="py-2 border-b border-dashed border-black space-y-0.5 text-[10px] text-black">
+                  <p className="font-bold">NO: #{order.orderNumber}</p>
+                  <p>TGL: {new Date(order.createdAt).toLocaleDateString('id-ID')}</p>
+                  <p>STATUS: {printData.status}</p>
+                  <p className="truncate">CUST: {order.fullName}</p>
+                  <p>HP: {order.whatsapp}</p>
+                  <p>KIRIM: {order.courierName || 'Reguler'}</p>
+                  {order.trackingNumber && (
+                    <p className="font-bold">RESI: {order.trackingNumber}</p>
+                  )}
+                </div>
 
-              <div className="py-2 border-b border-dashed border-black space-y-1.5 text-[10px] text-black">
-                {order.items.map((item, idx) => (
-                  <div key={idx} className="space-y-0.5">
-                    <p className="font-bold truncate text-black">
-                      {item.name} ({item.size})
-                    </p>
-                    <div className="flex justify-between text-black">
-                      <span>
-                        {item.quantity}x @{formatIDR(item.price)}
-                      </span>
-                      <span className="font-bold">{formatIDR(item.quantity * item.price)}</span>
+                <div className="py-2 border-b border-dashed border-black space-y-1.5 text-[10px] text-black">
+                  {order.items.map((item, idx) => (
+                    <div key={idx} className="space-y-0.5">
+                      <p className="font-bold truncate text-black">
+                        {item.name} ({item.size})
+                      </p>
+                      <div className="flex justify-between text-black">
+                        <span>
+                          {item.quantity}x @{formatIDR(item.price)}
+                        </span>
+                        <span className="font-bold">{formatIDR(item.quantity * item.price)}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <div className="py-2 border-b-2 border-black space-y-1 text-[10px] text-black">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>{formatIDR(subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Ongkir</span>
-                  <span>{formatIDR(shippingFee)}</span>
-                </div>
-                {discount > 0 && (
+                <div className="py-2 border-b-2 border-black space-y-1 text-[10px] text-black">
                   <div className="flex justify-between">
-                    <span>Diskon</span>
-                    <span>-{formatIDR(discount)}</span>
+                    <span>Subtotal</span>
+                    <span>{formatIDR(subtotal)}</span>
                   </div>
-                )}
-                <div className="flex justify-between text-xs font-black pt-1 border-t border-dashed border-black">
-                  <span>TOTAL</span>
-                  <span>{formatIDR(order.totalPrice)}</span>
+                  <div className="flex justify-between">
+                    <span>Ongkir</span>
+                    <span>{formatIDR(shippingFee)}</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between">
+                      <span>Diskon</span>
+                      <span>-{formatIDR(discount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs font-black pt-1 border-t border-dashed border-black">
+                    <span>TOTAL</span>
+                    <span>{formatIDR(order.totalPrice)}</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Thermal Barcode preview */}
-              <div className="pt-3 pb-1 text-center">
-                <div
-                  className="max-w-50 mx-auto bg-white"
-                  dangerouslySetInnerHTML={{ __html: barcodeSvg }}
-                />
-              </div>
+                {/* Thermal Barcode preview */}
+                <div className="pt-3 pb-1 text-center">
+                  <div
+                    className="max-w-50 mx-auto bg-white"
+                    dangerouslySetInnerHTML={{ __html: barcodeSvg }}
+                  />
+                </div>
 
-              <div className="text-center pt-2 text-[9px] text-black space-y-0.5">
-                <p className="font-bold">Terima Kasih!</p>
-                <p>Simpan struk sebagai bukti resmi.</p>
+                <div className="text-center pt-2 text-[9px] text-black space-y-0.5">
+                  <p className="font-bold">Terima Kasih!</p>
+                  <p>Simpan struk sebagai bukti resmi.</p>
+                </div>
               </div>
             </div>
           )}
