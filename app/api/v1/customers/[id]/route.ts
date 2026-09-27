@@ -4,13 +4,16 @@ import { getAuthenticatedUser } from '@/lib/auth/authorization';
 
 const PAID_STATUSES = new Set(['PAID', 'FULFILLED']);
 
-export async function GET(_request: Request, context: RouteContext<'/api/v1/customers/[id]'>) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const actor = await getAuthenticatedUser();
   if (!actor) {
-    return NextResponse.json({ code: 401, status: 'error', message: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { code: 401, status: 'error', message: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
-  const { id } = await context.params;
+  const { id } = await params;
   const rawId = decodeURIComponent(id);
   const normalizedId = rawId.replace(/\D/g, '');
   const orders = await prisma.order.findMany({
