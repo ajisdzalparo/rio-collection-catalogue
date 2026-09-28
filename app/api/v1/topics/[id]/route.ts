@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await authorizeUserWithPermission('journal.manage');
+  if (!auth.success) return auth.response;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -38,6 +42,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await authorizeUserWithPermission('journal.manage');
+  if (!auth.success) return auth.response;
+
   try {
     const { id } = await params;
     await prisma.topic.update({
@@ -47,7 +54,7 @@ export async function DELETE(
     return NextResponse.json({
       code: 200,
       status: 'success',
-      message: 'Topic deleted successfully'
+      data: { message: 'Topic deleted successfully' }
     });
   } catch (error) {
     console.error('Error deleting topic:', error);

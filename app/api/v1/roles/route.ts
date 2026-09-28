@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getActivityLogViewer } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { isSuperAdminRole } from '@/lib/auth/roles';
 import { recordActivity } from '@/lib/activity-log';
 import { prisma } from '@/lib/prisma';
@@ -24,7 +24,7 @@ function addRoleCompatibilityFields<T extends { name: string }>(role: T) {
       ? 'Pemilik toko dengan akses penuh operasional selain finance platform'
       : role.name === 'Super Admin'
         ? 'Akses tertinggi ke seluruh sistem dan finance platform'
-        : undefined,
+        : null,
     isSystemRole: isSuperAdminRole(role.name),
     isActive: true
   };
@@ -37,8 +37,8 @@ const createRoleSchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const viewer = await getActivityLogViewer();
-  if (!viewer) return NextResponse.json({ code: 403, status: 'error', message: 'Akses master role ditolak.' }, { status: 403 });
+  const auth = await authorizeUserWithPermission('users.view');
+  if (!auth.success) return auth.response;
   try {
     let roles;
     try {
@@ -48,87 +48,100 @@ export async function GET(request: Request) {
       const legacyRoles = await prisma.role.findMany({ select: legacyRoleSelect, orderBy: { createdAt: 'asc' } });
       roles = legacyRoles.map(addRoleCompatibilityFields);
     }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim().toLowerCase() || '';
     const pageParam = searchParams.get('page');
-    const pageSizeParam = searchParams.get('pageSize');
-    const filteredRoles = search
-      ? roles.filter(
-          (role) =>
-            role.name.toLowerCase().includes(search) ||
-            ('description' in role && typeof role.description === 'string'
-              ? role.description.toLowerCase().includes(search)
-              : false)
-        )
-      : roles;
-    const page = Math.max(1, Number.parseInt(pageParam || '1', 10) || 1);
-    const pageSize = Math.min(100, Math.max(1, Number.parseInt(pageSizeParam || '10', 10) || 10));
-    const paginated = Boolean(pageParam || pageSizeParam);
-    const data = paginated
-      ? filteredRoles.slice((page - 1) * pageSize, page * pageSize)
-      : filteredRoles;
+    const pageSizeParam = searchParams.get('pageSize') || searchParams.get('limit');
+
+    let filtered = roles;
+    if (search) {
+      filtered = roles.filter((role) =>
+        role.name.toLowerCase().includes(search) ||
+        ('description' in role && typeof role.description === 'string' && role.description.toLowerCase().includes(search))
+      );
+    }
+
+    if (!pageParam && !pageSizeParam) {
+      return NextResponse.json({ code: 200, status: 'success', data: filtered });
+    }
+
+    const page = Math.max(1, parseInt(pageParam || '1', 10) || 1);
+    const pageSize = Math.max(1, parseInt(pageSizeParam || '10', 10) || 10);
+    const total = filtered.length;
+    const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
     return NextResponse.json({
       code: 200,
       status: 'success',
-      data,
+      data: paginated,
       meta: {
-        page: paginated ? page : 1,
-        pageSize: paginated ? pageSize : filteredRoles.length,
-        total: filteredRoles.length,
-        totalPages: paginated ? Math.max(1, Math.ceil(filteredRoles.length / pageSize)) : 1
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize))
       }
     });
   } catch (error) {
     console.error('Error fetching roles:', error);
-    return NextResponse.json({ code: 500, status: 'error', message: 'Gagal memuat master role.' }, { status: 500 });
+    return NextResponse.json({ code: 500, status: 'error', message: 'Gagal memuat daftar role.' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
-  const actor = await getActivityLogViewer();
-  if (!actor) return NextResponse.json({ code: 403, status: 'error', message: 'Hanya Owner dan Super Admin yang dapat menambah role.' }, { status: 403 });
+  const auth = await authorizeUserWithPermission('users.manage');
+  if (!auth.success) return auth.response;
+  const actor = auth.user;
 
   const parsed = createRoleSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ code: 400, status: 'error', message: 'Data master role tidak valid.' }, { status: 400 });
-  if (isSuperAdminRole(parsed.data.name)) return NextResponse.json({ code: 403, status: 'error', message: 'Role Super Admin tidak dapat dibuat ulang.' }, { status: 403 });
+  if (!parsed.success || isSuperAdminRole(parsed.data.name)) {
+    return NextResponse.json({ code: 400, status: 'error', message: 'Data master role tidak valid.' }, { status: 400 });
+  }
+
+  const existing = await prisma.role.findFirst({
+    where: { name: { equals: parsed.data.name, mode: 'insensitive' } }
+  });
+  if (existing) {
+    return NextResponse.json({ code: 409, status: 'error', message: 'Nama role sudah terdaftar.' }, { status: 409 });
+  }
 
   try {
-    let existing;
-    try {
-      existing = await prisma.role.findFirst({ where: { name: { equals: parsed.data.name, mode: 'insensitive' } } });
-    } catch (error) {
-      if (!isMissingRoleMetadataColumns(error)) throw error;
-      existing = await prisma.role.findFirst({
-        where: { name: { equals: parsed.data.name, mode: 'insensitive' } },
-        select: legacyRoleSelect
-      });
-    }
-    if (existing) return NextResponse.json({ code: 409, status: 'error', message: 'Nama role sudah digunakan.' }, { status: 409 });
-
     let role;
     try {
-      role = await prisma.role.create({ data: { ...parsed.data, isActive: true, isSystemRole: false } });
+      role = await prisma.role.create({
+        data: {
+          name: parsed.data.name,
+          description: parsed.data.description,
+          permissions: parsed.data.permissions,
+          isActive: true
+        }
+      });
     } catch (error) {
       if (!isMissingRoleMetadataColumns(error)) throw error;
-      const legacyRole = await prisma.role.create({
-        data: { name: parsed.data.name, permissions: parsed.data.permissions },
+      const legacyCreated = await prisma.role.create({
+        data: {
+          name: parsed.data.name,
+          permissions: parsed.data.permissions
+        },
         select: legacyRoleSelect
       });
-      role = addRoleCompatibilityFields(legacyRole);
+      role = addRoleCompatibilityFields(legacyCreated);
     }
+
     await recordActivity({
       actor,
       action: 'CREATE',
       module: 'RBAC',
-      description: `Menambahkan master role ${role.name}.`,
+      description: `Membuat master role ${role.name}.`,
       entityType: 'Role',
       entityId: role.id,
-      metadata: { permissionCount: Object.values(parsed.data.permissions).filter(Boolean).length },
+      metadata: { permissions: parsed.data.permissions },
       request
     });
+
     return NextResponse.json({ code: 201, status: 'success', data: role }, { status: 201 });
   } catch (error) {
     console.error('Error creating role:', error);
-    return NextResponse.json({ code: 500, status: 'error', message: 'Gagal menambahkan master role.' }, { status: 500 });
+    return NextResponse.json({ code: 500, status: 'error', message: 'Gagal membuat master role.' }, { status: 500 });
   }
 }

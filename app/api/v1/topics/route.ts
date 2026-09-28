@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 
 export async function GET() {
   try {
@@ -21,6 +22,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await authorizeUserWithPermission('journal.manage');
+  if (!auth.success) return auth.response;
+
   try {
     const body = await request.json();
     const { name, description } = body;

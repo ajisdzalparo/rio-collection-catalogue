@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await authorizeUserWithPermission('testimonies.manage');
+    if (!auth.success) return auth.response;
+
     const { id } = await params;
     const body = await request.json();
     const { alt, imageUrl, status } = body;
@@ -38,6 +42,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await authorizeUserWithPermission('testimonies.manage');
+    if (!auth.success) return auth.response;
+
     const { id } = await params;
     await prisma.testimony.delete({
       where: { id }

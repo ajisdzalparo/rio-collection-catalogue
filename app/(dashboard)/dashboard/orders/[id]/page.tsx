@@ -49,7 +49,7 @@ import { Stepper } from '@/components/ui/stepper';
 import { useOrders, type Order } from '@/hooks/use-orders';
 import { useStoreSettingsQuery, useStoreSettingsStore } from '@/hooks/use-store-settings';
 import { useStoreBanksQuery } from '@/hooks/use-store-banks';
-import { formatIDR, formatWaNumber } from '@/lib/utils';
+import { formatIDR, formatWaNumber, getErrorMessage } from '@/lib/utils';
 import { getEnabledCourierOptions } from '@/lib/couriers';
 import {
   buildWhatsAppMessage,
@@ -57,6 +57,8 @@ import {
   type WhatsAppMessageStage
 } from '@/lib/order-whatsapp';
 import { OrderInvoiceDialog } from '@/components/dashboard/order-invoice-dialog';
+import { useRbac } from '@/features/users/hooks/use-rbac';
+import { AccessDeniedState } from '@/components/shared/access-denied-state';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -65,6 +67,10 @@ interface PageProps {
 export default function OrderDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { id } = use(params);
+  const { hasPermission, isLoading: rbacLoading } = useRbac();
+  const canViewOrders = hasPermission('orders.view');
+  const canProcessOrders = hasPermission('orders.process');
+
   const { data: orders = [], isLoading: ordersLoading, updateOrder, isUpdating } = useOrders();
   const persistedStoreSettings = useStoreSettingsStore();
   const { data: latestStoreSettings } = useStoreSettingsQuery();
@@ -208,8 +214,17 @@ export default function OrderDetailPage({ params }: PageProps) {
     return `https://wa.me/${formatWaNumber(orderItem.whatsapp)}?text=${encodeURIComponent(message)}`;
   };
 
-  if (ordersLoading) {
+  if (ordersLoading || rbacLoading) {
     return <CmsPageSkeleton variant="detail" />;
+  }
+
+  if (!canViewOrders) {
+    return (
+      <AccessDeniedState
+        title="Akses Detail Pesanan Terbatas"
+        description="Role akun Anda tidak memiliki izin untuk melihat detail pesanan ini. Silakan hubungi Super Admin untuk penyesuaian hak akses."
+      />
+    );
   }
 
   if (!order) {
@@ -565,9 +580,10 @@ export default function OrderDetailPage({ params }: PageProps) {
           )}
 
           {/* Progressive Order Actions & Workflow Steps */}
-          {['PENDING', 'CONFIRMED', 'WAITING_PAYMENT', 'PAID', 'FULFILLED'].includes(
-            order.status
-          ) && (
+          {canProcessOrders &&
+            ['PENDING', 'CONFIRMED', 'WAITING_PAYMENT', 'PAID', 'FULFILLED'].includes(
+              order.status
+            ) && (
             <div className="bg-card border border-border/40 rounded-xl p-6 shadow-xs space-y-5">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
@@ -610,11 +626,12 @@ export default function OrderDetailPage({ params }: PageProps) {
                         try {
                           await updateOrder({ id: order.id, waFollowedUp: true });
                           toast.success('Pengiriman WhatsApp order telah dikonfirmasi.');
-                        } catch {
-                          toast.error('Gagal menyimpan konfirmasi WhatsApp.');
+                        } catch (err) {
+                          toast.error(getErrorMessage(err, 'Gagal menyimpan konfirmasi WhatsApp.'));
                         }
                       }}
                       disabled={
+                        !canProcessOrders ||
                         isUpdating ||
                         order.waFollowedUp ||
                         openedWhatsApp?.orderId !== order.id ||
@@ -630,11 +647,11 @@ export default function OrderDetailPage({ params }: PageProps) {
                         try {
                           await updateOrder({ id: order.id, status: 'WAITING_PAYMENT' });
                           toast.success('Pesanan sekarang menunggu pembayaran.');
-                        } catch {
-                          toast.error('Tahap belum dapat dilanjutkan.');
+                        } catch (err) {
+                          toast.error(getErrorMessage(err, 'Tahap belum dapat dilanjutkan.'));
                         }
                       }}
-                      disabled={isUpdating || !order.waFollowedUp}
+                      disabled={!canProcessOrders || isUpdating || !order.waFollowedUp}
                       className="h-10 rounded-lg text-xs font-bold bg-foreground text-background hover:bg-foreground/90 cursor-pointer disabled:opacity-50"
                     >
                       3. Lanjut Menunggu Pembayaran
@@ -658,11 +675,11 @@ export default function OrderDetailPage({ params }: PageProps) {
                         try {
                           await updateOrder({ id: order.id, status: 'WAITING_PAYMENT' });
                           toast.success('Status lama berhasil dinormalisasi.');
-                        } catch {
-                          toast.error('Gagal memperbarui status');
+                        } catch (err) {
+                          toast.error(getErrorMessage(err, 'Gagal memperbarui status'));
                         }
                       }}
-                      disabled={isUpdating}
+                      disabled={!canProcessOrders || isUpdating}
                       className="h-10 rounded-lg text-xs font-bold"
                     >
                       Pindahkan ke Menunggu Pembayaran
@@ -679,12 +696,13 @@ export default function OrderDetailPage({ params }: PageProps) {
                   <PaymentProofUpload
                     label="Unggah Bukti Transfer Pembayaran Customer"
                     value={order.paymentProofUrl || ''}
+                    disabled={!canProcessOrders}
                     onChange={async (url) => {
                       try {
                         await updateOrder({ id: order.id, paymentProofUrl: url });
                         toast.success('Bukti pembayaran berhasil disimpan!');
-                      } catch {
-                        toast.error('Gagal menyimpan bukti pembayaran');
+                      } catch (err) {
+                        toast.error(getErrorMessage(err, 'Gagal menyimpan bukti pembayaran'));
                       }
                     }}
                   />
@@ -728,11 +746,12 @@ export default function OrderDetailPage({ params }: PageProps) {
                         try {
                           await updateOrder({ id: order.id, waFollowedUp: true });
                           toast.success('WhatsApp pembayaran telah dikonfirmasi.');
-                        } catch {
-                          toast.error('Gagal menyimpan konfirmasi WhatsApp.');
+                        } catch (err) {
+                          toast.error(getErrorMessage(err, 'Gagal menyimpan konfirmasi WhatsApp.'));
                         }
                       }}
                       disabled={
+                        !canProcessOrders ||
                         isUpdating ||
                         order.waFollowedUp ||
                         !order.paymentProofUrl ||
@@ -749,11 +768,16 @@ export default function OrderDetailPage({ params }: PageProps) {
                         try {
                           await updateOrder({ id: order.id, status: 'PAID' });
                           toast.success('Pembayaran telah diverifikasi sebagai lunas.');
-                        } catch {
-                          toast.error('Tahap pembayaran belum dapat diselesaikan.');
+                        } catch (err) {
+                          toast.error(getErrorMessage(err, 'Tahap pembayaran belum dapat diselesaikan.'));
                         }
                       }}
-                      disabled={isUpdating || !order.paymentProofUrl || !order.waFollowedUp}
+                      disabled={
+                        !canProcessOrders ||
+                        isUpdating ||
+                        !order.paymentProofUrl ||
+                        !order.waFollowedUp
+                      }
                       className="h-10 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer disabled:opacity-50"
                     >
                       <span>3. Tandai Lunas</span>
@@ -777,6 +801,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                         setShippingAdjustmentWaConfirmed(false);
                         setIsExpeditionDialogOpen(true);
                       }}
+                      disabled={!canProcessOrders}
                       className="h-8 rounded-lg text-xs font-bold border-border/60 gap-1.5"
                     >
                       <Truck className="h-3.5 w-3.5 text-primary" />
@@ -791,7 +816,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       </label>
                       <Select
                         value={courierName}
-                        disabled={isUpdating || order.waFollowedUp}
+                        disabled={!canProcessOrders || isUpdating || order.waFollowedUp}
                         onValueChange={(value) => value && setCourierName(value)}
                       >
                         <SelectTrigger className="h-10 text-xs rounded-lg">
@@ -813,7 +838,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       <Input
                         value={trackingNumber}
                         onChange={(e) => setTrackingNumber(e.target.value)}
-                        disabled={isUpdating || order.waFollowedUp}
+                        disabled={!canProcessOrders || isUpdating || order.waFollowedUp}
                         placeholder="Contoh: JNE1234567890"
                         className="h-10 text-xs rounded-lg font-mono font-bold"
                       />
@@ -876,11 +901,12 @@ export default function OrderDetailPage({ params }: PageProps) {
                             waFollowedUp: true
                           });
                           toast.success('WhatsApp pengiriman telah dikonfirmasi.');
-                        } catch {
-                          toast.error('Gagal menyimpan konfirmasi pengiriman.');
+                        } catch (err) {
+                          toast.error(getErrorMessage(err, 'Gagal menyimpan konfirmasi pengiriman.'));
                         }
                       }}
                       disabled={
+                        !canProcessOrders ||
                         isUpdating ||
                         order.waFollowedUp ||
                         openedWhatsApp?.orderId !== order.id ||
@@ -910,11 +936,12 @@ export default function OrderDetailPage({ params }: PageProps) {
                           toast.success(
                             `Pesanan ${order.orderNumber} berhasil dikirim (FULFILLED)!`
                           );
-                        } catch {
-                          toast.error('Gagal memperbarui status');
+                        } catch (err) {
+                          toast.error(getErrorMessage(err, 'Gagal memperbarui status'));
                         }
                       }}
                       disabled={
+                        !canProcessOrders ||
                         isUpdating ||
                         !order.waFollowedUp ||
                         !courierName.trim() ||
@@ -946,7 +973,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                       setCancelMode('CANCEL');
                       setIsCancelDialogOpen(true);
                     }}
-                    disabled={isUpdating}
+                    disabled={!canProcessOrders || isUpdating}
                     className="h-9 px-4 rounded-lg text-xs font-bold text-destructive hover:bg-destructive/10 border-border/40"
                   >
                     Batalkan Pesanan
@@ -959,7 +986,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                         setCancelMode('REJECT');
                         setIsCancelDialogOpen(true);
                       }}
-                      disabled={isUpdating}
+                      disabled={!canProcessOrders || isUpdating}
                       className="h-9 px-4 rounded-lg text-xs font-bold text-destructive hover:bg-destructive/10 border-border/40"
                     >
                       <XCircle className="h-3.5 w-3.5 mr-1" />

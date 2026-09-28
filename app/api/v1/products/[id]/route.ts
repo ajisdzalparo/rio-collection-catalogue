@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { mapProductRelations } from '@/lib/catalogue-relations';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { recordActivity } from '@/lib/activity-log';
 import { validateReleaseSchedule } from '@/lib/product-release';
 
@@ -21,7 +21,9 @@ const journalSummarySelect = {
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const actor = await getAuthenticatedUser();
+    const auth = await authorizeUserWithPermission(['products.edit', 'stock.manage']);
+    if (!auth.success) return auth.response;
+    const actor = auth.user;
     const body = await request.json();
 
     const existingProduct = await prisma.product.findUnique({
@@ -232,7 +234,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const actor = await getAuthenticatedUser();
+    const auth = await authorizeUserWithPermission('products.delete');
+    if (!auth.success) return auth.response;
+    const actor = auth.user;
     const product = await prisma.product.update({
       where: { id },
       data: {

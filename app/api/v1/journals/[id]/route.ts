@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { journalSchema } from '@/lib/journal-schema';
 import { revalidatePath } from 'next/cache';
 import { mapJournalRelations } from '@/lib/catalogue-relations';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { recordActivity } from '@/lib/activity-log';
 
 const productSummarySelect = {
@@ -14,9 +14,12 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await authorizeUserWithPermission('journal.manage');
+  if (!auth.success) return auth.response;
+  const actor = auth.user;
+
   try {
     const { id } = await params;
-    const actor = await getAuthenticatedUser();
     const parsed = journalSchema.safeParse(await request.json());
     if (!parsed.success) {
       const fieldErrors = parsed.error.flatten().fieldErrors;
@@ -88,7 +91,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const actor = await getAuthenticatedUser();
+    const auth = await authorizeUserWithPermission('journal.manage');
+    if (!auth.success) return auth.response;
+    const actor = auth.user;
     const journal = await prisma.journal.delete({
       where: { id }
     });

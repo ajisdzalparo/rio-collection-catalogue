@@ -4,7 +4,7 @@ import { normalizeProductAvailability } from '@/lib/product-availability';
 import { mapProductRelations } from '@/lib/catalogue-relations';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { recordActivity } from '@/lib/activity-log';
 import { syncDueProductReleases, validateReleaseSchedule } from '@/lib/product-release';
 
@@ -16,6 +16,7 @@ const journalSummarySelect = {
 import { Prisma } from '@prisma/client';
 
 export async function GET(request: Request) {
+
   try {
     await syncDueProductReleases();
 
@@ -177,7 +178,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const actor = await getAuthenticatedUser();
+    const auth = await authorizeUserWithPermission('products.create');
+    if (!auth.success) return auth.response;
+    const actor = auth.user;
     const body = await request.json();
     const {
       name,

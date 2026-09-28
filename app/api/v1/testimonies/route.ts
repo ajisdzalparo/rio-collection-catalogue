@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 
 export async function GET(request: Request) {
   try {
@@ -63,6 +64,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = await authorizeUserWithPermission('testimonies.manage');
+    if (!auth.success) return auth.response;
+
     const body = await request.json();
     const { alt, imageUrl } = body;
 

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 
-// GET /api/v1/store-banks            → all store bank accounts (CMS)
-// GET ?activeOnly=true               → only accounts shown to clients
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -23,15 +22,21 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/v1/store-banks — add a store bank account
 export async function POST(request: Request) {
+  const auth = await authorizeUserWithPermission('settings.manage');
+  if (!auth.success) return auth.response;
+
   try {
     const body = await request.json();
     const { bankName, accountNumber, accountOwner, isActive, sortOrder } = body;
 
     if (!bankName?.trim() || !accountNumber?.trim() || !accountOwner?.trim()) {
       return NextResponse.json(
-        { code: 400, status: 'error', message: 'bankName, accountNumber, accountOwner are required' },
+        {
+          code: 400,
+          status: 'error',
+          message: 'bankName, accountNumber, accountOwner are required'
+        },
         { status: 400 }
       );
     }

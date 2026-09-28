@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 
 const PAID_STATUSES = new Set(['PAID', 'FULFILLED']);
 
 export async function GET(request: Request) {
-  const actor = await getAuthenticatedUser();
-  if (!actor) {
-    return NextResponse.json({ code: 401, status: 'error', message: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await authorizeUserWithPermission('orders.view');
+  if (!auth.success) return auth.response;
+
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search')?.trim().toLowerCase() || '';

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getActivityLogViewer } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { isSuperAdminRole } from '@/lib/auth/roles';
 import { recordActivity } from '@/lib/activity-log';
 import { prisma } from '@/lib/prisma';
@@ -25,8 +25,9 @@ const updateRoleSchema = z.object({
 });
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const actor = await getActivityLogViewer();
-  if (!actor) return NextResponse.json({ code: 403, status: 'error', message: 'Akses perubahan role ditolak.' }, { status: 403 });
+  const auth = await authorizeUserWithPermission('users.manage');
+  if (!auth.success) return auth.response;
+  const actor = auth.user;
 
   const { id } = await params;
   let existing;
@@ -77,8 +78,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const actor = await getActivityLogViewer();
-  if (!actor) return NextResponse.json({ code: 403, status: 'error', message: 'Akses penghapusan role ditolak.' }, { status: 403 });
+  const auth = await authorizeUserWithPermission('users.delete');
+  if (!auth.success) return auth.response;
+  const actor = auth.user;
 
   const { id } = await params;
   let role;

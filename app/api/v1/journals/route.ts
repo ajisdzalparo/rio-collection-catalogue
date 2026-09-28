@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { journalSchema } from '@/lib/journal-schema';
 import { revalidatePath } from 'next/cache';
 import { mapJournalRelations } from '@/lib/catalogue-relations';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { recordActivity } from '@/lib/activity-log';
 
 const productSummarySelect = {
@@ -90,14 +90,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const auth = await authorizeUserWithPermission('journal.manage');
+  if (!auth.success) return auth.response;
+  const user = auth.user;
+
   try {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return NextResponse.json(
-        { code: 401, status: 'error', message: 'Anda harus login untuk menulis artikel blog.' },
-        { status: 401 }
-      );
-    }
 
     const parsed = journalSchema.safeParse(await request.json());
     if (!parsed.success) {

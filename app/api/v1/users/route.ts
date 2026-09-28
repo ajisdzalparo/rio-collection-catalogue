@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { isSuperAdminRole } from '@/lib/auth/roles';
 import { recordActivity } from '@/lib/activity-log';
+import { hashPassword } from '@/lib/password';
 
 export async function GET(request: Request) {
   try {
+    const auth = await authorizeUserWithPermission('users.view');
+    if (!auth.success) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim() || searchParams.get('q')?.trim() || '';
     const roleParam = searchParams.get('role')?.trim() || '';
@@ -70,16 +74,29 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authenticatedUser = await getAuthenticatedUser();
-    if (!authenticatedUser) {
+    const auth = await authorizeUserWithPermission('users.manage');
+    if (!auth.success) return auth.response;
+    const authenticatedUser = auth.user;
+
+    const body = await request.json();
+    const { name, email, role, status, password } = body;
+
+    if (!name || !email) {
       return NextResponse.json(
-        { code: 401, status: 'error', message: 'Sesi login tidak valid.' },
-        { status: 401 }
+        { code: 400, status: 'error', message: 'Nama dan email wajib diisi.' },
+        { status: 400 }
       );
     }
 
-    const body = await request.json();
-    const { name, email, role, status } = body;
+    const existingEmail = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() }
+    });
+    if (existingEmail) {
+      return NextResponse.json(
+        { code: 409, status: 'error', message: 'Email sudah digunakan oleh akun lain.' },
+        { status: 409 }
+      );
+    }
 
     if (isSuperAdminRole(role) && !isSuperAdminRole(authenticatedUser.role)) {
       return NextResponse.json(
@@ -92,12 +109,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const passwordHash = password ? await hashPassword(password) : undefined;
+
     const newUser = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
         role: role || 'Admin',
-        status: status || 'active'
+        status: status || 'active',
+        ...(passwordHash && { passwordHash })
       }
     });
 
@@ -129,3 +149,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

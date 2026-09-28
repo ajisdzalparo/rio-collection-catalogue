@@ -62,9 +62,15 @@ import { useStoreBanksQuery } from '@/hooks/use-store-banks';
 import { buildWhatsAppMessage, formatStoreBankDetails } from '@/lib/order-whatsapp';
 import { ORDER_STATUS_OPTIONS } from '@/lib/order-status';
 import { OrderInvoiceDialog } from '@/components/dashboard/order-invoice-dialog';
+import { useRbac } from '@/features/users/hooks/use-rbac';
+import { AccessDeniedState } from '@/components/shared/access-denied-state';
 
 function OrdersPageContent() {
   const router = useRouter();
+  const { hasPermission, isLoading: rbacLoading } = useRbac();
+  const canViewOrders = hasPermission('orders.view');
+  const canProcessOrders = hasPermission('orders.process');
+
   const persistedStoreSettings = useStoreSettingsStore();
   const { data: latestStoreSettings } = useStoreSettingsQuery();
   const { data: storeBanks = [] } = useStoreBanksQuery();
@@ -276,7 +282,7 @@ function OrdersPageContent() {
                   className="gap-2 cursor-pointer font-medium"
                 >
                   <Eye className="h-3.5 w-3.5 text-primary" />
-                  <span>Lihat &amp; Proses Pesanan</span>
+                  <span>{canProcessOrders ? 'Lihat & Proses Pesanan' : 'Lihat Rincian Pesanan'}</span>
                 </DropdownMenuItem>
 
                 {order.status === 'FULFILLED' && (
@@ -299,7 +305,7 @@ function OrdersPageContent() {
                   <span>Chat WA Pelanggan</span>
                 </DropdownMenuItem>
 
-                {order.status === 'WAITING_PAYMENT' && (
+                {order.status === 'WAITING_PAYMENT' && canProcessOrders && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -314,7 +320,7 @@ function OrdersPageContent() {
                   </>
                 )}
 
-                {order.status === 'PENDING' && (
+                {order.status === 'PENDING' && canProcessOrders && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -333,8 +339,17 @@ function OrdersPageContent() {
         )
       }
     ],
-    [getReminderWaLink, isUpdating, router]
+    [getReminderWaLink, isUpdating, router, canProcessOrders]
   );
+
+  if (!rbacLoading && !canViewOrders) {
+    return (
+      <AccessDeniedState
+        title="Akses Pesanan Terbatas"
+        description="Role akun Anda tidak memiliki hak akses untuk melihat daftar pesanan."
+      />
+    );
+  }
 
   return (
     <VStack gap="lg" className="pb-10 w-full">
@@ -359,29 +374,32 @@ function OrdersPageContent() {
             </span>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRunCronCleanup}
-            disabled={isCleaningUp}
-            className="h-9 px-3.5 rounded-xl text-xs font-bold gap-1.5 cursor-pointer border-border/30 hover:bg-muted"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isCleaningUp ? 'animate-spin' : ''}`} />
-            <span>{isCleaningUp ? 'Memproses Cron...' : 'Perbarui Status Expired'}</span>
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setIsDeleteExpiredOpen(true)}
-            disabled={expiredOrderCount === 0 || isDeletingExpired}
-            className="h-9 gap-1.5 rounded-xl px-3.5 text-xs font-bold"
-          >
-            <Trash2 className="h-3.5 w-3.5 text-white" />
-            <span>Hapus Pesanan Spam ({expiredOrderCount})</span>
-          </Button>
-        </div>
+        {canProcessOrders && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRunCronCleanup}
+              disabled={isCleaningUp}
+              className="h-9 px-3.5 rounded-xl text-xs font-bold gap-1.5 cursor-pointer border-border/30 hover:bg-muted"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isCleaningUp ? 'animate-spin' : ''}`} />
+              <span>{isCleaningUp ? 'Memproses Cron...' : 'Perbarui Status Expired'}</span>
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setIsDeleteExpiredOpen(true)}
+              disabled={expiredOrderCount === 0 || isDeletingExpired}
+              className="h-9 gap-1.5 rounded-xl px-3.5 text-xs font-bold"
+            >
+              <Trash2 className="h-3.5 w-3.5 text-white" />
+              <span>Hapus Pesanan Spam ({expiredOrderCount})</span>
+            </Button>
+          </div>
+        )}
       </div>
+
 
       {/* Orders DataTable */}
       <DataTable

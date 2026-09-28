@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { DEFAULT_ENABLED_COURIERS } from '@/lib/couriers';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { recordActivity } from '@/lib/activity-log';
 import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
@@ -71,7 +71,9 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const actor = await getAuthenticatedUser();
+    const auth = await authorizeUserWithPermission('settings.manage');
+    if (!auth.success) return auth.response;
+    const actor = auth.user;
     const body = await request.json();
     const {
       storeName,

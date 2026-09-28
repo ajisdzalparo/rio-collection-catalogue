@@ -15,3 +15,4 @@ export * from './top-loader';
 export * from './safe-image';
 export * from './cms-badge';
 export * from './cms-page-skeleton';
+export * from './access-denied-state';

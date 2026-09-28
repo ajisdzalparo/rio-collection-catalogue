@@ -20,6 +20,7 @@ interface PaymentProofUploadProps {
   label: string;
   description?: string;
   required?: boolean;
+  disabled?: boolean;
 }
 
 export function PaymentProofUpload({
@@ -27,7 +28,8 @@ export function PaymentProofUpload({
   onChange,
   label,
   description = 'JPG, PNG, WebP atau PDF (maks. 10 MB)',
-  required = true
+  required = true,
+  disabled = false
 }: PaymentProofUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -81,6 +83,7 @@ export function PaymentProofUpload({
         type="file"
         accept="image/jpeg,image/png,image/webp,application/pdf"
         className="hidden"
+        disabled={disabled || isUploading}
         onChange={handleFileChange}
         aria-label={label}
       />
@@ -104,33 +107,37 @@ export function PaymentProofUpload({
               <Eye className="h-3 w-3" />
               <span>Lihat</span>
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => inputRef.current?.click()}
-              disabled={isUploading}
-              className="h-7 px-2.5 rounded-md cursor-pointer"
-            >
-              Ganti
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => onChange('')}
-              aria-label={`Hapus ${label}`}
-              className="h-7 w-7 rounded-md"
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
+            {!disabled && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={isUploading}
+                  className="h-7 px-2.5 rounded-md cursor-pointer"
+                >
+                  Ganti
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => onChange('')}
+                  aria-label={`Hapus ${label}`}
+                  className="h-7 w-7 rounded-md"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          disabled={isUploading}
+          disabled={disabled || isUploading}
           className={cn(
             'flex w-full items-center gap-3 rounded-lg border border-dashed border-border/60 bg-muted/10 p-3 text-left transition-colors hover:border-foreground/40 hover:bg-muted/25 disabled:cursor-not-allowed disabled:opacity-60'
           )}

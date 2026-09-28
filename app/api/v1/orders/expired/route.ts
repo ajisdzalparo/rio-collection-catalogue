@@ -1,22 +1,11 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
-import { parseAuthCookieUser } from '@/lib/auth/roles';
-
-async function isAuthenticated() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value;
-  return Boolean(parseAuthCookieUser(token));
-}
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 
 export async function DELETE() {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json(
-      { code: 401, status: 'error', message: 'Sesi admin tidak valid' },
-      { status: 401 }
-    );
-  }
+  const auth = await authorizeUserWithPermission('orders.process');
+  if (!auth.success) return auth.response;
+
 
   try {
     const result = await prisma.order.deleteMany({

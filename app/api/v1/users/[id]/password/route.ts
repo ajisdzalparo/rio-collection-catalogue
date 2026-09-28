@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { isSuperAdminRole } from '@/lib/auth/roles';
 import { recordActivity } from '@/lib/activity-log';
 import { hashPassword } from '@/lib/password';
@@ -10,13 +10,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const actor = await getAuthenticatedUser();
-  if (!actor) {
-    return NextResponse.json(
-      { code: 401, status: 'error', message: 'Sesi login tidak valid.' },
-      { status: 401 }
-    );
-  }
+  const auth = await authorizeUserWithPermission('users.reset_password');
+  if (!auth.success) return auth.response;
+  const actor = auth.user;
 
   const { id } = await params;
   const target = await prisma.user.findUnique({

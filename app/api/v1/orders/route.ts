@@ -8,9 +8,13 @@ import { getCustomerFromRequest } from '@/lib/customer-auth';
 import { allowCheckoutAttempt } from '@/lib/checkout-rate-limit';
 import { normalizeEmail, normalizeWhatsapp } from '@/lib/customer-identity';
 import { publishOrderCreated } from '@/lib/order-notifications.server';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 
 export async function GET(request: Request) {
   try {
+    const auth = await authorizeUserWithPermission(['orders.view', 'reports.view']);
+    if (!auth.success) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim() || searchParams.get('q')?.trim() || '';
     const statusParam = searchParams.get('status')?.trim() || '';

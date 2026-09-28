@@ -1,8 +1,25 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import axios from 'axios';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+export function getErrorMessage(
+  err: unknown,
+  fallback: string = 'Terjadi kesalahan sistem.'
+): string {
+  if (axios.isAxiosError(err)) {
+    return err.response?.data?.message || err.message || fallback;
+  }
+  if (err instanceof Error) {
+    return err.message || fallback;
+  }
+  if (typeof err === 'string') {
+    return err;
+  }
+  return fallback;
 }
 
 export function formatIDR(val: number): string {
@@ -34,13 +51,11 @@ export function formatSafeDate(
     return isNaN(rawDate.getTime()) ? '-' : rawDate.toLocaleDateString('id-ID', options);
   }
 
-  // Try direct parsing (e.g. ISO format or standard date strings)
   const parsed = new Date(rawDate);
   if (!isNaN(parsed.getTime())) {
     return parsed.toLocaleDateString('id-ID', options);
   }
 
-  // Indonesian month name mapping for strings like "12 Oktober 2024"
   const indonesianMonths: Record<string, string> = {
     januari: 'January',
     februari: 'February',

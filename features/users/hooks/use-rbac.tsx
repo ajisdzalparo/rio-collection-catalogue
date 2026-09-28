@@ -40,14 +40,15 @@ export function useRbac() {
   const { user, isLoading } = useAuth();
   const currentRoleName = isLoading ? '' : user?.role || '';
   const permissions: RolePermissions = user?.permissions ?? {};
+  const isSuperAdmin = isSuperAdminRole(currentRoleName);
 
   const hasPermission = (permissionKey: keyof RolePermissions): boolean => {
     if (!user || isLoading) return false;
-    if (permissionKey === 'platform.finance.view') return isSuperAdminRole(currentRoleName);
+    if (isSuperAdmin) return true;
     return permissions[permissionKey] === true;
   };
 
-  return { currentRoleName, permissions, hasPermission, isLoading };
+  return { currentRoleName, permissions, hasPermission, isSuperAdmin, isLoading };
 }
 
 interface RbacGateProps {

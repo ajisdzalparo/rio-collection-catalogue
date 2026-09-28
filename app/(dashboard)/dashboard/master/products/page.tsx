@@ -28,6 +28,8 @@ import { CmsPageSkeleton } from '@/components/shared/cms-page-skeleton';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { SafeImage, CMSBadge } from '@/components/shared';
 import { formatIDR } from '@/lib/utils';
+import { AccessDeniedState } from '@/components/shared/access-denied-state';
+import { useRbac } from '@/features/users/hooks/use-rbac';
 import {
   Sheet,
   SheetContent,
@@ -51,6 +53,13 @@ const PRODUCT_STATUS_OPTIONS = [
 function ProductsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { hasPermission, isSuperAdmin } = useRbac();
+  const canView = isSuperAdmin || hasPermission('products.view');
+  const canCreate = isSuperAdmin || hasPermission('products.create');
+  const canEdit = isSuperAdmin || hasPermission('products.edit');
+  const canDelete = isSuperAdmin || hasPermission('products.delete');
+  const canManageStock = isSuperAdmin || hasPermission('stock.manage') || hasPermission('stock.view');
+
   const filterParam = searchParams.get('filter');
   const isOutOfStockFilter = filterParam === 'out_of_stock';
 
@@ -278,30 +287,34 @@ function ProductsContent() {
                 <Eye className="h-4 w-4" />
               </Button>
             </Link>
-            <Button
-              variant="link"
-              size="icon"
-              onClick={() => router.push(`/dashboard/products/${product.id}/edit`)}
-              className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              title="Edit Detail Produk"
-            >
-              <SquarePen className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="link"
-              size="icon"
-              onClick={() => setDeleteTargetProduct(product)}
-              disabled={isDeleting}
-              className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-              title="Hapus Produk"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canEdit && (
+              <Button
+                variant="link"
+                size="icon"
+                onClick={() => router.push(`/dashboard/products/${product.id}/edit`)}
+                className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title="Edit Detail Produk"
+              >
+                <SquarePen className="h-4 w-4" />
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="link"
+                size="icon"
+                onClick={() => setDeleteTargetProduct(product)}
+                disabled={isDeleting}
+                className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+                title="Hapus Produk"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         )
       }
     ],
-    [getStatusBadge, isDeleting, router]
+    [getStatusBadge, isDeleting, router, canEdit, canDelete]
   );
 
   // Mobile Adaptive Card Renderer for Products
@@ -385,34 +398,47 @@ function ProductsContent() {
                   <span>Detail</span>
                 </Button>
               </Link>
+              {canEdit && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/dashboard/products/${product.id}/edit`)}
+                  className="flex-1 h-8 text-xs font-bold rounded-xl gap-1 cursor-pointer bg-primary/5 hover:bg-primary/10 text-primary border-primary/20"
+                >
+                  <SquarePen className="h-3.5 w-3.5" />
+                  <span>Edit</span>
+                </Button>
+              )}
+            </div>
+            {canDelete && (
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                onClick={() => router.push(`/dashboard/products/${product.id}/edit`)}
-                className="flex-1 h-8 text-xs font-bold rounded-xl gap-1 cursor-pointer bg-primary/5 hover:bg-primary/10 text-primary border-primary/20"
+                onClick={() => setDeleteTargetProduct(product)}
+                disabled={isDeleting}
+                className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer shrink-0"
+                title="Hapus Produk"
               >
-                <SquarePen className="h-3.5 w-3.5" />
-                <span>Edit</span>
+                <Trash2 className="h-4 w-4" />
               </Button>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setDeleteTargetProduct(product)}
-              disabled={isDeleting}
-              className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer shrink-0"
-              title="Hapus Produk"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            )}
           </div>
         </div>
       );
     },
-    [router, isDeleting, getStatusBadge]
+    [router, isDeleting, getStatusBadge, canEdit, canDelete]
   );
+
+  if (!canView) {
+    return (
+      <AccessDeniedState
+        title="Akses Katalog Produk Terbatas"
+        description="Anda tidak memiliki hak akses untuk melihat katalog produk. Silakan hubungi Super Admin jika membutuhkan akses ini."
+      />
+    );
+  }
 
   return (
     <VStack gap="lg" className="pb-10">
@@ -427,21 +453,25 @@ function ProductsContent() {
           </p>
         </VStack>
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <Link href="/dashboard/stock" className="w-full sm:w-auto">
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto gap-2 h-10 rounded-xl cursor-pointer font-bold text-xs"
-            >
-              <Package className="h-4 w-4 text-primary" />
-              <span>Manajemen Stok</span>
-            </Button>
-          </Link>
-          <Link href="/dashboard/products/create" className="w-full sm:w-auto">
-            <Button className="w-full sm:w-auto gap-2 h-10 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs shadow-sm">
-              <Plus className="h-4 w-4" />
-              <span>Tambah Kaos Baru</span>
-            </Button>
-          </Link>
+          {canManageStock && (
+            <Link href="/dashboard/stock" className="w-full sm:w-auto">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto gap-2 h-10 rounded-xl cursor-pointer font-bold text-xs"
+              >
+                <Package className="h-4 w-4 text-primary" />
+                <span>Manajemen Stok</span>
+              </Button>
+            </Link>
+          )}
+          {canCreate && (
+            <Link href="/dashboard/products/create" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto gap-2 h-10 rounded-xl cursor-pointer font-bold uppercase tracking-wider text-xs shadow-sm">
+                <Plus className="h-4 w-4" />
+                <span>Tambah Kaos Baru</span>
+              </Button>
+            </Link>
+          )}
         </div>
       </Flex>
 

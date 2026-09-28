@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { isSuperAdminRole } from '@/lib/auth/roles';
 import { recordActivity } from '@/lib/activity-log';
+import { hashPassword } from '@/lib/password';
 
 export async function PATCH(
   request: Request,
@@ -10,16 +11,12 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { name, email, role, status } = body;
-    const authenticatedUser = await getAuthenticatedUser();
+    const auth = await authorizeUserWithPermission('users.manage');
+    if (!auth.success) return auth.response;
+    const authenticatedUser = auth.user;
 
-    if (!authenticatedUser) {
-      return NextResponse.json(
-        { code: 401, status: 'error', message: 'Sesi login tidak valid.' },
-        { status: 401 }
-      );
-    }
+    const body = await request.json();
+    const { name, email, role, status, password } = body;
 
     const existingUser = await prisma.user.findUnique({ where: { id } });
 
@@ -58,13 +55,16 @@ export async function PATCH(
       );
     }
 
+    const passwordHash = password && password.trim().length >= 8 ? await hashPassword(password.trim()) : undefined;
+
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        ...(name && { name }),
-        ...(email && { email }),
+        ...(name && { name: name.trim() }),
+        ...(email && { email: email.trim().toLowerCase() }),
         ...(role && { role }),
-        ...(status && { status })
+        ...(status && { status }),
+        ...(passwordHash && { passwordHash })
       }
     });
 
@@ -103,14 +103,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const authenticatedUser = await getAuthenticatedUser();
-
-    if (!authenticatedUser) {
-      return NextResponse.json(
-        { code: 401, status: 'error', message: 'Sesi login tidak valid.' },
-        { status: 401 }
-      );
-    }
+    const auth = await authorizeUserWithPermission('users.delete');
+    if (!auth.success) return auth.response;
+    const authenticatedUser = auth.user;
 
     const existingUser = await prisma.user.findUnique({ where: { id } });
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { deductStock, restoreStock } from '@/lib/stock';
-import { getAuthenticatedUser } from '@/lib/auth/authorization';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 import { recordActivity } from '@/lib/activity-log';
 
 const orderStatuses = [
@@ -64,7 +64,9 @@ const allowedStatusTransitions: Record<string, readonly string[]> = {
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const actor = await getAuthenticatedUser();
+    const auth = await authorizeUserWithPermission('orders.process');
+    if (!auth.success) return auth.response;
+    const actor = auth.user;
     const rawBody: unknown = await request.json().catch(() => ({}));
     const parsed = updateOrderSchema.safeParse(rawBody);
     if (!parsed.success) {

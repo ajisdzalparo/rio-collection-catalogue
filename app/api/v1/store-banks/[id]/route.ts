@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { authorizeUserWithPermission } from '@/lib/auth/authorization';
 
 // PUT /api/v1/store-banks/[id] — update store bank account
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await authorizeUserWithPermission('settings.manage');
+  if (!auth.success) return auth.response;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -31,6 +35,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 // DELETE /api/v1/store-banks/[id]
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await authorizeUserWithPermission('settings.manage');
+  if (!auth.success) return auth.response;
+
   try {
     const { id } = await params;
     await prisma.storeBank.delete({ where: { id } });

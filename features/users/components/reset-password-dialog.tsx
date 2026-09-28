@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { KeyRound, Eye, EyeOff, Sparkles, Copy, Check, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,11 +25,7 @@ interface ResetPasswordDialogProps {
   user: User | null;
 }
 
-export function ResetPasswordDialog({
-  open,
-  onOpenChange,
-  user
-}: ResetPasswordDialogProps) {
+export function ResetPasswordDialog({ open, onOpenChange, user }: ResetPasswordDialogProps) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -97,8 +94,8 @@ export function ResetPasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-card border-border/50">
-        <DialogHeader className="space-y-1.5">
+      <DialogContent className="sm:max-w-md rounded-2xl p-6 bg-card border-border/50 shadow-xl">
+        <DialogHeader className="space-y-1">
           <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
             <KeyRound className="h-4 w-4" />
             <span>Reset Kredensial Pengguna</span>
@@ -112,7 +109,7 @@ export function ResetPasswordDialog({
         </DialogHeader>
 
         {/* User Info Card */}
-        <div className="bg-muted/30 border border-border/30 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+        <div className="bg-muted/20 border border-border/40 rounded-xl p-3.5 flex items-center justify-between gap-3">
           <div className="space-y-0.5 min-w-0">
             <p className="text-xs font-bold text-foreground truncate">{user.name}</p>
             <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
@@ -126,7 +123,7 @@ export function ResetPasswordDialog({
           {/* New Password Field */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-foreground">Kata Sandi Baru</label>
+              <Label className="text-xs font-bold text-foreground">Kata Sandi Baru *</Label>
               <button
                 type="button"
                 onClick={generateRandomPassword}
@@ -152,10 +149,14 @@ export function ResetPasswordDialog({
                     variant="ghost"
                     size="icon"
                     onClick={handleCopy}
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
                     title="Salin password"
                   >
-                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
                   </Button>
                 )}
                 <Button
@@ -163,10 +164,14 @@ export function ResetPasswordDialog({
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
                   title={showPassword ? 'Sembunyikan' : 'Tampilkan'}
                 >
-                  {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  {showPassword ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -174,7 +179,7 @@ export function ResetPasswordDialog({
 
           {/* Confirm Password Field */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-foreground">Konfirmasi Kata Sandi</label>
+            <Label className="text-xs font-bold text-foreground">Konfirmasi Kata Sandi *</Label>
             <Input
               type={showPassword ? 'text' : 'password'}
               placeholder="Ulangi kata sandi baru"
@@ -185,15 +190,14 @@ export function ResetPasswordDialog({
             />
           </div>
 
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] leading-relaxed flex items-start gap-2">
+          <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary dark:text-primary-foreground text-[11px] leading-relaxed flex items-start gap-2">
             <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />
             <span>
-              Pastikan Anda mencatat dan memberikan kata sandi baru ini kepada staf bersangkutan
-              secara langsung.
+              Pastikan Anda mencatat dan memberikan kata sandi baru ini kepada staf bersangkutan.
             </span>
           </div>
 
-          <DialogFooter className="gap-3 pt-2">
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
             <Button
               type="button"
               variant="outline"
