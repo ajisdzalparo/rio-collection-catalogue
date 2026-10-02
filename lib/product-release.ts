@@ -50,39 +50,44 @@ export async function syncDueProductReleases(
   database: ProductReleaseDatabase = prisma,
   now = new Date()
 ): Promise<number> {
-  const dueProducts = await database.product.findMany({
-    where: {
-      status: 'COMING_SOON',
-      releaseDate: { lte: now },
-      deletedAt: null
-    },
-    select: {
-      id: true,
-      stockMode: true,
-      variants: {
-        select: { stock: true }
-      }
-    }
-  });
-
-  let updatedCount = 0;
-
-  for (const product of dueProducts) {
-    const totalStock = product.variants.reduce((total, variant) => total + Math.max(0, variant.stock), 0);
-    const nextStatus = product.stockMode === 'ALWAYS_AVAILABLE' || totalStock > 0
-      ? 'AVAILABLE'
-      : 'SOLD_OUT';
-
-    const result = await database.product.updateMany({
+  try {
+    const dueProducts = await database.product.findMany({
       where: {
-        id: product.id,
-        status: 'COMING_SOON'
+        status: 'COMING_SOON',
+        releaseDate: { lte: now },
+        deletedAt: null
       },
-      data: { status: nextStatus }
+      select: {
+        id: true,
+        stockMode: true,
+        variants: {
+          select: { stock: true }
+        }
+      }
     });
 
-    updatedCount += result.count;
-  }
+    let updatedCount = 0;
 
-  return updatedCount;
+    for (const product of dueProducts) {
+      const totalStock = product.variants.reduce((total, variant) => total + Math.max(0, variant.stock), 0);
+      const nextStatus = product.stockMode === 'ALWAYS_AVAILABLE' || totalStock > 0
+        ? 'AVAILABLE'
+        : 'SOLD_OUT';
+
+      const result = await database.product.updateMany({
+        where: {
+          id: product.id,
+          status: 'COMING_SOON'
+        },
+        data: { status: nextStatus }
+      });
+
+      updatedCount += result.count;
+    }
+
+    return updatedCount;
+  } catch (error) {
+    console.warn('[syncDueProductReleases] Skipping release sync due to DB error:', error);
+    return 0;
+  }
 }
