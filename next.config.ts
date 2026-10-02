@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
         source: '/dashboard/products/:path*',
         destination: '/dashboard/master/products/:path*',
         permanent: true
+      },
+      {
+        source: '/users/roles',
+        destination: '/manajemen-pengguna/role',
+        permanent: true
       }
     ];
   },
