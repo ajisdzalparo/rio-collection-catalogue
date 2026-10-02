@@ -40,9 +40,9 @@ export function useAuth() {
         return null;
       }
     },
-    staleTime: 0,
-    refetchInterval: (query) => query.state.data ? 10_000 : false,
-    refetchOnWindowFocus: 'always'
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    refetchInterval: false,
+    refetchOnWindowFocus: false
   });
 
   const loginMutation = useMutation({
