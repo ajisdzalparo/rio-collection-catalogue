@@ -7,28 +7,27 @@ import { recordActivity } from '@/lib/activity-log';
 import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
 
+const heroSlideItemSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  imageUrl: z.string().trim().max(2_000_000).default(''),
+  altText: z.string().trim().max(160).optional().default('Banner slide'),
+  title: z.string().trim().max(200).optional().default(''),
+  subtitle: z.string().trim().max(300).optional().default(''),
+  ctaText: z.string().trim().max(100).optional().default(''),
+  ctaLink: z
+    .string()
+    .trim()
+    .max(2_000)
+    .optional()
+    .default(''),
+  isActive: z.boolean().default(true)
+});
+
 const heroSlidesSchema = z
-  .array(
-    z.object({
-      id: z.string().trim().min(1).max(80),
-      imageUrl: z.string().trim().min(1).max(2_000_000),
-      altText: z.string().trim().min(1).max(160),
-      title: z.string().trim().max(200).optional(),
-      subtitle: z.string().trim().max(300).optional(),
-      ctaText: z.string().trim().max(100).optional(),
-      ctaLink: z
-        .string()
-        .trim()
-        .max(2_000)
-        .refine((value) => !value || value.startsWith('/') || /^https?:\/\//i.test(value), {
-          message: 'Link CTA harus berupa path internal atau URL http(s).'
-        })
-        .optional(),
-      isActive: z.boolean()
-    })
-  )
+  .array(heroSlideItemSchema)
   .superRefine((slides, context) => {
-    if (slides.length > 0 && !slides.some((slide) => slide.isActive)) {
+    const slidesWithImage = slides.filter((slide) => slide.imageUrl && slide.imageUrl.trim().length > 0);
+    if (slidesWithImage.length > 0 && !slidesWithImage.some((slide) => slide.isActive)) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Minimal satu slide banner harus aktif.'
@@ -126,7 +125,21 @@ export async function PUT(request: Request) {
       originProvinceName
     } = body;
 
-    const parsedHeroSlides = heroSlides === undefined ? undefined : heroSlidesSchema.safeParse(heroSlides);
+    const sanitizedHeroSlides = Array.isArray(heroSlides)
+      ? heroSlides.map((slide, index) => ({
+          ...slide,
+          id: slide.id || `hero-${Date.now()}-${index}`,
+          imageUrl: typeof slide.imageUrl === 'string' ? slide.imageUrl.trim() : '',
+          altText: typeof slide.altText === 'string' && slide.altText.trim() ? slide.altText.trim() : (slide.title?.trim() || 'Banner slide'),
+          title: slide.title || '',
+          subtitle: slide.subtitle || '',
+          ctaText: slide.ctaText || '',
+          ctaLink: slide.ctaLink || '',
+          isActive: typeof slide.isActive === 'boolean' ? slide.isActive : true
+        }))
+      : heroSlides;
+
+    const parsedHeroSlides = sanitizedHeroSlides === undefined ? undefined : heroSlidesSchema.safeParse(sanitizedHeroSlides);
     if (parsedHeroSlides && !parsedHeroSlides.success) {
       return NextResponse.json(
         { code: 400, status: 'error', message: 'Data slide banner tidak valid.', details: parsedHeroSlides.error.flatten() },

@@ -252,9 +252,10 @@ export default function StoreSettingsPage() {
       updateSettings(data.data);
       queryClient.setQueryData(['store-settings'], data.data);
       toast.success('Pengaturan toko & ekspedisi berhasil disimpan!');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save settings:', error);
-      toast.error('Gagal menyimpan pengaturan toko ke database');
+      const axiosErr = error as { response?: { data?: { message?: string } } };
+      toast.error(axiosErr.response?.data?.message || 'Gagal menyimpan pengaturan toko ke database');
     } finally {
       setIsSaving(false);
     }
