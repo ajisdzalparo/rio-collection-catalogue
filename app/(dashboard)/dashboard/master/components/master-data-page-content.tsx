@@ -219,9 +219,6 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
     const currentEdit = editingItem;
     const tab = activeTab;
 
-    // Close dialog immediately for instant, snappy UX
-    setIsDialogOpen(false);
-
     try {
       if (currentEdit) {
         if (currentEdit.type === 'cat') {
@@ -289,6 +286,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
           toast.success('Opsi material baru berhasil ditambahkan');
         }
       }
+      setIsDialogOpen(false);
     } catch (error) {
       console.error('Failed to save master item:', error);
       toast.error('Gagal menyimpan data master');
@@ -300,6 +298,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
     id: string;
     name: string;
   } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = (
     type: 'cat' | 'col' | 'top' | 'bank' | 'size' | 'material',
@@ -312,7 +311,7 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
   const confirmDeleteAction = async () => {
     if (!deleteTarget) return;
     const { type, id, name } = deleteTarget;
-    setDeleteTarget(null);
+    setIsDeleting(true);
     try {
       if (type === 'cat') {
         await masterMutations.deleteCategory(id);
@@ -328,9 +327,12 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
         await masterMutations.deleteMaterial(id);
       }
       toast.success(`Berhasil menghapus "${name}"`);
+      setDeleteTarget(null);
     } catch (error) {
       console.error('Failed to delete master item:', error);
       toast.error('Gagal menghapus data');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1116,11 +1118,13 @@ export default function MasterDataPageContent({ tabSlug }: { tabSlug?: string })
       {/* Delete Confirmation Modal */}
       <ConfirmModal
         open={!!deleteTarget}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeleteTarget(null);
+        }}
         title="Hapus Data Master"
         description={`Apakah Anda yakin ingin menghapus "${deleteTarget?.name}"? Tindakan ini tidak dapat dibatalkan.`}
         onConfirm={confirmDeleteAction}
-        loading={masterMutations.isPending}
+        loading={isDeleting || masterMutations.isPending}
       />
     </VStack>
   );

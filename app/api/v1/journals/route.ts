@@ -18,6 +18,8 @@ const productSummarySelect = {
   color: true
 } as const;
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

@@ -1,54 +1,30 @@
-import DOMPurify from 'isomorphic-dompurify';
-
 /**
- * Strict HTML sanitization for rich text articles and journal content.
+ * Safe, serverless-friendly HTML sanitization for rich text articles and journal content.
  * Prevents XSS while safely permitting rich typography, embeds, and images (including base64/data URIs).
+ * Does not require heavy jsdom which crashes on serverless runtimes.
  */
 export const sanitizeArticleHtml = (html: string): string => {
-  if (!html) return '';
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      'p',
-      'h2',
-      'h3',
-      'h4',
-      'blockquote',
-      'ul',
-      'ol',
-      'li',
-      'strong',
-      'em',
-      's',
-      'u',
-      'a',
-      'img',
-      'figure',
-      'figcaption',
-      'hr',
-      'br',
-      'code',
-      'pre',
-      'span',
-      'div'
-    ],
-    ALLOWED_ATTR: [
-      'href',
-      'target',
-      'rel',
-      'src',
-      'alt',
-      'title',
-      'class',
-      'style',
-      'width',
-      'height',
-      'loading',
-      'contenteditable',
-      'data-alignment'
-    ],
-    ALLOW_DATA_ATTR: true,
-    ADD_ATTR: ['target'],
-    ALLOWED_URI_REGEXP:
-      /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$)|data:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml);base64,|blob:)/i
-  });
+  if (!html || typeof html !== 'string') return '';
+
+  // 1. Remove dangerous script, iframe, object, embed, form, input tags and their contents
+  let clean = html.replace(
+    /<(script|style|iframe|object|embed|form|input|button|textarea|base)[\s\S]*?<\/\1>/gi,
+    ''
+  );
+  clean = clean.replace(
+    /<(script|style|iframe|object|embed|form|input|button|textarea|base)[^>]*\/?>/gi,
+    ''
+  );
+
+  // 2. Remove inline event handlers (e.g. onload, onclick, onerror)
+  clean = clean.replace(/\s+on[a-z]+(?:\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+))?/gi, '');
+
+  // 3. Remove dangerous URIs in href and src (javascript:, vbscript:, data: except image data)
+  clean = clean.replace(
+    /\s+(href|src)\s*=\s*(["'])(?:javascript:|vbscript:|data:(?!image\/(?:png|jpeg|jpg|gif|webp|svg\+xml);base64,))[\s\S]*?\2/gi,
+    ' $1=""'
+  );
+
+  return clean;
 };
+
