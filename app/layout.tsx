@@ -6,6 +6,7 @@ import AppProvider from '@/providers/app-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { OfflineDetector } from '@/components/shared/offline-detector';
 import { TopLoader } from '@/components/shared/top-loader';
+import { Analytics } from '@vercel/analytics/react';
 import './globals.css';
 
 const geistSans = Geist({
@@ -101,6 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <OfflineDetector />
           {children}
           <Toaster position="top-center" richColors />
+          <Analytics />
         </AppProvider>
       </body>
     </html>
