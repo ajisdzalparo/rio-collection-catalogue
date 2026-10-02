@@ -13,7 +13,7 @@ async function isAuthenticated(request?: Request) {
   const rawCookie = cookieStore.get('auth_token')?.value;
   const authHeader = request?.headers.get('authorization')?.replace('Bearer ', '');
   const token = rawCookie || authHeader;
-  return Boolean(parseAuthCookieUser(token));
+  return Boolean(await parseAuthCookieUser(token));
 }
 
 function errorResponse(message: string, status: number) {

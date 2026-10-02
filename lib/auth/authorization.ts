@@ -12,7 +12,7 @@ import type { RolePermissions } from '@/features/users/types/roles.types';
 
 export async function getAuthenticatedUser(): Promise<AuthCookieUser | null> {
   const cookieStore = await cookies();
-  const cookieUser = parseAuthCookieUser(cookieStore.get('auth_token')?.value);
+  const cookieUser = await parseAuthCookieUser(cookieStore.get('auth_token')?.value);
   if (!cookieUser) return null;
 
   try {

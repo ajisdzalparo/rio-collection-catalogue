@@ -25,9 +25,16 @@ export interface AuthCookieUser {
   status: string;
 }
 
-export function parseAuthCookieUser(rawValue?: string): AuthCookieUser | null {
+export async function parseAuthCookieUser(rawValue?: string): Promise<AuthCookieUser | null> {
   if (!rawValue) return null;
 
+  // 1. If it's a signed JWT (starts with standard JWT header prefix eyJ)
+  if (rawValue.startsWith('eyJ')) {
+    const { verifyAdminJwt } = await import('./admin-jwt');
+    return verifyAdminJwt(rawValue);
+  }
+
+  // 2. Fallback to JSON parse for legacy migration
   try {
     const decoded = decodeURIComponent(rawValue);
     const parsed: unknown = JSON.parse(decoded);

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { canViewActivityLogs, isSuperAdminRole, parseAuthCookieUser } from '@/lib/auth/roles';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
   const { pathname } = request.nextUrl;
 
@@ -18,14 +18,14 @@ export function middleware(request: NextRequest) {
   }
 
   if (isSuperAdminFinanceRoute) {
-    const user = parseAuthCookieUser(token);
+    const user = await parseAuthCookieUser(token);
     if (!user || !isSuperAdminRole(user.role) || user.status !== 'active') {
       return NextResponse.redirect(new URL('/forbidden', request.url));
     }
   }
 
   if (isActivityLogRoute) {
-    const user = parseAuthCookieUser(token);
+    const user = await parseAuthCookieUser(token);
     if (!user || !canViewActivityLogs(user.role) || user.status !== 'active') {
       return NextResponse.redirect(new URL('/forbidden', request.url));
     }

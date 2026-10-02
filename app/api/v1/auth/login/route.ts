@@ -3,8 +3,27 @@ import { prisma } from '@/lib/prisma';
 import { recordActivity } from '@/lib/activity-log';
 import { verifyPassword } from '@/lib/password';
 import { getEffectivePermissions } from '@/lib/auth/user-permissions';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
+import { signAdminJwt } from '@/lib/auth/admin-jwt';
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit('admin-login', ip, {
+    windowMs: 60_000,
+    maxRequests: 5
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        code: 429,
+        status: 'error',
+        message: `Terlalu banyak percobaan login. Silakan coba lagi dalam ${rateLimit.retryAfterSeconds} detik.`
+      },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -95,9 +114,11 @@ export async function POST(request: Request) {
       data: userData
     });
 
-    // Set cookie
-    response.cookies.set('auth_token', JSON.stringify(userData), {
-      httpOnly: false,
+    const authToken = await signAdminJwt(userData);
+
+    // Set secure httpOnly cookie
+    response.cookies.set('auth_token', authToken, {
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',

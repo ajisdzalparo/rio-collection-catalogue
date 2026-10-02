@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const rawCookie = cookieStore.get('auth_token')?.value;
   const authHeader = request.headers.get('authorization')?.replace('Bearer ', '');
   const token = rawCookie || authHeader;
-  const user = parseAuthCookieUser(token);
+  const user = await parseAuthCookieUser(token);
 
   if (!user) {
     return NextResponse.json(

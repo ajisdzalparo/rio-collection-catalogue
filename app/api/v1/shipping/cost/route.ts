@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { calculateShippingCost } from '@/lib/rajaongkir';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit('shipping-cost', ip, {
+    windowMs: 60_000,
+    maxRequests: 30
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        code: 429,
+        status: 'error',
+        message: `Terlalu banyak permintaan kalkulasi ongkir. Silakan coba lagi dalam ${rateLimit.retryAfterSeconds} detik.`
+      },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { destination, destinationType, weight, courier, origin, originType } = body;
