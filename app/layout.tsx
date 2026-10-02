@@ -33,10 +33,25 @@ const hankenGrotesk = Hanken_Grotesk({
   display: 'swap'
 });
 
-const defaultUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://rio-collection.ajisdzalparo.com';
+const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    const url = process.env.NEXT_PUBLIC_APP_URL;
+    return url.startsWith('http') ? url : `https://${url}`;
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    const url = process.env.VERCEL_URL;
+    return url.startsWith('http') ? url : `https://${url}`;
+  }
+  return 'https://rio-collection-catalogue.vercel.app';
+};
+
+const defaultUrl = getBaseUrl();
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl.startsWith('http') ? defaultUrl : `https://${defaultUrl}`),
+  metadataBase: new URL(defaultUrl),
   title: {
     default: 'RIO COLLECTION — Limited Archival T-Shirt Catalogue',
     template: '%s — RIO COLLECTION'
@@ -72,6 +87,7 @@ export const metadata: Metadata = {
         url: '/ms-icon-310x310.png',
         width: 310,
         height: 310,
+        type: 'image/png',
         alt: 'RIO COLLECTION'
       }
     ],

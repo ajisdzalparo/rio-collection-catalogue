@@ -29,7 +29,14 @@ export function getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL || '/api';
   }
   const port = process.env.PORT || 3000;
-  const host = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || `http://localhost:${port}`;
+  let host =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined) ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
+    `http://localhost:${port}`;
+  if (!host.startsWith('http')) {
+    host = `https://${host}`;
+  }
   const apiPath = process.env.NEXT_PUBLIC_API_URL || '/api';
   return `${host}${apiPath}`;
 }

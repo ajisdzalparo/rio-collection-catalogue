@@ -20,6 +20,7 @@ export const metadata: Metadata = {
         url: '/ms-icon-310x310.png',
         width: 310,
         height: 310,
+        type: 'image/png',
         alt: 'RIO COLLECTION',
       },
     ],

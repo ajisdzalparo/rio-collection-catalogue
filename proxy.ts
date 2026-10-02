@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { canViewActivityLogs, isSuperAdminRole, parseAuthCookieUser } from '@/lib/auth/roles';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
   const { pathname } = request.nextUrl;
 
